@@ -1296,7 +1296,7 @@ class ZuugleActivityWidget {
     }
 
     // Render connection details
-    targetBox.innerHTML = this.renderConnectionDetails(filtered);
+    targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
   }
 
   updateActivityTimeBox(connection, type) {
@@ -1351,7 +1351,7 @@ class ZuugleActivityWidget {
     }
   }
 
-  renderConnectionDetails(connections) {
+  renderConnectionDetails(connections, type) {
     if (!connections || connections.length === 0) {
       return '<div>No connection details available</div>';
     }
@@ -1374,7 +1374,8 @@ class ZuugleActivityWidget {
         <div class="connection-elements">
       `;
 
-      conn.connection_elements.forEach(element => {
+      // Render each connection element (departures)
+      conn.connection_elements.forEach((element, index) => {
         const departureTime = element.departure_time.split("T")[1]?.substring(0, 5) || '--:--';
         const arrivalTime = element.arrival_time.split("T")[1]?.substring(0, 5) || '--:--';
         const duration = this.calculateElementDuration(
@@ -1382,6 +1383,19 @@ class ZuugleActivityWidget {
           element.arrival_time
         );
         const icon = this.getTransportIcon(element.type || 'DEFAULT');
+
+        if (index === 0) {
+          if (type === "from") {
+            html += `
+              <div class="connection-element">
+                <div id="eleCont">
+                  <span class="element-icon">${this.getTransportIcon('WALK')}</span>
+                  <span class="element-duration">Departure</span>
+                </div>
+              </div>
+            `;
+          }
+        }
 
         html += `
           <div class="connection-element">
@@ -1395,6 +1409,32 @@ class ZuugleActivityWidget {
             </div>
           </div>
         `;
+
+        // If this is the last element, also show the final destination (to_location)
+        if (index === conn.connection_elements.length - 1) {
+          if (type === "to") {
+            html += `
+              <div class="connection-element">
+                <div class="element-time">
+                  <span>${arrivalTime}</span> ${element.to_location}
+                </div>
+                <div id="eleCont">
+                  <div class="element-crcl"></div>
+                  <span class="element-icon">${this.getTransportIcon('WALK')}</span>
+                  <span class="element-duration">Arrival</span>
+                </div>
+              </div>
+            `;
+          } else {
+            html += `
+              <div class="connection-element">
+                <div class="element-time">
+                  <span>${arrivalTime}</span> ${element.to_location}
+                </div>
+              </div>
+            `;
+          }
+        }
       });
 
       html += `</div>`;
