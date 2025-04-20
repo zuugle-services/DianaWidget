@@ -5,7 +5,7 @@
 
 ## Overview
 
-The **Diana Widget** is a JavaScript component that enables users to plan transportation connections to/from activities while respecting temporal constraints (earliest start time, latest end time, duration). Designed for tourism platforms, event sites, and outdoor activity providers.
+The **Diana Widget** is a fully-embeddable Javascript widget that enables users to plan transportation connections to/from activities while respecting temporal constraints (earliest start time, latest end time, duration). Designed for tourism platforms, event sites, and outdoor activity providers.
 
 **Key Value Proposition**:  
 _"Let users focus on their activity - we handle the transit logistics."_
