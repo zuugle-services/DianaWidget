@@ -50,6 +50,8 @@ class DianaWidget {
     activityLatestEndTimeFlexible: true,
     activityStartLocationDisplayName: null,
     activityEndLocationDisplayName: null,
+    activityStartTimeLabel: null,
+    activityEndTimeLabel: null,
     apiBaseUrl: "https://api.zuugle-services.net",
     apiToken: "development-token"
   };
@@ -728,19 +730,13 @@ class DianaWidget {
         scroll-snap-type: x mandatory;
       }
       
-      .slider button {
-      
-      
-        font-family: 'DM Sans' !important;
-      }
-      
       .slider::-webkit-scrollbar,
       .modal-body-result::-webkit-scrollbar {
         display: none;
       }
       
-      
       .slider button {
+        font-family: 'DM Sans' !important;
         display: inline-block;
         margin: 5px 2px;
         padding: 5px 5px;
@@ -752,6 +748,7 @@ class DianaWidget {
         white-space: nowrap;
         scroll-snap-align: start;
         min-width: 95px;
+        cursor: pointer;
       }
       
       .slider button.active-time {
@@ -1185,6 +1182,12 @@ class DianaWidget {
     if (this.config.activityLatestEndTimeFlexible) {
         params.activity_latest_end_time_flexible = this.config.activityLatestEndTimeFlexible;
     }
+    if (this.config.activityStartTimeLabel) {
+        params.activity_start_time_label = this.config.activityStartTimeLabel;
+    }
+    if (this.config.activityEndTimeLabel) {
+        params.activity_end_time_label = this.config.activityEndTimeLabel;
+    }
 
     const queryString = new URLSearchParams(params);
 
@@ -1375,7 +1378,7 @@ class DianaWidget {
         const latestEnd = this.config.activityLatestEndTime;
         endTime = this.getEarlierTime(connectionStartTime, latestEnd);
 
-        if (!this.config.activityEarliestStartTimeFlexible) {
+        if (!this.config.activityLatestEndTimeFlexible) {
           this.state.activityTimes.warning_lateend = this.getEarlierTime(endTime, latestEnd) === latestEnd;
         }
 
@@ -1402,8 +1405,8 @@ class DianaWidget {
               <div style="font-size: 14px; color: #6B7280; font-weight: 600;">
                 ${this.state.activityTimes.warning_earlystart ?
                     `<div class="activity-time-warning-text">Warning: Earlier Arrival than recommended starting time of activity!</div>` : ''}
-                <div>Start time: ${this.state.activityTimes.start || '--:--'}</div>
-                <div>End time: ${this.state.activityTimes.end || '--:--'}</div>
+                <div>${this.config.activityStartTimeLabel || 'Start time'}: ${this.state.activityTimes.start || '--:--'}</div>
+                <div>${this.config.activityEndTimeLabel || 'End time'}: ${this.state.activityTimes.end || '--:--'}</div>
                 ${this.state.activityTimes.warning_lateend ?
                     `<div class="activity-time-warning-text">Warning: Later Departure than recommended ending time of activity!</div>` : ''}
                 <div>Duration: ${this.state.activityTimes.duration || '-- hrs'}</div>
