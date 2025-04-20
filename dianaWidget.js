@@ -346,7 +346,6 @@ class DianaWidget {
       }
       
       #activity-time {
-      
         font-family: 'DM Sans' !important;
         background: #DEE4F3;
         padding: 12px;
@@ -356,9 +355,14 @@ class DianaWidget {
       
       }
       
-      /* #activity-time div:nth-child(3) {
-        display: none;
-      } */
+      .activity-time-warning-text {
+        font-family: 'DM Sans' !important;
+        background: #ffd38c;
+        padding: 8px 10px 8px 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-radius: 6px;
+        margin: 6px 0px;
+      }
       
       .date-input {
       
@@ -1395,14 +1399,14 @@ class DianaWidget {
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div style="font-size: 14px; color: #6B7280; font-weight: 600;">
                 ${this.state.activityTimes.warning_earlystart ?
-                    `<div style="color: orange;">Warning: Earlier Arrival than recommended starting time of activity!</div>` : ''}
+                    `<div class="activity-time-warning-text">Warning: Earlier Arrival than recommended starting time of activity!</div>` : ''}
                 <div>Start time: ${this.state.activityTimes.start || '--:--'}</div>
-                ${this.state.activityTimes.warning_lateend ?
-                    `<div style="color: orange;">Warning: Later Departure than recommended ending time of activity!</div>` : ''}
                 <div>End time: ${this.state.activityTimes.end || '--:--'}</div>
+                ${this.state.activityTimes.warning_lateend ?
+                    `<div class="activity-time-warning-text">Warning: Later Departure than recommended ending time of activity!</div>` : ''}
                 <div>Duration: ${this.state.activityTimes.duration || '-- hrs'}</div>
                 ${this.state.activityTimes.warning_duration ?
-                    `<div style="color: orange;">Warning: Duration is less than recommended duration of activity!</div>` : ''}
+                    `<div class="activity-time-warning-text">Warning: Activity duration below recommended (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})!</div>` : ''}
               </div>
             </div>
           </div>
@@ -1612,9 +1616,6 @@ class DianaWidget {
         this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
         this.updateDateDisplay(this.state.selectedDate);
         calendarContainer.classList.remove("active");
-
-        console.log(this.elements.activityDate.value);
-        console.log(this.state.selectedDate);
       });
 
       // Day selection
@@ -1763,6 +1764,15 @@ class DianaWidget {
       return [`${hours} hr${hours !== 1 ? 's' : ''} ${minutes} min`, [hours, minutes]];
     }
     return [`${minutes} min`, [0, minutes]];
+  }
+
+  getTimeFormatFromMinutes(minutes) {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours} hr${hours !== 1 ? 's' : ''} ${mins} min`
+    }
+    return `${mins} min`;
   }
 
   addSwipeBehavior(sliderId) {
