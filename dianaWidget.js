@@ -1,4 +1,4 @@
-class ZuugleActivityWidget {
+class DianaWidget {
   constructor(config = {}) {
     // Validate and merge configuration
     this.config = this.validateConfig(config);
@@ -7,7 +7,7 @@ class ZuugleActivityWidget {
     this.state = {
       fromConnections: [],
       toConnections: [],
-      selectedDate: new Date(2025, 3, 19), // April 19, 2025 as in original
+      selectedDate: new Date(),
       loading: false,
       error: null,
       suggestions: [],
@@ -34,7 +34,8 @@ class ZuugleActivityWidget {
 
   // Default configuration
   defaultConfig = {
-    activityName: "Activity Name",
+    activityName: "[Activity Name]",
+    activityType: "[Activity Type]",
     primaryColor: "#4285f4",
     requiredFields: [
       'activityStartLocation',
@@ -45,6 +46,10 @@ class ZuugleActivityWidget {
       'activityLatestEndTime',
       'activityDurationMinutes'
     ],
+    activityEarliestStartTimeFlexible: true,
+    activityLatestEndTimeFlexible: true,
+    activityStartLocationDisplayName: null,
+    activityEndLocationDisplayName: null,
     apiBaseUrl: "https://api.zuugle-services.net",
     apiToken: "development-token"
   };
@@ -865,9 +870,7 @@ class ZuugleActivityWidget {
 
   initDOM() {
     // Create main container
-    this.container = document.getElementById("zuugleWidgetContainer");
-    document.body.appendChild(this.container);
-
+    this.container = document.getElementById("dianaWidgetContainer");
     // Render modal HTML
     this.container.innerHTML = this.getModalHTML();
 
@@ -1054,7 +1057,7 @@ class ZuugleActivityWidget {
     // Suggestion selection
     this.elements.suggestionsContainer.addEventListener('click', (e) => {
       if (e.target.classList.contains('suggestion-item')) {
-        this.handleSuggestionSelect(e.target.dataset.value);
+        this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
       }
     });
 
@@ -1095,8 +1098,10 @@ class ZuugleActivityWidget {
     }
   }
 
-  handleSuggestionSelect(value) {
+  handleSuggestionSelect(value, lat, lon) {
     this.elements.originInput.value = value;
+    this.elements.originInput.setAttribute('data-lat', lat);
+    this.elements.originInput.setAttribute('data-lon', lon);
     this.state.suggestions = [];
     this.renderSuggestions();
     this.elements.originInput.focus();
@@ -1108,9 +1113,13 @@ class ZuugleActivityWidget {
       return;
     }
 
-    if (!this.state.selectedDate) {
-      this.showError("Please select a date");
-      return;
+    if (!this.elements.activityDate.value) {
+      if (!this.state.selectedDate) {
+        this.showError("Please select a date");
+        return;
+      } else {
+        this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
+      }
     }
 
     this.setLoadingState(true);
@@ -1143,10 +1152,12 @@ class ZuugleActivityWidget {
   }
 
   async fetchActivityData() {
-    const params = new URLSearchParams({
-      date: this.state.selectedDate.toISOString().split("T")[0],
-      user_start_location: this.elements.originInput.value,
-      user_start_location_type: "address",
+    var params = {
+      date: this.elements.activityDate.value,
+      user_start_location: this.elements.originInput.attributes['data-lat'].value.toString() + "," + this.elements.originInput.attributes['data-lon'].value.toString(),
+      user_start_location_type: "coordinates",
+      activity_name: this.config.activityName,
+      activity_type: this.config.activityType,
       activity_start_location: this.config.activityStartLocation,
       activity_start_location_type: this.config.activityStartLocationType,
       activity_end_location: this.config.activityEndLocation,
@@ -1154,10 +1165,25 @@ class ZuugleActivityWidget {
       activity_earliest_start_time: this.config.activityEarliestStartTime,
       activity_latest_end_time: this.config.activityLatestEndTime,
       activity_duration_minutes: this.config.activityDurationMinutes
-    });
+    };
+
+    if (this.config.activityStartLocationDisplayName) {
+      params.activity_start_location_display_name = this.config.activityStartLocationDisplayName;
+    }
+    if (this.config.activityEndLocationDisplayName) {
+        params.activity_end_location_display_name = this.config.activityEndLocationDisplayName;
+    }
+    if (this.config.activityEarliestStartTimeFlexible) {
+        params.activity_earliest_start_time_flexible = this.config.activityEarliestStartTimeFlexible;
+    }
+    if (this.config.activityLatestEndTimeFlexible) {
+        params.activity_latest_end_time_flexible = this.config.activityLatestEndTimeFlexible;
+    }
+
+    const queryString = new URLSearchParams(params);
 
     const response = await fetch(
-      `${this.config.apiBaseUrl}/connections?${params}`,
+      `${this.config.apiBaseUrl}/connections?${queryString}`,
       {
         headers: {
           "Authorization": `Bearer ${this.config.apiToken}`
@@ -1200,7 +1226,9 @@ class ZuugleActivityWidget {
              role="option"
              tabindex="0"
              data-value="${feature.diana_properties.display_name.replace(/"/g, '&quot;')}"
-             data-location_type="${feature.diana_properties.location_type}">
+             data-location_type="${feature.diana_properties.location_type}"
+             data-lat="${feature.geometry.coordinates[1]}"
+             data-lon="${feature.geometry.coordinates[0]}">
           ${feature.diana_properties.display_name}
         </div>
       `).join('');
@@ -1330,7 +1358,9 @@ class ZuugleActivityWidget {
         const earliestStart = this.config.activityEarliestStartTime;
         startTime = this.getLaterTime(connectionEndTime, earliestStart);
 
-        this.state.activityTimes.warning_earlystart = this.getLaterTime(startTime, earliestStart) === earliestStart;
+        if (!this.config.activityEarliestStartTimeFlexible) {
+          this.state.activityTimes.warning_earlystart = this.getLaterTime(startTime, earliestStart) === earliestStart;
+        }
 
         // Store for later use with "from activity" connections
         this.state.activityTimes.start = startTime;
@@ -1339,7 +1369,9 @@ class ZuugleActivityWidget {
         const latestEnd = this.config.activityLatestEndTime;
         endTime = this.getEarlierTime(connectionStartTime, latestEnd);
 
-        this.state.activityTimes.warning_lateend = this.getEarlierTime(endTime, latestEnd) === latestEnd;
+        if (!this.config.activityEarliestStartTimeFlexible) {
+          this.state.activityTimes.warning_lateend = this.getEarlierTime(endTime, latestEnd) === latestEnd;
+        }
 
         // Calculate duration using stored start time
         startTime = this.state.activityTimes.start;
@@ -1362,13 +1394,13 @@ class ZuugleActivityWidget {
             </div>
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div style="font-size: 14px; color: #6B7280; font-weight: 600;">
-                <div>Start time: ${this.state.activityTimes.start || '--:--'}</div>
-                <div>End time: ${this.state.activityTimes.end || '--:--'}</div>
-                <div>Duration: ${this.state.activityTimes.duration || '-- hrs'}</div>
                 ${this.state.activityTimes.warning_earlystart ?
                     `<div style="color: orange;">Warning: Earlier Arrival than recommended starting time of activity!</div>` : ''}
+                <div>Start time: ${this.state.activityTimes.start || '--:--'}</div>
                 ${this.state.activityTimes.warning_lateend ?
                     `<div style="color: orange;">Warning: Later Departure than recommended ending time of activity!</div>` : ''}
+                <div>End time: ${this.state.activityTimes.end || '--:--'}</div>
+                <div>Duration: ${this.state.activityTimes.duration || '-- hrs'}</div>
                 ${this.state.activityTimes.warning_duration ?
                     `<div style="color: orange;">Warning: Duration is less than recommended duration of activity!</div>` : ''}
               </div>
@@ -1418,6 +1450,9 @@ class ZuugleActivityWidget {
           if (type === "from") {
             html += `
               <div class="connection-element">
+                <div class="element-time">
+                  <span>${departureTime}</span> ${this.config.activityEndLocationDisplayName || element.from_location}
+                </div>
                 <div id="eleCont">
                   <span class="element-icon">${this.getTransportIcon('WALK')}</span>
                   <span class="element-duration">Departure</span>
@@ -1461,7 +1496,7 @@ class ZuugleActivityWidget {
             html += `
               <div class="connection-element">
                 <div class="element-time">
-                  <span>${arrivalTime}</span> ${element.to_location}
+                  <span>${arrivalTime}</span> ${this.config.activityStartLocationDisplayName || element.to_location}
                 </div>
                 <div id="eleCont">
                   <div class="element-crcl"></div>
@@ -1497,9 +1532,9 @@ class ZuugleActivityWidget {
     dateInputContainer.appendChild(calendarContainer);
 
     // Track selected date
-    let selectedDate = new Date(this.state.selectedDate);
-    let currentViewMonth = selectedDate.getMonth();
-    let currentViewYear = selectedDate.getFullYear();
+    let selectedDate = this.state.selectedDate;
+    let currentViewMonth = this.state.selectedDate.getMonth();
+    let currentViewYear = this.state.selectedDate.getFullYear();
 
     // Render calendar function
     const renderCalendar = () => {
@@ -1533,7 +1568,7 @@ class ZuugleActivityWidget {
             <div class="calendar-day-header">T</div>
             <div class="calendar-day-header">F</div>
             <div class="calendar-day-header">S</div>
-            ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, currentViewYear, currentViewMonth, selectedDate)}
+            ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, currentViewYear, currentViewMonth)}
           </div>
         </div>
         <div class="calendar-footer">
@@ -1573,10 +1608,13 @@ class ZuugleActivityWidget {
       calendarContainer.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        const formattedDate = selectedDate.toISOString().split("T")[0];
-        this.elements.activityDate.value = formattedDate;
-        this.updateDateDisplay(selectedDate);
+        this.state.selectedDate = selectedDate;
+        this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
+        this.updateDateDisplay(this.state.selectedDate);
         calendarContainer.classList.remove("active");
+
+        console.log(this.elements.activityDate.value);
+        console.log(this.state.selectedDate);
       });
 
       // Day selection
@@ -1613,7 +1651,14 @@ class ZuugleActivityWidget {
     renderCalendar();
   }
 
-  generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, year, month, selectedDate) {
+  formatDatetime(date) {
+    let year = date.getFullYear();
+    let month = date.getMonth() + 1;
+    let day = date.getDate();
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  }
+
+  generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, year, month) {
     let html = "";
     const today = new Date();
 
@@ -1626,7 +1671,7 @@ class ZuugleActivityWidget {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       const isToday = date.toDateString() === today.toDateString();
-      const isSelected = date.toDateString() === selectedDate.toDateString();
+      const isSelected = date.toDateString() === this.state.selectedDate.toDateString();
 
       html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}">${day}</div>`;
     }
@@ -1803,9 +1848,7 @@ class ZuugleActivityWidget {
     this.elements.errorContainer.style.display = message ? "block" : "none";
 
     if (message) {
-      setTimeout(() => {
-        this.showError("");
-      }, 5000);
+      console.error(`Error: ${message}`);
     }
   }
 }
@@ -1813,11 +1856,11 @@ class ZuugleActivityWidget {
 // Initialize the widget when DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   try {
-    // Use window.journeyConfig if available, or empty object
-    const config = window.journeyConfig || {};
-    new ZuugleActivityWidget(config);
+    // Use window.dianaActivityConfig if available, or empty object
+    const config = window.dianaActivityConfig || {};
+    const dianaWidget = new DianaWidget(config);
   } catch (error) {
-    console.error("Failed to initialize Zuugle Activity Widget:", error);
+    console.error("Failed to initialize Diana Widget:", error);
     // Fallback UI if initialization fails
     const fallback = document.createElement('div');
     fallback.style.padding = '20px';

@@ -15,7 +15,7 @@
 1. Include the widget script on your page:
 
 ```html
-<script src="zuugleWidget.js"></script>
+<script src="dianaWidget.js"></script>
 ```
 
 2. Add a container in your HTML:
