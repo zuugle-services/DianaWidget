@@ -12,10 +12,15 @@ class ZuugleActivityWidget {
       error: null,
       suggestions: [],
       activeTimeFilters: { from: null, to: null },
+      recommendedToIndex: 0,
+      recommendedFromIndex: 0,
       activityTimes: {
         start: '',
         end: '',
-        duration: ''
+        duration: '',
+        warning_earlystart: false,
+        warning_lateend: false,
+        warning_duration: false,
       }
     };
 
@@ -346,9 +351,9 @@ class ZuugleActivityWidget {
       
       }
       
-      #activity-time div:nth-child(3) {
+      /* #activity-time div:nth-child(3) {
         display: none;
-      }
+      } */
       
       .date-input {
       
@@ -1170,8 +1175,19 @@ class ZuugleActivityWidget {
       throw new Error("No connection data available");
     }
 
-    this.state.fromConnections = result.connections.from_activity;
     this.state.toConnections = result.connections.to_activity;
+    this.state.fromConnections = result.connections.from_activity;
+
+    // Ensure valid indices (fallback to 0 if invalid)
+    this.state.recommendedToIndex = Math.max(0, Math.min(
+      result.connections.recommended_to_activity_connection || 0,
+      this.state.toConnections.length - 1
+    ));
+
+    this.state.recommendedFromIndex = Math.max(0, Math.min(
+      result.connections.recommended_from_activity_connection || 0,
+      this.state.fromConnections.length - 1
+    ));
 
     this.renderConnectionResults();
   }
@@ -1196,24 +1212,22 @@ class ZuugleActivityWidget {
   }
 
   renderConnectionResults() {
-    // Render top slider (to activity)
+    // Render sliders with recommended connections
     this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
-
-    // Render bottom slider (from activity)
     this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
 
-    // Set initial active filters
+    // Set initial active filters using recommended indices
     if (this.state.toConnections.length > 0) {
-      const firstTo = this.state.toConnections[0];
-      const startTime = firstTo.connection_start_timestamp.split(" ")[1].substring(0, 5);
-      const endTime = firstTo.connection_end_timestamp.split(" ")[1].substring(0, 5);
+      const recommendedTo = this.state.toConnections[this.state.recommendedToIndex];
+      const startTime = recommendedTo.connection_start_timestamp.split(" ")[1].substring(0, 5);
+      const endTime = recommendedTo.connection_end_timestamp.split(" ")[1].substring(0, 5);
       this.filterConnectionsByTime('to', startTime, endTime);
     }
 
     if (this.state.fromConnections.length > 0) {
-      const firstFrom = this.state.fromConnections[0];
-      const startTime = firstFrom.connection_start_timestamp.split(" ")[1].substring(0, 5);
-      const endTime = firstFrom.connection_end_timestamp.split(" ")[1].substring(0, 5);
+      const recommendedFrom = this.state.fromConnections[this.state.recommendedFromIndex];
+      const startTime = recommendedFrom.connection_start_timestamp.split(" ")[1].substring(0, 5);
+      const endTime = recommendedFrom.connection_end_timestamp.split(" ")[1].substring(0, 5);
       this.filterConnectionsByTime('from', startTime, endTime);
     }
 
@@ -1260,7 +1274,13 @@ class ZuugleActivityWidget {
         this.filterConnectionsByTime(type, startTime, endTime);
       });
 
-      if (index === 0) {
+      // Add 'active-time' class if this is the recommended connection
+      const isRecommended = (
+        (type === 'to' && index === this.state.recommendedToIndex) ||
+        (type === 'from' && index === this.state.recommendedFromIndex)
+      );
+
+      if (isRecommended) {
         btn.classList.add('active-time');
       }
 
@@ -1290,10 +1310,7 @@ class ZuugleActivityWidget {
       return connStart === startTime && connEnd === endTime;
     });
 
-    // Update activity time box for "to" connections
-    if (type === 'to') {
-      this.updateActivityTimeBox(filtered[0], type);
-    }
+    this.updateActivityTimeBox(filtered[0], type);
 
     // Render connection details
     targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
@@ -1306,23 +1323,30 @@ class ZuugleActivityWidget {
       const connectionStartTime = connection.connection_start_timestamp.split(" ")[1];
       const connectionEndTime = connection.connection_end_timestamp.split(" ")[1];
 
-      let startTime, endTime, duration;
+      let startTime, endTime, duration, hoursminutes, hours, minutes;
 
       if (type === 'to') {
         // For "to activity" connections, calculate latest possible start
         const earliestStart = this.config.activityEarliestStartTime;
-        startTime = this.getLaterTime(connectionStartTime, earliestStart);
+        startTime = this.getLaterTime(connectionEndTime, earliestStart);
+
+        this.state.activityTimes.warning_earlystart = this.getLaterTime(startTime, earliestStart) === earliestStart;
 
         // Store for later use with "from activity" connections
         this.state.activityTimes.start = startTime;
       } else {
         // For "from activity" connections, calculate earliest possible end
         const latestEnd = this.config.activityLatestEndTime;
-        endTime = this.getEarlierTime(connectionEndTime, latestEnd);
+        endTime = this.getEarlierTime(connectionStartTime, latestEnd);
+
+        this.state.activityTimes.warning_lateend = this.getEarlierTime(endTime, latestEnd) === latestEnd;
 
         // Calculate duration using stored start time
         startTime = this.state.activityTimes.start;
-        duration = this.calculateDuration(startTime, endTime);
+        [duration, hoursminutes] = this.calculateDuration(startTime, endTime);
+        [hours, minutes] = hoursminutes.map(Number);
+
+        this.state.activityTimes.warning_duration = (hours*60 + minutes) < this.config.activityDurationMinutes;
 
         // Update state
         this.state.activityTimes.end = endTime;
@@ -1341,6 +1365,12 @@ class ZuugleActivityWidget {
                 <div>Start time: ${this.state.activityTimes.start || '--:--'}</div>
                 <div>End time: ${this.state.activityTimes.end || '--:--'}</div>
                 <div>Duration: ${this.state.activityTimes.duration || '-- hrs'}</div>
+                ${this.state.activityTimes.warning_earlystart ?
+                    `<div style="color: orange;">Warning: Earlier Arrival than recommended starting time of activity!</div>` : ''}
+                ${this.state.activityTimes.warning_lateend ?
+                    `<div style="color: orange;">Warning: Later Departure than recommended ending time of activity!</div>` : ''}
+                ${this.state.activityTimes.warning_duration ?
+                    `<div style="color: orange;">Warning: Duration is less than recommended duration of activity!</div>` : ''}
               </div>
             </div>
           </div>
@@ -1670,9 +1700,9 @@ class ZuugleActivityWidget {
     const minutes = totalMinutes % 60;
 
     if (hours > 0) {
-      return `${hours} hr${hours !== 1 ? 's' : ''} ${minutes} min`;
+      return [`${hours} hr${hours !== 1 ? 's' : ''} ${minutes} min`, [hours, minutes]];
     }
-    return `${minutes} min`;
+    return [`${minutes} min`, [0, minutes]];
   }
 
   addSwipeBehavior(sliderId) {
