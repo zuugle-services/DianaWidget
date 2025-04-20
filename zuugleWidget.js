@@ -1424,21 +1424,36 @@ class ZuugleActivityWidget {
                 </div>
               </div>
             `;
+          } else {
+            html += `
+              <div class="connection-element">
+                <div class="element-time">
+                  <span>${departureTime}</span> ${this.elements.originInput.value}
+                </div>
+                <div id="eleCont">
+                  <div class="element-crcl"></div>
+                  <span class="element-icon">${icon}</span>
+                  <span class="element-duration">${element.vehicle_name || duration}</span>
+                </div>
+              </div>
+            `;
           }
+        } else {
+          html += `
+            <div class="connection-element">
+              <div class="element-time">
+                <span>${departureTime}</span> ${element.from_location}
+              </div>
+              <div id="eleCont">
+                <div class="element-crcl"></div>
+                <span class="element-icon">${icon}</span>
+                <span class="element-duration">${element.vehicle_name || duration}</span>
+              </div>
+            </div>
+          `;
         }
 
-        html += `
-          <div class="connection-element">
-            <div class="element-time">
-              <span>${departureTime}</span> ${element.from_location}
-            </div>
-            <div id="eleCont">
-              <div class="element-crcl"></div>
-              <span class="element-icon">${icon}</span>
-              <span class="element-duration">${element.vehicle_name || duration}</span>
-            </div>
-          </div>
-        `;
+
 
         // If this is the last element, also show the final destination (to_location)
         if (index === conn.connection_elements.length - 1) {
@@ -1459,7 +1474,7 @@ class ZuugleActivityWidget {
             html += `
               <div class="connection-element">
                 <div class="element-time">
-                  <span>${arrivalTime}</span> ${element.to_location}
+                  <span>${arrivalTime}</span> ${this.elements.originInput.value}
                 </div>
               </div>
             `;
