@@ -1,4 +1,5 @@
 class DianaWidget {
+
   constructor(config = {}) {
     // Validate and merge configuration
     this.config = this.validateConfig(config);
@@ -447,11 +448,6 @@ class DianaWidget {
         @media (max-width: 768px) {
           padding: 12px 16px;
         }
-      }
-      
-      .cancel-btn {
-        display: none;
-        background-color: #f1f1f1;
       }
       
       .apply-btn {
@@ -955,7 +951,6 @@ class DianaWidget {
               </div>
 
               <div class="form-footer">
-                <button type="button" class="btn cancel-btn">Cancel</button>
                 <button type="submit" class="btn apply-btn" id="searchBtn">Search</button>
               </div>
             </form>
@@ -1010,23 +1005,22 @@ class DianaWidget {
 
   cacheDOMElements() {
     this.elements = {
-      modal: document.getElementById("activityModal"),
-      innerContainer: document.getElementById("innerContainer"),
-      formPage: document.getElementById("formPage"),
-      resultsPage: document.getElementById("resultsPage"),
-      originInput: document.getElementById("originInput"),
-      suggestionsContainer: document.getElementById("suggestions"),
-      activityDate: document.getElementById("activityDate"),
-      dateDisplay: document.getElementById("dateDisplay"),
-      searchBtn: document.getElementById("searchBtn"),
-      backBtn: document.getElementById("backBtn"),
-      cancelBtn: document.querySelector(".cancel-btn"),
-      errorContainer: document.getElementById("errorContainer"),
-      responseBox: document.getElementById("responseBox"),
-      responseBoxBottom: document.getElementById("responseBox-bottom"),
-      topSlider: document.getElementById("topSlider"),
-      bottomSlider: document.getElementById("bottomSlider"),
-      activityTimeBox: document.getElementById("activity-time")
+      modal: this.container.querySelector("#activityModal"),
+      innerContainer: this.container.querySelector("#innerContainer"),
+      formPage: this.container.querySelector("#formPage"),
+      resultsPage: this.container.querySelector("#resultsPage"),
+      originInput: this.container.querySelector("#originInput"),
+      suggestionsContainer: this.container.querySelector("#suggestions"),
+      activityDate: this.container.querySelector("#activityDate"),
+      dateDisplay: this.container.querySelector("#dateDisplay"),
+      searchBtn: this.container.querySelector("#searchBtn"),
+      backBtn: this.container.querySelector("#backBtn"),
+      errorContainer: this.container.querySelector("#errorContainer"),
+      responseBox: this.container.querySelector("#responseBox"),
+      responseBoxBottom: this.container.querySelector("#responseBox-bottom"),
+      topSlider: this.container.querySelector("#topSlider"),
+      bottomSlider: this.container.querySelector("#bottomSlider"),
+      activityTimeBox: this.container.querySelector("#activity-time")
     };
   }
 
@@ -1070,7 +1064,6 @@ class DianaWidget {
 
     // Navigation
     this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
-    this.elements.cancelBtn.addEventListener('click', () => this.closeModal());
 
     // Keyboard navigation for suggestions
     this.elements.originInput.addEventListener('keydown', (e) => {
@@ -1533,7 +1526,7 @@ class DianaWidget {
 
   // Calendar methods (from original implementation)
   initCalendar() {
-    const dateInputContainer = document.querySelector(".date-input-container");
+    const dateInputContainer = this.container.querySelector(".date-input-container");
 
     // Create calendar container
     const calendarContainer = document.createElement("div");
@@ -1860,10 +1853,6 @@ class DianaWidget {
     this.elements.formPage.classList.add("active");
   }
 
-  closeModal() {
-    this.elements.modal.style.display = "none";
-  }
-
   setLoadingState(isLoading) {
     this.state.loading = isLoading;
     this.elements.searchBtn.disabled = isLoading;
@@ -1898,10 +1887,10 @@ document.addEventListener("DOMContentLoaded", () => {
     fallback.style.borderRadius = '4px';
     fallback.style.margin = '10px';
     fallback.innerHTML = `
-      <h3 style="color: #c62828; margin-top: 0;">Activity Planner Failed to Load</h3>
-      <p>We're unable to load the activity planner at this time. Please try again later.</p>
+      <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
+      <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
       <p><small>Error: ${error.message}</small></p>
     `;
-    document.body.appendChild(fallback);
+    document.getElementById("dianaWidgetContainer").appendChild(fallback);
   }
 });
