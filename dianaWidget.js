@@ -1130,6 +1130,8 @@ class DianaWidget {
     try {
       await this.fetchActivityData();
       this.navigateToResults();
+      this.slideToRecommendedConnections();
+
     } catch (error) {
       this.showError("Failed to load connections. Please try again.");
     } finally {
@@ -1836,6 +1838,20 @@ class DianaWidget {
     this.elements.innerContainer.style.transform = "unset";
   }
 
+  slideToRecommendedConnections() {
+    let topSlider = this.elements["topSlider"];
+    let topActiveBtn = topSlider.querySelector('.active-time');
+    if (topActiveBtn) {
+      topSlider.scrollLeft = topActiveBtn.offsetLeft - (topSlider.offsetWidth / 2) + (topActiveBtn.offsetWidth / 2);
+    }
+
+    let bottomSlider = this.elements["bottomSlider"];
+    let bottomActiveBtn = bottomSlider.querySelector('.active-time');
+    if (bottomActiveBtn) {
+      bottomSlider.scrollLeft = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
+    }
+  }
+
   navigateToForm() {
     this.elements.resultsPage.classList.remove("active");
     this.elements.formPage.classList.add("active");
@@ -1868,7 +1884,7 @@ document.addEventListener("DOMContentLoaded", () => {
   try {
     // Use window.dianaActivityConfig if available, or empty object
     const config = window.dianaActivityConfig || {};
-    const dianaWidget = new DianaWidget(config);
+    new DianaWidget(config);
   } catch (error) {
     console.error("Failed to initialize Diana Widget:", error);
     // Fallback UI if initialization fails
