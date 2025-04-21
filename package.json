@@ -13,7 +13,7 @@
         "url": "https://github.com/zuugle-services/DianaWidget.git"
     },
     "private": true,
-    "devDependencies": {
+    "dependencies": {
         "css-loader": "^7.1.2",
         "cssnano": "^7.0.6",
         "mini-css-extract-plugin": "^2.9.2",
@@ -23,6 +23,7 @@
         "style-loader": "^4.0.0",
         "webpack": "^5.99.6",
         "webpack-cli": "^6.0.1",
-        "webpack-manifest-plugin": "^5.0.1"
+        "webpack-manifest-plugin": "^5.0.1",
+        "flatpickr": "^4.6.13"
     }
 }

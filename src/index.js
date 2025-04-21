@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", () => {
   try {
     // Use window.dianaActivityConfig if available, or empty object
     const config = window.dianaActivityConfig || {};
-    new DianaWidget(config);
+    window.dianawidget = new DianaWidget(config);
   } catch (error) {
     console.error("Failed to initialize Diana Widget:", error);
     // Fallback UI if initialization fails
@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
       <p><small>Error: ${error.message}</small></p>
     `;
+    document.getElementById("dianaWidgetContainer").innerHTML = "";
     document.getElementById("dianaWidgetContainer").appendChild(fallback);
   }
 });

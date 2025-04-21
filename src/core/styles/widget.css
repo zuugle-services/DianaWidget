@@ -367,10 +367,9 @@
 
 .diana-container .calendar-body {
     padding: 10px;
-    border: 1px solid;
     margin: 15px;
     border-radius: 8px;
-    border-color: #eaeaea
+    border: 1px solid #eaeaea;
 }
 
 .diana-container .calendar-nav {
@@ -635,4 +634,39 @@
 
 .diana-container .middle-box .element-time span {
     color: #888
+}
+
+/* Show native date input on mobile */
+@media (max-width: 768px) {
+  .diana-container .date-input-container input[type="date"] {
+    opacity: 1;
+    position: relative;
+    height: auto;
+    padding: 12px 40px !important;
+    border-radius: 5px;
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    color: #333;
+    font-size: 14px;
+    pointer-events: all;
+    width: inherit;
+  }
+
+  .diana-container .date-input {
+    display: none !important;
+  }
+
+  /* Style the native date picker button */
+  .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    padding: 4px;
+    cursor: pointer;
+  }
+}
+
+/* Hide native date input on desktop */
+@media (min-width: 769px) {
+  .diana-container .date-input-container input[type="date"] {
+    display: none;
+  }
 }

@@ -1,6 +1,30 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 
 export default class DianaWidget {
+  // Default configuration
+  defaultConfig = {
+    activityName: "[Activity Name]",
+    activityType: "[Activity Type]",
+    primaryColor: "#4285f4",
+    requiredFields: [
+      'activityStartLocation',
+      'activityStartLocationType',
+      'activityEndLocation',
+      'activityEndLocationType',
+      'activityEarliestStartTime',
+      'activityLatestEndTime',
+      'activityDurationMinutes'
+    ],
+    activityEarliestStartTimeFlexible: true,
+    activityLatestEndTimeFlexible: true,
+    activityStartLocationDisplayName: null,
+    activityEndLocationDisplayName: null,
+    activityStartTimeLabel: null,
+    activityEndTimeLabel: null,
+    apiBaseUrl: "https://api.zuugle-services.net",
+    apiToken: "development-token"
+  };
+
   constructor(config = {}) {
     // Validate and merge configuration
     this.config = this.validateConfig(config);
@@ -33,30 +57,6 @@ export default class DianaWidget {
     this.initCalendar();
     // this.applyTheme();
   }
-
-  // Default configuration
-  defaultConfig = {
-    activityName: "[Activity Name]",
-    activityType: "[Activity Type]",
-    primaryColor: "#4285f4",
-    requiredFields: [
-      'activityStartLocation',
-      'activityStartLocationType',
-      'activityEndLocation',
-      'activityEndLocationType',
-      'activityEarliestStartTime',
-      'activityLatestEndTime',
-      'activityDurationMinutes'
-    ],
-    activityEarliestStartTimeFlexible: true,
-    activityLatestEndTimeFlexible: true,
-    activityStartLocationDisplayName: null,
-    activityEndLocationDisplayName: null,
-    activityStartTimeLabel: null,
-    activityEndTimeLabel: null,
-    apiBaseUrl: "https://api.zuugle-services.net",
-    apiToken: "development-token"
-  };
 
   validateConfig(userConfig) {
     const config = { ...this.defaultConfig, ...userConfig };
@@ -266,15 +266,29 @@ export default class DianaWidget {
 
   setupEventListeners() {
     // Address input with debouncing
-    this.elements.originInput.addEventListener('input', this.debounce(
-      (e) => this.handleAddressInput(e.target.value),
-      300
-    ));
+    this.elements.originInput.addEventListener('input', (e) => {
+      this.elements.originInput.removeAttribute("data-lat");
+      this.elements.originInput.removeAttribute("data-lon");
+      this.debounce(
+        this.handleAddressInput(e.target.value),
+        300
+      );
+    });
+
 
     // Suggestion selection
     this.elements.suggestionsContainer.addEventListener('click', (e) => {
       if (e.target.classList.contains('suggestion-item')) {
         this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
+      }
+    });
+
+    // close suggestions box when clicking outside
+    document.addEventListener("click", (e) => {
+      if (this.elements.suggestionsContainer.style.display &&
+          !this.elements.suggestionsContainer.contains(e.target)) {
+        this.state.suggestions = [];
+        this.renderSuggestions();
       }
     });
 
@@ -371,10 +385,8 @@ export default class DianaWidget {
   }
 
   async fetchActivityData() {
-    var params = {
+    let params = {
       date: this.elements.activityDate.value,
-      user_start_location: this.elements.originInput.attributes['data-lat'].value.toString() + "," + this.elements.originInput.attributes['data-lon'].value.toString(),
-      user_start_location_type: "coordinates",
       activity_name: this.config.activityName,
       activity_type: this.config.activityType,
       activity_start_location: this.config.activityStartLocation,
@@ -385,6 +397,14 @@ export default class DianaWidget {
       activity_latest_end_time: this.config.activityLatestEndTime,
       activity_duration_minutes: this.config.activityDurationMinutes
     };
+
+    if (this.elements.originInput.attributes["data-lat"] !== undefined && this.elements.originInput.attributes["data-lon"] !== undefined) {
+      params["user_start_location"] = this.elements.originInput.attributes['data-lat'].value.toString() + "," + this.elements.originInput.attributes['data-lon'].value.toString();
+      params["user_start_location_type"] = "coordinates";
+    } else {
+      params["user_start_location"] = this.elements.originInput.value;
+      params["user_start_location_type"] = "address";
+    }
 
     if (this.config.activityStartLocationDisplayName) {
       params.activity_start_location_display_name = this.config.activityStartLocationDisplayName;
@@ -510,7 +530,7 @@ export default class DianaWidget {
           <div style="display: flex; justify-content:space-between; width: 100%;
                       width: -moz-available;          /* WebKit-based browsers will ignore this. */
                       width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
-                      width: fill-available;; 
+                      width: fill-available;
                       align-items: center; font-size: 12px; color: #666;">
             <span>${duration}</span>
             <div style="display: flex; gap:2px; align-items: center;">
@@ -670,7 +690,7 @@ export default class DianaWidget {
           element.arrival_time
         );
 
-        let icon = '';
+        let icon;
         if (element.type !== 'JNY') {
           icon = this.getTransportIcon(element.type || 'DEFAULT');
         } else {
@@ -755,6 +775,17 @@ export default class DianaWidget {
 
   // Calendar methods (from original implementation)
   initCalendar() {
+    // Check if mobile device
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      // Show native date input for mobile
+      this.elements.activityDate.type = "date";
+      this.elements.activityDate.addEventListener("change", (e) => {
+        this.state.selectedDate = new Date(e.target.value);
+        this.updateDateDisplay(this.state.selectedDate);
+      });
+      return; // Skip custom calendar initialization
+    }
+
     const dateInputContainer = this.container.querySelector(".date-input-container");
 
     // Create calendar container
@@ -859,6 +890,7 @@ export default class DianaWidget {
 
     // Toggle calendar visibility
     dateInputContainer.addEventListener("click", (e) => {
+      if (window.matchMedia("(max-width: 768px)").matches) return;
       e.stopPropagation();
       calendarContainer.classList.toggle("active");
       if (calendarContainer.classList.contains("active")) {
