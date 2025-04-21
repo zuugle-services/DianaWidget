@@ -1,0 +1,39 @@
+name: 🚀 Deploy DianaWidget on Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  deploy:
+    name: 🎉 Deploy to Pseudo-CDN
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🚚 Checkout code
+      uses: actions/checkout@v4
+
+    - name: ⎔ Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 16
+
+    - name: 📦 Install dependencies
+      run: npm ci
+
+    - name: 🔨 Build production bundle
+      run: npm run build
+
+    - name: 📤 Deploy to FTP
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./dist/
+        server-dir: /public/diana/
+        exclude: |
+          **/.git*
+          **/.git*/**
+        log-level: verbose
+        dry-run: true
