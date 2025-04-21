@@ -25,17 +25,12 @@ jobs:
       run: npm run build
 
     - name: 📤 Deploy to FTP
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
-        server: ${{ secrets.FTP_SERVER }}
         username: ${{ secrets.FTP_USERNAME }}
+        server: ${{ secrets.FTP_SERVER }}
+        port: ${{ secrets.FTP_PORT }}
+        local_path: './dist/DianaWidget.bundle.js'
+        remote_path: './'
+        sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
-        port: 22
-        protocol: ftp
-        local-dir: ./dist/
-        server-dir: ./
-        exclude: |
-          **/.git*
-          **/.git*/**
-        log-level: verbose
-        dry-run: true
