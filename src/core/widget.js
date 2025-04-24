@@ -148,7 +148,7 @@ export default class DianaWidget {
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
                   <input type="text" class="input-field disabled" id="destinationInput" 
-                         placeholder="Destination" value="Pre filled" readonly
+                         placeholder="Destination" value="${this.config.activityName}" readonly
                          aria-labelledby="destinationLabel">
                 </div>
               </div>
