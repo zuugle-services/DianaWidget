@@ -5,7 +5,6 @@ export default class DianaWidget {
   defaultConfig = {
     activityName: "[Activity Name]",
     activityType: "[Activity Type]",
-    primaryColor: "#4285f4",
     requiredFields: [
       'activityStartLocation',
       'activityStartLocationType',

@@ -1,182 +1,220 @@
-# Diana Widget - Travel Planning Integration
+# DianaWidget - Activity Transit Planner Widget
 
-![Diana Widget Preview](./preview.png)
-*An interactive widget for seamless travel planning around activities*
+![Widget Preview](preview.png)
 
-## Overview
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/zuugle-services/DianaWidget/CI)
+![Github Release](https://img.shields.io/github/v/release/zuugle-services/DianaWidget)
 
-The **Diana Widget** is a fully-embeddable Javascript widget that enables users to plan transportation connections to/from activities while respecting temporal constraints (earliest start time, latest end time, duration). Designed for tourism platforms, event sites, and outdoor activity providers.
-
-**Key Value Proposition**:  
-_"Let users focus on their activity - we handle the transit logistics."_
-
-## Core Features
-
-- 🗺️ **Smart Address Autocomplete**  
-  Powered by Diana API with OSM integration and station detection
-- 📅 **Date/Time Management**  
-  Interactive calendar with smart date validation
-- ⏱️ **Connection Analysis**  
-  Dual-slider interface for inbound/outbound journeys
-- ⚠️ **Constraint Warnings**  
-  Visual alerts for:
-  - Early arrivals
-  - Late departures
-  - Insufficient activity duration
-- 🚆 **Multimodal Support**  
-  Icons for 15+ transport types (trains, buses, ferries, etc.)
-- ♿ **Accessibility First**  
-  ARIA labels, keyboard nav, screen reader support
+## Table of Contents
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Development](#development)
+- [Configuration](#configuration)
+- [Architecture](#architecture)
+- [Styling System](#styling-system)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-## Technology Stack
+## Project Overview
+A modular JavaScript widget that helps users plan transit connections for activities between specified locations. Key capabilities:
+- Location autocomplete with suggestions
+- Date/time selection with adaptive calendar
+- Connection results with visual timelines
+- Flexible activity duration warnings
+- Mobile-responsive design
+- Error handling and fallback UI
 
-| Layer              | Technology                          | Purpose                                  |
-|--------------------|-------------------------------------|------------------------------------------|
-| **Core**           | Vanilla JavaScript (ES6+)           | No framework dependencies                |
-| **Styling**        | CSS Modules + PostCSS               | Scoped styles + modern CSS features      |
-| **Bundling**       | Webpack 5                           | Tree-shaking, chunk optimization         |
-| **API**            | Diana API (internal)                | Connections + geocoding data             |
-| **Testing**        | Manual via `index.html`             | Quick visual validation                  |
+Designed for integration in web applications requiring activity transit planning functionality.
 
 ---
 
-## Getting Started
+## Features
+**Core Functionality**
+- 🗺️ Interactive map-based location input
+- 📅 Adaptive calendar (native on mobile/custom on desktop)
+- ⏱ Real-time connection filtering
+- 🚦 Activity duration validation
+- 🚄 Multi-modal transport visualization
 
-### Prerequisites
-- Node.js v16+
-- NPM v8+
-- Access to Diana API credentials
+**Technical Highlights**
+- CSS Modules with PostCSS processing
+- Webpack-based build pipeline
+- Accessibility-first implementation
+- Configuration validation system
+- Comprehensive error handling
+- Swipe-friendly mobile UI
 
-### Installation
+---
+
+## Installation
 ```bash
 git clone https://github.com/zuugle-services/DianaWidget.git
 cd DianaWidget
-npm install
+npm ci
 ```
-
-### Development Workflow
-
-1. **Start dev server**  
-   Watches files and auto-rebuilds:
-   ```bash
-   npm run dev
-   ```
-
-2. **Test implementation**  
-   Open `index.html` in browser (no live reload - manual refresh required)
-
-3. **Production build**  
-   ```bash
-   npm run build
-   ```
-   Outputs to `/dist`:
-   - `DianaWidget.bundle.js` (minified)
-   - `manifest.json` (build fingerprints)
 
 ---
 
-## Development Guide
+## Development
 
-### Project Structure
-
-```
-├── src/
-│   ├── widget.js       # Core widget logic
-│   └── styles/         # CSS modules
-├── dist/               # Built assets
-├── webpack.config.js   # Build configuration
-└── index.html          # Demo/Test implementation
+### Scripts
+```bash
+npm run dev     # Start dev server with hot-reload
+npm run build   # Create production bundle
+npm run analyze # Analyze bundle size
 ```
 
-### Key Implementation Files
-
-1. **widget.js**  
-   - `DianaWidget` class: Main controller
-   - Connection state management
-   - DOM manipulation handlers
-   - API communication layer
-
-2. **styles/widget.css**  
-   - BEM-style CSS modules
-   - Theming via CSS custom properties
-   - Responsive breakpoints
-
----
-<!--
-## Deployment (Pseudo-CDN)
-
-To deploy to company webserver:
-
-1. Build production bundle:
-   ```bash
-   npm run build
-   ```
-
-2. Upload these files to `/public/widget` on webserver:
-   - `DianaWidget.bundle.js`
-   - Any updated CSS assets
-
-3. Integration snippet for users:
+### Key Development Patterns
+1. **Widget Initialization**  
+   Configure through `window.dianaActivityConfig` in host page:
    ```html
-   <div id="dianaWidgetContainer"></div>
    <script>
-     window.dianaActivityConfig = {
-       activityName: "Your Activity",
-       activityType: "Museum Visit",
-       activityStartLocation: "47.715575,15.804045",
-       /* ... other required configs ... */
-     };
+   window.dianaActivityConfig = {
+     activityName: "Skiing in Alps",
+     activityStartLocation: "47.715575,15.804045",
+     // ... other config
+   };
    </script>
-   <script src="https://cdn.yourcompany.com/widget/DianaWidget.bundle.js"></script>
+   <script src="dist/DianaWidget.bundle.js"></script>
    ```
+
+2. **Component Structure**  
+   - `src/core/widget.js`: Main widget class
+   - `src/core/styles/widget.css`: Component styles
+   - `src/index.js`: DOM initialization
+
+3. **State Management**  
+   Internal state machine tracks:
+   - Connection results
+   - Selected date/time
+   - Loading states
+   - Validation warnings
+
 ---
--->
 
-## API Integration
-
-### Required Configuration
-
-All these fields **must** be provided:
-
-```javascript
-window.dianaActivityConfig = {
-  activityName: "Hiking in Alps",          // Display name
-  activityType: "Hiking",                  // Activity category
-  activityStartLocation: "47.71,15.80",    // Coordinates/address
-  activityStartLocationType: "coordinates",// [coordinates|address|station]
-  activityEndLocation: "47.68,15.64", 
-  activityEndLocationType: "coordinates",
-  activityEarliestStartTime: "09:00:00",   // HH:MM:SS
-  activityLatestEndTime: "17:00:00",
-  activityDurationMinutes: 180             // Minimum required
-};
+## Configuration
+**Required Fields**
+```js
+{
+  activityStartLocation: "coordinates|address",
+  activityEndLocation: "coordinates|address",
+  activityEarliestStartTime: "HH:mm:ss",
+  activityLatestEndTime: "HH:mm:ss",
+  activityDurationMinutes: Number
+}
 ```
 
-### Response Handling
-
-The widget automatically processes Diana API responses with:
-
-```json
+**Optional Parameters**
+```js
 {
-  "connections": {
-    "to_activity": [...],          // Inbound journeys
-    "from_activity": [...],        // Return journeys
-    "recommended_to_activity_connection": 1,  // Index of best option
-    "recommended_from_activity_connection": 0
-  }
+  apiBaseUrl: "https://api.zuugle-services.net",
+  activityStartTimeLabel: "Checkin Time", 
+  activityEndTimeLabel: "Checkout Time",
+  activityStartLocationDisplayName: "Mountain Base Camp"
 }
 ```
 
 ---
 
-## Contributing
+## Architecture
+```bash
+├── dist/                   # Built assets
+├── src/
+│   ├── core/               
+│   │   ├── widget.js       # Main widget logic
+│   │   └── styles/         # Component styles
+│   └── index.js            # Initialization entry
+├── webpack.config.js       # Build configuration
+└── postcss.config.js       # CSS processing
+```
 
-### Branch Strategy
+**Key Modules**
+1. **Widget Core** (`widget.js`)
+   - Configuration validation
+   - DOM injection
+   - API communication
+   - State management
 
-1. `main` - Production-ready code
-2. `dev` - Active development
-3. `feature/*` - New functionality
+2. **Styling System**
+   - CSS Modules with hashed class names
+   - PostCSS pipeline with:
+     - Nesting rules
+     - Auto-prefixing
+     - Minification
+
+3. **Build System**
+   - Webpack 5 with UMD output
+   - CSS extraction/minification
+   - Manifest generation
 
 ---
+
+## Styling System
+**CSS Features**
+- Custom properties for theming
+- Mobile-first responsive design
+- Accessible focus states
+- Adaptive calendar UI
+- CSS Grid/Flex layouts
+
+**Theming Variables**
+```css
+.diana-container {
+  --primary-color: #4285f4;  /* Main brand color */
+  --error-color: #dc3545;    /* Validation errors */
+}
+```
+
+---
+
+## Deployment
+**CI/CD Pipeline** (`.github/workflows/deploy.yml`)
+1. Triggered on releases
+2. Builds production bundle
+3. Deploys via SFTP to:
+   ```yaml
+   ./dist/DianaWidget.bundle.js → $FTP_SERVER
+   ```
+
+**Hosting Requirements**
+- Serve `DianaWidget.bundle.js` from CDN
+- Add configuration object in host page
+- Ensure CORS headers for API access
+
+---
+
+## Contributing
+We welcome contributions! Here's how to help:
+
+**Good First Issues**
+- Improve keyboard navigation
+- Add additional transport icons
+- Enhance test coverage
+- Optimize calendar performance
+
+**Development Process**
+1. Fork repository
+2. Create feature branch
+3. Submit PR with:
+   - Description of changes
+   - Updated documentation
+   - Passing tests (coming soon!)
+
+**Why Contribute?**
+- Solve real-world transit planning challenges
+- Work with modern web technologies
+- Impact thousands of outdoor enthusiasts
+- Learn from production-grade codebase
+
+---
+
+## License
+Proprietary software © Zuugle Services GmbH. Contact team@zuugle-services.net for licensing inquiries.
+
+---
+
+> Let's build better outdoor experiences together! 🏔️🚌✨
