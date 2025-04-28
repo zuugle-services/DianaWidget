@@ -2,6 +2,9 @@
 
 .diana-container {
     --primary-color: #4285f4;
+    --secondary-color: #ccc;
+    --input-border-color: #e0e0e0;
+    --warning-color: #ffd38c;
     --error-color: #dc3545;
     font-family: "DM Sans",sans-serif !important;
     isolation: isolate
@@ -17,7 +20,7 @@
     left: 0;
     right: 0;
     background-color: #fff;
-    border: 1px solid #ccc;
+    border: 1px solid var(--secondary-color);
     border-radius: 5px;
     z-index: 1000;
     max-height: 150px;
@@ -159,7 +162,7 @@
     width: 100%;
     padding: 12px 40px!important;
     border-radius: 5px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--input-border-color);
     box-sizing: border-box;
     font-size: 14px;
     font-family: "DM Sans",sans-serif !important;
@@ -206,7 +209,7 @@
 }
 
 .diana-container .activity-time-warning-text {
-    background: #ffd38c;
+    background: var(--warning-color);
     padding: 8px 10px;
     box-shadow: 0 1px 3px rgba(0,0,0,.1);
     border-radius: 6px;
@@ -220,7 +223,7 @@
 .diana-container .date-input {
     padding: 12px 40px!important;
     border-radius: 5px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--input-border-color);
     width: 100%;
     box-sizing: border-box;
     cursor: pointer;
@@ -288,7 +291,7 @@
 }
 
 .diana-container .apply-btn,.diana-container button.calendar-footer-btn.calendar-apply-btn {
-    background-color: #4285f4;
+    background-color: var(--primary-color);
     color: #fff;
     font-family: "DM Sans",sans-serif !important;
 }
@@ -432,16 +435,16 @@
 }
 
 .diana-container .calendar-day.today {
-    border: 1px solid #4285f4
+    border: 1px solid var(--primary-color);
 }
 
 .diana-container .calendar-day.selected {
-    background-color: #4285f4;
+    background-color: var(--primary-color);
     color: #fff
 }
 
 .diana-container .calendar-day.disabled {
-    color: #ccc;
+    color: var(--secondary-color);
     cursor: not-allowed
 }
 
@@ -525,7 +528,7 @@
     padding: 5px;
     background: #fff;
     box-shadow: none;
-    border: 1px solid #ccc;
+    border: 1px solid var(--secondary-color);
     border-radius: 8px;
     color: #000;
     scroll-snap-align: start;
@@ -537,7 +540,7 @@
     background: rgba(130,177,252,.12);
     box-shadow: none;
     color: #000;
-    border-color: #4285f4;
+    border-color: var(--primary-color);
     border-width: 2px
 }
 
@@ -560,7 +563,7 @@
     color: #333;
     overflow-y: auto;
     min-height: max-content;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--input-border-color);
     box-shadow: 0 1px 3px rgba(0,0,0,.1)
 }
 
@@ -607,7 +610,7 @@
 }
 
 .diana-container .middle-box .element-vehicle {
-    color: #4285f4;
+    color: var(--primary-color);
     font-size: 13px
 }
 
@@ -615,7 +618,7 @@
     width: 5px;
     height: 5px;
     border-radius: 50%;
-    background-color: #4285f4;
+    background-color: var(--primary-color);
     position: absolute;
     top: 5px;
     left: -20px;
@@ -644,7 +647,7 @@
     height: auto;
     padding: 12px 40px !important;
     border-radius: 5px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--input-border-color);
     background-color: #fff;
     color: #333;
     font-size: 14px;
