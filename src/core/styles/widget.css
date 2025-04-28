@@ -1,13 +1,40 @@
 @import url(https://fonts.googleapis.com/css2?family=DM+Sans&display=swap);
 
 .diana-container {
+    /* Base Colors */
     --primary-color: #4285f4;
     --secondary-color: #ccc;
-    --input-border-color: #e0e0e0;
     --warning-color: #ffd38c;
     --error-color: #dc3545;
-    font-family: "DM Sans",sans-serif !important;
-    isolation: isolate
+    --success-color: #28a745;  /* Added for completeness */
+
+    /* Backgrounds */
+    --bg-primary: #fff;
+    --bg-secondary: #fafafa;
+    --bg-tertiary: #f5f5f5;
+    --bg-hover: #f0f0f0;
+    --bg-info: #dee4f3;
+    --bg-transparent: rgba(128,128,128,0.05);
+
+    /* Text Colors */
+    --text-primary: #000;
+    --text-secondary: #333;
+    --text-tertiary: #666;
+    --text-muted: #888;
+    --text-disabled: #999;
+
+    /* Borders */
+    --border-primary: #e0e0e0;
+    --border-secondary: #d3d3d3;
+    --border-tertiary: #eaeaea;
+
+    /* Shadows */
+    --shadow-light: rgba(0,0,0,0.1);
+    --shadow-medium: rgba(0,0,0,0.15);
+    --shadow-dark: rgba(0,0,0,0.2);
+
+    font-family: "DM Sans", sans-serif !important;
+    isolation: isolate;
 }
 
 .diana-container .input-container {
@@ -19,7 +46,7 @@
     top: 100%;
     left: 0;
     right: 0;
-    background-color: #fff;
+    background-color: var(--bg-primary);
     border: 1px solid var(--secondary-color);
     border-radius: 5px;
     z-index: 1000;
@@ -34,7 +61,7 @@
 }
 
 .diana-container .suggestion-item:hover {
-    background-color: #f0f0f0
+    background-color: var(--bg-hover);
 }
 
 .diana-container .widget-header {
@@ -44,7 +71,7 @@
     padding-bottom: 10px;
     margin-bottom: 10px;
     margin-top: 0;
-    border-bottom: 1px solid #d3d3d3
+    border-bottom: 1px solid var(--border-secondary);
 }
 
 .diana-container .widget-header-heading {
@@ -85,7 +112,7 @@
 }
 
 .diana-container .modal-content {
-    background-color: #fefefe;
+    background-color: var(--bg-secondary);
     padding: 20px;
     border: 0;
     width: 100%;
@@ -96,7 +123,7 @@
     box-sizing: border-box;
     transition: all .3s ease-in-out;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,.2)
+    box-shadow: 0 4px 8px var(--shadow-dark);
 }
 
 .diana-container .middle-box::-webkit-scrollbar,.diana-container .modal-body-result::-webkit-scrollbar,.diana-container .modal-content::-webkit-scrollbar,.diana-container .slider::-webkit-scrollbar {
@@ -149,28 +176,28 @@
 }
 
 .diana-container .close:hover {
-    color: #000
+    color: var(--text-primary);
 }
 
 .diana-container .form-section {
     position: relative;
     margin-bottom: 0;
-    color: #888
+    color: var(--text-muted);
 }
 
 .diana-container .input-field {
     width: 100%;
     padding: 12px 40px!important;
     border-radius: 5px;
-    border: 1px solid var(--input-border-color);
+    border: 1px solid var(--border-primary);
     box-sizing: border-box;
     font-size: 14px;
     font-family: "DM Sans",sans-serif !important;
 }
 
 .diana-container .input-field.disabled {
-    background-color: #f5f5f5;
-    color: #666;
+    background-color: var(--bg-tertiary);
+    color: var(--text-tertiary);
     cursor: not-allowed;
     pointer-events: none;
     user-select: none;
@@ -183,7 +210,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: #999
+    color: var(--text-disabled);
 }
 
 .diana-container .input-icon {
@@ -201,9 +228,9 @@
 }
 
 .diana-container #activity-time {
-    background: #dee4f3;
+    background: var(--bg-info);
     padding: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    box-shadow: 0 1px 3px var(--shadow-light);
     border-radius: 8px;
     margin: 7px 0
 }
@@ -211,7 +238,7 @@
 .diana-container .activity-time-warning-text {
     background: var(--warning-color);
     padding: 8px 10px;
-    box-shadow: 0 1px 3px rgba(0,0,0,.1);
+    box-shadow: 0 1px 3px var(--shadow-light);
     border-radius: 6px;
     margin: 6px 0
 }
@@ -223,31 +250,31 @@
 .diana-container .date-input {
     padding: 12px 40px!important;
     border-radius: 5px;
-    border: 1px solid var(--input-border-color);
+    border: 1px solid var(--border-primary);
     width: 100%;
     box-sizing: border-box;
     cursor: pointer;
-    background-color: #fff;
+    background-color: var(--bg-primary);
     display: flex;
     align-items: center
 }
 
 .diana-container .date-input-display {
-    color: #333;
+    color: var(--text-secondary);
     font-size: 16px;
     pointer-events: none;
     font-family: "DM Sans",sans-serif !important;
 }
 
 .diana-container .date-input-display.placeholder {
-    color: #999
+    color: var(--text-disabled);
 }
 
 .diana-container .date-input-icon {
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #999
+    color: var(--text-disabled);
 }
 
 .diana-container .date-input-arrow,.diana-container .date-input-icon,.diana-container input[type=date] {
@@ -259,7 +286,7 @@
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #999
+    color: var(--text-disabled);
 }
 
 .diana-container input[type=date] {
@@ -292,7 +319,7 @@
 
 .diana-container .apply-btn,.diana-container button.calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
-    color: #fff;
+    color: var(--bg-primary);
     font-family: "DM Sans",sans-serif !important;
 }
 
@@ -301,23 +328,23 @@
     border: 0;
     font-size: 24px;
     cursor: pointer;
-    color: #d3d3d3;
+    color: var(--border-secondary);
     margin-right: 10px;
-    border-right: 1px solid #d3d3d3;
+    border-right: 1px solid var(--border-secondary);
     font-weight: 700;
     font-family: "DM Sans",sans-serif !important;
 }
 
 .diana-container .powered-by {
     text-align: center;
-    color: #999;
+    color: var(--text-disabled);
     font-size: 12px;
     margin-top: 20px
 }
 
 .diana-container hr {
     border: 0;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border-tertiary);
     margin: 20px 0
 }
 
@@ -344,9 +371,9 @@
     width: 100%;
     max-width: 450px;
     z-index: 10;
-    background: #fff;
+    background: var(--bg-primary);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    box-shadow: 0 4px 12px var(--shadow-medium);
     margin-top: 5px;
     font-family: "DM Sans",sans-serif !important;
 }
@@ -365,14 +392,14 @@
 .diana-container .calendar-title {
     font-size: 16px;
     font-weight: 500;
-    color: #000
+    color: var(--text-primary);
 }
 
 .diana-container .calendar-body {
     padding: 10px;
     margin: 15px;
     border-radius: 8px;
-    border: 1px solid #eaeaea;
+    border: 1px solid var(--border-tertiary);
 }
 
 .diana-container .calendar-nav {
@@ -395,7 +422,7 @@
     border: 0;
     cursor: pointer;
     font-size: 16px;
-    color: #666
+    color: var(--text-tertiary);
 }
 
 .diana-container .calendar-grid {
@@ -409,7 +436,7 @@
     text-align: center;
     font-size: 12px;
     font-weight: 500;
-    color: #999;
+    color: var(--text-disabled);
     padding: 3px 0
 }
 
@@ -427,11 +454,11 @@
     align-items: center;
     margin: 0 auto;
     font-size: 12px;
-    color: #000
+    color: var(--text-primary);
 }
 
 .diana-container .calendar-day:hover {
-    background-color: #f0f0f0
+    background-color: var(--bg-hover);
 }
 
 .diana-container .calendar-day.today {
@@ -440,7 +467,7 @@
 
 .diana-container .calendar-day.selected {
     background-color: var(--primary-color);
-    color: #fff
+    color: var(--bg-primary);
 }
 
 .diana-container .calendar-day.disabled {
@@ -463,7 +490,7 @@
 }
 
 .diana-container .slider-wrapper {
-    background-color: #fff;
+    background-color: var(--bg-primary);
     align-items: center
 }
 
@@ -473,7 +500,7 @@
 
 .diana-container .etc,.diana-container .slider-wrap-fixed {
     position: absolute;
-    background: #fff;
+    background: var(--bg-primary);
     z-index: 99;
     width: 100%!important;
     max-width: 430px
@@ -526,11 +553,11 @@
     display: inline-block;
     margin: 5px 2px;
     padding: 5px;
-    background: #fff;
+    background: var(--bg-primary);
     box-shadow: none;
     border: 1px solid var(--secondary-color);
     border-radius: 8px;
-    color: #000;
+    color: var(--text-primary);
     scroll-snap-align: start;
     min-width: 95px;
     cursor: pointer
@@ -539,7 +566,7 @@
 .diana-container .slider button.active-time {
     background: rgba(130,177,252,.12);
     box-shadow: none;
-    color: #000;
+    color: var(--text-primary);
     border-color: var(--primary-color);
     border-width: 2px
 }
@@ -548,23 +575,23 @@
     font-size: 20px;
     padding: 5px 10px;
     cursor: pointer;
-    background: #ddd;
+    background: var(--bg-tertiary);
     border-radius: 50%;
     border: 0;
     margin: 0 5px
 }
 
 .diana-container .middle-box {
-    background: #fafafa;
+    background: var(--bg-secondary);
     padding: 12px;
     border-radius: 8px;
     font-size: 14px;
     line-height: 1;
-    color: #333;
+    color: var(--text-secondary);
     overflow-y: auto;
     min-height: max-content;
-    border: 1px solid var(--input-border-color);
-    box-shadow: 0 1px 3px rgba(0,0,0,.1)
+    border: 1px solid var(--border-primary);
+    box-shadow: 0 1px 3px var(--shadow-light);
 }
 
 .diana-container .middle-box>div {
@@ -575,19 +602,19 @@
     font-size: 16px;
     font-weight: 700;
     margin-bottom: 10px;
-    color: #000
+    color: var(--text-primary);
 }
 
 .diana-container .middle-box .connection-meta {
     display: none;
     gap: 15px;
-    color: #666;
+    color: var(--text-tertiary);
     margin-bottom: 20px;
     font-size: 14px
 }
 
 .diana-container .middle-box .connection-elements {
-    border-left: 5px solid #eee;
+    border-left: 5px solid var(--border-tertiary);
     padding-left: 15px;
     margin-left: 7px
 }
@@ -598,13 +625,13 @@
 }
 
 .diana-container .middle-box .element-time {
-    color: #000;
+    color: var(--text-primary);
     margin-bottom: 3px;
     font-size: 14px
 }
 
 .diana-container .middle-box .element-duration {
-    color: #666;
+    color: var(--text-tertiary);
     font-size: 13px;
     margin-bottom: 5px
 }
@@ -636,7 +663,7 @@
 }
 
 .diana-container .middle-box .element-time span {
-    color: #888
+    color: var(--text-muted);
 }
 
 /* Show native date input on mobile */
@@ -647,9 +674,9 @@
     height: auto;
     padding: 12px 40px !important;
     border-radius: 5px;
-    border: 1px solid var(--input-border-color);
-    background-color: #fff;
-    color: #333;
+    border: 1px solid var(--border-primary);
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
     font-size: 14px;
     pointer-events: all;
     width: inherit;
