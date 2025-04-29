@@ -1,4 +1,5 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
+import { DateTime } from 'luxon';
 
 export default class DianaWidget {
   // Default configuration
@@ -18,6 +19,7 @@ export default class DianaWidget {
     activityLatestEndTimeFlexible: true,
     activityStartLocationDisplayName: null,
     activityEndLocationDisplayName: null,
+    activityTimesTZ: "UTC", // Can be "Europe/Vienna", "UTC", etc.
     activityStartTimeLabel: null,
     activityEndTimeLabel: null,
     apiBaseUrl: "https://api.zuugle-services.net",
@@ -384,6 +386,21 @@ export default class DianaWidget {
   }
 
   async fetchActivityData() {
+    const activityDate = new Date(this.elements.activityDate.value);
+
+    // Convert times to UTC
+    const utcEarliestStart = this.convertLocalTimeToUTC(
+      this.config.activityEarliestStartTime,
+      activityDate,
+      this.config.activityTimesTZ
+    );
+
+    const utcLatestEnd = this.convertLocalTimeToUTC(
+      this.config.activityLatestEndTime,
+      activityDate,
+      this.config.activityTimesTZ
+    );
+
     let params = {
       date: this.elements.activityDate.value,
       activity_name: this.config.activityName,
@@ -392,8 +409,8 @@ export default class DianaWidget {
       activity_start_location_type: this.config.activityStartLocationType,
       activity_end_location: this.config.activityEndLocation,
       activity_end_location_type: this.config.activityEndLocationType,
-      activity_earliest_start_time: this.config.activityEarliestStartTime,
-      activity_latest_end_time: this.config.activityLatestEndTime,
+      activity_earliest_start_time: utcEarliestStart,
+      activity_latest_end_time: utcLatestEnd,
       activity_duration_minutes: this.config.activityDurationMinutes
     };
 
@@ -491,15 +508,15 @@ export default class DianaWidget {
     // Set initial active filters using recommended indices
     if (this.state.toConnections.length > 0) {
       const recommendedTo = this.state.toConnections[this.state.recommendedToIndex];
-      const startTime = recommendedTo.connection_start_timestamp.split(" ")[1].substring(0, 5);
-      const endTime = recommendedTo.connection_end_timestamp.split(" ")[1].substring(0, 5);
+      const startTime = this.convertUTCToViennaTime(recommendedTo.connection_start_timestamp);
+      const endTime = this.convertUTCToViennaTime(recommendedTo.connection_end_timestamp);
       this.filterConnectionsByTime('to', startTime, endTime);
     }
 
     if (this.state.fromConnections.length > 0) {
       const recommendedFrom = this.state.fromConnections[this.state.recommendedFromIndex];
-      const startTime = recommendedFrom.connection_start_timestamp.split(" ")[1].substring(0, 5);
-      const endTime = recommendedFrom.connection_end_timestamp.split(" ")[1].substring(0, 5);
+      const startTime = this.convertUTCToViennaTime(recommendedFrom.connection_start_timestamp);
+      const endTime = this.convertUTCToViennaTime(recommendedFrom.connection_end_timestamp);
       this.filterConnectionsByTime('from', startTime, endTime);
     }
 
@@ -513,8 +530,8 @@ export default class DianaWidget {
     slider.innerHTML = '';
 
     connections.forEach((conn, index) => {
-      const startTime = conn.connection_start_timestamp.split(" ")[1].substring(0, 5);
-      const endTime = conn.connection_end_timestamp.split(" ")[1].substring(0, 5);
+      const startTime = this.convertUTCToViennaTime(conn.connection_start_timestamp);
+      const endTime = this.convertUTCToViennaTime(conn.connection_end_timestamp);
       const duration = this.calculateTimeDifference(
         conn.connection_start_timestamp,
         conn.connection_end_timestamp
@@ -577,8 +594,8 @@ export default class DianaWidget {
 
     // Filter connections
     const filtered = connections.filter(conn => {
-      const connStart = conn.connection_start_timestamp.split(" ")[1].substring(0, 5);
-      const connEnd = conn.connection_end_timestamp.split(" ")[1].substring(0, 5);
+      const connStart = this.convertUTCToViennaTime(conn.connection_start_timestamp);
+      const connEnd = this.convertUTCToViennaTime(conn.connection_end_timestamp);
       return connStart === startTime && connEnd === endTime;
     });
 
@@ -592,14 +609,15 @@ export default class DianaWidget {
     if (!connection) return;
 
     try {
-      const connectionStartTime = connection.connection_start_timestamp.split(" ")[1];
-      const connectionEndTime = connection.connection_end_timestamp.split(" ")[1];
+      const activityDate = new Date(this.elements.activityDate.value);
+      const connectionStartTime = this.convertUTCToViennaTime(connection.connection_start_timestamp);
+      const connectionEndTime = this.convertUTCToViennaTime(connection.connection_end_timestamp);
 
       let startTime, endTime, duration, hoursminutes, hours, minutes;
 
       if (type === 'to') {
         // For "to activity" connections, calculate latest possible start
-        const earliestStart = this.config.activityEarliestStartTime;
+        const earliestStart = this.convertLocalTimeToViennaTime(this.config.activityEarliestStartTime, activityDate, this.config.activityTimesTZ);
         startTime = this.getLaterTime(connectionEndTime, earliestStart);
 
         if (!this.config.activityEarliestStartTimeFlexible) {
@@ -610,7 +628,7 @@ export default class DianaWidget {
         this.state.activityTimes.start = startTime;
       } else {
         // For "from activity" connections, calculate earliest possible end
-        const latestEnd = this.config.activityLatestEndTime;
+        const latestEnd = this.convertLocalTimeToViennaTime(this.config.activityLatestEndTime, activityDate, this.config.activityTimesTZ);
         endTime = this.getEarlierTime(connectionStartTime, latestEnd);
 
         if (!this.config.activityLatestEndTimeFlexible) {
@@ -669,8 +687,8 @@ export default class DianaWidget {
 
       let html = `
         <div class="connection-meta">
-          <span>${conn.connection_start_timestamp.split(" ")[1].substring(0, 5)} - 
-                ${conn.connection_end_timestamp.split(" ")[1].substring(0, 5)}</span>
+          <span>${this.convertUTCToViennaTime(conn.connection_start_timestamp)} - 
+                ${this.convertUTCToViennaTime(conn.connection_end_timestamp)}</span>
           <span>${this.calculateTimeDifference(
             conn.connection_start_timestamp,
             conn.connection_end_timestamp
@@ -682,8 +700,8 @@ export default class DianaWidget {
 
       // Render each connection element (departures)
       conn.connection_elements.forEach((element, index) => {
-        const departureTime = element.departure_time.split("T")[1]?.substring(0, 5) || '--:--';
-        const arrivalTime = element.arrival_time.split("T")[1]?.substring(0, 5) || '--:--';
+        const departureTime = this.convertUTCToViennaTime(element.departure_time);
+        const arrivalTime = this.convertUTCToViennaTime(element.arrival_time);
         const duration = this.calculateElementDuration(
           element.departure_time,
           element.arrival_time
@@ -700,12 +718,9 @@ export default class DianaWidget {
           if (type === "from") {
             html += `
               <div class="connection-element">
-                <div class="element-time">
-                  <span>${departureTime}</span> ${this.config.activityEndLocationDisplayName || element.from_location}
-                </div>
                 <div id="eleCont">
                   <span class="element-icon">${this.getTransportIcon('WALK')}</span>
-                  <span class="element-duration">Departure</span>
+                  <span class="element-duration">${duration}</span>
                 </div>
               </div>
             `;
@@ -743,18 +758,7 @@ export default class DianaWidget {
         // If this is the last element, also show the final destination (to_location)
         if (index === conn.connection_elements.length - 1) {
           if (type === "to") {
-            html += `
-              <div class="connection-element">
-                <div class="element-time">
-                  <span>${arrivalTime}</span> ${this.config.activityStartLocationDisplayName || element.to_location}
-                </div>
-                <div id="eleCont">
-                  <div class="element-crcl"></div>
-                  <span class="element-icon">${this.getTransportIcon('WALK')}</span>
-                  <span class="element-duration">Arrival</span>
-                </div>
-              </div>
-            `;
+
           } else {
             html += `
               <div class="connection-element">
@@ -955,20 +959,57 @@ export default class DianaWidget {
     }
   }
 
-  calculateTimeDifference(startTime, endTime) {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diff = end - start;
-    const totalHours = (diff / (1000 * 60 * 60)).toFixed(1);
+  calculateTimeDifference(startISO, endISO) {
+    const start = DateTime.fromISO(startISO);
+    const end = DateTime.fromISO(endISO);
+    const diff = end.diff(start, ['hours', 'minutes']);
+    const totalHours = diff.hours + Math.floor(diff.minutes / 60);
     return `${totalHours} hrs`;
   }
 
-  calculateElementDuration(startTime, endTime) {
-    const start = new Date(startTime);
-    const end = new Date(endTime);
-    const diff = end - start;
-    const minutes = Math.floor(diff / (1000 * 60));
-    return `${minutes} min`;
+  calculateElementDuration(startISO, endISO) {
+    const start = DateTime.fromISO(startISO);
+    const end = DateTime.fromISO(endISO);
+    const diff = end.diff(start, 'minutes');
+    return `${diff.minutes} min`;
+  }
+
+  convertLocalTimeToUTC(localTime, date, timezone) {
+    const [hours, minutes] = localTime.split(':').map(Number);
+
+    return DateTime.fromObject({
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        hour: hours,
+        minute: minutes
+      },
+      {
+        zone: timezone
+      }
+    ).toUTC().toFormat('HH:mm');
+  }
+
+  convertLocalTimeToViennaTime(localTime, date, timezone) {
+    const [hours, minutes] = localTime.split(':').map(Number);
+
+    return DateTime.fromObject({
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        hour: hours,
+        minute: minutes
+      },
+      {
+        zone: timezone
+      }
+    ).setZone('Europe/Vienna').toFormat('HH:mm');
+  }
+
+  convertUTCToViennaTime(isoString) {
+    return DateTime.fromISO(isoString, { zone: 'utc' })
+      .setZone('Europe/Vienna')
+      .toFormat('HH:mm');
   }
 
   getTransportIcon(type) {
@@ -991,23 +1032,25 @@ export default class DianaWidget {
   }
 
   getLaterTime(time1, time2) {
-    const [h1, m1] = time1.split(':').map(Number);
-    const [h2, m2] = time2.split(':').map(Number);
+    const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: 'Europe/Vienna' });
+    const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: 'Europe/Vienna' });
 
-    if (h1 > h2 || (h1 === h2 && m1 > m2)) {
-      return `${String(h1).padStart(2, '0')}:${String(m1).padStart(2, '0')}`;
+    if (t1 > t2) {
+      return t1.toFormat('HH:mm');
+    } else {
+      return t2.toFormat('HH:mm');
     }
-    return `${String(h2).padStart(2, '0')}:${String(m2).padStart(2, '0')}`;
   }
 
   getEarlierTime(time1, time2) {
-    const [h1, m1] = time1.split(':').map(Number);
-    const [h2, m2] = time2.split(':').map(Number);
+    const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: 'Europe/Vienna' });
+    const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: 'Europe/Vienna' });
 
-    if (h1 < h2 || (h1 === h2 && m1 < m2)) {
-      return `${String(h1).padStart(2, '0')}:${String(m1).padStart(2, '0')}`;
+    if (t1 < t2) {
+      return t1.toFormat('HH:mm');
+    } else {
+      return t2.toFormat('HH:mm');
     }
-    return `${String(h2).padStart(2, '0')}:${String(m2).padStart(2, '0')}`;
   }
 
   calculateDuration(startTime, endTime) {
