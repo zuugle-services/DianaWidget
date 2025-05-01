@@ -1,5 +1,6 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 import { DateTime } from 'luxon';
+import translations from '../translations';
 
 export default class DianaWidget {
   // Default configuration
@@ -23,7 +24,8 @@ export default class DianaWidget {
     activityStartTimeLabel: null,
     activityEndTimeLabel: null,
     apiBaseUrl: "https://api.zuugle-services.net",
-    apiToken: "development-token"
+    apiToken: "development-token",
+    language: 'EN',
   };
 
   constructor(config = {}) {
@@ -62,6 +64,11 @@ export default class DianaWidget {
   validateConfig(userConfig) {
     const config = { ...this.defaultConfig, ...userConfig };
 
+    if (!translations[config.language]) {
+      console.warn(`Unsupported language '${config.language}', falling back to EN`);
+      config.language = 'EN';
+    }
+
     // Check for required fields
     const missingFields = this.defaultConfig.requiredFields.filter(
       field => !userConfig[field]
@@ -73,6 +80,18 @@ export default class DianaWidget {
     }
 
     return config;
+  }
+
+  t(keyPath) {
+    const keys = keyPath.split('.');
+    let result = translations[this.config.language];
+
+    for (const key of keys) {
+      result = result?.[key];
+      if (!result) break;
+    }
+
+    return result || translations.EN[keyPath] || `[${keyPath}]`;
   }
 
   injectBaseStyles() {
@@ -121,13 +140,13 @@ export default class DianaWidget {
 
             <form class="modal-body" aria-labelledby="formHeading">
               <div style="position:relative" class="form-section">
-                <p id="originLabel">Origin</p>
+                <p id="originLabel">${this.t('origin')}</p>
                 <div class="input-container">
                   <svg class="input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                   </svg>
                   <input type="text" class="input-field" id="originInput" 
-                         placeholder="Enter origin" value=""
+                         placeholder="${this.t('enterOrigin')}" value=""
                          aria-labelledby="originLabel">
                   <svg class="input-icon-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="7"></circle>
@@ -142,20 +161,20 @@ export default class DianaWidget {
               </div>
             
               <div class="form-section">
-                <p id="destinationLabel">Destination</p>
+                <p id="destinationLabel">${this.t('destination')}</p>
                 <div class="input-container">
                   <svg class="input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
                   <input type="text" class="input-field disabled" id="destinationInput" 
-                         placeholder="Destination" value="${this.config.activityName}" readonly
+                         placeholder="${this.t('destination')}" value="${this.config.activityName}" readonly
                          aria-labelledby="destinationLabel">
                 </div>
               </div>
 
               <div class="form-section">
-                <p id="dateLabel">Activity date</p>
+                <p id="dateLabel">${this.t('activityDate')}</p>
                 <div class="date-input-container" role="button" aria-labelledby="dateLabel" tabindex="0">
                   <div class="date-input">
                     <svg class="date-input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -164,7 +183,7 @@ export default class DianaWidget {
                       <line x1="8" y1="2" x2="8" y2="6"></line>
                       <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    <span id="dateDisplay" class="date-input-display placeholder">Select</span>
+                    <span id="dateDisplay" class="date-input-display placeholder">${this.t('selectDate')}</span>
                     <svg class="date-input-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polyline points="6 9 12 15 18 9"></polyline>
                     </svg>
@@ -174,7 +193,7 @@ export default class DianaWidget {
               </div>
 
               <div class="form-footer">
-                <button type="submit" class="btn apply-btn" id="searchBtn">Search</button>
+                <button type="submit" class="btn apply-btn" id="searchBtn">${this.t('search')}</button>
               </div>
             </form>
           </div>
@@ -196,15 +215,14 @@ export default class DianaWidget {
 
                 <div id="backBtn" class="widget-response-back-button" role="button" tabindex="0">
                   <div>&#x2190;</div>
-                  <div>Back</div>
+                  <div>${this.t('back')}</div>
                 </div>
 
-                <div style='font-size:12px; display:none;'>Incoming Dates: </div>
-                <div class="slider" id="topSlider" role="group" aria-label="Available time slots"></div>
+                <div class="slider" id="topSlider" role="group" aria-label="${this.t('ariaLabels.topSlider')}"></div>
               </div>
 
               <div class="middle-box" id="responseBox" aria-live="polite">
-                Incoming connections are loading...
+                ${this.t('loadingConnectionsI')}
               </div>
 
               <div id="activity-time">
@@ -212,12 +230,11 @@ export default class DianaWidget {
               </div>
 
               <div class="middle-box" id="responseBox-bottom" aria-live="polite">
-                Outgoing connections are loading...
+                ${this.t('loadingConnectionsO')}
               </div>
 
               <div class="slider-wrapper slider-wrap-fixed">
-                <div style='font-size:12px; display:none;'>Outgoing Dates: </div>
-                <div class="slider" id="bottomSlider" role="group" aria-label="Available return time slots"></div>
+                <div class="slider" id="bottomSlider" role="group" aria-label="${this.t('ariaLabels.bottomSlider')}"></div>
               </div>
             </div>
           </div>
@@ -257,8 +274,8 @@ export default class DianaWidget {
     this.elements.activityDate.setAttribute('aria-hidden', 'true');
 
     // Buttons
-    this.elements.searchBtn.setAttribute('aria-label', 'Search for connections');
-    this.elements.backBtn.setAttribute('aria-label', 'Go back to search form');
+    this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
+    this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
 
     // Live regions
     this.elements.responseBox.setAttribute('aria-busy', 'false');
@@ -325,7 +342,7 @@ export default class DianaWidget {
       this.state.suggestions = results.features;
       this.renderSuggestions();
     } catch (error) {
-      this.showError("Failed to load suggestions. Please try again.");
+      this.showError(this.t('errors.suggestionError'));
     }
   }
 
@@ -340,13 +357,13 @@ export default class DianaWidget {
 
   async handleSearch() {
     if (!this.elements.originInput.value) {
-      this.showError("Please enter an origin location");
+      this.showError(this.t('errors.originRequired'));
       return;
     }
 
     if (!this.elements.activityDate.value) {
       if (!this.state.selectedDate) {
-        this.showError("Please select a date");
+        this.showError(this.t('errors.dateRequired'));
         return;
       } else {
         this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
@@ -361,7 +378,7 @@ export default class DianaWidget {
 
     } catch (error) {
       console.error(error);
-      this.showError("Failed to load connections. Please try again.");
+      this.showError(this.t('errors.connectionError'));
     } finally {
       this.setLoadingState(false);
     }
@@ -657,14 +674,14 @@ export default class DianaWidget {
             <div style="display: flex; flex-direction: column; gap: 12px;">
               <div style="font-size: 14px; color: #6B7280; font-weight: 600;">
                 ${this.state.activityTimes.warning_earlystart ?
-                    `<div class="activity-time-warning-text">Warning: Earlier Arrival than recommended starting time of activity!</div>` : ''}
-                <div>${this.config.activityStartTimeLabel || 'Start time'}: ${this.state.activityTimes.start || '--:--'}</div>
-                <div>${this.config.activityEndTimeLabel || 'End time'}: ${this.state.activityTimes.end || '--:--'}</div>
+                    `<div class="activity-time-warning-text">${this.t("warnings.earlyStart")}</div>` : ''}
+                <div>${this.config.activityStartTimeLabel || this.t("activityStart")}: ${this.state.activityTimes.start || '--:--'}</div>
+                <div>${this.config.activityEndTimeLabel || this.t("activityEnd")}: ${this.state.activityTimes.end || '--:--'}</div>
                 ${this.state.activityTimes.warning_lateend ?
-                    `<div class="activity-time-warning-text">Warning: Later Departure than recommended ending time of activity!</div>` : ''}
-                <div>Duration: ${this.state.activityTimes.duration || '-- hrs'}</div>
+                    `<div class="activity-time-warning-text">${this.t("warnings.lateEnd")}</div>` : ''}
+                <div>${this.t("activityDuration")}: ${this.state.activityTimes.duration || '-- hrs'}</div>
                 ${this.state.activityTimes.warning_duration ?
-                    `<div class="activity-time-warning-text">Warning: Activity duration below recommended (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})!</div>` : ''}
+                    `<div class="activity-time-warning-text">${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})</div>` : ''}
               </div>
             </div>
           </div>
@@ -677,12 +694,12 @@ export default class DianaWidget {
 
   renderConnectionDetails(connections, type) {
     if (!connections || connections.length === 0) {
-      return '<div>No connection details available</div>';
+      return `<div>${this.t('noConnectionDetails')}</div>`;
     }
 
     return connections.map(conn => {
       if (!conn.connection_elements || conn.connection_elements.length === 0) {
-        return '<div>No connection elements available</div>';
+        return `<div>${this.t('noConnectionElements')}</div>`;
       }
 
       let html = `
@@ -693,7 +710,7 @@ export default class DianaWidget {
             conn.connection_start_timestamp,
             conn.connection_end_timestamp
           )}</span>
-          <span>${conn.connection_transfers} transfers</span>
+          <span>${conn.connection_transfers} ${this.t("transfers")}</span>
         </div>
         <div class="connection-elements">
       `;
@@ -809,11 +826,11 @@ export default class DianaWidget {
       // Calendar HTML
       calendarContainer.innerHTML = `
         <div class="calendar-header">
-          <p class="calendar-title">Select Activity Date</p>
+          <p class="calendar-title">${this.t("datePickerTitle")}</p>
         </div>
         <div class="calendar-body">
           <div class="calendar-nav">
-            <button class="calendar-nav-btn prev-month" aria-label="Previous month">
+            <button class="calendar-nav-btn prev-month" aria-label="${this.t('ariaLabels.previousMonthButton')}">
               <svg width="6" height="12" viewBox="0 0 6 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5.3 11L1.66938 6.76428C1.2842 6.3149 1.2842 5.65177 1.66939 5.20238L5.3 0.966667" stroke="#656C6E" stroke-width="1.1" stroke-linecap="round"/>
               </svg>
@@ -826,19 +843,19 @@ export default class DianaWidget {
             </button>
           </div>
           <div class="calendar-grid">
-            <div class="calendar-day-header">S</div>
-            <div class="calendar-day-header">M</div>
-            <div class="calendar-day-header">T</div>
-            <div class="calendar-day-header">W</div>
-            <div class="calendar-day-header">T</div>
-            <div class="calendar-day-header">F</div>
-            <div class="calendar-day-header">S</div>
+            <div class="calendar-day-header">${this.t("shortDays")[0]}</div>
+            <div class="calendar-day-header">${this.t("shortDays")[1]}</div>
+            <div class="calendar-day-header">${this.t("shortDays")[2]}</div>
+            <div class="calendar-day-header">${this.t("shortDays")[3]}</div>
+            <div class="calendar-day-header">${this.t("shortDays")[4]}</div>
+            <div class="calendar-day-header">${this.t("shortDays")[5]}</div>
+            <div class="calendar-day-header">${this.t("shortDays")[6]}</div>
             ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, currentViewYear, currentViewMonth)}
           </div>
         </div>
         <div class="calendar-footer">
-          <button type="button" class="calendar-footer-btn calendar-cancel-btn">Cancel</button>
-          <button type="button" class="calendar-footer-btn calendar-apply-btn">Apply</button>
+          <button type="button" class="calendar-footer-btn calendar-cancel-btn">${this.t("cancel")}</button>
+          <button type="button" class="calendar-footer-btn calendar-apply-btn">${this.t("apply")}</button>
         </div>
       `;
 
@@ -943,18 +960,19 @@ export default class DianaWidget {
   }
 
   getMonthName(month) {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return months[month];
+    return this.t('months')[month];
   }
 
-  // Utility methods
   updateDateDisplay(date) {
+    const localeMap = { EN: 'en-US', DE: 'de-DE' };
+    const locale = localeMap[this.config.language] || 'en-US';
+
     if (date && !isNaN(date.getTime())) {
       const options = { day: "numeric", month: "short", year: "numeric" };
-      this.elements.dateDisplay.textContent = date.toLocaleDateString("en-US", options);
+      this.elements.dateDisplay.textContent = date.toLocaleDateString(locale, options);
       this.elements.dateDisplay.classList.remove("placeholder");
     } else {
-      this.elements.dateDisplay.textContent = "Select";
+      this.elements.dateDisplay.textContent = this.t('selectDate');
       this.elements.dateDisplay.classList.add("placeholder");
     }
   }
@@ -964,9 +982,9 @@ export default class DianaWidget {
     const end = DateTime.fromISO(endISO);
     const diff = end.diff(start, ['hours', 'minutes']);
     if (diff.hours === 0) {
-      return `${diff.minutes} min`;
+      return `${diff.minutes} ${this.t("durationMinutes")}`;
     } else {
-      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}h`;
+      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}${this.t("durationHours")}`;
     }
   }
 
@@ -975,9 +993,9 @@ export default class DianaWidget {
     const end = DateTime.fromISO(endISO);
     const diff = end.diff(start, ['hours', 'minutes']);
     if (diff.hours === 0) {
-      return `${diff.minutes} min`;
+      return `${diff.minutes} ${this.t("durationMinutes")}`;
     } else {
-      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}h`;
+      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}${this.t("durationHours")}`;
     }
   }
 
@@ -1069,18 +1087,18 @@ export default class DianaWidget {
     const minutes = totalMinutes % 60;
 
     if (hours > 0) {
-      return [`${hours}:${String(minutes).padStart(2, '0')}h`, [hours, minutes]];
+      return [`${hours}:${String(minutes).padStart(2, '0')}${this.t("durationHours")}`, [hours, minutes]];
     }
-    return [`${minutes} min`, [0, minutes]];
+    return [`${minutes} ${this.t("durationMinutes")}`, [0, minutes]];
   }
 
   getTimeFormatFromMinutes(minutes) {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
-      return `${hours}:${String(mins).padStart(2, '0')}h`;
+      return `${hours}:${String(mins).padStart(2, '0')}${this.t("durationHours")}`;
     }
-    return `${mins} min`;
+    return `${mins} ${this.t("durationMinutes")}`;
   }
 
   addSwipeBehavior(sliderId) {
@@ -1166,7 +1184,7 @@ export default class DianaWidget {
   setLoadingState(isLoading) {
     this.state.loading = isLoading;
     this.elements.searchBtn.disabled = isLoading;
-    this.elements.searchBtn.textContent = isLoading ? "Searching..." : "Search";
+    this.elements.searchBtn.textContent = isLoading ? this.t("loadingStateSearching") : "Search";
     this.elements.searchBtn.setAttribute('aria-busy', isLoading);
   }
 
