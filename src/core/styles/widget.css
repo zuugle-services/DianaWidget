@@ -700,3 +700,19 @@
     display: none;
   }
 }
+
+.diana-container .waiting-block {
+  background: rgba(255, 149, 0, 0.1);
+  border-radius: 8px;
+  margin: 8px 0;
+  padding: 8px;
+}
+
+.diana-container .waiting-block .element-time {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.diana-container .waiting-block #eleCont {
+  background: rgba(255, 149, 0, 0.15);
+}

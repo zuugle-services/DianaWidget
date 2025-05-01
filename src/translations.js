@@ -43,6 +43,10 @@ export default {
       searchButton: "Search for connections",
       backButton: "Go back to search form",
       previousMonth: "Previous month",
+    },
+    waiting: {
+      beforeActivity: "Waiting for activity to start",
+      afterActivity: "Waiting after activity ends"
     }
   },
   DE: {
@@ -87,6 +91,10 @@ export default {
       searchButton: "Verbindungen suchen",
       backButton: "Zurück zum Suchformular",
       previousMonth: "Vorheriger Monat",
+    },
+    waiting: {
+      beforeActivity: "Warten auf den Beginn der Aktivität",
+      afterActivity: "Warten nach dem Ende der Aktivität"
     }
   }
 };
