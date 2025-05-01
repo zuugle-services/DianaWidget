@@ -664,26 +664,40 @@ export default class DianaWidget {
         this.state.activityTimes.duration = duration;
       }
 
-      // Update the activity time box
       this.elements.activityTimeBox.innerHTML = `
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div style="font-weight: 600; font-size: 18px; color: #111827;">
-              ${this.config.activityName}
+        <div class="activity-time-card">
+          <div class="activity-time-header">${this.config.activityName}</div>
+          <div class="activity-time-meta">
+            ${this.state.activityTimes.warning_earlystart ? `
+              <div class="activity-time-warning-text">${this.t("warnings.earlyStart")}</div>
+            ` : ''}
+            
+            <div class="activity-time-row">
+              <span class="activity-time-label">${this.t("activityStart")}</span>
+              <span class="activity-time-value">${this.state.activityTimes.start || '--:--'}</span>
+              <span class="activity-time-divider">•</span>
+              <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-              <div style="font-size: 14px; color: #6B7280; font-weight: 600;">
-                ${this.state.activityTimes.warning_earlystart ?
-                    `<div class="activity-time-warning-text">${this.t("warnings.earlyStart")}</div>` : ''}
-                <div>${this.config.activityStartTimeLabel || this.t("activityStart")}: ${this.state.activityTimes.start || '--:--'}</div>
-                <div>${this.config.activityEndTimeLabel || this.t("activityEnd")}: ${this.state.activityTimes.end || '--:--'}</div>
-                ${this.state.activityTimes.warning_lateend ?
-                    `<div class="activity-time-warning-text">${this.t("warnings.lateEnd")}</div>` : ''}
-                <div>${this.t("activityDuration")}: ${this.state.activityTimes.duration || '-- hrs'}</div>
-                ${this.state.activityTimes.warning_duration ?
-                    `<div class="activity-time-warning-text">${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})</div>` : ''}
+      
+            <div class="activity-time-row">
+              <span class="activity-time-label">${this.t("activityEnd")}</span>
+              <span class="activity-time-value">${this.state.activityTimes.end || '--:--'}</span>
+              <span class="activity-time-divider">•</span>
+              <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
+            </div>
+      
+            <div class="activity-time-row">
+              <span class="activity-time-label">${this.t("activityDuration")}</span>
+              <span class="activity-time-value">${this.state.activityTimes.duration || '--'}</span>
+            </div>
+      
+            ${this.state.activityTimes.warning_lateend || this.state.activityTimes.warning_duration ? `
+              <div class="activity-time-warning-text">
+                ${[this.state.activityTimes.warning_lateend ? this.t("warnings.lateEnd") : '', 
+                  this.state.activityTimes.warning_duration ? this.t("warnings.duration") : '']
+                  .filter(Boolean).join(' & ')}
               </div>
-            </div>
+            ` : ''}
           </div>
         </div>
       `;

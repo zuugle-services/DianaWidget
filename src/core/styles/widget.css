@@ -228,6 +228,56 @@
 }
 
 .diana-container #activity-time {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  background: var(--bg-info);
+  border-radius: 8px;
+}
+
+.diana-container .activity-time-header {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 120%;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+  padding: 8px 16px 8px 16px;
+}
+
+.diana-container .activity-time-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 8px;
+}
+
+.diana-container .activity-time-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 120%;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+}
+
+.diana-container .activity-time-label {
+  min-width: 80px;
+  color: var(--text-tertiary);
+}
+
+.diana-container .activity-time-value {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.diana-container .activity-time-divider {
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+.diana-container #activity-time {
     background: var(--bg-info);
     padding: 12px;
     box-shadow: 0 1px 3px var(--shadow-light);
@@ -243,11 +293,8 @@
     margin: 6px 0
 }
 
-.diana-container #activity-time,.diana-container .activity-time-warning-text,.diana-container .date-input {
-    font-family: "DM Sans",sans-serif !important;
-}
-
 .diana-container .date-input {
+    font-family: "DM Sans",sans-serif !important;
     padding: 12px 40px!important;
     border-radius: 5px;
     border: 1px solid var(--border-primary);
@@ -352,15 +399,6 @@
     color: red;
     text-align: center;
     padding: 20px
-}
-
-.diana-container #activity-time div div:nth-child(1) {
-    display: flex;
-    flex-direction: column;
-    height: auto;
-    align-content: space-around;
-    justify-content: space-between;
-    align-items: flex-start
 }
 
 .diana-container .calendar-container {
