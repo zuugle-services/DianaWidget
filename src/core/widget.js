@@ -963,15 +963,22 @@ export default class DianaWidget {
     const start = DateTime.fromISO(startISO);
     const end = DateTime.fromISO(endISO);
     const diff = end.diff(start, ['hours', 'minutes']);
-    const totalHours = diff.hours + Math.floor(diff.minutes / 60);
-    return `${totalHours} hrs`;
+    if (diff.hours === 0) {
+      return `${diff.minutes} min`;
+    } else {
+      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}h`;
+    }
   }
 
   calculateElementDuration(startISO, endISO) {
     const start = DateTime.fromISO(startISO);
     const end = DateTime.fromISO(endISO);
-    const diff = end.diff(start, 'minutes');
-    return `${diff.minutes} min`;
+    const diff = end.diff(start, ['hours', 'minutes']);
+    if (diff.hours === 0) {
+      return `${diff.minutes} min`;
+    } else {
+      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}h`;
+    }
   }
 
   convertLocalTimeToUTC(localTime, date, timezone) {
@@ -1062,7 +1069,7 @@ export default class DianaWidget {
     const minutes = totalMinutes % 60;
 
     if (hours > 0) {
-      return [`${hours} hr${hours !== 1 ? 's' : ''} ${minutes} min`, [hours, minutes]];
+      return [`${hours}:${String(minutes).padStart(2, '0')}h`, [hours, minutes]];
     }
     return [`${minutes} min`, [0, minutes]];
   }
@@ -1071,7 +1078,7 @@ export default class DianaWidget {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
-      return `${hours} hr${hours !== 1 ? 's' : ''} ${mins} min`
+      return `${hours}:${String(mins).padStart(2, '0')}h`;
     }
     return `${mins} min`;
   }
