@@ -6,7 +6,9 @@
     --secondary-color: #ccc;
     --warning-color: #ffd38c;
     --error-color: #dc3545;
-    --success-color: #28a745;  /* Added for completeness */
+    --success-color: #28a745;
+
+    --icon-input-color: #656C6E;
 
     /* Backgrounds */
     --bg-primary: #fff;
@@ -20,7 +22,7 @@
     --text-primary: #000;
     --text-secondary: #333;
     --text-tertiary: #666;
-    --text-muted: #888;
+    --text-muted: #838383;
     --text-disabled: #999;
 
     /* Borders */
@@ -66,26 +68,72 @@
 
 .diana-container .widget-header {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    padding-top: 5px;
-    padding-bottom: 10px;
-    margin-bottom: 10px;
-    margin-top: 0;
-    border-bottom: 1px solid var(--border-secondary);
+    padding: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--border-primary);
+    gap: 12px;
+    width: 100%;
+    max-width: 470px;
+    background: var(--bg-primary);
 }
 
 .diana-container .widget-header-heading {
-    color: gray;
-    font-size: 16px
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 120%;
+    letter-spacing: 0.02em;
+    width: 100%;
+    padding: 0 8px;
 }
 
 .diana-container .widget-response-back-button {
-    color: gray;
+    /* Back button styles */
     display: flex;
-    gap: 6px;
     align-items: center;
-    margin-bottom: 10px;
-    cursor: pointer
+    gap: 6px;
+    color: var(--text-tertiary);
+    font-family: 'DM Sans', sans-serif;
+    font-style: normal;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 120%;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    width: fit-content;
+}
+
+.diana-container .widget-response-back-button:hover {
+    background-color: var(--bg-hover);
+}
+
+.diana-container .widget-header-button {
+    /* Tab bar container */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 24px 8px 24px;
+    gap: 10px;
+    height: 40px;
+    border-right: 1px solid var(--border-primary);
+}
+
+.diana-container .back-btn {
+    /* Back button icon */
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--text-tertiary);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .diana-container .modal {
@@ -112,8 +160,7 @@
 }
 
 .diana-container .modal-content {
-    background-color: var(--bg-secondary);
-    padding: 20px;
+    background-color: var(--bg-primary);
     border: 0;
     width: 100%;
     margin: 10px;
@@ -158,6 +205,10 @@
     justify-content: center;
     overflow: visible;
     font-family: "DM Sans",sans-serif !important;
+}
+
+.diana-container .modal-body {
+    padding: 20px;
 }
 
 .diana-container .modal-body-result {
@@ -210,7 +261,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--text-disabled);
+    color: var(--icon-input-color);
 }
 
 .diana-container .input-icon {
@@ -282,7 +333,6 @@
     padding: 12px;
     box-shadow: 0 1px 3px var(--shadow-light);
     border-radius: 8px;
-    margin: 7px 0
 }
 
 .diana-container .activity-time-warning-text {
@@ -367,18 +417,6 @@
 .diana-container .apply-btn,.diana-container button.calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
     color: var(--bg-primary);
-    font-family: "DM Sans",sans-serif !important;
-}
-
-.diana-container .back-btn {
-    background: 0 0;
-    border: 0;
-    font-size: 24px;
-    cursor: pointer;
-    color: var(--border-secondary);
-    margin-right: 10px;
-    border-right: 1px solid var(--border-secondary);
-    font-weight: 700;
     font-family: "DM Sans",sans-serif !important;
 }
 
@@ -478,7 +516,7 @@
     padding: 3px 0
 }
 
-.diana-container .calendar-day,.diana-container div#eleCont {
+.diana-container .calendar-day {
     display: flex;
     justify-content: center
 }
@@ -541,11 +579,11 @@
     background: var(--bg-primary);
     z-index: 99;
     width: 100%!important;
-    max-width: 430px
+    max-width: 470px
 }
 
 .diana-container .etc {
-    top: 0
+    top: 3px;
 }
 
 .diana-container .slider-wrap-fixed {
@@ -567,7 +605,7 @@
 }
 
 .diana-container #responseBox {
-    margin-top: 163px!important
+    margin-top: 180px!important
 }
 
 .diana-container #responseBox-bottom {
@@ -584,7 +622,8 @@
     flex: 1;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory
+    scroll-snap-type: x mandatory;
+    margin-left: 10px;
 }
 
 .diana-container .slider button {
@@ -620,7 +659,7 @@
 }
 
 .diana-container .middle-box {
-    background: var(--bg-secondary);
+    background: var(--bg-primary);
     padding: 12px;
     border-radius: 8px;
     font-size: 14px;
@@ -630,6 +669,7 @@
     min-height: max-content;
     border: 1px solid var(--border-primary);
     box-shadow: 0 1px 3px var(--shadow-light);
+    margin: 8px 20px 8px 20px;
 }
 
 .diana-container .middle-box>div {
@@ -643,12 +683,17 @@
     color: var(--text-primary);
 }
 
-.diana-container .middle-box .connection-meta {
-    display: none;
-    gap: 15px;
-    color: var(--text-tertiary);
-    margin-bottom: 20px;
-    font-size: 14px
+.diana-container .middle-box .element-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.diana-container .element-icon {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .diana-container .middle-box .connection-elements {
@@ -669,9 +714,11 @@
 }
 
 .diana-container .middle-box .element-duration {
-    color: var(--text-tertiary);
-    font-size: 13px;
-    margin-bottom: 5px
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    line-height: 120%;
+    letter-spacing: 0.02em;
+    color: var(--text-primary);
 }
 
 .diana-container .middle-box .element-vehicle {
@@ -691,13 +738,16 @@
 }
 
 .diana-container div#eleCont {
-    gap: 7px;
-    background-color: rgba(128,128,128,.05);
+    gap: 4px;
+    background-color: #FBF8F8;
     width: 92px;
     height: 29px;
-    align-items: flex-end;
-    border-radius: 9px;
-    align-content: center
+    align-items: center;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    flex-direction: row;
+    padding: 4px 8px;
 }
 
 .diana-container .middle-box .element-time span {

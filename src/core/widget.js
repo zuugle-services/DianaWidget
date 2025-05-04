@@ -142,13 +142,13 @@ export default class DianaWidget {
               <div style="position:relative" class="form-section">
                 <p id="originLabel">${this.t('origin')}</p>
                 <div class="input-container">
-                  <svg class="input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                   </svg>
                   <input type="text" class="input-field" id="originInput" 
                          placeholder="${this.t('enterOrigin')}" value=""
                          aria-labelledby="originLabel">
-                  <svg class="input-icon-right" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg class="input-icon-right" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="7"></circle>
                     <circle cx="12" cy="12" r="3"></circle>
                     <line x1="12" y1="0" x2="12" y2="5"></line>
@@ -163,7 +163,7 @@ export default class DianaWidget {
               <div class="form-section">
                 <p id="destinationLabel">${this.t('destination')}</p>
                 <div class="input-container">
-                  <svg class="input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
@@ -177,7 +177,7 @@ export default class DianaWidget {
                 <p id="dateLabel">${this.t('activityDate')}</p>
                 <div class="date-input-container" role="button" aria-labelledby="dateLabel" tabindex="0">
                   <div class="date-input">
-                    <svg class="date-input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                       <line x1="16" y1="2" x2="16" y2="6"></line>
                       <line x1="8" y1="2" x2="8" y2="6"></line>
@@ -225,7 +225,7 @@ export default class DianaWidget {
                 ${this.t('loadingConnectionsI')}
               </div>
 
-              <div id="activity-time">
+              <div id="activity-time" class="middle-box">
                 ${this.config.activityName}
               </div>
 
@@ -717,15 +717,6 @@ export default class DianaWidget {
       }
 
       let html = `
-        <div class="connection-meta">
-          <span>${this.convertUTCToViennaTime(conn.connection_start_timestamp)} - 
-                ${this.convertUTCToViennaTime(conn.connection_end_timestamp)}</span>
-          <span>${this.calculateTimeDifference(
-            conn.connection_start_timestamp,
-            conn.connection_end_timestamp
-          )}</span>
-          <span>${conn.connection_transfers} ${this.t("transfers")}</span>
-        </div>
         <div class="connection-elements">
       `;
 
@@ -1222,6 +1213,7 @@ export default class DianaWidget {
     this.elements.formPage.classList.remove("active");
     this.elements.resultsPage.classList.add("active");
     this.elements.innerContainer.style.transform = "unset";
+    this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-secondary) !important";
   }
 
   slideToRecommendedConnections() {
@@ -1241,6 +1233,7 @@ export default class DianaWidget {
   navigateToForm() {
     this.elements.resultsPage.classList.remove("active");
     this.elements.formPage.classList.add("active");
+    this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-primary) !important";
   }
 
   setLoadingState(isLoading) {
