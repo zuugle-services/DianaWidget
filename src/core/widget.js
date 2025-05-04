@@ -12,15 +12,15 @@ export default class DianaWidget {
       'activityStartLocationType',
       'activityEndLocation',
       'activityEndLocationType',
-      'activityEarliestStartTime',
-      'activityLatestEndTime',
+      'activityEarliestStartTime', // Format HH:MM or HH:MM:SS
+      'activityLatestStartTime',   // Format HH:MM or HH:MM:SS
+      'activityEarliestEndTime',   // Format HH:MM or HH:MM:SS
+      'activityLatestEndTime',     // Format HH:MM or HH:MM:SS
       'activityDurationMinutes'
     ],
-    activityEarliestStartTimeFlexible: true,
-    activityLatestEndTimeFlexible: true,
     activityStartLocationDisplayName: null,
     activityEndLocationDisplayName: null,
-    activityTimesTZ: "UTC", // Can be "Europe/Vienna", "UTC", etc.
+    timezone: "Europe/Vienna",
     activityStartTimeLabel: null,
     activityEndTimeLabel: null,
     apiBaseUrl: "https://api.zuugle-services.net",
@@ -47,8 +47,6 @@ export default class DianaWidget {
         start: '',
         end: '',
         duration: '',
-        warning_earlystart: false,
-        warning_lateend: false,
         warning_duration: false,
       }
     };
@@ -58,7 +56,6 @@ export default class DianaWidget {
     this.initDOM();
     this.setupEventListeners();
     this.initCalendar();
-    // this.applyTheme();
   }
 
   validateConfig(userConfig) {
@@ -69,14 +66,20 @@ export default class DianaWidget {
       config.language = 'EN';
     }
 
-    // Check for required fields
+    // Check for required fields (using the updated list)
     const missingFields = this.defaultConfig.requiredFields.filter(
-      field => !userConfig[field]
+      field => !config[field] // Check merged config
     );
 
     if (missingFields.length > 0) {
       console.error(`Missing required configuration: ${missingFields.join(', ')}`);
       throw new Error(`Missing required configuration: ${missingFields.join(', ')}`);
+    }
+
+    // Validate timezone using Luxon
+    if (!DateTime.local().setZone(config.timezone).isValid) {
+        console.warn(`Invalid timezone '${config.timezone}' provided, falling back to 'Europe/Vienna'. Error: ${DateTime.local().setZone(config.timezone).invalidReason}`);
+        config.timezone = 'Europe/Vienna';
     }
 
     return config;
@@ -127,7 +130,6 @@ export default class DianaWidget {
     return `
       <div id="activityModal" class="modal visible">
         <div id="innerContainer" class="modal-content">
-          <!-- Form Page -->
           <div id="formPage" class="modal-page active">
             <div class="widget-header">
               <div class="widget-header-button">
@@ -145,7 +147,7 @@ export default class DianaWidget {
                   <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"></circle>
                   </svg>
-                  <input type="text" class="input-field" id="originInput" 
+                  <input type="text" class="input-field" id="originInput"
                          placeholder="${this.t('enterOrigin')}" value=""
                          aria-labelledby="originLabel">
                   <svg class="input-icon-right" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -156,10 +158,10 @@ export default class DianaWidget {
                     <line x1="12" y1="20" x2="12" y2="50"></line>
                     <line x1="50" y1="10" x2="20" y2="12"></line>
                   </svg>
-                </div>  
+                </div>
                 <div id="suggestions" class="suggestions-container" role="listbox"></div>
               </div>
-            
+
               <div class="form-section">
                 <p id="destinationLabel">${this.t('destination')}</p>
                 <div class="input-container">
@@ -167,7 +169,7 @@ export default class DianaWidget {
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
-                  <input type="text" class="input-field disabled" id="destinationInput" 
+                  <input type="text" class="input-field disabled" id="destinationInput"
                          placeholder="${this.t('destination')}" value="${this.config.activityName}" readonly
                          aria-labelledby="destinationLabel">
                 </div>
@@ -198,7 +200,6 @@ export default class DianaWidget {
             </form>
           </div>
 
-          <!-- Results Page -->
           <div id="resultsPage" class="modal-page">
             <div class="modal-body-result">
               <div id="errorContainer" class="error-message" style="display: none" role="alert"></div>
@@ -378,7 +379,25 @@ export default class DianaWidget {
 
     } catch (error) {
       console.error(error);
-      this.showError(this.t('errors.connectionError'));
+      // Try to parse API error message if available
+      let errorMessage = this.t('errors.connectionError');
+      if (error.message.includes('Failed to fetch connections')) {
+        try {
+            // Assuming the error might contain a JSON body from the API
+            const errorBody = await error.response?.json(); // Check if response exists
+            if (errorBody?.error) {
+                errorMessage = errorBody.error; // Use specific error from API if possible
+            } else if (error.message) {
+                errorMessage = error.message; // Fallback to fetch error message
+            }
+        } catch (parseError) {
+            // Ignore if parsing fails, stick to generic message
+            console.error("Could not parse API error response:", parseError);
+        }
+      } else if (error.message) {
+          errorMessage = error.message; // Use other error messages directly
+      }
+      this.showError(errorMessage);
     } finally {
       this.setLoadingState(false);
     }
@@ -405,19 +424,29 @@ export default class DianaWidget {
   async fetchActivityData() {
     const activityDate = new Date(this.elements.activityDate.value);
 
-    // Convert times to UTC
+    // Convert config times (in local timezone) to UTC for the API
     const utcEarliestStart = this.convertLocalTimeToUTC(
       this.config.activityEarliestStartTime,
       activityDate,
-      this.config.activityTimesTZ
+      this.config.timezone
     );
-
+    const utcLatestStart = this.convertLocalTimeToUTC(
+      this.config.activityLatestStartTime,
+      activityDate,
+      this.config.timezone
+    );
+    const utcEarliestEnd = this.convertLocalTimeToUTC(
+      this.config.activityEarliestEndTime,
+      activityDate,
+      this.config.timezone
+    );
     const utcLatestEnd = this.convertLocalTimeToUTC(
       this.config.activityLatestEndTime,
       activityDate,
-      this.config.activityTimesTZ
+      this.config.timezone
     );
 
+    // Build request parameters
     let params = {
       date: this.elements.activityDate.value,
       activity_name: this.config.activityName,
@@ -427,10 +456,13 @@ export default class DianaWidget {
       activity_end_location: this.config.activityEndLocation,
       activity_end_location_type: this.config.activityEndLocationType,
       activity_earliest_start_time: utcEarliestStart,
+      activity_latest_start_time: utcLatestStart,
+      activity_earliest_end_time: utcEarliestEnd,
       activity_latest_end_time: utcLatestEnd,
       activity_duration_minutes: this.config.activityDurationMinutes
     };
 
+    // Handle user start location (coordinates or address)
     if (this.elements.originInput.attributes["data-lat"] !== undefined && this.elements.originInput.attributes["data-lon"] !== undefined) {
       params["user_start_location"] = this.elements.originInput.attributes['data-lat'].value.toString() + "," + this.elements.originInput.attributes['data-lon'].value.toString();
       params["user_start_location_type"] = "coordinates";
@@ -439,17 +471,12 @@ export default class DianaWidget {
       params["user_start_location_type"] = "address";
     }
 
+    // Add optional display names and labels
     if (this.config.activityStartLocationDisplayName) {
       params.activity_start_location_display_name = this.config.activityStartLocationDisplayName;
     }
     if (this.config.activityEndLocationDisplayName) {
         params.activity_end_location_display_name = this.config.activityEndLocationDisplayName;
-    }
-    if (this.config.activityEarliestStartTimeFlexible) {
-        params.activity_earliest_start_time_flexible = this.config.activityEarliestStartTimeFlexible;
-    }
-    if (this.config.activityLatestEndTimeFlexible) {
-        params.activity_latest_end_time_flexible = this.config.activityLatestEndTimeFlexible;
     }
     if (this.config.activityStartTimeLabel) {
         params.activity_start_time_label = this.config.activityStartTimeLabel;
@@ -459,7 +486,6 @@ export default class DianaWidget {
     }
 
     const queryString = new URLSearchParams(params);
-
     const response = await fetch(
       `${this.config.apiBaseUrl}/connections?${queryString}`,
       {
@@ -469,29 +495,48 @@ export default class DianaWidget {
       }
     );
 
+    // Handle API errors
     if (!response.ok) {
-      throw new Error(`Failed to fetch connections: ${response.status}`);
+        const error = new Error(`Failed to fetch connections: ${response.status} ${response.statusText}`);
+        error.response = response; // Attach response for potential error body parsing
+        throw error;
     }
 
     const result = await response.json();
 
+    // Validate response structure
     if (!result?.connections?.from_activity || !result?.connections?.to_activity) {
-      throw new Error("No connection data available");
+      console.error("API response missing expected connection data:", result);
+      throw new Error("Invalid connection data received from API.");
     }
 
+    // Store connection data
     this.state.toConnections = result.connections.to_activity;
     this.state.fromConnections = result.connections.from_activity;
 
-    // Ensure valid indices (fallback to 0 if invalid)
-    this.state.recommendedToIndex = Math.max(0, Math.min(
-      result.connections.recommended_to_activity_connection || 0,
-      this.state.toConnections.length - 1
-    ));
+    // Ensure valid recommended indices (fallback to 0 if invalid or missing)
+    const toIndex = result.connections.recommended_to_activity_connection;
+    const fromIndex = result.connections.recommended_from_activity_connection;
 
-    this.state.recommendedFromIndex = Math.max(0, Math.min(
-      result.connections.recommended_from_activity_connection || 0,
-      this.state.fromConnections.length - 1
-    ));
+    this.state.recommendedToIndex = (typeof toIndex === 'number' && toIndex >= 0 && toIndex < this.state.toConnections.length)
+        ? toIndex
+        : 0;
+
+    this.state.recommendedFromIndex = (typeof fromIndex === 'number' && fromIndex >= 0 && fromIndex < this.state.fromConnections.length)
+        ? fromIndex
+        : 0;
+
+    // Check if connection arrays are empty AFTER setting indices
+    if (this.state.toConnections.length === 0) {
+        console.warn("No 'to_activity' connections received.");
+        // Optionally throw an error or show a specific message
+        // throw new Error("No connections found TO the activity.");
+    }
+     if (this.state.fromConnections.length === 0) {
+        console.warn("No 'from_activity' connections received.");
+        // Optionally throw an error or show a specific message
+        // throw new Error("No connections found FROM the activity.");
+    }
 
     this.renderConnectionResults();
   }
@@ -500,7 +545,7 @@ export default class DianaWidget {
   renderSuggestions() {
     this.elements.suggestionsContainer.innerHTML = this.state.suggestions
       .map(feature => `
-        <div class="suggestion-item" 
+        <div class="suggestion-item"
              role="option"
              tabindex="0"
              data-value="${feature.diana_properties.display_name.replace(/"/g, '&quot;')}"
@@ -518,22 +563,47 @@ export default class DianaWidget {
   }
 
   renderConnectionResults() {
-    // Render sliders with recommended connections
-    this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
-    this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
+    this.showError(null);
 
-    // Set initial active filters using recommended indices
-    if (this.state.toConnections.length > 0) {
+    // Clear previous results
+    this.elements.topSlider.innerHTML = '';
+    this.elements.bottomSlider.innerHTML = '';
+    this.elements.responseBox.innerHTML = this.t('selectTimeSlot'); // Placeholder
+    this.elements.responseBoxBottom.innerHTML = this.t('selectTimeSlot'); // Placeholder
+    this.elements.activityTimeBox.innerHTML = this.config.activityName; // Reset
+
+    // Check if connections exist before rendering
+    if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
+        this.showError(this.t('errors.noConnectionsFound'));
+        return; // Stop rendering if no connections at all
+    }
+     if (this.state.toConnections.length === 0) {
+        this.elements.responseBox.innerHTML = this.t('errors.noToConnectionsFound');
+        // Still render 'from' connections if they exist
+    } else {
+        this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
+    }
+
+    if (this.state.fromConnections.length === 0) {
+        this.elements.responseBoxBottom.innerHTML = this.t('errors.noFromConnectionsFound');
+        // Still render 'to' connections if they exist
+    } else {
+        this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
+    }
+
+
+    // Set initial active filters using recommended indices IF connections exist
+    if (this.state.toConnections.length > 0 && this.state.recommendedToIndex < this.state.toConnections.length) {
       const recommendedTo = this.state.toConnections[this.state.recommendedToIndex];
-      const startTime = this.convertUTCToViennaTime(recommendedTo.connection_start_timestamp);
-      const endTime = this.convertUTCToViennaTime(recommendedTo.connection_end_timestamp);
+      const startTime = this.convertUTCToLocalTime(recommendedTo.connection_start_timestamp);
+      const endTime = this.convertUTCToLocalTime(recommendedTo.connection_end_timestamp);
       this.filterConnectionsByTime('to', startTime, endTime);
     }
 
-    if (this.state.fromConnections.length > 0) {
+    if (this.state.fromConnections.length > 0 && this.state.recommendedFromIndex < this.state.fromConnections.length) {
       const recommendedFrom = this.state.fromConnections[this.state.recommendedFromIndex];
-      const startTime = this.convertUTCToViennaTime(recommendedFrom.connection_start_timestamp);
-      const endTime = this.convertUTCToViennaTime(recommendedFrom.connection_end_timestamp);
+      const startTime = this.convertUTCToLocalTime(recommendedFrom.connection_start_timestamp);
+      const endTime = this.convertUTCToLocalTime(recommendedFrom.connection_end_timestamp);
       this.filterConnectionsByTime('from', startTime, endTime);
     }
 
@@ -547,8 +617,9 @@ export default class DianaWidget {
     slider.innerHTML = '';
 
     connections.forEach((conn, index) => {
-      const startTime = this.convertUTCToViennaTime(conn.connection_start_timestamp);
-      const endTime = this.convertUTCToViennaTime(conn.connection_end_timestamp);
+      // Convert UTC times from API to the configured local timezone for display
+      const startTimeLocal = this.convertUTCToLocalTime(conn.connection_start_timestamp);
+      const endTimeLocal = this.convertUTCToLocalTime(conn.connection_end_timestamp);
       const duration = this.calculateTimeDifference(
         conn.connection_start_timestamp,
         conn.connection_end_timestamp
@@ -558,8 +629,7 @@ export default class DianaWidget {
       btn.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center;">
           <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold;">
-            ${startTime} - ${endTime}
-          </div>
+            ${startTimeLocal} - ${endTimeLocal} </div>
           <div style="display: flex; justify-content:space-between; width: 100%;
                       width: -moz-available;          /* WebKit-based browsers will ignore this. */
                       width: -webkit-fill-available;  /* Mozilla-based browsers will ignore this. */
@@ -577,7 +647,7 @@ export default class DianaWidget {
       `;
 
       btn.addEventListener('click', () => {
-        this.filterConnectionsByTime(type, startTime, endTime);
+        this.filterConnectionsByTime(type, startTimeLocal, endTimeLocal);
       });
 
       // Add 'active-time' class if this is the recommended connection
@@ -594,7 +664,7 @@ export default class DianaWidget {
     });
   }
 
-  filterConnectionsByTime(type, startTime, endTime) {
+  filterConnectionsByTime(type, startTimeLocal, endTimeLocal) {
     const connections = type === 'from' ? this.state.fromConnections : this.state.toConnections;
     const sliderId = type === 'from' ? 'bottomSlider' : 'topSlider';
     const targetBox = type === 'from' ? this.elements.responseBoxBottom : this.elements.responseBox;
@@ -604,22 +674,30 @@ export default class DianaWidget {
     const buttons = slider.querySelectorAll('button');
     buttons.forEach(btn => {
       btn.classList.remove('active-time');
-      if (btn.textContent.includes(`${startTime} - ${endTime}`)) {
+      // Compare button text content (which now contains local times)
+      if (btn.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
         btn.classList.add('active-time');
       }
     });
 
-    // Filter connections
+    // Filter connections based on local time representation
     const filtered = connections.filter(conn => {
-      const connStart = this.convertUTCToViennaTime(conn.connection_start_timestamp);
-      const connEnd = this.convertUTCToViennaTime(conn.connection_end_timestamp);
-      return connStart === startTime && connEnd === endTime;
+      const connStartLocal = this.convertUTCToLocalTime(conn.connection_start_timestamp);
+      const connEndLocal = this.convertUTCToLocalTime(conn.connection_end_timestamp);
+      return connStartLocal === startTimeLocal && connEndLocal === endTimeLocal;
     });
 
-    this.updateActivityTimeBox(filtered[0], type);
-
-    // Render connection details
-    targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+    // Update the central activity time box based on the *first* matching connection
+    // This assumes connections with the same start/end time are effectively the same for activity timing
+    if (filtered.length > 0) {
+        this.updateActivityTimeBox(filtered[0], type);
+        // Render connection details for *all* matching connections (could be multiple options with same time)
+        targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+    } else {
+        // Handle case where no connection matches the clicked time slot (shouldn't normally happen)
+        targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
+        console.warn(`No connection found matching local time slot: ${startTimeLocal} - ${endTimeLocal}`);
+    }
   }
 
   updateActivityTimeBox(connection, type) {
@@ -627,75 +705,79 @@ export default class DianaWidget {
 
     try {
       const activityDate = new Date(this.elements.activityDate.value);
-      const connectionStartTime = this.convertUTCToViennaTime(connection.connection_start_timestamp);
-      const connectionEndTime = this.convertUTCToViennaTime(connection.connection_end_timestamp);
+      // Get connection start/end times in the configured local timezone
+      const connectionStartTimeLocal = this.convertUTCToLocalTime(connection.connection_start_timestamp);
+      const connectionEndTimeLocal = this.convertUTCToLocalTime(connection.connection_end_timestamp);
 
-      let startTime, endTime, duration, hoursminutes, hours, minutes;
+      let calculatedActivityStartLocal, calculatedActivityEndLocal, durationText, hours, minutes;
 
       if (type === 'to') {
-        // For "to activity" connections, calculate latest possible start
-        const earliestStart = this.convertLocalTimeToViennaTime(this.config.activityEarliestStartTime, activityDate, this.config.activityTimesTZ);
-        startTime = this.getLaterTime(connectionEndTime, earliestStart);
+        // Convert earliest config start time to the local display timezone
+        const earliestConfigStartLocal = this.convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityDate);
+        // Determine the actual activity start time (later of connection arrival or earliest config start)
+        calculatedActivityStartLocal = this.getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal);
 
-        if (!this.config.activityEarliestStartTimeFlexible) {
-          this.state.activityTimes.warning_earlystart = this.getLaterTime(startTime, earliestStart) === earliestStart;
-        }
+        // Store the calculated start time (in local format) for later use
+        this.state.activityTimes.start = calculatedActivityStartLocal;
+        // Reset end time and duration when 'to' connection changes
+        this.state.activityTimes.end = '';
+        this.state.activityTimes.duration = '';
+        this.state.activityTimes.warning_duration = false; // Reset duration warning
 
-        // Store for later use with "from activity" connections
-        this.state.activityTimes.start = startTime;
       } else {
-        // For "from activity" connections, calculate earliest possible end
-        const latestEnd = this.convertLocalTimeToViennaTime(this.config.activityLatestEndTime, activityDate, this.config.activityTimesTZ);
-        endTime = this.getEarlierTime(connectionStartTime, latestEnd);
+        // Convert latest config end time to the local display timezone
+        const latestConfigEndLocal = this.convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityDate);
+        // Determine the actual activity end time (earlier of connection departure or latest config end)
+        calculatedActivityEndLocal = this.getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal);
 
-        if (!this.config.activityLatestEndTimeFlexible) {
-          this.state.activityTimes.warning_lateend = this.getEarlierTime(endTime, latestEnd) === latestEnd;
+        // Calculate duration using the stored local start time and the calculated local end time
+        calculatedActivityStartLocal = this.state.activityTimes.start; // Retrieve stored start time
+        if (calculatedActivityStartLocal && calculatedActivityEndLocal) {
+            const durationResult = this.calculateDurationLocal(calculatedActivityStartLocal, calculatedActivityEndLocal);
+            durationText = durationResult.text;
+            hours = durationResult.hours;
+            minutes = durationResult.minutes;
+
+            // Check if calculated duration is less than required config duration
+            this.state.activityTimes.warning_duration = (hours * 60 + minutes) < this.config.activityDurationMinutes;
+        } else {
+            durationText = '--'; // Duration cannot be calculated yet
+            this.state.activityTimes.warning_duration = false;
         }
 
-        // Calculate duration using stored start time
-        startTime = this.state.activityTimes.start;
-        [duration, hoursminutes] = this.calculateDuration(startTime, endTime);
-        [hours, minutes] = hoursminutes.map(Number);
 
-        this.state.activityTimes.warning_duration = (hours*60 + minutes) < this.config.activityDurationMinutes;
-
-        // Update state
-        this.state.activityTimes.end = endTime;
-        this.state.activityTimes.duration = duration;
+        // Update state with calculated local end time and duration
+        this.state.activityTimes.end = calculatedActivityEndLocal;
+        this.state.activityTimes.duration = durationText;
       }
 
+      // Render the activity time box using the calculated local times
       this.elements.activityTimeBox.innerHTML = `
         <div class="activity-time-card">
           <div class="activity-time-header">${this.config.activityName}</div>
           <div class="activity-time-meta">
-            ${this.state.activityTimes.warning_earlystart ? `
-              <div class="activity-time-warning-text">${this.t("warnings.earlyStart")}</div>
-            ` : ''}
-            
             <div class="activity-time-row">
-              <span class="activity-time-label">${this.t("activityStart")}</span>
+              <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
               <span class="activity-time-value">${this.state.activityTimes.start || '--:--'}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
             </div>
-      
+
             <div class="activity-time-row">
-              <span class="activity-time-label">${this.t("activityEnd")}</span>
+              <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
               <span class="activity-time-value">${this.state.activityTimes.end || '--:--'}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
             </div>
-      
+
             <div class="activity-time-row">
               <span class="activity-time-label">${this.t("activityDuration")}</span>
               <span class="activity-time-value">${this.state.activityTimes.duration || '--'}</span>
             </div>
-      
-            ${this.state.activityTimes.warning_lateend || this.state.activityTimes.warning_duration ? `
+
+            ${this.state.activityTimes.warning_duration ? `
               <div class="activity-time-warning-text">
-                ${[this.state.activityTimes.warning_lateend ? this.t("warnings.lateEnd") : '', 
-                  this.state.activityTimes.warning_duration ? this.t("warnings.duration") : '']
-                  .filter(Boolean).join(' & ')}
+                 ${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})
               </div>
             ` : ''}
           </div>
@@ -703,8 +785,10 @@ export default class DianaWidget {
       `;
     } catch (error) {
       console.error("Error updating activity time box:", error);
+       this.elements.activityTimeBox.innerHTML = `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
     }
   }
+
 
   renderConnectionDetails(connections, type) {
     if (!connections || connections.length === 0) {
@@ -722,8 +806,8 @@ export default class DianaWidget {
 
       // Render each connection element (departures)
       conn.connection_elements.forEach((element, index) => {
-        const departureTime = this.convertUTCToViennaTime(element.departure_time);
-        const arrivalTime = this.convertUTCToViennaTime(element.arrival_time);
+        const departureTime = this.convertUTCToLocalTime(element.departure_time);
+        const arrivalTime = this.convertUTCToLocalTime(element.arrival_time);
         const duration = this.calculateElementDuration(
           element.departure_time,
           element.arrival_time
@@ -787,7 +871,6 @@ export default class DianaWidget {
                 <div class="element-time">
                   <span>${arrivalTime}</span> ${this.elements.originInput.value}
                 </div>
-              </div>
             `;
           }
         }
@@ -802,13 +885,13 @@ export default class DianaWidget {
           html += `
             <div class="connection-element waiting-block">
               <div class="element-time">
-                <span>${this.convertUTCToViennaTime(conn.connection_end_timestamp)}</span> 
+                <span>${this.convertUTCToLocalTime(conn.connection_end_timestamp)}</span> 
                 ${this.t('waiting.beforeActivity')}
               </div>
               <div id="eleCont">
                 <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
                 <span class="element-duration">
-                  ${waitDuration.minutes} ${this.t('durationMinutes')}
+                  ${waitDuration.minutes} ${this.t('durationMinutesShort')}
                 </span>
               </div>
             </div>`;
@@ -830,7 +913,7 @@ export default class DianaWidget {
               <div id="eleCont">
                 <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
                 <span class="element-duration">
-                  ${waitDuration.minutes} ${this.t('durationMinutes')}
+                  ${waitDuration.minutes} ${this.t('durationMinutesShort')}
                 </span>
               </div>
             </div>`;
@@ -842,16 +925,23 @@ export default class DianaWidget {
     }).join('');
   }
 
-  // Calendar methods (from original implementation)
+
+  // Calendar methods (no changes needed here)
   initCalendar() {
     // Check if mobile device
     if (window.matchMedia("(max-width: 768px)").matches) {
       // Show native date input for mobile
       this.elements.activityDate.type = "date";
       this.elements.activityDate.addEventListener("change", (e) => {
-        this.state.selectedDate = new Date(e.target.value);
+        // Ensure date is parsed correctly, considering potential timezone issues
+        const [year, month, day] = e.target.value.split('-').map(Number);
+        // Create date object using UTC values to avoid local timezone interpretation
+        this.state.selectedDate = new Date(Date.UTC(year, month - 1, day));
         this.updateDateDisplay(this.state.selectedDate);
       });
+      // Set initial value and display for mobile
+       this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
+       this.updateDateDisplay(this.state.selectedDate);
       return; // Skip custom calendar initialization
     }
 
@@ -870,7 +960,9 @@ export default class DianaWidget {
     // Render calendar function
     const renderCalendar = () => {
       const daysInMonth = new Date(currentViewYear, currentViewMonth + 1, 0).getDate();
-      const firstDayOfMonth = new Date(currentViewYear, currentViewMonth, 1).getDay();
+      // Adjust firstDayOfMonth calculation to handle different locales potentially starting week on Monday
+      let firstDayOfMonth = new Date(currentViewYear, currentViewMonth, 1).getDay();
+      firstDayOfMonth = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1; // Adjust Sunday (0) to 6, shift others back
 
       // Calendar HTML
       calendarContainer.innerHTML = `
@@ -952,7 +1044,8 @@ export default class DianaWidget {
           e.stopPropagation();
           dayElements.forEach(d => d.classList.remove("selected"));
           day.classList.add("selected");
-          selectedDate = new Date(currentViewYear, currentViewMonth, parseInt(day.textContent));
+          // Create date object using UTC values to avoid local timezone interpretation
+          selectedDate = new Date(Date.UTC(currentViewYear, currentViewMonth, parseInt(day.textContent)));
         });
       });
     };
@@ -963,6 +1056,10 @@ export default class DianaWidget {
       e.stopPropagation();
       calendarContainer.classList.toggle("active");
       if (calendarContainer.classList.contains("active")) {
+        // Ensure the calendar renders with the currently selected date
+        selectedDate = this.state.selectedDate;
+        currentViewMonth = this.state.selectedDate.getMonth();
+        currentViewYear = this.state.selectedDate.getFullYear();
         renderCalendar();
       }
     });
@@ -976,11 +1073,13 @@ export default class DianaWidget {
       }
     });
 
-    // Initialize with today's date
-    renderCalendar();
+    // Initialize with today's date and render display
+    this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
+    this.updateDateDisplay(this.state.selectedDate);
   }
 
   formatDatetime(date) {
+    // Format date as YYYY-MM-DD for the hidden input
     let year = date.getFullYear();
     let month = date.getMonth() + 1;
     let day = date.getDate();
@@ -990,16 +1089,17 @@ export default class DianaWidget {
   generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, year, month) {
     let html = "";
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today's date for comparison
 
     // Empty cells for days before the first of the month
     for (let i = 0; i < firstDayOfMonth; i++) {
-      html += "<div></div>";
+      html += "<div class='calendar-day empty'></div>";
     }
 
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month, day);
-      const isToday = date.toDateString() === today.toDateString();
+      const date = new Date(Date.UTC(year, month, day)); // Use UTC to create date
+      const isToday = date.toDateString() === today.toDateString(); // Compare date strings
       const isSelected = date.toDateString() === this.state.selectedDate.toDateString();
 
       html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}">${day}</div>`;
@@ -1008,15 +1108,17 @@ export default class DianaWidget {
     return html;
   }
 
+
   getMonthName(month) {
     return this.t('months')[month];
   }
 
   updateDateDisplay(date) {
-    const localeMap = { EN: 'en-US', DE: 'de-DE' };
-    const locale = localeMap[this.config.language] || 'en-US';
+    const localeMap = { EN: 'en-GB', DE: 'de-DE' }; // Use en-GB for DD/MM/YYYY format consistency
+    const locale = localeMap[this.config.language] || 'en-GB';
 
     if (date && !isNaN(date.getTime())) {
+      // Format date for display using locale settings
       const options = { day: "numeric", month: "short", year: "numeric" };
       this.elements.dateDisplay.textContent = date.toLocaleDateString(locale, options);
       this.elements.dateDisplay.classList.remove("placeholder");
@@ -1026,179 +1128,274 @@ export default class DianaWidget {
     }
   }
 
+  // --- Time Calculation and Conversion ---
+
+  /**
+   * Calculates the difference between two ISO 8601 timestamps (UTC).
+   * Returns a human-readable duration string (e.g., "45 min", "1:30 h").
+   */
   calculateTimeDifference(startISO, endISO) {
-    const start = DateTime.fromISO(startISO);
-    const end = DateTime.fromISO(endISO);
-    const diff = end.diff(start, ['hours', 'minutes']);
-    if (diff.hours === 0) {
-      return `${diff.minutes} ${this.t("durationMinutes")}`;
-    } else {
-      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}${this.t("durationHours")}`;
+    try {
+        const start = DateTime.fromISO(startISO, { zone: 'utc' });
+        const end = DateTime.fromISO(endISO, { zone: 'utc' });
+        if (!start.isValid || !end.isValid) {
+            throw new Error(`Invalid date format: ${startISO} or ${endISO}`);
+        }
+        const diff = end.diff(start, ['hours', 'minutes']);
+        const hours = Math.floor(diff.as('hours')); // Get whole hours
+        const minutes = Math.round(diff.as('minutes')) % 60; // Get remaining minutes
+
+        if (hours === 0) {
+            return `${minutes} ${this.t("durationMinutesShort")}`;
+        } else {
+            return `${hours}:${String(minutes).padStart(2, '0')}${this.t("durationHoursShort")}`;
+        }
+    } catch (error) {
+        console.error("Error calculating time difference:", error);
+        return "--"; // Fallback duration
     }
   }
 
+  /**
+   * Calculates the duration of a single connection element (leg).
+   * Uses calculateTimeDifference for the core logic.
+   */
   calculateElementDuration(startISO, endISO) {
-    const start = DateTime.fromISO(startISO);
-    const end = DateTime.fromISO(endISO);
-    const diff = end.diff(start, ['hours', 'minutes']);
-    if (diff.hours === 0) {
-      return `${diff.minutes} ${this.t("durationMinutes")}`;
-    } else {
-      return `${diff.hours}:${String(diff.minutes).padStart(2, '0')}${this.t("durationHours")}`;
+    return this.calculateTimeDifference(startISO, endISO);
+  }
+
+  /**
+   * Converts a local time string (HH:MM or HH:MM:SS) from the configured timezone
+   * to a UTC time string (HH:MM:SS) for the given date.
+   */
+  convertLocalTimeToUTC(localTime, date, timezone) {
+    try {
+        const [hours, minutes, seconds] = ([...(localTime.split(':')), '0', '0']).slice(0, 3).map(Number);
+
+        const localDt = DateTime.fromObject({
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            day: date.getDate(),
+            hour: hours,
+            minute: minutes,
+            second: seconds || 0 // Use provided seconds or default to 0
+            },
+            {
+            zone: timezone // Interpret the input time in the configured timezone
+            }
+        );
+
+        if (!localDt.isValid) {
+            throw new Error(`Invalid local time or timezone: ${localTime}, ${timezone}. Reason: ${localDt.invalidReason}`);
+        }
+
+        return localDt.toUTC().toFormat('HH:mm:ss'); // Output UTC in HH:mm:ss format
+    } catch(error) {
+        console.error("Error converting local time to UTC:", error);
+        return "00:00:00"; // Fallback value
     }
   }
 
-  convertLocalTimeToUTC(localTime, date, timezone) {
-    const [hours, minutes] = localTime.split(':').map(Number);
+  /**
+   * Converts a configuration time string (HH:MM or HH:MM:SS) for a specific date
+   * to the display timezone (which is also the configured timezone).
+   * Returns time in HH:mm format.
+   */
+  convertConfigTimeToLocalTime(configTime, date) {
+     try {
+        const [hours, minutes, seconds] = ([...(configTime.split(':')), '0', '0']).slice(0, 3).map(Number);
 
-    return DateTime.fromObject({
-        year: date.getFullYear(),
-        month: date.getMonth() + 1,
-        day: date.getDate(),
-        hour: hours,
-        minute: minutes
-      },
-      {
-        zone: timezone
-      }
-    ).toUTC().toFormat('HH:mm');
+        // Create DateTime object assuming the configTime is already in the target display timezone
+        const localDt = DateTime.fromObject({
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            day: date.getDate(),
+            hour: hours,
+            minute: minutes,
+            second: seconds || 0
+            },
+            {
+            zone: this.config.timezone // The config time is already in this zone
+            }
+        );
+
+         if (!localDt.isValid) {
+            throw new Error(`Invalid config time or timezone: ${configTime}, ${this.config.timezone}. Reason: ${localDt.invalidReason}`);
+        }
+
+        return localDt.toFormat('HH:mm'); // Output in local HH:mm format
+    } catch(error) {
+        console.error("Error converting config time to local time:", error);
+        return "--:--"; // Fallback value
+    }
   }
 
-  convertLocalTimeToViennaTime(localTime, date, timezone) {
-    const [hours, minutes] = localTime.split(':').map(Number);
-
-    return DateTime.fromObject({
-        year: date.getFullYear(),
-        month: date.getMonth() + 1,
-        day: date.getDate(),
-        hour: hours,
-        minute: minutes
-      },
-      {
-        zone: timezone
-      }
-    ).setZone('Europe/Vienna').toFormat('HH:mm');
+  /**
+   * Converts a UTC ISO 8601 timestamp string to the configured local timezone.
+   * Returns time in HH:mm format.
+   */
+  convertUTCToLocalTime(isoString) {
+     try {
+        const utcDt = DateTime.fromISO(isoString, { zone: 'utc' });
+         if (!utcDt.isValid) {
+            throw new Error(`Invalid UTC timestamp: ${isoString}. Reason: ${utcDt.invalidReason}`);
+        }
+        return utcDt.setZone(this.config.timezone) // Convert to configured local zone
+                    .toFormat('HH:mm');
+    } catch(error) {
+        console.error("Error converting UTC to local time:", error);
+        return "--:--"; // Fallback value
+    }
   }
 
-  convertUTCToViennaTime(isoString) {
-    return DateTime.fromISO(isoString, { zone: 'utc' })
-      .setZone('Europe/Vienna')
-      .toFormat('HH:mm');
-  }
+  // --- Helper Functions ---
 
   getTransportIcon(type) {
+    // Map API vehicle type IDs or string types to SVG icons
     const icons = {
-      1: `<svg width="16" height="16" viewBox="0 0 12 15" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9.5 0.5H2.5C1.96957 0.5 1.46086 0.710714 1.08579 1.08579C0.710714 1.46086 0.5 1.96957 0.5 2.5V10.5C0.5 11.0304 0.710714 11.5391 1.08579 11.9142C1.46086 12.2893 1.96957 12.5 2.5 12.5H3L2.1 13.7C2.0606 13.7525 2.03194 13.8123 2.01564 13.8759C1.99935 13.9395 1.99574 14.0057 2.00503 14.0707C2.01431 14.1357 2.03631 14.1982 2.06976 14.2547C2.10322 14.3112 2.14747 14.3606 2.2 14.4C2.25253 14.4394 2.3123 14.4681 2.37591 14.4844C2.43952 14.5007 2.50571 14.5043 2.57071 14.495C2.63571 14.4857 2.69825 14.4637 2.75475 14.4302C2.81125 14.3968 2.8606 14.3525 2.9 14.3L4.25 12.5H7.75L9.1 14.3C9.17957 14.4061 9.29801 14.4762 9.42929 14.495C9.56056 14.5137 9.69391 14.4796 9.8 14.4C9.90609 14.3204 9.97622 14.202 9.99498 14.0707C10.0137 13.9394 9.97956 13.8061 9.9 13.7L9 12.5H9.5C10.0304 12.5 10.5391 12.2893 10.9142 11.9142C11.2893 11.5391 11.5 11.0304 11.5 10.5V2.5C11.5 1.96957 11.2893 1.46086 10.9142 1.08579C10.5391 0.710714 10.0304 0.5 9.5 0.5ZM2.5 1.5H9.5C9.76522 1.5 10.0196 1.60536 10.2071 1.79289C10.3946 1.98043 10.5 2.23478 10.5 2.5V6.5H1.5V2.5C1.5 2.23478 1.60536 1.98043 1.79289 1.79289C1.98043 1.60536 2.23478 1.5 2.5 1.5ZM9.5 11.5H2.5C2.23478 11.5 1.98043 11.3946 1.79289 11.2071C1.60536 11.0196 1.5 10.7652 1.5 10.5V7.5H10.5V10.5C10.5 10.7652 10.3946 11.0196 10.2071 11.2071C10.0196 11.3946 9.76522 11.5 9.5 11.5ZM4 9.75C4 9.89834 3.95601 10.0433 3.8736 10.1667C3.79119 10.29 3.67406 10.3861 3.53701 10.4429C3.39997 10.4997 3.24917 10.5145 3.10368 10.4856C2.9582 10.4567 2.82456 10.3852 2.71967 10.2803C2.61478 10.1754 2.54335 10.0418 2.51441 9.89632C2.48547 9.75083 2.50032 9.60003 2.55709 9.46299C2.61386 9.32594 2.70999 9.20881 2.83332 9.1264C2.95666 9.04399 3.10166 9 3.25 9C3.44891 9 3.63968 9.07902 3.78033 9.21967C3.92098 9.36032 4 9.55109 4 9.75ZM9.5 9.75C9.5 9.89834 9.45601 10.0433 9.3736 10.1667C9.29119 10.29 9.17406 10.3861 9.03701 10.4429C8.89997 10.4997 8.74917 10.5145 8.60368 10.4856C8.4582 10.4567 8.32456 10.3852 8.21967 10.2803C8.11478 10.1754 8.04335 10.0418 8.01441 9.89632C7.98547 9.75083 8.00033 9.60003 8.05709 9.46299C8.11386 9.32594 8.20999 9.20881 8.33332 9.1264C8.45666 9.04399 8.60166 9 8.75 9C8.94891 9 9.13968 9.07902 9.28033 9.21967C9.42098 9.36032 9.5 9.55109 9.5 9.75Z" fill="#34C759"/>
-          </svg>`,
-      WALK: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9.50003 5C9.8956 5 10.2823 4.8827 10.6112 4.66294C10.9401 4.44318 11.1964 4.13082 11.3478 3.76537C11.4992 3.39992 11.5388 2.99778 11.4616 2.60982C11.3844 2.22186 11.194 1.86549 10.9142 1.58579C10.6345 1.30608 10.2782 1.1156 9.89021 1.03843C9.50225 0.96126 9.10012 1.00087 8.73467 1.15224C8.36921 1.30362 8.05686 1.55996 7.83709 1.88886C7.61733 2.21776 7.50003 2.60444 7.50003 3C7.50003 3.53043 7.71075 4.03914 8.08582 4.41422C8.46089 4.78929 8.9696 5 9.50003 5ZM9.50003 2C9.69781 2 9.89115 2.05865 10.0556 2.16853C10.2201 2.27841 10.3482 2.43459 10.4239 2.61732C10.4996 2.80004 10.5194 3.00111 10.4808 3.19509C10.4422 3.38907 10.347 3.56726 10.2071 3.70711C10.0673 3.84696 9.8891 3.9422 9.69512 3.98079C9.50114 4.01937 9.30007 3.99957 9.11735 3.92388C8.93462 3.84819 8.77844 3.72002 8.66856 3.55557C8.55868 3.39112 8.50003 3.19778 8.50003 3C8.50003 2.73478 8.60539 2.48043 8.79293 2.29289C8.98046 2.10536 9.23482 2 9.50003 2ZM13.5 9C13.5 9.13261 13.4474 9.25979 13.3536 9.35356C13.2598 9.44732 13.1326 9.5 13 9.5C10.7932 9.5 9.69066 8.38688 8.80503 7.4925C8.63378 7.31938 8.47003 7.155 8.30503 7.0025L7.46566 8.9325L9.79066 10.5931C9.85542 10.6394 9.9082 10.7004 9.94462 10.7712C9.98104 10.842 10 10.9204 10 11V14.5C10 14.6326 9.94735 14.7598 9.85359 14.8536C9.75982 14.9473 9.63264 15 9.50003 15C9.36742 15 9.24025 14.9473 9.14648 14.8536C9.05271 14.7598 9.00003 14.6326 9.00003 14.5V11.2575L7.05816 9.87L4.95878 14.6994C4.91993 14.7887 4.85581 14.8648 4.77431 14.9182C4.69281 14.9716 4.59747 15 4.50003 15C4.43137 15.0002 4.36345 14.9859 4.30066 14.9581C4.17911 14.9053 4.08351 14.8064 4.03488 14.6831C3.98624 14.5598 3.98855 14.4222 4.04128 14.3006L7.42128 6.5275C6.83941 6.42438 6.11378 6.6025 5.25253 7.06375C4.56566 7.44263 3.92458 7.89917 3.34191 8.42438C3.24465 8.51149 3.11717 8.55711 2.98673 8.55148C2.85628 8.54584 2.73321 8.48941 2.64383 8.39423C2.55444 8.29905 2.50584 8.17268 2.5084 8.04213C2.51096 7.91159 2.56448 7.78723 2.65753 7.69563C2.81378 7.54875 6.51316 4.11875 8.82753 6.12813C9.06691 6.33563 9.29503 6.56563 9.51503 6.78875C10.3869 7.66875 11.21 8.5 13 8.5C13.1326 8.5 13.2598 8.55268 13.3536 8.64645C13.4474 8.74022 13.5 8.86739 13.5 9Z" fill="#FF9500"/>
-            </svg>`,
-      TRSF: `<svg width="16" height="16" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/>
-             </svg>`,
-      WAIT: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500">
-               <circle cx="12" cy="12" r="9" stroke-width="2"/>
-               <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
-             </svg>`,
-      DEFAULT: `<svg width="16" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7.5 0.5C7.5 0.632608 7.44732 0.759785 7.35355 0.853553C7.25979 0.947321 7.13261 1 7 1H5C4.86739 1 4.74021 0.947321 4.64645 0.853553C4.55268 0.759785 4.5 0.632608 4.5 0.5C4.5 0.367392 4.55268 0.240215 4.64645 0.146447C4.74021 0.0526785 4.86739 0 5 0H7C7.13261 0 7.25979 0.0526785 7.35355 0.146447C7.44732 0.240215 7.5 0.367392 7.5 0.5ZM7 11H5C4.86739 11 4.74021 11.0527 4.64645 11.1464C4.55268 11.2402 4.5 11.3674 4.5 11.5C4.5 11.6326 4.55268 11.7598 4.64645 11.8536C4.74021 11.9473 4.86739 12 5 12H7C7.13261 12 7.25979 11.9473 7.35355 11.8536C7.44732 11.7598 7.5 11.6326 7.5 11.5C7.5 11.3674 7.44732 11.2402 7.35355 11.1464C7.25979 11.0527 7.13261 11 7 11ZM11 0H9.5C9.36739 0 9.24021 0.0526785 9.14645 0.146447C9.05268 0.240215 9 0.367392 9 0.5C9 0.632608 9.05268 0.759785 9.14645 0.853553C9.24021 0.947321 9.36739 1 9.5 1H11V2.5C11 2.63261 11.0527 2.75979 11.1464 2.85355C11.2402 2.94732 11.3674 3 11.5 3C11.6326 3 11.7598 2.94732 11.8536 2.85355C11.9473 2.75979 12 2.63261 12 2.5V1C12 0.734784 11.8946 0.48043 11.7071 0.292893C11.5196 0.105357 11.2652 0 11 0ZM11.5 4.5C11.3674 4.5 11.2402 4.55268 11.1464 4.64645C11.0527 4.74021 11 4.86739 11 5V7C11 7.13261 11.0527 7.25979 11.1464 7.35355C11.2402 7.44732 11.3674 7.5 11.5 7.5C11.6326 7.5 11.7598 7.44732 11.8536 7.35355C11.9473 7.25979 12 7.13261 12 7V5C12 4.86739 11.9473 4.74021 11.8536 4.64645C11.7598 4.55268 11.6326 4.5 11.5 4.5ZM11.5 9C11.3674 9 11.2402 9.05268 11.1464 9.14645C11.0527 9.24021 11 9.36739 11 9.5V11H9.5C9.36739 11 9.24021 11.0527 9.14645 11.1464C9.05268 11.2402 9 11.3674 9 11.5C9 11.6326 9.05268 11.7598 9.14645 11.8536C9.24021 11.9473 9.36739 12 9.5 12H11C11.2652 12 11.5196 11.8946 11.7071 11.7071C11.8946 11.5196 12 11.2652 12 11V9.5C12 9.36739 11.9473 9.24021 11.8536 9.14645C11.7598 9.05268 11.6326 9 11.5 9ZM0.5 7.5C0.632608 7.5 0.759785 7.44732 0.853553 7.35355C0.947321 7.25979 1 7.13261 1 7V5C1 4.86739 0.947321 4.74021 0.853553 4.64645C0.759785 4.55268 0.632608 4.5 0.5 4.5C0.367392 4.5 0.240215 4.55268 0.146447 4.64645C0.0526785 4.74021 0 4.86739 0 5V7C0 7.13261 0.0526785 7.25979 0.146447 7.35355C0.240215 7.44732 0.367392 7.5 0.5 7.5ZM2.5 11H1V9.5C1 9.36739 0.947321 9.24021 0.853553 9.14645C0.759785 9.05268 0.632608 9 0.5 9C0.367392 9 0.240215 9.05268 0.146447 9.14645C0.0526785 9.24021 0 9.36739 0 9.5V11C0 11.2652 0.105357 11.5196 0.292893 11.7071C0.48043 11.8946 0.734784 12 1 12H2.5C2.63261 12 2.75979 11.9473 2.85355 11.8536C2.94732 11.7598 3 11.6326 3 11.5C3 11.3674 2.94732 11.2402 2.85355 11.1464C2.75979 11.0527 2.63261 11 2.5 11ZM2.5 0H1C0.734784 0 0.48043 0.105357 0.292893 0.292893C0.105357 0.48043 0 0.734784 0 1V2.5C0 2.63261 0.0526785 2.75979 0.146447 2.85355C0.240215 2.94732 0.367392 3 0.5 3C0.632608 3 0.759785 2.94732 0.853553 2.85355C0.947321 2.75979 1 2.63261 1 2.5V1H2.5C2.63261 1 2.75979 0.947321 2.85355 0.853553C2.94732 0.759785 3 0.632608 3 0.5C3 0.367392 2.94732 0.240215 2.85355 0.146447C2.75979 0.0526785 2.63261 0 2.5 0Z" fill="#AEAEB2"/>
-                </svg>`,
+      1: `<svg width="16" height="16" viewBox="0 0 12 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.5 0.5H2.5C1.96957 0.5 1.46086 0.710714 1.08579 1.08579C0.710714 1.46086 0.5 1.96957 0.5 2.5V10.5C0.5 11.0304 0.710714 11.5391 1.08579 11.9142C1.46086 12.2893 1.96957 12.5 2.5 12.5H3L2.1 13.7C2.0606 13.7525 2.03194 13.8123 2.01564 13.8759C1.99935 13.9395 1.99574 14.0057 2.00503 14.0707C2.01431 14.1357 2.03631 14.1982 2.06976 14.2547C2.10322 14.3112 2.14747 14.3606 2.2 14.4C2.25253 14.4394 2.3123 14.4681 2.37591 14.4844C2.43952 14.5007 2.50571 14.5043 2.57071 14.495C2.63571 14.4857 2.69825 14.4637 2.75475 14.4302C2.81125 14.3968 2.8606 14.3525 2.9 14.3L4.25 12.5H7.75L9.1 14.3C9.17957 14.4061 9.29801 14.4762 9.42929 14.495C9.56056 14.5137 9.69391 14.4796 9.8 14.4C9.90609 14.3204 9.97622 14.202 9.99498 14.0707C10.0137 13.9394 9.97956 13.8061 9.9 13.7L9 12.5H9.5C10.0304 12.5 10.5391 12.2893 10.9142 11.9142C11.2893 11.5391 11.5 11.0304 11.5 10.5V2.5C11.5 1.96957 11.2893 1.46086 10.9142 1.08579C10.5391 0.710714 10.0304 0.5 9.5 0.5ZM2.5 1.5H9.5C9.76522 1.5 10.0196 1.60536 10.2071 1.79289C10.3946 1.98043 10.5 2.23478 10.5 2.5V6.5H1.5V2.5C1.5 2.23478 1.60536 1.98043 1.79289 1.79289C1.98043 1.60536 2.23478 1.5 2.5 1.5ZM9.5 11.5H2.5C2.23478 11.5 1.98043 11.3946 1.79289 11.2071C1.60536 11.0196 1.5 10.7652 1.5 10.5V7.5H10.5V10.5C10.5 10.7652 10.3946 11.0196 10.2071 11.2071C10.0196 11.3946 9.76522 11.5 9.5 11.5ZM4 9.75C4 9.89834 3.95601 10.0433 3.8736 10.1667C3.79119 10.29 3.67406 10.3861 3.53701 10.4429C3.39997 10.4997 3.24917 10.5145 3.10368 10.4856C2.9582 10.4567 2.82456 10.3852 2.71967 10.2803C2.61478 10.1754 2.54335 10.0418 2.51441 9.89632C2.48547 9.75083 2.50032 9.60003 2.55709 9.46299C2.61386 9.32594 2.70999 9.20881 2.83332 9.1264C2.95666 9.04399 3.10166 9 3.25 9C3.44891 9 3.63968 9.07902 3.78033 9.21967C3.92098 9.36032 4 9.55109 4 9.75ZM9.5 9.75C9.5 9.89834 9.45601 10.0433 9.3736 10.1667C9.29119 10.29 9.17406 10.3861 9.03701 10.4429C8.89997 10.4997 8.74917 10.5145 8.60368 10.4856C8.4582 10.4567 8.32456 10.3852 8.21967 10.2803C8.11478 10.1754 8.04335 10.0418 8.01441 9.89632C7.98547 9.75083 8.00033 9.60003 8.05709 9.46299C8.11386 9.32594 8.20999 9.20881 8.33332 9.1264C8.45666 9.04399 8.60166 9 8.75 9C8.94891 9 9.13968 9.07902 9.28033 9.21967C9.42098 9.36032 9.5 9.55109 9.5 9.75Z" fill="#34C759"/></svg>`,
+      WALK: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.50003 5C9.8956 5 10.2823 4.8827 10.6112 4.66294C10.9401 4.44318 11.1964 4.13082 11.3478 3.76537C11.4992 3.39992 11.5388 2.99778 11.4616 2.60982C11.3844 2.22186 11.194 1.86549 10.9142 1.58579C10.6345 1.30608 10.2782 1.1156 9.89021 1.03843C9.50225 0.96126 9.10012 1.00087 8.73467 1.15224C8.36921 1.30362 8.05686 1.55996 7.83709 1.88886C7.61733 2.21776 7.50003 2.60444 7.50003 3C7.50003 3.53043 7.71075 4.03914 8.08582 4.41422C8.46089 4.78929 8.9696 5 9.50003 5ZM9.50003 2C9.69781 2 9.89115 2.05865 10.0556 2.16853C10.2201 2.27841 10.3482 2.43459 10.4239 2.61732C10.4996 2.80004 10.5194 3.00111 10.4808 3.19509C10.4422 3.38907 10.347 3.56726 10.2071 3.70711C10.0673 3.84696 9.8891 3.9422 9.69512 3.98079C9.50114 4.01937 9.30007 3.99957 9.11735 3.92388C8.93462 3.84819 8.77844 3.72002 8.66856 3.55557C8.55868 3.39112 8.50003 3.19778 8.50003 3C8.50003 2.73478 8.60539 2.48043 8.79293 2.29289C8.98046 2.10536 9.23482 2 9.50003 2ZM13.5 9C13.5 9.13261 13.4474 9.25979 13.3536 9.35356C13.2598 9.44732 13.1326 9.5 13 9.5C10.7932 9.5 9.69066 8.38688 8.80503 7.4925C8.63378 7.31938 8.47003 7.155 8.30503 7.0025L7.46566 8.9325L9.79066 10.5931C9.85542 10.6394 9.9082 10.7004 9.94462 10.7712C9.98104 10.842 10 10.9204 10 11V14.5C10 14.6326 9.94735 14.7598 9.85359 14.8536C9.75982 14.9473 9.63264 15 9.50003 15C9.36742 15 9.24025 14.9473 9.14648 14.8536C9.05271 14.7598 9.00003 14.6326 9.00003 14.5V11.2575L7.05816 9.87L4.95878 14.6994C4.91993 14.7887 4.85581 14.8648 4.77431 14.9182C4.69281 14.9716 4.59747 15 4.50003 15C4.43137 15.0002 4.36345 14.9859 4.30066 14.9581C4.17911 14.9053 4.08351 14.8064 4.03488 14.6831C3.98624 14.5598 3.98855 14.4222 4.04128 14.3006L7.42128 6.5275C6.83941 6.42438 6.11378 6.6025 5.25253 7.06375C4.56566 7.44263 3.92458 7.89917 3.34191 8.42438C3.24465 8.51149 3.11717 8.55711 2.98673 8.55148C2.85628 8.54584 2.73321 8.48941 2.64383 8.39423C2.55444 8.29905 2.50584 8.17268 2.5084 8.04213C2.51096 7.91159 2.56448 7.78723 2.65753 7.69563C2.81378 7.54875 6.51316 4.11875 8.82753 6.12813C9.06691 6.33563 9.29503 6.56563 9.51503 6.78875C10.3869 7.66875 11.21 8.5 13 8.5C13.1326 8.5 13.2598 8.55268 13.3536 8.64645C13.4474 8.74022 13.5 8.86739 13.5 9Z" fill="#FF9500"/></svg>`,
+      TRSF: `<svg width="16" height="16" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/></svg>`,
+      WAIT: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF9500"><circle cx="12" cy="12" r="9" stroke-width="2"/><path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/></svg>`,
+      DEFAULT: `<svg width="16" height="16" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.5 0.5C7.5 0.632608 7.44732 0.759785 7.35355 0.853553C7.25979 0.947321 7.13261 1 7 1H5C4.86739 1 4.74021 0.947321 4.64645 0.853553C4.55268 0.759785 4.5 0.632608 4.5 0.5C4.5 0.367392 4.55268 0.240215 4.64645 0.146447C4.74021 0.0526785 4.86739 0 5 0H7C7.13261 0 7.25979 0.0526785 7.35355 0.146447C7.44732 0.240215 7.5 0.367392 7.5 0.5ZM7 11H5C4.86739 11 4.74021 11.0527 4.64645 11.1464C4.55268 11.2402 4.5 11.3674 4.5 11.5C4.5 11.6326 4.55268 11.7598 4.64645 11.8536C4.74021 11.9473 4.86739 12 5 12H7C7.13261 12 7.25979 11.9473 7.35355 11.8536C7.44732 11.7598 7.5 11.6326 7.5 11.5C7.5 11.3674 7.44732 11.2402 7.35355 11.1464C7.25979 11.0527 7.13261 11 7 11ZM11 0H9.5C9.36739 0 9.24021 0.0526785 9.14645 0.146447C9.05268 0.240215 9 0.367392 9 0.5C9 0.632608 9.05268 0.759785 9.14645 0.853553C9.24021 0.947321 9.36739 1 9.5 1H11V2.5C11 2.63261 11.0527 2.75979 11.1464 2.85355C11.2402 2.94732 11.3674 3 11.5 3C11.6326 3 11.7598 2.94732 11.8536 2.85355C11.9473 2.75979 12 2.63261 12 2.5V1C12 0.734784 11.8946 0.48043 11.7071 0.292893C11.5196 0.105357 11.2652 0 11 0ZM11.5 4.5C11.3674 4.5 11.2402 4.55268 11.1464 4.64645C11.0527 4.74021 11 4.86739 11 5V7C11 7.13261 11.0527 7.25979 11.1464 7.35355C11.2402 7.44732 11.3674 7.5 11.5 7.5C11.6326 7.5 11.7598 7.44732 11.8536 7.35355C11.9473 7.25979 12 7.13261 12 7V5C12 4.86739 11.9473 4.74021 11.8536 4.64645C11.7598 4.55268 11.6326 4.5 11.5 4.5ZM11.5 9C11.3674 9 11.2402 9.05268 11.1464 9.14645C11.0527 9.24021 11 9.36739 11 9.5V11H9.5C9.36739 11 9.24021 11.0527 9.14645 11.1464C9.05268 11.2402 9 11.3674 9 11.5C9 11.6326 9.05268 11.7598 9.14645 11.8536C9.24021 11.9473 9.36739 12 9.5 12H11C11.2652 12 11.5196 11.8946 11.7071 11.7071C11.8946 11.5196 12 11.2652 12 11V9.5C12 9.36739 11.9473 9.24021 11.8536 9.14645C11.7598 9.05268 11.6326 9 11.5 9ZM0.5 7.5C0.632608 7.5 0.759785 7.44732 0.853553 7.35355C0.947321 7.25979 1 7.13261 1 7V5C1 4.86739 0.947321 4.74021 0.853553 4.64645C0.759785 4.55268 0.632608 4.5 0.5 4.5C0.367392 4.5 0.240215 4.55268 0.146447 4.64645C0.0526785 4.74021 0 4.86739 0 5V7C0 7.13261 0.0526785 7.25979 0.146447 7.35355C0.240215 7.44732 0.367392 7.5 0.5 7.5ZM2.5 11H1V9.5C1 9.36739 0.947321 9.24021 0.853553 9.14645C0.759785 9.05268 0.632608 9 0.5 9C0.367392 9 0.240215 9.05268 0.146447 9.14645C0.0526785 9.24021 0 9.36739 0 9.5V11C0 11.2652 0.105357 11.5196 0.292893 11.7071C0.48043 11.8946 0.734784 12 1 12H2.5C2.63261 12 2.75979 11.9473 2.85355 11.8536C2.94732 11.7598 3 11.6326 3 11.5C3 11.3674 2.94732 11.2402 2.85355 11.1464C2.75979 11.0527 2.63261 11 2.5 11ZM2.5 0H1C0.734784 0 0.48043 0.105357 0.292893 0.292893C0.105357 0.48043 0 0.734784 0 1V2.5C0 2.63261 0.0526785 2.75979 0.146447 2.85355C0.240215 2.94732 0.367392 3 0.5 3C0.632608 3 0.759785 2.94732 0.853553 2.85355C0.947321 2.75979 1 2.63261 1 2.5V1H2.5C2.63261 1 2.75979 0.947321 2.85355 0.853553C2.94732 0.759785 3 0.632608 3 0.5C3 0.367392 2.94732 0.240215 2.85355 0.146447C2.75979 0.0526785 2.63261 0 2.5 0Z" fill="#AEAEB2"/></svg>`,
     };
-
+    // Use || 'DEFAULT' to handle null or undefined types gracefully
     return icons[type] || icons["DEFAULT"];
   }
 
+  /**
+   * Compares two time strings (HH:MM) and returns the later one.
+   */
   getLaterTime(time1, time2) {
-    const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: 'Europe/Vienna' });
-    const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: 'Europe/Vienna' });
-
-    if (t1 > t2) {
-      return t1.toFormat('HH:mm');
-    } else {
-      return t2.toFormat('HH:mm');
+    try {
+        const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: this.config.timezone });
+        const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: this.config.timezone });
+         if (!t1.isValid || !t2.isValid) {
+            throw new Error(`Invalid time format for comparison: ${time1} or ${time2}`);
+        }
+        return t1 > t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
+    } catch(error) {
+        console.error("Error comparing times (getLaterTime):", error);
+        return time1 || time2 || "--:--"; // Fallback
     }
   }
 
+  /**
+   * Compares two time strings (HH:MM) and returns the earlier one.
+   */
   getEarlierTime(time1, time2) {
-    const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: 'Europe/Vienna' });
-    const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: 'Europe/Vienna' });
-
-    if (t1 < t2) {
-      return t1.toFormat('HH:mm');
-    } else {
-      return t2.toFormat('HH:mm');
+     try {
+        const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: this.config.timezone });
+        const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: this.config.timezone });
+         if (!t1.isValid || !t2.isValid) {
+            throw new Error(`Invalid time format for comparison: ${time1} or ${time2}`);
+        }
+        return t1 < t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
+    } catch(error) {
+        console.error("Error comparing times (getEarlierTime):", error);
+        return time1 || time2 || "--:--"; // Fallback
     }
   }
 
-  calculateDuration(startTime, endTime) {
-    const [startH, startM] = startTime.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
+  /**
+   * Calculates the duration between two local time strings (HH:MM).
+   * Returns an object { text: "...", hours: ..., minutes: ... }.
+   */
+  calculateDurationLocal(startTimeLocal, endTimeLocal) {
+    try {
+        const start = DateTime.fromFormat(startTimeLocal, 'HH:mm', { zone: this.config.timezone });
+        const end = DateTime.fromFormat(endTimeLocal, 'HH:mm', { zone: this.config.timezone });
 
-    const totalMinutes = (endH * 60 + endM) - (startH * 60 + startM);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
+        if (!start.isValid || !end.isValid) {
+            throw new Error(`Invalid local time format for duration: ${startTimeLocal} or ${endTimeLocal}`);
+        }
 
-    if (hours > 0) {
-      return [`${hours}:${String(minutes).padStart(2, '0')}${this.t("durationHours")}`, [hours, minutes]];
+        // Handle potential day rollover if end time is earlier than start time
+        let endAdjusted = end;
+        if (end < start) {
+            endAdjusted = end.plus({ days: 1 });
+        }
+
+        const diff = endAdjusted.diff(start, ['hours', 'minutes']);
+        const totalMinutes = Math.round(diff.as('minutes')); // Total duration in minutes
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+
+        let durationText;
+        if (hours > 0) {
+            durationText = `${hours}:${String(minutes).padStart(2, '0')}${this.t("durationHoursShort")}`;
+        } else {
+            durationText = `${minutes} ${this.t("durationMinutesShort")}`;
+        }
+
+        return { text: durationText, hours: hours, minutes: minutes };
+
+    } catch (error) {
+        console.error("Error calculating local duration:", error);
+        return { text: "--", hours: 0, minutes: 0 }; // Fallback
     }
-    return [`${minutes} ${this.t("durationMinutes")}`, [0, minutes]];
-  }
+}
 
+
+  /**
+   * Formats a duration in minutes into a human-readable string (e.g., "45 min", "1:30 h").
+   */
   getTimeFormatFromMinutes(minutes) {
+    if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
+        return '--';
+    }
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
-      return `${hours}:${String(mins).padStart(2, '0')}${this.t("durationHours")}`;
+      return `${hours}:${String(mins).padStart(2, '0')}${this.t("durationHoursShort")}`;
     }
-    return `${mins} ${this.t("durationMinutes")}`;
+    return `${mins} ${this.t("durationMinutesShort")}`;
   }
 
   addSwipeBehavior(sliderId) {
     const slider = this.elements[sliderId];
+    if (!slider) return; // Guard against missing element
+
     let startX, scrollLeft, isDown = false;
 
-    slider.addEventListener('mousedown', (e) => {
+    const handleStart = (pageX) => {
       isDown = true;
-      startX = e.pageX - slider.offsetLeft;
+      startX = pageX - slider.offsetLeft;
       scrollLeft = slider.scrollLeft;
-    });
+      slider.classList.add('active-swipe'); // Add class for visual feedback
+    };
 
-    slider.addEventListener('mouseleave', () => {
+    const handleEnd = () => {
       isDown = false;
-    });
+      slider.classList.remove('active-swipe');
+    };
 
-    slider.addEventListener('mouseup', () => {
-      isDown = false;
-    });
-
-    slider.addEventListener('mousemove', (e) => {
+    const handleMove = (pageX) => {
       if (!isDown) return;
-      e.preventDefault();
-      const x = e.pageX - slider.offsetLeft;
-      const walk = (x - startX) * 2;
+      const x = pageX - slider.offsetLeft;
+      const walk = (x - startX) * 1.5; // Adjust multiplier for desired scroll speed
       slider.scrollLeft = scrollLeft - walk;
+    };
+
+    // Mouse events
+    slider.addEventListener('mousedown', (e) => handleStart(e.pageX));
+    slider.addEventListener('mouseleave', handleEnd);
+    slider.addEventListener('mouseup', handleEnd);
+    slider.addEventListener('mousemove', (e) => {
+        e.preventDefault(); // Prevent text selection during drag
+        handleMove(e.pageX);
     });
 
     // Touch events for mobile
-    slider.addEventListener('touchstart', (e) => {
-      isDown = true;
-      startX = e.touches[0].pageX - slider.offsetLeft;
-      scrollLeft = slider.scrollLeft;
-    });
-
-    slider.addEventListener('touchend', () => {
-      isDown = false;
-    });
-
+    slider.addEventListener('touchstart', (e) => handleStart(e.touches[0].pageX), { passive: true }); // Use passive for better scroll performance
+    slider.addEventListener('touchend', handleEnd);
+    slider.addEventListener('touchcancel', handleEnd); // Handle cancellation
     slider.addEventListener('touchmove', (e) => {
-      if (!isDown) return;
-      e.preventDefault();
-      const x = e.touches[0].pageX - slider.offsetLeft;
-      const walk = (x - startX) * 2;
-      slider.scrollLeft = scrollLeft - walk;
-    });
+        // e.preventDefault(); // Prevent default scroll only if needed, can interfere with page scroll
+        handleMove(e.touches[0].pageX);
+    }, { passive: false }); // Set passive to false if preventDefault is used
   }
+
 
   debounce(func, wait) {
     let timeout;
@@ -1214,42 +1411,75 @@ export default class DianaWidget {
     this.elements.resultsPage.classList.add("active");
     this.elements.innerContainer.style.transform = "unset";
     this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-secondary) !important";
+    // Ensure error is cleared when navigating to results
+    this.showError(null);
   }
 
   slideToRecommendedConnections() {
-    let topSlider = this.elements["topSlider"];
-    let topActiveBtn = topSlider.querySelector('.active-time');
-    if (topActiveBtn) {
-      topSlider.scrollLeft = topActiveBtn.offsetLeft - (topSlider.offsetWidth / 2) + (topActiveBtn.offsetWidth / 2);
-    }
+    // Use requestAnimationFrame for smoother scrolling after elements are rendered
+    requestAnimationFrame(() => {
+        const topSlider = this.elements["topSlider"];
+        if (topSlider) {
+            const topActiveBtn = topSlider.querySelector('.active-time');
+            if (topActiveBtn) {
+                const scrollPos = topActiveBtn.offsetLeft - (topSlider.offsetWidth / 2) + (topActiveBtn.offsetWidth / 2);
+                topSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            }
+        }
 
-    let bottomSlider = this.elements["bottomSlider"];
-    let bottomActiveBtn = bottomSlider.querySelector('.active-time');
-    if (bottomActiveBtn) {
-      bottomSlider.scrollLeft = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
-    }
+        const bottomSlider = this.elements["bottomSlider"];
+         if (bottomSlider) {
+            const bottomActiveBtn = bottomSlider.querySelector('.active-time');
+            if (bottomActiveBtn) {
+                const scrollPos = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
+                bottomSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
+            }
+        }
+    });
   }
+
 
   navigateToForm() {
     this.elements.resultsPage.classList.remove("active");
     this.elements.formPage.classList.add("active");
     this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-primary) !important";
+     // Clear results state when going back
+    this.state.toConnections = [];
+    this.state.fromConnections = [];
+    this.state.activityTimes = { start: '', end: '', duration: '', warning_duration: false };
+    this.showError(null); // Clear any previous errors
   }
 
   setLoadingState(isLoading) {
     this.state.loading = isLoading;
     this.elements.searchBtn.disabled = isLoading;
-    this.elements.searchBtn.textContent = isLoading ? this.t("loadingStateSearching") : "Search";
-    this.elements.searchBtn.setAttribute('aria-busy', isLoading);
+    this.elements.searchBtn.innerHTML = isLoading
+        ? `<span class="loading-spinner"></span> ${this.t("loadingStateSearching")}`
+        : this.t('search'); // Use translation key
+    this.elements.searchBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+
+     // Also disable origin input during loading
+    this.elements.originInput.disabled = isLoading;
   }
 
   showError(message) {
     this.state.error = message;
     this.elements.errorContainer.textContent = message;
     this.elements.errorContainer.style.display = message ? "block" : "none";
+    // Set ARIA role alert for screen readers
+    this.elements.errorContainer.setAttribute('role', message ? 'alert' : null);
+
 
     if (message) {
-      console.error(`Error: ${message}`);
+      console.error(`Widget Error: ${message}`);
+       // Clear results display areas if an error occurs after search attempt
+       if (this.elements.resultsPage.classList.contains('active')) {
+            this.elements.responseBox.innerHTML = '';
+            this.elements.responseBoxBottom.innerHTML = '';
+            this.elements.activityTimeBox.innerHTML = '';
+            this.elements.topSlider.innerHTML = '';
+            this.elements.bottomSlider.innerHTML = '';
+       }
     }
   }
 }

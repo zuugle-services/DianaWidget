@@ -15,9 +15,9 @@ export default {
     loadingStateSearching: "Searching...",
     noConnections: "No connection details available",
     transfers: "transfers",
-    durationHours: "h",
+    durationHoursShort: "h",
     durationHoursLong: "hours",
-    durationMinutes: "min",
+    durationMinutesShort: "min",
     durationMinutesLong: "minutes",
     activityStart: "Start time",
     activityEnd: "End time",
@@ -33,7 +33,8 @@ export default {
       originRequired: "Please enter an origin location",
       dateRequired: "Please select a date",
       connectionError: "Failed to load connections. Please try again.",
-      suggestionError: "Failed to load suggestions. Please try again."
+      suggestionError: "Failed to load suggestions. Please try again.",
+      activityTimeError: "Failed to calculate activity times. Please try again."
     },
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     shortDays: ["S", "M", "T", "W", "T", "F", "S"],
@@ -65,9 +66,9 @@ export default {
     loadingStateSearching: "Suche...",
     noConnections: "Keine Verbindungsdetails verfügbar",
     transfers: "Umstiege",
-    durationHours: "h",
+    durationHoursShort: "h",
     durationHoursLong: "Stunden",
-    durationMinutes: "Min",
+    durationMinutesShort: "Min",
     durationMinutesLong: "Minuten",
     activityStart: "Startzeit",
     activityEnd: "Endzeit",
@@ -81,7 +82,8 @@ export default {
       originRequired: "Bitte geben Sie einen Startort ein",
       dateRequired: "Bitte wählen Sie ein Datum",
       connectionError: "Verbindungsdaten konnten nicht geladen werden.",
-      suggestionError: "Vorschläge konnten nicht geladen werden."
+      suggestionError: "Vorschläge konnten nicht geladen werden.",
+      activityTimeError: "Aktivitätszeiten konnten nicht geladen werden"
     },
     months: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
     shortDays: ["S", "M", "D", "M", "D", "F", "S"],
