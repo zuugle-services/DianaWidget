@@ -273,6 +273,10 @@ export default class DianaWidget {
               <div class="slider-wrapper slider-wrap-fixed">
                 <div class="slider" id="bottomSlider" role="group" aria-label="${this.t('ariaLabels.bottomSlider')}"></div>
               </div>
+              
+              <div class="widget-footer">
+                Powered by Zuugle Services GmbH.
+              </div>
             </div>
           </div>
         </div>
@@ -903,7 +907,7 @@ export default class DianaWidget {
                   <span>${departureTime}</span> ${this.elements.originInput.value}
                 </div>
                 <div id="eleCont">
-                  <div class="element-crcl"></div>
+                  <div class="element-circle"></div>
                   <span class="element-icon">${icon}</span>
                   <span class="element-duration">${element.vehicle_name || duration}</span>
                 </div>
@@ -917,7 +921,7 @@ export default class DianaWidget {
                 <span>${departureTime}</span> ${element.from_location}
               </div>
               <div id="eleCont">
-                <div class="element-crcl"></div>
+                <div class="element-circle"></div>
                 <span class="element-icon">${icon}</span>
                 <span class="element-duration">${element.vehicle_name || duration}</span>
               </div>
@@ -937,6 +941,7 @@ export default class DianaWidget {
                 <div class="element-time">
                   <span>${arrivalTime}</span> ${this.elements.originInput.value}
                 </div>
+                <div class="element-circle"></div>
               </div>
             `;
           }
