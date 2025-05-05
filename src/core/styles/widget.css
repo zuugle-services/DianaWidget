@@ -377,11 +377,10 @@
 .diana-container .calendar-container {
     display: none;
     position: absolute;
-    top: calc(100% + 5px); /* Position below date input */
+    top: calc(100% + 5px);
     left: 0;
     width: 100%;
-    /* max-width: 450px; */ /* Let it take input width */
-    z-index: 1001; /* Above suggestions */
+    z-index: 1001;
     background: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow-medium);

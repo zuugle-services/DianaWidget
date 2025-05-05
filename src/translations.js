@@ -37,7 +37,7 @@ export default {
       activityTimeError: "Failed to calculate activity times. Please try again."
     },
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-    shortDays: ["S", "M", "T", "W", "T", "F", "S"],
+    shortDays: ["M", "T", "W", "T", "F", "S", "S"],
     ariaLabels: {
       topSlider: "Available time slots",
       bottomSlider: "Available return time slots",
@@ -86,7 +86,7 @@ export default {
       activityTimeError: "Aktivitätszeiten konnten nicht geladen werden"
     },
     months: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
-    shortDays: ["S", "M", "D", "M", "D", "F", "S"],
+    shortDays: ["M", "D", "M", "D", "F", "S", "S"],
     ariaLabels: {
       topSlider: "Verfügbare Zeitfenster",
       bottomSlider: "Verfügbare Rückkehrzeitfenster",

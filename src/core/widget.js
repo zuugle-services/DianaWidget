@@ -275,7 +275,7 @@ export default class DianaWidget {
               </div>
               
               <div class="widget-footer">
-                Powered by Zuugle Services GmbH.
+                Powered by Zuugle Services GmbH
               </div>
             </div>
           </div>
@@ -975,72 +975,93 @@ export default class DianaWidget {
   }
 
 
-  // Calendar methods (no changes needed here)
+    // --- Calendar Methods ---
+
+  /**
+   * Initializes the date picker calendar functionality.
+   * Uses native date input on mobile, custom calendar on desktop.
+   * Includes logic to reposition the custom calendar on scroll and resize.
+   */
   initCalendar() {
-    // Check if mobile device
+    // --- Mobile Handling: Use Native Date Input ---
     if (window.matchMedia("(max-width: 768px)").matches) {
-      // Show native date input for mobile
-      this.elements.activityDate.type = "date";
+      // Show native date input and hide custom display elements
+      this.elements.activityDate.style.display = 'block'; // Ensure native input is visible
+      // Check if previousElementSibling exists before trying to style it
+      if (this.elements.activityDate.previousElementSibling) {
+        this.elements.activityDate.previousElementSibling.style.display = 'none'; // Hide custom display div
+      } else {
+        console.warn("Could not find previous element sibling for native date input to hide.");
+      }
+
+
+      // Add event listener for changes to the native input
       this.elements.activityDate.addEventListener("change", (e) => {
-        // Ensure date is parsed correctly, considering potential timezone issues
+        // Parse date correctly, creating a Date object in UTC to avoid timezone shifts
         const [year, month, day] = e.target.value.split('-').map(Number);
-        // Create date object using UTC values to avoid local timezone interpretation
-        this.state.selectedDate = new Date(Date.UTC(year, month - 1, day));
-        this.updateDateDisplay(this.state.selectedDate);
+        this.state.selectedDate = new Date(Date.UTC(year, month - 1, day)); // Use UTC month (0-indexed)
+        this.updateDateDisplay(this.state.selectedDate); // Update the (hidden) custom display as well
       });
       // Set initial value and display for mobile
-       this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
-       this.updateDateDisplay(this.state.selectedDate);
-      return; // Skip custom calendar initialization
+      this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
+      this.updateDateDisplay(this.state.selectedDate); // Update custom display even if hidden
+      return; // Skip custom calendar setup for mobile
     }
 
+    // --- Desktop Handling: Use Custom Calendar ---
     const dateInputContainer = this.container.querySelector(".date-input-container");
+    if (!dateInputContainer) {
+        console.error("Date input container not found for calendar initialization.");
+        return; // Guard clause
+    }
 
-    // Create calendar container
+    // Create calendar container and append to body
     const calendarContainer = document.createElement("div");
-    calendarContainer.className = "calendar-container";
-    dateInputContainer.appendChild(calendarContainer);
+    calendarContainer.className = "diana-container calendar-container"; // Apply base and specific class
+    // Apply necessary inline styles for initial state and positioning base
+    calendarContainer.style.cssText = `
+        display: none;
+        position: absolute; /* Crucial for JS positioning */
+        z-index: 9999; /* High z-index */
+        background: var(--bg-primary);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px var(--shadow-medium);
+        font-family: "DM Sans", sans-serif !important;
+        height: inherit;
+    `;
+    document.body.appendChild(calendarContainer);
 
-    // Track selected date
-    let selectedDate = this.state.selectedDate;
+    // Track selected date within the calendar instance
+    let selectedDateInCalendar = this.state.selectedDate;
     let currentViewMonth = this.state.selectedDate.getMonth();
     let currentViewYear = this.state.selectedDate.getFullYear();
 
-    // Render calendar function
-    const renderCalendar = () => {
+    /**
+     * Renders the calendar content into the provided container.
+     * @param {HTMLElement} calContainer - The calendar container element.
+     */
+    const renderCalendar = (calContainer) => {
       const daysInMonth = new Date(currentViewYear, currentViewMonth + 1, 0).getDate();
-      // Adjust firstDayOfMonth calculation to handle different locales potentially starting week on Monday
-      let firstDayOfMonth = new Date(currentViewYear, currentViewMonth, 1).getDay();
-      firstDayOfMonth = (firstDayOfMonth === 0) ? 6 : firstDayOfMonth - 1; // Adjust Sunday (0) to 6, shift others back
+      let firstDayOfMonthIndex = new Date(currentViewYear, currentViewMonth, 1).getDay();
+      firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1;
 
-      // Calendar HTML
-      calendarContainer.innerHTML = `
+      calContainer.innerHTML = `
         <div class="calendar-header">
           <p class="calendar-title">${this.t("datePickerTitle")}</p>
         </div>
         <div class="calendar-body">
           <div class="calendar-nav">
             <button class="calendar-nav-btn prev-month" aria-label="${this.t('ariaLabels.previousMonthButton')}">
-              <svg width="6" height="12" viewBox="0 0 6 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5.3 11L1.66938 6.76428C1.2842 6.3149 1.2842 5.65177 1.66939 5.20238L5.3 0.966667" stroke="#656C6E" stroke-width="1.1" stroke-linecap="round"/>
-              </svg>
+              <svg width="6" height="12" viewBox="0 0 6 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.3 11L1.66938 6.76428C1.2842 6.3149 1.2842 5.65177 1.66939 5.20238L5.3 0.966667" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
             </button>
             <div class="calendar-month-year">${this.getMonthName(currentViewMonth)} ${currentViewYear}</div>
-            <button class="calendar-nav-btn next-month" aria-label="Next month">
-              <svg width="6" height="12" viewBox="0 0 6 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0.699999 1L4.33061 5.23572C4.7158 5.6851 4.7158 6.34823 4.33061 6.79762L0.699999 11.0333" stroke="#656C6E" stroke-width="1.1" stroke-linecap="round"/>
-              </svg>
+            <button class="calendar-nav-btn next-month" aria-label="${this.t('ariaLabels.nextMonthButton')}">
+              <svg width="6" height="12" viewBox="0 0 6 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0.699999 1L4.33061 5.23572C4.7158 5.6851 4.7158 6.34823 4.33061 6.79762L0.699999 11.0333" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>
             </button>
           </div>
           <div class="calendar-grid">
-            <div class="calendar-day-header">${this.t("shortDays")[0]}</div>
-            <div class="calendar-day-header">${this.t("shortDays")[1]}</div>
-            <div class="calendar-day-header">${this.t("shortDays")[2]}</div>
-            <div class="calendar-day-header">${this.t("shortDays")[3]}</div>
-            <div class="calendar-day-header">${this.t("shortDays")[4]}</div>
-            <div class="calendar-day-header">${this.t("shortDays")[5]}</div>
-            <div class="calendar-day-header">${this.t("shortDays")[6]}</div>
-            ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, currentViewYear, currentViewMonth)}
+            ${this.t("shortDays").map(day => `<div class="calendar-day-header">${day}</div>`).join('')}
+            ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonthIndex, currentViewYear, currentViewMonth, selectedDateInCalendar)}
           </div>
         </div>
         <div class="calendar-footer">
@@ -1049,83 +1070,137 @@ export default class DianaWidget {
         </div>
       `;
 
-      // Event listeners for calendar navigation
-      calendarContainer.querySelector(".prev-month").addEventListener("click", (e) => {
+      // Add Event Listeners within the Calendar
+      calContainer.querySelector(".prev-month").addEventListener("click", (e) => {
         e.stopPropagation();
         currentViewMonth--;
         if (currentViewMonth < 0) {
           currentViewMonth = 11;
           currentViewYear--;
         }
-        renderCalendar();
+        renderCalendar(calContainer);
       });
 
-      calendarContainer.querySelector(".next-month").addEventListener("click", (e) => {
+      calContainer.querySelector(".next-month").addEventListener("click", (e) => {
         e.stopPropagation();
         currentViewMonth++;
         if (currentViewMonth > 11) {
           currentViewMonth = 0;
           currentViewYear++;
         }
-        renderCalendar();
+        renderCalendar(calContainer);
       });
 
-      // Apply/cancel buttons
-      calendarContainer.querySelector(".calendar-cancel-btn").addEventListener("click", (e) => {
+      calContainer.querySelector(".calendar-cancel-btn").addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
         calendarContainer.classList.remove("active");
+        calendarContainer.style.display = 'none';
       });
 
-      calendarContainer.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
+      calContainer.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
         e.preventDefault();
         e.stopPropagation();
-        this.state.selectedDate = selectedDate;
+        this.state.selectedDate = selectedDateInCalendar;
         this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
         this.updateDateDisplay(this.state.selectedDate);
         calendarContainer.classList.remove("active");
+        calendarContainer.style.display = 'none';
       });
 
-      // Day selection
-      const dayElements = calendarContainer.querySelectorAll(".calendar-day:not(.disabled)");
+      const dayElements = calContainer.querySelectorAll(".calendar-day:not(.empty):not(.disabled)");
       dayElements.forEach(day => {
         day.addEventListener("click", (e) => {
           e.stopPropagation();
-          dayElements.forEach(d => d.classList.remove("selected"));
-          day.classList.add("selected");
-          // Create date object using UTC values to avoid local timezone interpretation
-          selectedDate = new Date(Date.UTC(currentViewYear, currentViewMonth, parseInt(day.textContent)));
+          selectedDateInCalendar = new Date(Date.UTC(currentViewYear, currentViewMonth, parseInt(day.textContent)));
+          renderCalendar(calContainer); // Re-render to show selection
         });
       });
+    }; // End of renderCalendar
+
+    // --- Function to reposition the calendar ---
+    const repositionCalendar = () => {
+      if (!calendarContainer || !dateInputContainer || calendarContainer.style.display !== 'block') {
+        return; // Exit if calendar isn't active or elements are missing
+      }
+      const rect = dateInputContainer.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+      calendarContainer.style.top = `${rect.bottom + scrollTop + 5}px`;
+      calendarContainer.style.left = `${rect.left + scrollLeft}px`;
+      calendarContainer.style.width = `${rect.width}px`;
     };
 
-    // Toggle calendar visibility
+    // --- Toggle calendar visibility and call reposition ---
     dateInputContainer.addEventListener("click", (e) => {
       if (window.matchMedia("(max-width: 768px)").matches) return;
       e.stopPropagation();
-      calendarContainer.classList.toggle("active");
-      if (calendarContainer.classList.contains("active")) {
-        // Ensure the calendar renders with the currently selected date
-        selectedDate = this.state.selectedDate;
+
+      const isActive = calendarContainer.classList.contains("active");
+
+      document.querySelectorAll('.calendar-container.active').forEach(otherCal => {
+          if (otherCal !== calendarContainer) {
+              otherCal.classList.remove('active');
+              otherCal.style.display = 'none';
+          }
+      });
+
+      if (isActive) {
+        calendarContainer.classList.remove("active");
+        calendarContainer.style.display = 'none';
+      } else {
+        selectedDateInCalendar = this.state.selectedDate;
         currentViewMonth = this.state.selectedDate.getMonth();
         currentViewYear = this.state.selectedDate.getFullYear();
-        renderCalendar();
+        renderCalendar(calendarContainer); // Render content first
+
+        calendarContainer.style.display = 'block'; // Make visible
+        calendarContainer.classList.add("active");
+
+        repositionCalendar(); // Position it correctly
       }
     });
 
-    // Close calendar when clicking outside
+    // --- Close calendar when clicking outside ---
     document.addEventListener("click", (e) => {
       if (calendarContainer.classList.contains("active") &&
           !dateInputContainer.contains(e.target) &&
           !calendarContainer.contains(e.target)) {
         calendarContainer.classList.remove("active");
+        calendarContainer.style.display = 'none';
       }
     });
 
-    // Initialize with today's date and render display
+    // --- Throttled repositioning function for listeners ---
+    // Ensure the global throttle function is available here
+    const throttledReposition = typeof throttle === 'function'
+        ? throttle(repositionCalendar, 100) // Use throttle if available
+        : repositionCalendar; // Fallback to non-throttled if not defined
+
+    if (typeof throttle !== 'function') {
+        console.warn("Throttle function not found. Calendar repositioning on scroll/resize might impact performance.");
+    }
+
+
+    // --- Add scroll listener to reposition calendar ---
+    window.addEventListener('scroll', () => {
+      if (calendarContainer.classList.contains('active')) {
+        throttledReposition(); // Call throttled version
+      }
+    }, true); // Use capture phase might be slightly better for reacting sooner
+
+    // --- Add resize listener to reposition calendar ---
+    window.addEventListener('resize', () => {
+      if (calendarContainer.classList.contains('active')) {
+        throttledReposition(); // Call throttled version
+      }
+    });
+
+    // Initialize display for desktop
     this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
     this.updateDateDisplay(this.state.selectedDate);
-  }
+  } // End of initCalendar
 
   formatDatetime(date) {
     // Format date as YYYY-MM-DD for the hidden input
@@ -1135,7 +1210,7 @@ export default class DianaWidget {
     return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
 
-  generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, year, month) {
+  generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, year, month, selectedDateInCalendar) {
     let html = "";
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Normalize today's date for comparison
@@ -1149,7 +1224,7 @@ export default class DianaWidget {
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(Date.UTC(year, month, day)); // Use UTC to create date
       const isToday = date.toDateString() === today.toDateString(); // Compare date strings
-      const isSelected = date.toDateString() === this.state.selectedDate.toDateString();
+      const isSelected = date.toDateString() === selectedDateInCalendar.toDateString();
 
       html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}">${day}</div>`;
     }
@@ -1550,4 +1625,33 @@ export default class DianaWidget {
        }
     }
   }
+}
+
+
+/**
+ * Throttles a function using requestAnimationFrame to synchronize with browser repaints.
+ * Ensures the function is called at most once per frame during frequent events.
+ * @param {Function} func The function to throttle.
+ * @returns {Function} The throttled function.
+ */
+function throttle(func) {
+  let isScheduled = false; // Flag to track if a frame callback is already scheduled
+  let lastArgs = null;     // Store the latest arguments
+  let lastContext = null;  // Store the latest context ('this')
+
+  // Return the throttled function
+  return function(...args) {
+    lastArgs = args;     // Capture the latest arguments
+    lastContext = this;  // Capture the latest context
+
+    // If a frame isn't already scheduled, schedule one
+    if (!isScheduled) {
+      isScheduled = true;
+      requestAnimationFrame(() => {
+        // Execute the function with the last captured arguments and context
+        func.apply(lastContext, lastArgs);
+        isScheduled = false; // Reset the flag after execution
+      });
+    }
+  };
 }
