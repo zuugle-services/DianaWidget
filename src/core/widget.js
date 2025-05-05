@@ -717,13 +717,22 @@ export default class DianaWidget {
         // Determine the actual activity start time (later of connection arrival or earliest config start)
         calculatedActivityStartLocal = this.getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal);
 
+        calculatedActivityEndLocal = this.state.activityTimes.end;
+        if (calculatedActivityStartLocal && calculatedActivityEndLocal) {
+          const durationResult = this.calculateDurationLocal(calculatedActivityStartLocal, calculatedActivityEndLocal);
+          durationText = durationResult.text;
+          hours = durationResult.hours;
+          minutes = durationResult.minutes;
+
+          this.state.activityTimes.warning_duration = (hours * 60 + minutes) < this.config.activityDurationMinutes;
+        } else {
+          durationText = '--';
+          this.state.activityTimes.warning_duration = false;
+        }
+
         // Store the calculated start time (in local format) for later use
         this.state.activityTimes.start = calculatedActivityStartLocal;
-        // Reset end time and duration when 'to' connection changes
-        this.state.activityTimes.end = '';
-        this.state.activityTimes.duration = '';
-        this.state.activityTimes.warning_duration = false; // Reset duration warning
-
+        this.state.activityTimes.duration = durationText;
       } else {
         // Convert latest config end time to the local display timezone
         const latestConfigEndLocal = this.convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityDate);
@@ -1341,6 +1350,11 @@ export default class DianaWidget {
    * Formats a duration in minutes into a human-readable string (e.g., "45 min", "1:30 h").
    */
   getTimeFormatFromMinutes(minutes) {
+    try {
+      minutes = parseInt(minutes);
+    } catch {
+      return '--';
+    }
     if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
         return '--';
     }
