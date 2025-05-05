@@ -32,11 +32,47 @@ export default class DianaWidget {
     // Validate and merge configuration
     this.config = this.validateConfig(config);
 
+    // Determine the initial date based on current time and activity feasibility
+    let initialSelectedDate;
+    try {
+        const now = DateTime.now().setZone(this.config.timezone);
+        const latestEndTimeStr = this.config.activityLatestEndTime;
+        const durationMinutes = parseInt(this.config.activityDurationMinutes, 10);
+
+        // Parse latest end time (HH:MM or HH:MM:SS)
+        const [endHours, endMinutes, endSeconds] = ([...(latestEndTimeStr.split(':')), '0', '0']).slice(0, 3).map(Number);
+
+        // Create a DateTime object for the latest end time today
+        const latestEndTimeToday = now.set({
+            hour: endHours,
+            minute: endMinutes,
+            second: endSeconds || 0,
+            millisecond: 0
+        });
+
+        // Calculate the threshold time: latest end time - duration - 1 hour buffer
+        const thresholdTime = latestEndTimeToday.minus({
+            minutes: durationMinutes,
+            hours: 1
+        });
+
+        // If the current time is past the threshold, set initial date to tomorrow
+        if (now > thresholdTime) {
+            initialSelectedDate = now.plus({ days: 1 }).toJSDate(); // Use tomorrow
+        } else {
+            initialSelectedDate = now.toJSDate(); // Use today
+        }
+
+    } catch (error) {
+        console.error("Error calculating initial date, defaulting to today:", error);
+        initialSelectedDate = new Date(); // Fallback to JS Date object for today
+    }
+
     // Initialize state
     this.state = {
       fromConnections: [],
       toConnections: [],
-      selectedDate: new Date(),
+      selectedDate: initialSelectedDate,
       loading: false,
       error: null,
       suggestions: [],
