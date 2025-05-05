@@ -24,13 +24,34 @@ jobs:
     - name: 🔨 Build production bundle
       run: npm run build
 
-    - name: 📤 Deploy to FTP
+    - name: 🏷️ Extract version from package.json
+      id: get-version
+      run: |
+        VERSION=$(jq -r .version package.json)
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+    - name: 📂 Create versioned bundle copy
+      run: |
+        cp ./dist/DianaWidget.bundle.js "./dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js"
+
+    - name: 📤 Deploy main to FTP
       uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
         username: ${{ secrets.FTP_USERNAME }}
         server: ${{ secrets.FTP_SERVER }}
         port: ${{ secrets.FTP_PORT }}
         local_path: './dist/DianaWidget.bundle.js'
+        remote_path: './'
+        sftp_only: true
+        password: ${{ secrets.FTP_PASSWORD }}
+
+    - name: 📤 Deploy version to FTP
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      with:
+        username: ${{ secrets.FTP_USERNAME }}
+        server: ${{ secrets.FTP_SERVER }}
+        port: ${{ secrets.FTP_PORT }}
+        local_path: './dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js'
         remote_path: './'
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
