@@ -41,7 +41,7 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         port: ${{ secrets.FTP_PORT }}
         local_path: './dist/DianaWidget.bundle.js'
-        remote_path: './'
+        remote_path: './dist/'
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
 
@@ -52,6 +52,6 @@ jobs:
         server: ${{ secrets.FTP_SERVER }}
         port: ${{ secrets.FTP_PORT }}
         local_path: './dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js'
-        remote_path: './'
+        remote_path: './dist/'
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
