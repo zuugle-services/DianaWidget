@@ -75,6 +75,7 @@ export default class DianaWidget {
       selectedDate: initialSelectedDate,
       loading: false,
       error: null,
+      info: null,
       suggestions: [],
       activeTimeFilters: { from: null, to: null },
       recommendedToIndex: 0,
@@ -130,7 +131,17 @@ export default class DianaWidget {
       if (!result) break;
     }
 
-    return result || translations.EN[keyPath] || `[${keyPath}]`;
+    // Fallback to English if key not found in current language, then to keyPath itself
+    if (!result && this.config.language !== 'EN') {
+        let fallbackResult = translations.EN;
+        for (const key of keys) {
+            fallbackResult = fallbackResult?.[key];
+            if (!fallbackResult) break;
+        }
+        result = fallbackResult;
+    }
+
+    return result || `[${keyPath}]`; // Return keyPath if no translation found
   }
 
   injectBaseStyles() {
@@ -175,6 +186,9 @@ export default class DianaWidget {
                 ${this.config.activityName}
               </div>
             </div>
+            
+            <div id="infoContainer" class="info-message" style="display: none;" role="status"></div>
+            <div id="formErrorContainer" class="error-message" style="display: none;" role="alert"></div>
 
             <form class="modal-body" aria-labelledby="formHeading">
               <div style="position:relative" class="form-section">
@@ -238,7 +252,7 @@ export default class DianaWidget {
 
           <div id="resultsPage" class="modal-page">
             <div class="modal-body-result">
-              <div id="errorContainer" class="error-message" style="display: none" role="alert"></div>
+              <div id="resultsErrorContainer" class="error-message" style="display: none" role="alert"></div>
 
               <div class="slider-wrapper etc">
                 <div class="widget-header">
@@ -296,7 +310,9 @@ export default class DianaWidget {
       dateDisplay: this.container.querySelector("#dateDisplay"),
       searchBtn: this.container.querySelector("#searchBtn"),
       backBtn: this.container.querySelector("#backBtn"),
-      errorContainer: this.container.querySelector("#errorContainer"),
+      formErrorContainer: this.container.querySelector("#formErrorContainer"),
+      resultsErrorContainer: this.container.querySelector("#resultsErrorContainer"),
+      infoContainer: this.container.querySelector("#infoContainer"),
       responseBox: this.container.querySelector("#responseBox"),
       responseBoxBottom: this.container.querySelector("#responseBox-bottom"),
       topSlider: this.container.querySelector("#topSlider"),
@@ -328,10 +344,11 @@ export default class DianaWidget {
     this.elements.originInput.addEventListener('input', (e) => {
       this.elements.originInput.removeAttribute("data-lat");
       this.elements.originInput.removeAttribute("data-lon");
+      this.clearMessages(); // Clear info/error on input change
       this.debounce(
-        this.handleAddressInput(e.target.value),
+        () => this.handleAddressInput(e.target.value), // Pass function reference
         300
-      );
+      )();
     });
 
 
@@ -345,7 +362,9 @@ export default class DianaWidget {
     // close suggestions box when clicking outside
     document.addEventListener("click", (e) => {
       if (this.elements.suggestionsContainer.style.display &&
-          !this.elements.suggestionsContainer.contains(e.target)) {
+          !this.elements.suggestionsContainer.contains(e.target) &&
+          !this.elements.originInput.contains(e.target) // Also check if click is on originInput
+        ) {
         this.state.suggestions = [];
         this.renderSuggestions();
       }
@@ -383,7 +402,7 @@ export default class DianaWidget {
       this.state.suggestions = results.features;
       this.renderSuggestions();
     } catch (error) {
-      this.showError(this.t('errors.suggestionError'));
+      this.showError(this.t('errors.suggestionError'), 'form'); // Show suggestion error on form page
     }
   }
 
@@ -394,19 +413,23 @@ export default class DianaWidget {
     this.state.suggestions = [];
     this.renderSuggestions();
     this.elements.originInput.focus();
+    this.clearMessages(); // Clear info/error on selection
   }
 
   async handleSearch() {
+    this.clearMessages(); // Clear previous messages
+
     if (!this.elements.originInput.value) {
-      this.showError(this.t('errors.originRequired'));
+      this.showInfo(this.t('infos.originRequired'));
       return;
     }
 
     if (!this.elements.activityDate.value) {
       if (!this.state.selectedDate) {
-        this.showError(this.t('errors.dateRequired'));
+        this.showError(this.t('infos.dateRequired'), 'form');
         return;
       } else {
+        // If a date was selected via custom calendar but not yet in input field
         this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
       }
     }
@@ -418,26 +441,31 @@ export default class DianaWidget {
       this.slideToRecommendedConnections();
 
     } catch (error) {
-      console.error(error);
-      // Try to parse API error message if available
-      let errorMessage = this.t('errors.connectionError');
-      if (error.message.includes('Failed to fetch connections')) {
+      console.error("Search error:", error);
+      let errorMessage = this.t('errors.connectionError'); // Default error
+      let errorCode = null;
+
+      if (error.response) { // Check if it's a fetch error with a response
         try {
-            // Assuming the error might contain a JSON body from the API
-            const errorBody = await error.response?.json(); // Check if response exists
-            if (errorBody?.error) {
-                errorMessage = errorBody.error; // Use specific error from API if possible
-            } else if (error.message) {
-                errorMessage = error.message; // Fallback to fetch error message
+            const errorBody = await error.response.json();
+            if (errorBody && errorBody.code) {
+                errorCode = errorBody.code;
+                const translationKey = this.getApiErrorTranslationKey(errorCode);
+                errorMessage = this.t(translationKey);
+            } else if (errorBody && errorBody.error) {
+                errorMessage = errorBody.error; // Use error message from API if no code
             }
         } catch (parseError) {
-            // Ignore if parsing fails, stick to generic message
             console.error("Could not parse API error response:", parseError);
+            // Stick to generic if parsing fails, or use statusText if available
+            if (error.response.statusText) {
+                errorMessage = `${this.t('errors.connectionError')} (Status: ${error.response.status} ${error.response.statusText})`;
+            }
         }
       } else if (error.message) {
-          errorMessage = error.message; // Use other error messages directly
+          errorMessage = error.message; // For other types of errors
       }
-      this.showError(errorMessage);
+      this.showError(errorMessage, 'form'); // Show API errors on results page
     } finally {
       this.setLoadingState(false);
     }
@@ -455,7 +483,15 @@ export default class DianaWidget {
     );
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      // Try to parse error from API for suggestions
+      let errorMsg = `API error: ${response.status}`;
+      try {
+          const errorBody = await response.json();
+          if (errorBody && errorBody.error) {
+              errorMsg = errorBody.error;
+          }
+      } catch (e) { /* Ignore parsing error */ }
+      throw new Error(errorMsg);
     }
 
     return response.json();
@@ -547,7 +583,15 @@ export default class DianaWidget {
     // Validate response structure
     if (!result?.connections?.from_activity || !result?.connections?.to_activity) {
       console.error("API response missing expected connection data:", result);
-      throw new Error("Invalid connection data received from API.");
+      // Create an error object that can be caught by handleSearch
+      const apiError = new Error("Invalid connection data received from API.");
+      // Simulate an API-like error structure if needed for consistent handling
+      apiError.response = {
+        json: async () => ({ error: "Invalid connection data received from API.", code: "APP_INVALID_DATA" }),
+        status: 500,
+        statusText: "Invalid Data"
+      };
+      throw apiError;
     }
 
     // Store connection data
@@ -567,15 +611,13 @@ export default class DianaWidget {
         : 0;
 
     // Check if connection arrays are empty AFTER setting indices
-    if (this.state.toConnections.length === 0) {
+    if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
+        console.warn("No connections received (to_activity and from_activity are empty).");
+        // This case will be handled by renderConnectionResults showing "noConnectionsFound"
+    } else if (this.state.toConnections.length === 0) {
         console.warn("No 'to_activity' connections received.");
-        // Optionally throw an error or show a specific message
-        // throw new Error("No connections found TO the activity.");
-    }
-     if (this.state.fromConnections.length === 0) {
+    } else if (this.state.fromConnections.length === 0) {
         console.warn("No 'from_activity' connections received.");
-        // Optionally throw an error or show a specific message
-        // throw new Error("No connections found FROM the activity.");
     }
 
     this.renderConnectionResults();
@@ -603,7 +645,7 @@ export default class DianaWidget {
   }
 
   renderConnectionResults() {
-    this.showError(null);
+    this.showError(null, 'results'); // Clear previous errors on results page
 
     // Clear previous results
     this.elements.topSlider.innerHTML = '';
@@ -614,18 +656,18 @@ export default class DianaWidget {
 
     // Check if connections exist before rendering
     if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
-        this.showError(this.t('errors.noConnectionsFound'));
+        this.showError(this.t('errors.api.noConnectionsFound'), 'form');
         return; // Stop rendering if no connections at all
     }
      if (this.state.toConnections.length === 0) {
-        this.elements.responseBox.innerHTML = this.t('errors.noToConnectionsFound');
+        this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
         // Still render 'from' connections if they exist
     } else {
         this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
     }
 
     if (this.state.fromConnections.length === 0) {
-        this.elements.responseBoxBottom.innerHTML = this.t('errors.noFromConnectionsFound');
+        this.elements.responseBoxBottom.innerHTML = this.t('errors.api.noFromConnectionsFound');
         // Still render 'to' connections if they exist
     } else {
         this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
@@ -857,7 +899,7 @@ export default class DianaWidget {
         const connectionStart = this.convertUTCToLocalTime(conn.connection_start_timestamp);
         const waitDuration = this.calculateDurationLocal(this.state.activityTimes.end, connectionStart);
 
-        if (waitDuration.minutes > 0) {
+        if (waitDuration.minutes > 0 || waitDuration.hours > 0) {
           html += `
             <div class="connection-element waiting-block">
               <div class="element-time">
@@ -867,7 +909,7 @@ export default class DianaWidget {
               <div id="eleCont">
                 <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
                 <span class="element-duration">
-                  ${waitDuration.minutes} ${this.t('durationMinutesShort')}
+                  ${waitDuration.text}
                 </span>
               </div>
             </div>`;
@@ -892,14 +934,16 @@ export default class DianaWidget {
 
         if (index === 0) {
           if (type === "from") {
-            html += `
-              <div class="connection-element">
-                <div id="eleCont">
-                  <span class="element-icon">${this.getTransportIcon('WALK')}</span>
-                  <span class="element-duration">${duration}</span>
+            if (duration !== `0 ${this.t("durationMinutesShort")}`) {
+              html += `
+                <div class="connection-element">
+                  <div id="eleCont">
+                    <span class="element-icon">${this.getTransportIcon('WALK')}</span>
+                    <span class="element-duration">${duration}</span>
+                  </div>
                 </div>
-              </div>
-            `;
+              `;
+            }
           } else {
             html += `
               <div class="connection-element">
@@ -928,8 +972,6 @@ export default class DianaWidget {
             </div>
           `;
         }
-
-
 
         // If this is the last element, also show the final destination (to_location)
         if (index === conn.connection_elements.length - 1) {
@@ -1001,6 +1043,7 @@ export default class DianaWidget {
         const [year, month, day] = e.target.value.split('-').map(Number);
         this.state.selectedDate = new Date(Date.UTC(year, month - 1, day)); // Use UTC month (0-indexed)
         this.updateDateDisplay(this.state.selectedDate); // Update the (hidden) custom display as well
+        this.clearMessages(); // Clear info/error on date change
       });
       // Set initial value and display for mobile
       this.elements.activityDate.value = this.formatDatetime(this.state.selectedDate);
@@ -1106,6 +1149,7 @@ export default class DianaWidget {
         this.updateDateDisplay(this.state.selectedDate);
         calendarContainer.classList.remove("active");
         calendarContainer.style.display = 'none';
+        this.clearMessages(); // Clear info/error on date apply
       });
 
       const dayElements = calContainer.querySelectorAll(".calendar-day:not(.empty):not(.disabled)");
@@ -1151,8 +1195,8 @@ export default class DianaWidget {
         calendarContainer.style.display = 'none';
       } else {
         selectedDateInCalendar = this.state.selectedDate;
-        currentViewMonth = this.state.selectedDate.getMonth();
-        currentViewYear = this.state.selectedDate.getFullYear();
+        currentViewMonth = selectedDateInCalendar.getMonth();
+        currentViewYear = selectedDateInCalendar.getFullYear();
         renderCalendar(calendarContainer); // Render content first
 
         calendarContainer.style.display = 'block'; // Make visible
@@ -1173,10 +1217,7 @@ export default class DianaWidget {
     });
 
     // --- Throttled repositioning function for listeners ---
-    // Ensure the global throttle function is available here
-    const throttledReposition = typeof throttle === 'function'
-        ? throttle(repositionCalendar, 100) // Use throttle if available
-        : repositionCalendar; // Fallback to non-throttled if not defined
+    const throttledReposition = throttle(repositionCalendar, 100);
 
     if (typeof throttle !== 'function') {
         console.warn("Throttle function not found. Calendar repositioning on scroll/resize might impact performance.");
@@ -1401,6 +1442,43 @@ export default class DianaWidget {
     return icons[type] || icons["DEFAULT"];
   }
 
+  getApiErrorTranslationKey(errorCode) {
+    const codeMap = {
+        1001: 'errors.api.queryParamMissing',
+        1002: 'errors.api.invalidLimitParam',
+        1003: 'errors.api.autocompleteFailed',
+        2001: 'errors.api.invalidUserStartCoordinates',
+        2002: 'errors.api.geocodeUserStartFailed',
+        2003: 'errors.api.geocodeUserStartFailedInternal',
+        2004: 'errors.api.unsupportedUserStartType',
+        2005: 'errors.api.invalidActivityStartCoordinates',
+        2006: 'errors.api.geocodeActivityStartFailed',
+        2007: 'errors.api.geocodeActivityStartFailedInternal',
+        2008: 'errors.api.unsupportedActivityStartType',
+        2009: 'errors.api.invalidActivityEndCoordinates',
+        2010: 'errors.api.geocodeActivityEndFailed',
+        2011: 'errors.api.geocodeActivityEndFailedInternal',
+        2012: 'errors.api.unsupportedActivityEndType',
+        2013: 'errors.api.activityNotFound',
+        2014: 'errors.api.noToConnections',
+        2015: 'errors.api.noFromConnections',
+        2016: 'errors.api.dbErrorActivity',
+        2017: 'errors.api.noToConnectionsTimeWindow',
+        2018: 'errors.api.noToConnectionsAfterCurrentTime',
+        2019: 'errors.api.toConnectionsNoScore',
+        2020: 'errors.api.internalErrorRecommendedTo',
+        2021: 'errors.api.errorCalcToConnections',
+        2022: 'errors.api.noReturnConnectionsFlexible',
+        2023: 'errors.api.noReturnConnectionMatchingIncoming',
+        2024: 'errors.api.errorCalcFromConnections',
+        3001: 'errors.api.internalErrorCalcToProvider',
+        3002: 'errors.api.internalErrorCalcFromProvider',
+        3003: 'errors.api.internalErrorCalcFromProviderFallback',
+        'APP_INVALID_DATA': 'errors.api.invalidDataReceived' // Custom app error
+    };
+    return codeMap[errorCode] || 'errors.api.unknown';
+  }
+
   /**
    * Compares two time strings (HH:MM) and returns the later one.
    */
@@ -1431,7 +1509,7 @@ export default class DianaWidget {
         return t1 < t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
     } catch(error) {
         console.error("Error comparing times (getEarlierTime):", error);
-        return time1 || time2 || "--:--"; // Fallback
+        return time1 || time2 || "--:--";
     }
   }
 
@@ -1445,7 +1523,9 @@ export default class DianaWidget {
         const end = DateTime.fromFormat(endTimeLocal, 'HH:mm', { zone: this.config.timezone });
 
         if (!start.isValid || !end.isValid) {
-            throw new Error(`Invalid local time format for duration: ${startTimeLocal} or ${endTimeLocal}`);
+            // If one is invalid, return a placeholder or try to use the valid one if logic allows
+            console.warn(`Invalid local time format for duration: ${startTimeLocal} or ${endTimeLocal}`);
+            return { text: "--", hours: 0, minutes: 0 };
         }
 
         // Handle potential day rollover if end time is earlier than start time
@@ -1543,46 +1623,43 @@ export default class DianaWidget {
   debounce(func, wait) {
     let timeout;
     return (...args) => {
+      const context = this;
       clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
+      timeout = setTimeout(() => func.apply(context, args), wait);
     };
   }
 
   // Navigation methods
   navigateToResults() {
+    this.clearMessages(); // Clear messages before navigating
     this.elements.formPage.classList.remove("active");
     this.elements.resultsPage.classList.add("active");
     this.elements.innerContainer.style.transform = "unset";
     this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-secondary) !important";
-    // Ensure error is cleared when navigating to results
-    this.showError(null);
   }
 
   slideToRecommendedConnections() {
     // Use requestAnimationFrame for smoother scrolling after elements are rendered
     requestAnimationFrame(() => {
         const topSlider = this.elements["topSlider"];
-        if (topSlider) {
+        if (topSlider && topSlider.querySelector('.active-time')) {
             const topActiveBtn = topSlider.querySelector('.active-time');
-            if (topActiveBtn) {
-                const scrollPos = topActiveBtn.offsetLeft - (topSlider.offsetWidth / 2) + (topActiveBtn.offsetWidth / 2);
-                topSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
-            }
+            const scrollPos = topActiveBtn.offsetLeft - (topSlider.offsetWidth / 2) + (topActiveBtn.offsetWidth / 2);
+            topSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
         }
 
         const bottomSlider = this.elements["bottomSlider"];
-         if (bottomSlider) {
+         if (bottomSlider && bottomSlider.querySelector('.active-time')) {
             const bottomActiveBtn = bottomSlider.querySelector('.active-time');
-            if (bottomActiveBtn) {
-                const scrollPos = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
-                bottomSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
-            }
+            const scrollPos = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
+            bottomSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
         }
     });
   }
 
 
   navigateToForm() {
+    this.clearMessages(); // Clear messages before navigating
     this.elements.resultsPage.classList.remove("active");
     this.elements.formPage.classList.add("active");
     this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-primary) !important";
@@ -1590,7 +1667,6 @@ export default class DianaWidget {
     this.state.toConnections = [];
     this.state.fromConnections = [];
     this.state.activityTimes = { start: '', end: '', duration: '', warning_duration: false };
-    this.showError(null); // Clear any previous errors
   }
 
   setLoadingState(isLoading) {
@@ -1605,18 +1681,20 @@ export default class DianaWidget {
     this.elements.originInput.disabled = isLoading;
   }
 
-  showError(message) {
+  showError(message, page = 'form') { // page can be 'form' or 'results'
     this.state.error = message;
-    this.elements.errorContainer.textContent = message;
-    this.elements.errorContainer.style.display = message ? "block" : "none";
-    // Set ARIA role alert for screen readers
-    this.elements.errorContainer.setAttribute('role', message ? 'alert' : null);
+    const errorContainer = page === 'form' ? this.elements.formErrorContainer : this.elements.resultsErrorContainer;
 
+    if (errorContainer) {
+        errorContainer.textContent = message;
+        errorContainer.style.display = message ? "block" : "none";
+        errorContainer.setAttribute('role', message ? 'alert' : null);
+    }
 
     if (message) {
       console.error(`Widget Error: ${message}`);
-       // Clear results display areas if an error occurs after search attempt
-       if (this.elements.resultsPage.classList.contains('active')) {
+       // Clear results display areas if an error occurs and we are on results page or intended for results page
+       if (page === 'results' && this.elements.resultsPage.classList.contains('active')) {
             this.elements.responseBox.innerHTML = '';
             this.elements.responseBoxBottom.innerHTML = '';
             this.elements.activityTimeBox.innerHTML = '';
@@ -1625,6 +1703,24 @@ export default class DianaWidget {
        }
     }
   }
+
+  showInfo(message) {
+    this.state.info = message;
+    if (this.elements.infoContainer) {
+        this.elements.infoContainer.textContent = message;
+        this.elements.infoContainer.style.display = message ? "block" : "none";
+        this.elements.infoContainer.setAttribute('role', message ? 'status' : null);
+    }
+     if (message) {
+      console.info(`Widget Info: ${message}`);
+    }
+  }
+
+  clearMessages() {
+    this.showError(null, 'form');
+    this.showError(null, 'results');
+    this.showInfo(null);
+  }
 }
 
 
@@ -1632,25 +1728,23 @@ export default class DianaWidget {
  * Throttles a function using requestAnimationFrame to synchronize with browser repaints.
  * Ensures the function is called at most once per frame during frequent events.
  * @param {Function} func The function to throttle.
+ * @param {number} delay The delay in ms (not directly used by rAF, but common for throttle)
  * @returns {Function} The throttled function.
  */
-function throttle(func) {
-  let isScheduled = false; // Flag to track if a frame callback is already scheduled
-  let lastArgs = null;     // Store the latest arguments
-  let lastContext = null;  // Store the latest context ('this')
+function throttle(func, delay) {
+  let isScheduled = false;
+  let lastArgs = null;
+  let lastContext = null;
 
-  // Return the throttled function
   return function(...args) {
-    lastArgs = args;     // Capture the latest arguments
-    lastContext = this;  // Capture the latest context
+    lastArgs = args;
+    lastContext = this;
 
-    // If a frame isn't already scheduled, schedule one
     if (!isScheduled) {
       isScheduled = true;
       requestAnimationFrame(() => {
-        // Execute the function with the last captured arguments and context
         func.apply(lastContext, lastArgs);
-        isScheduled = false; // Reset the flag after execution
+        isScheduled = false;
       });
     }
   };

@@ -657,8 +657,8 @@
 .diana-container div#eleCont {
     gap: 4px;
     background-color: #FBF8F8;
-    width: 92px;
-    height: 29px;
+    width: 100px;
+    height: 30px;
     align-items: center;
     border-radius: 8px;
     display: flex;
@@ -695,10 +695,23 @@
     border: 1px solid rgba(220, 53, 69, 0.2);
     text-align: center;
     padding: 10px 15px;
-    margin: 10px 20px; /* Consistent margin */
+    margin: 10px 20px;
     border-radius: 6px;
     font-size: 14px;
 }
+
+.diana-container .info-message {
+    color: #004085; /* A common color for informational text, adjust as needed */
+    background-color: var(--bg-info); /* Using your existing variable for info background */
+    border: 1px solid #b8daff; /* A light blue border, complements --bg-info */
+    text-align: center;
+    padding: 10px 15px;
+    margin: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
 
 /* --- Footer --- */
 /* --- MODIFIED: Make footer sticky at the bottom of modal-content --- */
