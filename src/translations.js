@@ -33,6 +33,8 @@ export default {
     infos: {
       originRequired: "Please enter an origin location.",
       dateRequired: "Please select a date.",
+      fetchingLocation: "Fetching your location...",
+      fetchingAddress: "Looking up address...",
     },
     errors: {
       connectionError: "Failed to load connections. Please try again.",
@@ -68,7 +70,13 @@ export default {
         noToConnectionsFound: "No connections found to the activity. You might check the 'from activity' options below if available.",
         noFromConnectionsFound: "No connections found from the activity. You might check the 'to activity' options above if available.",
         invalidDataReceived: "Received invalid data from the server. Please try again.",
-        unknown: "An unexpected error occurred. Please try again."
+        geolocationNotSupported: "Geolocation is not supported by your browser.",
+        geolocationPermissionDenied: "Permission to access location was denied.",
+        geolocationPositionUnavailable: "Location information is unavailable.",
+        geolocationTimeout: "The request to get user location timed out.",
+        reverseGeocodeNoResults: "Could not find an address for your location.",
+        reverseGeocodeFailed: "Failed to look up address for your location.",
+        unknown: "An unexpected error occurred. Please try again.",
       }
     },
     months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -120,6 +128,8 @@ export default {
     infos: {
       originRequired: "Bitte geben Sie einen Startort ein.",
       dateRequired: "Bitte wählen Sie ein Datum.",
+      fetchingLocation: "Standort wird abgerufen...",
+      fetchingAddress: "Adresse wird gesucht...",
     },
     errors: {
       connectionError: "Verbindungsdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -160,7 +170,13 @@ export default {
         noToConnectionsFound: "Keine Verbindungen zur Aktivität gefunden. Prüfen Sie ggf. die Optionen 'von der Aktivität' unten.",
         noFromConnectionsFound: "Keine Verbindungen von der Aktivität gefunden. Prüfen Sie ggf. die Optionen 'zur Aktivität' oben.",
         invalidDataReceived: "Ungültige Daten vom Server empfangen. Bitte versuchen Sie es erneut.",
-        unknown: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut."
+        geolocationNotSupported: "Geolokalisierung wird von Ihrem Browser nicht unterstützt.",
+        geolocationPermissionDenied: "Zugriff auf den Standort wurde verweigert.",
+        geolocationPositionUnavailable: "Standortinformationen sind nicht verfügbar.",
+        geolocationTimeout: "Die Anfrage zur Standortbestimmung ist abgelaufen.",
+        reverseGeocodeNoResults: "Keine Adresse für Ihren Standort gefunden.",
+        reverseGeocodeFailed: "Die Adresssuche für Ihren Standort ist fehlgeschlagen.",
+        unknown: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
       }
     },
     months: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],

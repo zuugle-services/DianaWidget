@@ -233,13 +233,13 @@ export default class DianaWidget {
                   <input type="text" class="input-field" id="originInput"
                          placeholder="${this.t('enterOrigin')}" value=""
                          aria-labelledby="originLabel">
-                  <svg class="input-icon-right" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg id="currentLocationBtn" class="input-icon-right" style="pointer-events: auto; cursor: pointer;" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="${this.t('useCurrentLocation')}" role="button">
                     <circle cx="12" cy="12" r="7"></circle>
                     <circle cx="12" cy="12" r="3"></circle>
                     <line x1="12" y1="0" x2="12" y2="5"></line>
-                    <line x1="-80" y1="10" x2="5" y2="12"></line>
-                    <line x1="12" y1="20" x2="12" y2="50"></line>
-                    <line x1="50" y1="10" x2="20" y2="12"></line>
+                    <line x1="0" y1="12" x2="5" y2="12"></line> 
+                    <line x1="12" y1="19" x2="12" y2="24"></line>
+                    <line x1="19" y1="12" x2="24" y2="12"></line>
                   </svg>
                 </div>
                 <div id="suggestions" class="suggestions-container" role="listbox"></div>
@@ -350,7 +350,8 @@ export default class DianaWidget {
       responseBoxBottom: this.container.querySelector("#responseBox-bottom"),
       topSlider: this.container.querySelector("#topSlider"),
       bottomSlider: this.container.querySelector("#bottomSlider"),
-      activityTimeBox: this.container.querySelector("#activity-time")
+      activityTimeBox: this.container.querySelector("#activity-time"),
+      currentLocationBtn: this.container.querySelector("#currentLocationBtn"), // Added
     };
   }
 
@@ -366,6 +367,10 @@ export default class DianaWidget {
     // Buttons
     this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
     this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
+    if (this.elements.currentLocationBtn) { // Added check
+        this.elements.currentLocationBtn.setAttribute('aria-label', this.t('useCurrentLocation'));
+    }
+
 
     // Live regions
     this.elements.responseBox.setAttribute('aria-busy', 'false');
@@ -420,6 +425,112 @@ export default class DianaWidget {
         this.handleSuggestionEnter(e);
       }
     });
+
+    // Current Location Button
+    if (this.elements.currentLocationBtn) { // Added
+        this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
+    }
+  }
+
+  // --- Current Location --- Added Section
+  async handleCurrentLocation() {
+    this.clearMessages();
+    if (!navigator.geolocation) {
+      this.showError(this.t('errors.geolocationNotSupported'), 'form');
+      return;
+    }
+
+    // Temporarily disable button and input
+    this.elements.currentLocationBtn.style.pointerEvents = 'none';
+    this.elements.currentLocationBtn.style.opacity = '0.5';
+    this.elements.originInput.disabled = true;
+    this.showInfo(this.t('infos.fetchingLocation'));
+
+
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000, // 10 seconds
+          maximumAge: 0 // Force fresh location
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      await this.fetchReverseGeocode(latitude, longitude);
+
+    } catch (error) {
+      let errorMsg = this.t('errors.geolocationError');
+      if (error.code) {
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMsg = this.t('errors.geolocationPermissionDenied');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMsg = this.t('errors.geolocationPositionUnavailable');
+            break;
+          case error.TIMEOUT:
+            errorMsg = this.t('errors.geolocationTimeout');
+            break;
+        }
+      }
+      this.showError(errorMsg, 'form');
+    } finally {
+      // Re-enable button and input
+      this.elements.currentLocationBtn.style.pointerEvents = 'auto';
+      this.elements.currentLocationBtn.style.opacity = '1';
+      this.elements.originInput.disabled = false;
+      if (this.state.info === this.t('infos.fetchingLocation')) { // Clear only if it's our message
+          this.showInfo(null);
+      }
+    }
+  }
+
+  async fetchReverseGeocode(latitude, longitude) {
+    this.showInfo(this.t('infos.fetchingAddress'));
+    try {
+      const response = await fetch(
+        `${this.config.apiBaseUrl}/reverse-geocode?lat=${latitude}&lon=${longitude}`,
+        {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.config.apiToken}`
+        }
+      });
+
+      if (!response.ok) {
+        let errorMsg = `Reverse geocode API error: ${response.status}`;
+        try {
+            const errorBody = await response.json();
+            if (errorBody && errorBody.error) {
+                errorMsg = errorBody.error;
+            }
+        } catch (e) { /* Ignore parsing error */ }
+        throw new Error(errorMsg);
+      }
+
+      const data = await response.json();
+
+      if (data.features && data.features.length > 0 && data.features[0].diana_properties && data.features[0].diana_properties.display_name) {
+        this.elements.originInput.value = data.features[0].diana_properties.display_name;
+        this.elements.originInput.setAttribute('data-lat', latitude.toString());
+        this.elements.originInput.setAttribute('data-lon', longitude.toString());
+        this.state.suggestions = []; // Clear any old suggestions
+        this.renderSuggestions();
+        this.clearMessages(); // Clear info/error messages
+      } else {
+        throw new Error(this.t('errors.reverseGeocodeNoResults'));
+      }
+
+    } catch (error) {
+      console.error("Reverse geocode error:", error);
+      this.showError(error.message || this.t('errors.reverseGeocodeFailed'), 'form');
+    } finally {
+        if (this.state.info === this.t('infos.fetchingAddress')) { // Clear only if it's our message
+            this.showInfo(null);
+        }
+    }
   }
 
   // Event handlers
