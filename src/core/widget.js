@@ -119,6 +119,39 @@ export default class DianaWidget {
         config.timezone = 'Europe/Vienna';
     }
 
+    // Validate location types
+    const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
+    if (!validLocationTypes.includes(config.activityStartLocationType)) {
+      console.error(`Invalid activityStartLocationType '${config.activityStartLocationType}' provided.`);
+      throw new Error(`Invalid activityStartLocationType '${config.activityStartLocationType}' provided. Valid types are: ${validLocationTypes.join(', ')}`);
+    }
+    if (!validLocationTypes.includes(config.activityEndLocationType)) {
+      console.error(`Invalid activityEndLocationType '${config.activityEndLocationType}' provided.`);
+      throw new Error(`Invalid activityEndLocationType '${config.activityEndLocationType}' provided. Valid types are: ${validLocationTypes.join(', ')}`);
+    }
+
+    // Validate activity duration
+    const duration = parseInt(config.activityDurationMinutes, 10);
+    if (isNaN(duration) || duration <= 0) {
+        console.error(`Invalid activityDurationMinutes '${config.activityDurationMinutes}' provided.`);
+        throw new Error(`Invalid activityDurationMinutes '${config.activityDurationMinutes}' provided. It must be a positive integer.`);
+    }
+
+    // Validate time format (HH:MM or HH:MM:SS)
+    const timeRegex = /^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?$/;
+    const timeFields = [
+      'activityEarliestStartTime',
+      'activityLatestStartTime',
+      'activityEarliestEndTime',
+      'activityLatestEndTime'
+    ];
+    timeFields.forEach(field => {
+      if (!timeRegex.test(config[field])) {
+        console.error(`Invalid time format for '${field}': '${config[field]}'. Expected format: HH:MM or HH:MM:SS`);
+        throw new Error(`Invalid time format for '${field}': '${config[field]}'. Expected format: HH:MM or HH:MM:SS`);
+      }
+    });
+
     return config;
   }
 
