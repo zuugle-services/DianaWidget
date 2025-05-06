@@ -125,9 +125,14 @@
 
     </div>
 
+    <!-- For local version / deployed index.html -->
+    <script src="./dist/DianaWidget.bundle.js"></script>
+    <!-- For live version: -->
+    <!-- <script src="https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"></script> -->
+
     <script>
         // Configuration for the DianaWidget
-        window.dianaActivityConfig = {
+        dianaActivityConfig = {
             activityName: "Marktschellenberger Eishöhle im Untersberg", // Name of the activity or destination
             activityType: "Hiking", // Type of activity (e.g., Skiing, Hiking, MuseumVisit)
             activityStartLocation: "47.72620173410345, 13.042174020936743", // Coordinates for the start of the activity (e.g. cable car valley station)
@@ -148,12 +153,9 @@
             // apiBaseUrl: "http://localhost:8000/", // Optional: For development/testing against a local API
             // apiToken: "test_token"                // Optional: API token if required
         };
-    </script>
 
-    <!-- For local version / deployed index.html -->
-    <script src="./dist/DianaWidget.bundle.js"></script>
-    <!-- For live version: -->
-    <!-- <script src="https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"></script> -->
+        new window.DianaWidget(dianaActivityConfig, "dianaWidgetContainer");
+    </script>
 
     </body>
 </html>

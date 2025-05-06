@@ -29,71 +29,89 @@ export default class DianaWidget {
   };
 
   constructor(config = {}, containerId = "dianaWidgetContainer") {
-    // Validate and merge configuration
-    this.config = this.validateConfig(config);
-    this.container = document.getElementById(containerId);
-
-    // Determine the initial date based on current time and activity feasibility
-    let initialSelectedDate;
     try {
-        const now = DateTime.now().setZone(this.config.timezone);
-        const latestEndTimeStr = this.config.activityLatestEndTime;
-        const durationMinutes = parseInt(this.config.activityDurationMinutes, 10);
+      // Validate and merge configuration
+      this.config = this.validateConfig(config);
+      this.container = document.getElementById(containerId);
 
-        // Parse latest end time (HH:MM or HH:MM:SS)
-        const [endHours, endMinutes, endSeconds] = ([...(latestEndTimeStr.split(':')), '0', '0']).slice(0, 3).map(Number);
+      // Determine the initial date based on current time and activity feasibility
+      let initialSelectedDate;
+      try {
+          const now = DateTime.now().setZone(this.config.timezone);
+          const latestEndTimeStr = this.config.activityLatestEndTime;
+          const durationMinutes = parseInt(this.config.activityDurationMinutes, 10);
 
-        // Create a DateTime object for the latest end time today
-        const latestEndTimeToday = now.set({
-            hour: endHours,
-            minute: endMinutes,
-            second: endSeconds || 0,
-            millisecond: 0
-        });
+          // Parse latest end time (HH:MM or HH:MM:SS)
+          const [endHours, endMinutes, endSeconds] = ([...(latestEndTimeStr.split(':')), '0', '0']).slice(0, 3).map(Number);
 
-        // Calculate the threshold time: latest end time - duration - 1 hour buffer
-        const thresholdTime = latestEndTimeToday.minus({
-            minutes: durationMinutes,
-            hours: 1
-        });
+          // Create a DateTime object for the latest end time today
+          const latestEndTimeToday = now.set({
+              hour: endHours,
+              minute: endMinutes,
+              second: endSeconds || 0,
+              millisecond: 0
+          });
 
-        // If the current time is past the threshold, set initial date to tomorrow
-        if (now > thresholdTime) {
-            initialSelectedDate = now.plus({ days: 1 }).toJSDate(); // Use tomorrow
-        } else {
-            initialSelectedDate = now.toJSDate(); // Use today
-        }
+          // Calculate the threshold time: latest end time - duration - 1 hour buffer
+          const thresholdTime = latestEndTimeToday.minus({
+              minutes: durationMinutes,
+              hours: 1
+          });
 
-    } catch (error) {
-        console.error("Error calculating initial date, defaulting to today:", error);
-        initialSelectedDate = new Date(); // Fallback to JS Date object for today
-    }
+          // If the current time is past the threshold, set initial date to tomorrow
+          if (now > thresholdTime) {
+              initialSelectedDate = now.plus({ days: 1 }).toJSDate(); // Use tomorrow
+          } else {
+              initialSelectedDate = now.toJSDate(); // Use today
+          }
 
-    // Initialize state
-    this.state = {
-      fromConnections: [],
-      toConnections: [],
-      selectedDate: initialSelectedDate,
-      loading: false,
-      error: null,
-      info: null,
-      suggestions: [],
-      activeTimeFilters: { from: null, to: null },
-      recommendedToIndex: 0,
-      recommendedFromIndex: 0,
-      activityTimes: {
-        start: '',
-        end: '',
-        duration: '',
-        warning_duration: false,
+      } catch (error) {
+          console.error("Error calculating initial date, defaulting to today:", error);
+          initialSelectedDate = new Date(); // Fallback to JS Date object for today
       }
-    };
 
-    // Initialize the widget
-    this.injectBaseStyles();
-    this.initDOM();
-    this.setupEventListeners();
-    this.initCalendar();
+      // Initialize state
+      this.state = {
+        fromConnections: [],
+        toConnections: [],
+        selectedDate: initialSelectedDate,
+        loading: false,
+        error: null,
+        info: null,
+        suggestions: [],
+        activeTimeFilters: { from: null, to: null },
+        recommendedToIndex: 0,
+        recommendedFromIndex: 0,
+        activityTimes: {
+          start: '',
+          end: '',
+          duration: '',
+          warning_duration: false,
+        }
+      };
+
+      // Initialize the widget
+      this.injectBaseStyles();
+      this.initDOM();
+      this.setupEventListeners();
+      this.initCalendar();
+    } catch (error) {
+      console.error("Failed to initialize Diana Widget:", error);
+      // Fallback UI if initialization fails
+      const fallback = document.createElement('div');
+      fallback.style.padding = '20px';
+      fallback.style.backgroundColor = '#ffebee';
+      fallback.style.border = '1px solid #ef9a9a';
+      fallback.style.borderRadius = '4px';
+      fallback.style.margin = '10px';
+      fallback.innerHTML = `
+        <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
+        <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
+        <p><small>Error: ${error.message}</small></p>
+      `;
+      document.getElementById(containerId).innerHTML = "";
+      document.getElementById(containerId).appendChild(fallback);
+    }
   }
 
   validateConfig(userConfig) {
