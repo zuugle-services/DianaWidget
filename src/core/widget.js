@@ -275,7 +275,7 @@ export default class DianaWidget {
               </div>
               
               <div class="widget-footer">
-                Powered by Zuugle Services GmbH
+                <a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a>
               </div>
             </div>
           </div>
