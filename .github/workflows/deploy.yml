@@ -34,7 +34,7 @@ jobs:
       run: |
         cp ./dist/DianaWidget.bundle.js "./dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js"
 
-    - name: 📤 Deploy main to FTP
+    - name: 📤 Deploy main to Server
       uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
         username: ${{ secrets.FTP_USERNAME }}
@@ -45,7 +45,7 @@ jobs:
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 📤 Deploy version to FTP
+    - name: 📤 Deploy version to Server
       uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
         username: ${{ secrets.FTP_USERNAME }}
@@ -53,5 +53,16 @@ jobs:
         port: ${{ secrets.FTP_PORT }}
         local_path: './dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js'
         remote_path: './dist/'
+        sftp_only: true
+        password: ${{ secrets.FTP_PASSWORD }}
+
+    - name: 📤 Deploy index.html demo page to Server
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      with:
+        username: ${{ secrets.FTP_USERNAME }}
+        server: ${{ secrets.FTP_SERVER }}
+        port: ${{ secrets.FTP_PORT }}
+        local_path: './index.html'
+        remote_path: './'
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}

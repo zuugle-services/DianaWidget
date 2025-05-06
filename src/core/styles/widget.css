@@ -103,14 +103,14 @@
     line-height: 120%;
     letter-spacing: 0.02em;
     width: 100%;
-    padding: 0 8px;
+    padding: 14px 8px;
 }
 
 .diana-container .widget-header-button {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 8px 24px 8px 24px;
+    padding: 27px 24px 27px 24px;
     gap: 10px;
     height: 40px;
     border-right: 1px solid var(--border-primary);

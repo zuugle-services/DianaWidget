@@ -1,6 +1,6 @@
 # DianaWidget - Activity Transit Planner Widget
 
-![Widget Preview](preview.png)
+![Widget Preview](img/preview.png)
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/zuugle-services/DianaWidget/CI)
 ![Github Release](https://img.shields.io/github/v/release/zuugle-services/DianaWidget)
@@ -10,6 +10,7 @@
 - [Features](#features)
 - [Installation](#installation)
 - [Development](#development)
+- [Demo](#demo)
 - [Configuration](#configuration)
 - [Styling & Theming](#styling--theming)
 - [Architecture](#architecture)
@@ -101,6 +102,16 @@ npm run analyze # Analyze bundle size
 
 ---
 
+## Demo
+
+There is a demo webpage `./index.html` where either the local dev version of the widget or the live version
+can be loaded. Different configuration can be tried out here and it works well for testing and modifying the 
+widget styles.
+
+![Widget Preview](img/demo.png)
+
+---
+
 ## Configuration
 
 The widget is configured via a JavaScript object.
@@ -149,7 +160,7 @@ The widget uses CSS custom properties (variables) for easy theming. You can over
 
 **Theming Variables**
 
-Define these in a CSS rule targeting `.diana-container` or a higher-level parent element:
+Define these in a CSS rule targeting `.diana-container`:
 
 ```css
 /* Base Colors */
@@ -197,6 +208,30 @@ Example Override:
 }
 ```
 
+**Sizing options**
+
+By setting a `max-height` on the `dianaWidgetContainer` you can also set boundaries for the sizing of the widget.
+Setting `max-width` on the container is not recommended, but theoretically possible. The reason is, that the widget starts to look very squished.
+
+Example:
+```html
+<div id="dianaWidgetContainer" style="max-height: 600px;">
+```
+
+You can even set more complex styles to the outermost container, e.g.:
+```css
+#dianaWidgetContainer {
+   background-color: #ffffff;
+   border-radius: 0.75rem; /* Border for container */
+   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* Soft shadow */
+   overflow: hidden; /* To keep the shadow from leaking onto the main page */
+   transition: box-shadow 0.3s ease-in-out; /* Transition animation for shadow */
+}
+#dianaWidgetContainer:hover {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* Hard shadow on hover */
+}
+```
+
 ---
 
 ## Architecture
@@ -225,7 +260,6 @@ Example Override:
    - CSS Modules with hashed class names (via `css-loader`)
    - PostCSS pipeline with:
      - Nesting rules (`postcss-nesting`)
-     - Auto-prefixing (`autoprefixer`)
      - Minification (`cssnano`)
 
 3. **Build System**

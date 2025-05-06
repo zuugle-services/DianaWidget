@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DianaWidget Demo - Ultimate Ski Adventure Planner</title>
+    <title>Marktschellenberger Eishöhle Adventure</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -24,15 +24,6 @@
         #dianaWidgetContainer:hover {
              box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
         }
-        /* Style for placeholder text inside the widget container */
-        #dianaWidgetContainer .loading-placeholder {
-             display: flex;
-             justify-content: center;
-             align-items: center;
-             height: 550px; /* Match min-height */
-             color: #6b7280; /* Gray text */
-             font-style: italic;
-        }
         /* Simple transition for gallery images */
         .gallery-img {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -47,8 +38,8 @@
 
     <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
         <div class="container mx-auto px-4 py-6 md:px-8 md:py-10 text-center">
-            <h1 class="text-3xl md:text-5xl font-bold mb-2 drop-shadow-md">Plan Your Ultimate Ski Adventure!</h1>
-            <p class="text-lg md:text-xl text-blue-100">Effortless public transport planning to Stuhleck am Semmering.</p>
+            <h1 class="text-3xl md:text-5xl font-bold mb-2 drop-shadow-md">Explore the Marktschellenberger Eishöhle!</h1>
+            <p class="text-lg md:text-xl text-blue-100">Plan your journey to the fascinating ice cave in Untersberg.</p>
         </div>
     </header>
 
@@ -58,39 +49,39 @@
 
             <div class="lg:w-3/5 space-y-8">
                 <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Your Day Trip to Stuhleck</h2>
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Your Adventure to the Ice Kingdom</h2>
                     <img
-                        src="https://placehold.co/800x450/a0aec0/ffffff?text=Beautiful+Stuhleck+View"
-                        alt="Scenic view of Stuhleck ski resort"
+                        src="https://placehold.co/800x450/a0aec0/ffffff?text=Marktschellenberger+Eish%C3%B6hle+Entrance"
+                        alt="Entrance or impressive ice formation of Marktschellenberger Eishöhle"
                         class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
                         onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
                     >
                     <p class="mb-4 text-gray-700 leading-relaxed">
-                        Experience the thrill of the slopes at Stuhleck am Semmering, one of Austria's most popular and accessible ski resorts near Vienna. With perfectly groomed pistes catering to all skill levels, from gentle beginner slopes to challenging runs for experts, Stuhleck offers a fantastic winter sports experience. Enjoy the modern lifts, breathtaking panoramic views, and cozy mountain huts serving delicious Austrian specialties.
+                        Embark on an unforgettable journey into the Marktschellenberger Eishöhle, Germany's largest ice cave, nestled within the majestic Untersberg massif. Discover a subterranean world of glittering ice formations, frozen waterfalls, and vast caverns. This natural wonder offers a unique experience for adventurers and nature lovers alike, showcasing the raw beauty sculpted by millennia of ice and rock.
                     </p>
                     <p class="text-gray-700 leading-relaxed">
-                        Forget the hassle of driving and finding parking! Use our integrated travel planner to find convenient train and bus connections directly to the resort. Simply enter your starting location and preferred date to discover the best public transport options for your unforgettable ski day.
+                        Accessing the ice cave is an adventure in itself, typically involving a scenic hike. Our travel planner helps you find the best public transport connections to the starting points of the trails leading to this icy marvel. Prepare for a cool experience, both literally and figuratively!
                     </p>
                 </section>
 
                 <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Resort Highlights</h3>
+                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Cave Highlights</h3>
                     <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
                         <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                            <span>Modern Lifts & Gondolas</span>
+                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                            <span>Spectacular Ice Formations</span>
                         </li>
                         <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                             <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            <span>26 km of Diverse Pistes</span>
+                             <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.0006 1.50098L20.5006 18.001H3.50061L12.0006 1.50098ZM12.0006 4.7312L7.13461 16.001H16.8666L12.0006 4.7312Z M10.0006 19.001C10.0006 18.4487 10.4483 18.001 11.0006 18.001H13.0006C13.5529 18.001 14.0006 18.4487 14.0006 19.001V22.001H10.0006V19.001Z"/></svg>
+                            <span>Germany's Largest Ice Cave</span>
                         </li>
                          <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>Night Skiing Available</span>
+                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            <span>Guided Tours Available</span>
                         </li>
                         <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                            <span>Cozy Mountain Restaurants</span>
+                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0zM9 9a3 3 0 100-6 3 3 0 000 6zm0 0v1.5M15 15a3 3 0 100-6 3 3 0 000 6zm0 0v1.5M12 6.75h.008v.008H12V6.75zm0 10.5h.008v.008H12v-.008zM4.5 12H3m1.5 0H6m10.5 0h1.5m-1.5 0h-1.5M9 4.5V3M15 4.5V3M7.5 7.5S7.65 6 9 6s1.5 1.5 1.5 1.5M15 7.5S14.85 6 13.5 6s-1.5 1.5-1.5 1.5"></path></svg>
+                            <span>Consistently Low Temperatures (around 0°C)</span>
                         </li>
                     </ul>
                 </section>
@@ -98,22 +89,22 @@
                  <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
                     <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear</h3>
                     <ul class="list-disc list-inside space-y-2 text-gray-700">
-                        <li>Warm, waterproof ski jacket and pants</li>
-                        <li>Thermal base layers</li>
-                        <li>Ski gloves or mittens</li>
-                        <li>Helmet and goggles</li>
-                        <li>Sunscreen and lip balm (even on cloudy days!)</li>
-                        <li>Skis/Snowboard, boots, and poles (rentals available)</li>
-                        <li>Backpack for water and snacks</li>
+                        <li>Warm, layered clothing (temperature inside is near freezing)</li>
+                        <li>Waterproof and sturdy hiking boots with good grip</li>
+                        <li>Gloves and a warm hat</li>
+                        <li>Headlamp or flashlight (though tours are usually lit)</li>
+                        <li>Small backpack for water and snacks</li>
+                        <li>Sunscreen and sunglasses for the hike to the cave</li>
+                        <li>Camera to capture the icy beauty!</li>
                     </ul>
                 </section>
 
                 <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
                     <h3 class="text-xl font-semibold mb-4 text-gray-800">Gallery</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <img src="https://placehold.co/300x200/81e6d9/ffffff?text=Slope+View" alt="Ski slope" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
-                        <img src="https://placehold.co/300x200/f6ad55/ffffff?text=Mountain+Hut" alt="Mountain hut" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
-                        <img src="https://placehold.co/300x200/9f7aea/ffffff?text=Chairlift" alt="Chairlift" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                        <img src="https://placehold.co/300x200/81e6d9/ffffff?text=Ice+Formations" alt="Ice formations inside the cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                        <img src="https://placehold.co/300x200/f6ad55/ffffff?text=Untersberg+Trail" alt="Hiking trail in Untersberg" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                        <img src="https://placehold.co/300x200/9f7aea/ffffff?text=Cave+Interior" alt="View inside the ice cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
                     </div>
                 </section>
             </div>
@@ -122,7 +113,7 @@
                 <div class="sticky top-8">
                     <h2 class="text-2xl font-semibold mb-4 text-center lg:text-left text-gray-800">Travel Planner</h2>
                     <div id="dianaWidgetContainer" style="max-height: 600px;">
-                    </div>
+                        </div>
                 </div>
             </div>
 
@@ -135,29 +126,34 @@
     </div>
 
     <script>
+        // Configuration for the DianaWidget
         window.dianaActivityConfig = {
-            activityName: "Hiking in Mountains",
-            activityType: "Hiking",
-            activityStartLocation: "47.71557523759539, 15.8040452544133",
-            activityStartLocationDisplayName: "Raxseilbahn Talstation",
-            activityStartLocationType: "coordinates",
-            activityEndLocation: "47.68219100889535, 15.644807818859727",
-            activityEndLocationDisplayName: "Altenberg/Rax Kapelle",
-            activityEndLocationType: "coordinates",
-            activityEarliestStartTime: "04:30:00",
-            activityLatestStartTime: "14:00:00",
-            activityEarliestEndTime: "05:00:00",
-            activityLatestEndTime: "20:00:00",
-            activityDurationMinutes: "210",
-            activityTimesTZ: "Europe/Vienna", // Defaults to "UTC"
-            activityStartTimeLabel: null, // Can be set to "Checkin Time" or "Start Time", but defaults to "Start Time"
-            activityEndTimeLabel: null, // Can be set to "Checkout Time" or "End Time", but defaults to "End Time"
-            language: "DE",
-            // apiBaseUrl: "http://localhost:8000/",
-            // apiToken: "test_token"
+            activityName: "Marktschellenberger Eishöhle im Untersberg", // Name of the activity or destination
+            activityType: "Hiking", // Type of activity (e.g., Skiing, Hiking, MuseumVisit)
+            activityStartLocation: "47.72620173410345, 13.042174020936743", // Coordinates for the start of the activity (e.g. cable car valley station)
+            activityStartLocationDisplayName: "Untersbergbahn Talstation", // Display name for the start location
+            activityStartLocationType: "coordinates", // Type of start location (can be "address" or "coordinates")
+            activityEndLocation: "47.70487271915757, 13.038710343883247", // Coordinates for the end of the activity (e.g. the ice cave itself)
+            activityEndLocationDisplayName: "Eishöhle, Marktschellenberg", // Display name for the end location
+            activityEndLocationType: "coordinates", // Type of end location
+            activityEarliestStartTime: "08:00:00", // Earliest possible start time for the activity (e.g., first cave tour)
+            activityLatestStartTime: "14:00:00",   // Latest possible start time for the activity (e.g., last cave tour entry)
+            activityEarliestEndTime: "10:00:00",   // Earliest possible end time for the activity
+            activityLatestEndTime: "18:00:00",   // Latest possible end time for the activity
+            activityDurationMinutes: "120",        // Estimated duration of the activity itself (e.g., cave tour duration)
+            activityTimesTZ: "Europe/Berlin", // Timezone for the activity times (Germany uses Europe/Berlin)
+            activityStartTimeLabel: "Beginn", // Label for the start time in the widget
+            activityEndTimeLabel: "Ende",     // Label for the end time in the widget
+            language: "DE",                   // Language for the widget (German)
+            // apiBaseUrl: "http://localhost:8000/", // Optional: For development/testing against a local API
+            // apiToken: "test_token"                // Optional: API token if required
         };
     </script>
-    <script src="dist/DianaWidget.bundle.js"></script>
 
-</body>
+    <!-- For local version / deployed index.html -->
+    <script src="./dist/DianaWidget.bundle.js"></script>
+    <!-- For live version: -->
+    <!-- <script src="https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"></script> -->
+
+    </body>
 </html>
