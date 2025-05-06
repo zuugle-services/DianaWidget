@@ -31,7 +31,7 @@ export default class DianaWidget {
   constructor(config = {}, containerId = "dianaWidgetContainer") {
     // Validate and merge configuration
     this.config = this.validateConfig(config);
-    this.parameterContainerId = containerId;
+    this.container = document.getElementById(containerId);
 
     // Determine the initial date based on current time and activity feasibility
     let initialSelectedDate;
@@ -189,7 +189,6 @@ export default class DianaWidget {
 
   initDOM() {
     // Create main container
-    this.container = document.getElementById(this.parameterContainerId);
     let dianaContainer = document.createElement('div');
     dianaContainer.className = 'diana-container';
     this.container.appendChild(dianaContainer);
