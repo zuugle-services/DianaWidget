@@ -367,7 +367,7 @@ export default class DianaWidget {
     // Buttons
     this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
     this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
-    if (this.elements.currentLocationBtn) { // Added check
+    if (this.elements.currentLocationBtn) {
         this.elements.currentLocationBtn.setAttribute('aria-label', this.t('useCurrentLocation'));
     }
 
@@ -480,7 +480,7 @@ export default class DianaWidget {
       this.elements.currentLocationBtn.style.pointerEvents = 'auto';
       this.elements.currentLocationBtn.style.opacity = '1';
       this.elements.originInput.disabled = false;
-      if (this.state.info === this.t('infos.fetchingLocation')) { // Clear only if it's our message
+      if (this.state.info === this.t('infos.fetchingLocation')) {
           this.showInfo(null);
       }
     }
@@ -501,12 +501,17 @@ export default class DianaWidget {
 
       if (!response.ok) {
         let errorMsg = `Reverse geocode API error: ${response.status}`;
+        let errorCode = null;
         try {
             const errorBody = await response.json();
-            if (errorBody && errorBody.error) {
+            if (errorBody && errorBody.code) {
+                errorCode = errorBody.code;
+                const translationKey = this.getApiErrorTranslationKey(errorCode);
+                errorMsg = this.t(translationKey);
+            } else if (errorBody && errorBody.error) {
                 errorMsg = errorBody.error;
             }
-        } catch (e) { /* Ignore parsing error */ }
+        } catch (e) { /* Ignore parsing error, use default errorMsg */ }
         throw new Error(errorMsg);
       }
 
@@ -546,7 +551,7 @@ export default class DianaWidget {
       this.state.suggestions = results.features;
       this.renderSuggestions();
     } catch (error) {
-      this.showError(this.t('errors.suggestionError'), 'form'); // Show suggestion error on form page
+      this.showError(error.message || this.t('errors.suggestionError'), 'form');
     }
   }
 
@@ -609,7 +614,7 @@ export default class DianaWidget {
       } else if (error.message) {
           errorMessage = error.message; // For other types of errors
       }
-      this.showError(errorMessage, 'form'); // Show API errors on results page
+      this.showError(errorMessage, 'form');
     } finally {
       this.setLoadingState(false);
     }
@@ -627,14 +632,18 @@ export default class DianaWidget {
     );
 
     if (!response.ok) {
-      // Try to parse error from API for suggestions
       let errorMsg = `API error: ${response.status}`;
+      let errorCode = null;
       try {
           const errorBody = await response.json();
-          if (errorBody && errorBody.error) {
+          if (errorBody && errorBody.code) {
+              errorCode = errorBody.code;
+              const translationKey = this.getApiErrorTranslationKey(errorCode);
+              errorMsg = this.t(translationKey);
+          } else if (errorBody && errorBody.error) {
               errorMsg = errorBody.error;
           }
-      } catch (e) { /* Ignore parsing error */ }
+      } catch (e) { /* Ignore parsing error, use default errorMsg */ }
       throw new Error(errorMsg);
     }
 
@@ -718,7 +727,7 @@ export default class DianaWidget {
     // Handle API errors
     if (!response.ok) {
         const error = new Error(`Failed to fetch connections: ${response.status} ${response.statusText}`);
-        error.response = response; // Attach response for potential error body parsing
+        error.response = response;
         throw error;
     }
 
@@ -1120,8 +1129,11 @@ export default class DianaWidget {
         // If this is the last element, also show the final destination (to_location)
         if (index === conn.connection_elements.length - 1) {
           if (type === "to") {
-
-          } else {
+            // For 'to' type, the final arrival is at the activity location
+            // The activity time box already shows this, so we might not need specific handling here
+            // unless we want to show the arrival time at the activity start location *before* the walk.
+          } else { // type === "from"
+            // For 'from' type, this is the arrival at the user's final destination (originInput)
             html += `
               <div class="connection-element">
                 <div class="element-time">
@@ -1136,19 +1148,21 @@ export default class DianaWidget {
 
       if (type === 'to' && this.state.activityTimes.start) {
         const connectionEnd = this.convertUTCToLocalTime(conn.connection_end_timestamp);
-        const waitDuration = this.calculateDurationLocal(this.state.activityTimes.start, connectionEnd);
+        // This should be the duration *from* connection end *to* actual activity start
+        const waitDuration = this.calculateDurationLocal(connectionEnd, this.state.activityTimes.start);
 
-        if (waitDuration.minutes > 0) {
+
+        if (waitDuration.minutes > 0 || waitDuration.hours > 0) {
           html += `
             <div class="connection-element waiting-block">
               <div class="element-time">
-                <span>${this.convertUTCToLocalTime(conn.connection_end_timestamp)}</span> 
+                <span>${connectionEnd}</span> 
                 ${this.t('waiting.beforeActivity')}
               </div>
               <div id="eleCont">
                 <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
                 <span class="element-duration">
-                  ${waitDuration.minutes} ${this.t('durationMinutesShort')}
+                  ${waitDuration.text}
                 </span>
               </div>
             </div>`;
@@ -1618,7 +1632,9 @@ export default class DianaWidget {
         3001: 'errors.api.internalErrorCalcToProvider',
         3002: 'errors.api.internalErrorCalcFromProvider',
         3003: 'errors.api.internalErrorCalcFromProviderFallback',
-        'APP_INVALID_DATA': 'errors.api.invalidDataReceived' // Custom app error
+        4001: 'errors.api.reverseGeocodeParameterMissing',
+        4002: 'errors.api.reverseGeocodeFailed',
+        'APP_INVALID_DATA': 'errors.api.invalidDataReceived'
     };
     return codeMap[errorCode] || 'errors.api.unknown';
   }
