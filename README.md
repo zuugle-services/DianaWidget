@@ -1,5 +1,10 @@
 # DianaWidget - Activity Transit Planner Widget
 
+![Widget Preview](img/preview.png)
+
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/zuugle-services/DianaWidget/CI)
+![Github Release](https://img.shields.io/github/v/release/zuugle-services/DianaWidget)
+
 ## Table of Contents
 
 * [Project Overview](#project-overview)
@@ -170,6 +175,8 @@ npm run analyze # Analyze bundle size
 There is a demo webpage `./index.html` where either the local dev version of the widget or the live version
 can be loaded. Different configuration can be tried out here and it works well for testing and modifying the
 widget styles.
+
+![Demo Page](img/demo.png)
 
 To run the demo with a development server:
 
