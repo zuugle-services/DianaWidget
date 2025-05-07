@@ -84,7 +84,6 @@
     align-items: center;
     padding: 0;
     border-bottom: 1px solid var(--border-primary);
-    gap: 12px;
     width: 100%;
     background: var(--bg-primary);
     position: sticky;
@@ -102,16 +101,16 @@
     letter-spacing: 0.02em;
     width: 100%;
     padding: 14px 8px;
+    border-left: 1px solid var(--border-primary);
 }
 
 .diana-container .widget-header-button {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 27px 24px 27px 24px;
+    padding: 7px 24px 7px 24px;
     gap: 10px;
     height: 40px;
-    border-right: 1px solid var(--border-primary);
 }
 
 .diana-container .back-btn {
@@ -440,6 +439,7 @@
 }
 .diana-container .slider-wrapper.etc { /* Top slider */
     top: 0;
+    padding-top: 0;
 }
 .diana-container .slider-wrapper.slider-wrap-fixed { /* Bottom slider */
     bottom: 24px;
