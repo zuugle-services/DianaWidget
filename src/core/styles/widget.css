@@ -100,8 +100,9 @@
     line-height: 120%;
     letter-spacing: 0.02em;
     width: 100%;
-    padding: 14px 8px;
+    padding: 18px 14px 18px 0;
     border-left: 1px solid var(--border-primary);
+    text-align: center;
 }
 
 .diana-container .widget-header-button {
