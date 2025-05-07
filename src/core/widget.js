@@ -539,7 +539,9 @@ export default class DianaWidget {
             } else if (errorBody && errorBody.error) {
                 errorMsg = errorBody.error;
             }
-        } catch (e) { /* Ignore parsing error, use default errorMsg */ }
+        } catch (e) {
+          /* Ignore parsing error, use default errorMsg */
+        }
         throw new Error(errorMsg);
       }
 
@@ -659,28 +661,31 @@ export default class DianaWidget {
             }
           }
       );
+
+      if (!response.ok) {
+        let errorMsg = `API error: ${response.status}`;
+        let errorCode = null;
+        try {
+            const errorBody = await response.json();
+            if (errorBody && errorBody.code) {
+                errorCode = errorBody.code;
+                const translationKey = this.getApiErrorTranslationKey(errorCode);
+                errorMsg = this.t(translationKey);
+            } else if (errorBody && errorBody.error) {
+                errorMsg = errorBody.error;
+            }
+        } catch (e) {
+          /* Ignore parsing error, use default errorMsg */
+        }
+        throw new Error(errorMsg);
+      }
+
+      return response.json();
+
     } catch (e) {
-      let errorMsg = this.t('errors.suggestionError');
-      throw new Error(errorMsg);
+      console.error("Suggestions error:", e);
+      this.showError(e.message || this.t('errors.suggestionError'), 'form');
     }
-
-    if (!response.ok) {
-      let errorMsg = `API error: ${response.status}`;
-      let errorCode = null;
-      try {
-          const errorBody = await response.json();
-          if (errorBody && errorBody.code) {
-              errorCode = errorBody.code;
-              const translationKey = this.getApiErrorTranslationKey(errorCode);
-              errorMsg = this.t(translationKey);
-          } else if (errorBody && errorBody.error) {
-              errorMsg = errorBody.error;
-          }
-      } catch (e) { /* Ignore parsing error, use default errorMsg */ }
-      throw new Error(errorMsg);
-    }
-
-    return response.json();
   }
 
   async fetchActivityData() {
@@ -1041,22 +1046,21 @@ export default class DianaWidget {
             </div>
 
             <div class="activity-time-row">
+              <span class="activity-time-label">${this.t("activityDuration")}</span>
+              <span class="activity-time-value">${this.state.activityTimes.duration || '--'}</span>
+              ${this.state.activityTimes.warning_duration ? `
+                <div class="activity-time-warning-text">
+                   ${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})
+                </div>
+              ` : ''}
+            </div>
+            
+            <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
               <span class="activity-time-value">${this.state.activityTimes.end || '--:--'}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
             </div>
-
-            <div class="activity-time-row">
-              <span class="activity-time-label">${this.t("activityDuration")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.duration || '--'}</span>
-            </div>
-
-            ${this.state.activityTimes.warning_duration ? `
-              <div class="activity-time-warning-text">
-                 ${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})
-              </div>
-            ` : ''}
           </div>
         </div>
       `;
