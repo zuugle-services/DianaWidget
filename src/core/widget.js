@@ -34,7 +34,15 @@ export default class DianaWidget {
       this.config = this.validateConfig(config);
       this.container = document.getElementById(containerId);
 
-      this.container.style.maxHeight = "790px";
+      // Add default max-height style for containerId, which can be overridden by element styles
+      let style = document.createElement('style');
+      style.innerHTML = `
+          #${containerId} {
+            max-height: 790px;
+          }
+      `;
+      document.body.appendChild(style);
+
 
       // Determine the initial date based on current time and activity feasibility
       let initialSelectedDate;
