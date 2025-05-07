@@ -1110,10 +1110,14 @@ export default class DianaWidget {
       conn.connection_elements.forEach((element, index) => {
         const departureTime = this.convertUTCToLocalTime(element.departure_time);
         const arrivalTime = this.convertUTCToLocalTime(element.arrival_time);
-        const duration = this.calculateElementDuration(
+        let duration = this.calculateElementDuration(
           element.departure_time,
           element.arrival_time
         );
+
+        if (element.type === "TRSF") {
+          duration += ` ${this.t("durationTransferTime")}`;
+        }
 
         let icon;
         if (element.type !== 'JNY') {
