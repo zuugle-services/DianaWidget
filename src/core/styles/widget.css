@@ -1,17 +1,11 @@
 @import url(https://fonts.googleapis.com/css2?family=DM+Sans&display=swap);
 
-#dianaWidgetContainer {
-    max-height: 790px;
-}
-
 .diana-container {
     /* Base Colors */
     --primary-color: #4285f4;
     --secondary-color: #ccc;
     --warning-color: #ffd38c;
-    --error-color: #dc3545;
     --success-color: #28a745;
-
     --icon-input-color: #656C6E;
 
     /* Backgrounds */
@@ -19,8 +13,11 @@
     --bg-secondary: #fafafa;
     --bg-tertiary: #f5f5f5;
     --bg-hover: #f0f0f0;
+    --bg-error: rgba(220, 53, 69, 0.1);
     --bg-info: #dee4f3;
     --bg-transparent: rgba(128,128,128,0.05);
+    --bg-apply-hover: #357ae8;
+    --bg-waiting-block: rgba(255, 149, 0, 0.08);
 
     /* Text Colors */
     --text-primary: #000;
@@ -28,24 +25,27 @@
     --text-tertiary: #666;
     --text-muted: #838383;
     --text-disabled: #999;
+    --text-error: #dc3545;
+    --text-info: #004085;
+    --text-warning: #856404;
 
     /* Borders */
     --border-primary: #e0e0e0;
     --border-secondary: #d3d3d3;
     --border-tertiary: #eaeaea;
+    --border-error: rgba(220, 53, 69, 0.2);
+    --border-info: #b8daff;
 
     /* Shadows */
+    --shadow-verylight: rgba(0,0,0,0.08);
     --shadow-light: rgba(0,0,0,0.1);
     --shadow-medium: rgba(0,0,0,0.15);
     --shadow-dark: rgba(0,0,0,0.2);
-
-    --inherit-var: inherit;
+    --shadow-gray: rgba(255, 255, 255, 0.3);
 
     font-family: "DM Sans", sans-serif !important;
     isolation: isolate;
-    /* Ensure the container itself takes full height of its parent */
     height: 100%;
-    /* Added relative positioning for potential absolute children */
     position: relative;
     max-height: inherit;
 }
@@ -83,15 +83,13 @@
     flex-direction: row;
     align-items: center;
     padding: 0;
-    /* margin-bottom: 12px; */ /* Removed margin for sticky */
     border-bottom: 1px solid var(--border-primary);
     gap: 12px;
     width: 100%;
     background: var(--bg-primary);
-    /* Make header sticky within modal-content scroll */
     position: sticky;
     top: 0;
-    z-index: 10; /* High z-index for header */
+    z-index: 10;
 }
 
 .diana-container .widget-header-heading {
@@ -133,10 +131,9 @@
     display: none; /* Initially hidden */
     justify-content: center;
     align-items: center;
-    background-color: transparent; /* Let parent handle background */
+    background-color: transparent;
     position: relative;
-    position: relative;
-    height: 100%; /* Fill .diana-container */
+    height: 100%;
     width: 100%;
     margin: 0;
     font-family: "DM Sans",sans-serif !important;
@@ -147,27 +144,26 @@
     display: flex !important; /* Show when active */
 }
 
-/* --- MODIFIED: The main scrolling container --- */
+/* --- The main scrolling container --- */
 .diana-container .modal-content {
     background-color: var(--bg-primary);
     border: 0;
     width: 100%;
     margin: 0;
-    height: 100%; /* Fill .modal */
-    max-width: 470px; /* Keep max-width if desired */
+    height: 100%;
+    max-width: 470px;
     overflow-y: auto; /* <<<<< PRIMARY SCROLLBAR HERE >>>>> */
     overflow-x: hidden;
     box-sizing: border-box;
     transition: all .3s ease-in-out;
-    border-radius: 10px; /* Keep border-radius */
-    box-shadow: 0 4px 8px var(--shadow-dark); /* Keep shadow */
-    display: flex; /* Use flex to manage pages */
-    flex-direction: column; /* Stack pages vertically */
-    position: relative; /* Context for sticky/absolute children */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px var(--shadow-dark);
+    display: flex;
+    flex-direction: column;
+    position: relative;
     max-height: inherit;
 }
 
-/* Hide scrollbar visually if desired, but keep functionality */
 .diana-container .modal-content::-webkit-scrollbar {
     /* display: none; */ /* Uncomment to hide */
     width: 6px;
@@ -178,7 +174,7 @@
 }
 .diana-container .modal-content {
    scrollbar-width: none;
-   scrollbar-color: var(--border-secondary) var(--bg-primary); /* Firefox */
+   scrollbar-color: var(--border-secondary) var(--bg-primary);
 }
 
 
@@ -186,10 +182,10 @@
 .diana-container .modal-page {
     display: none; /* Hide inactive pages */
     font-family: "DM Sans",sans-serif !important;
-    flex-grow: 1; /* Allow page to fill space */
-    flex-shrink: 0; /* Prevent shrinking */
-    flex-direction: column; /* Stack content vertically */
-    min-height: 0; /* Important for flex children */
+    flex-grow: 1;
+    flex-shrink: 0;
+    flex-direction: column;
+    min-height: 0;
     max-height: inherit;
 }
 
@@ -203,25 +199,25 @@
     display: flex;
     flex-direction: column;
     font-family: "DM Sans",sans-serif !important;
-    flex-grow: 1; /* Allow body to take available space */
-    padding-bottom: 10px; /* General padding */
+    flex-grow: 1;
+    padding-bottom: 10px;
 }
 
 .diana-container .modal-body {
-    padding: 20px; /* Specific padding for form */
+    padding: 20px;
 }
 
 .diana-container .modal-body-result {
-    padding: 0; /* Results page manages its own padding/margins */
-    position: relative; /* Context for back button etc. */
-    background-color: var(--bg-secondary); /* Background for results area */
+    padding: 0;
+    position: relative;
+    background-color: var(--bg-secondary);
     max-height: inherit;
 }
 
 /* --- Form Specific Styles --- */
 .diana-container .form-section {
     position: relative;
-    margin-bottom: 15px; /* Spacing between form elements */
+    margin-bottom: 15px;
     color: var(--text-muted);
 }
 .diana-container .form-section p {
@@ -256,14 +252,13 @@
     top: 50%;
     transform: translateY(-50%);
     color: var(--icon-input-color);
-    pointer-events: none; /* Prevent icon interaction */
+    pointer-events: none;
 }
 
 .diana-container .input-icon { left: 12px; }
 .diana-container .input-icon-right { right: 12px; }
 
 .diana-container .date-input-container {
-    /* margin-top: 10px; */ /* Handled by form-section margin */
     position: relative;
     cursor: pointer;
 }
@@ -279,15 +274,15 @@
     background-color: var(--bg-primary);
     display: flex;
     align-items: center;
-    position: relative; /* Needed for absolute icons */
+    position: relative;
 }
 
 .diana-container .date-input-display {
     color: var(--text-secondary);
-    font-size: 14px; /* Match input field */
+    font-size: 14px;
     pointer-events: none;
     font-family: "DM Sans",sans-serif !important;
-    flex-grow: 1; /* Take up space */
+    flex-grow: 1;
 }
 
 .diana-container .date-input-display.placeholder {
@@ -321,7 +316,7 @@
     height: 100%;
     cursor: pointer;
     font-family: "DM Sans",sans-serif !important;
-    pointer-events: none; /* Hide on desktop */
+    pointer-events: none;
 }
 
 .diana-container .form-footer {
@@ -353,16 +348,16 @@
     color: var(--bg-primary);
 }
  .diana-container .apply-btn:hover:not(:disabled) {
-    background-color: #357ae8; /* Darker blue on hover */
+    background-color: var(--bg-apply-hover);
 }
 
 .diana-container .loading-spinner {
     display: inline-block;
     width: 1em;
     height: 1em;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid var(--shadow-gray);
     border-radius: 50%;
-    border-top-color: #fff;
+    border-top-color: var(--bg-primary);
     animation: spin 1s ease-in-out infinite;
     margin-right: 0.5em;
     vertical-align: middle;
@@ -401,13 +396,13 @@
 .diana-container .calendar-day:not(.empty):hover { background-color: var(--bg-hover); }
 .diana-container .calendar-day.today { border: 1px solid var(--primary-color); font-weight: bold; }
 .diana-container .calendar-day.selected { background-color: var(--primary-color); color: var(--bg-primary); font-weight: bold; }
-.diana-container .calendar-day.selected:hover { background-color: #357ae8; }
+.diana-container .calendar-day.selected:hover { background-color: var(--bg-apply-hover); }
 .diana-container .calendar-day.disabled { color: var(--secondary-color); cursor: not-allowed; background: none; }
 .diana-container .calendar-footer { display: flex; justify-content: flex-end; padding: 10px; border-top: 1px solid var(--border-tertiary); gap: 10px; }
 .diana-container .calendar-footer-btn { padding: 8px 15px; border: 1px solid var(--border-secondary); border-radius: 4px; cursor: pointer; font-size: 12px; background-color: var(--bg-primary); color: var(--text-secondary); }
 .diana-container .calendar-footer-btn.calendar-apply-btn { background-color: var(--primary-color); color: var(--bg-primary); border-color: var(--primary-color); }
  .diana-container .calendar-footer-btn:hover { background-color: var(--bg-hover); }
- .diana-container .calendar-footer-btn.calendar-apply-btn:hover { background-color: #357ae8; }
+ .diana-container .calendar-footer-btn.calendar-apply-btn:hover { background-color: var(--bg-apply-hover); }
 
 
 /* --- Results Page Specific Styles --- */
@@ -427,7 +422,7 @@
     border-radius: 8px;
     transition: background-color 0.2s ease;
     width: fit-content;
-    margin: 8px 20px; /* Position within the results body */
+    margin: 8px 20px;
 }
 
 .diana-container .widget-response-back-button:hover {
@@ -438,18 +433,18 @@
 .diana-container .slider-wrapper {
     background-color: var(--bg-primary);
     align-items: center;
-    position: sticky; /* Make sliders sticky */
-    z-index: 9; /* Below header, above content */
-    padding: 5px 0; /* Add some padding */
-    border-bottom: 1px solid var(--border-primary); /* Separator */
+    position: sticky;
+    z-index: 9;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border-primary);
 }
 .diana-container .slider-wrapper.etc { /* Top slider */
     top: 0;
 }
 .diana-container .slider-wrapper.slider-wrap-fixed { /* Bottom slider */
-    bottom: 24px; /* Stick above the footer (adjust height if footer changes) */
-    border-top: 1px solid var(--border-primary); /* Add separator */
-    border-bottom: none; /* Remove bottom border */
+    bottom: 24px;
+    border-top: 1px solid var(--border-primary);
+    border-bottom: none;
 }
 
 .diana-container .slider {
@@ -502,25 +497,25 @@
 /* --- Content Boxes (Response, Activity, etc.) --- */
 .diana-container .middle-box {
     background: var(--bg-primary);
-    padding: 12px 15px; /* Adjust padding */
+    padding: 12px 15px;
     border-radius: 8px;
     font-size: 14px;
-    line-height: 1.4; /* Improve readability */
+    line-height: 1.4;
     color: var(--text-secondary);
     min-height: max-content;
     border: 1px solid var(--border-primary);
-    box-shadow: 0 1px 2px var(--shadow-light); /* Softer shadow */
-    margin: 12px 20px; /* Consistent margin */
+    box-shadow: 0 1px 2px var(--shadow-light);
+    margin: 12px 20px;
 }
 .diana-container .middle-box:first-of-type {
-    margin-top: 12px; /* Add margin above first box */
+    margin-top: 12px;
 }
  .diana-container .middle-box:last-of-type {
-    margin-bottom: 12px; /* Add margin below last box */
+    margin-bottom: 12px;
 }
 
 .diana-container #activity-time {
-    background: var(--bg-info); /* Keep distinct background */
+    background: var(--bg-info);
     padding: 12px 15px;
     margin: 12px 20px;
 }
@@ -534,12 +529,12 @@
 .diana-container .activity-time-header {
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
-    font-weight: 500; /* Slightly bolder */
+    font-weight: 500;
     line-height: 120%;
     letter-spacing: 0.02em;
     color: var(--text-primary);
     padding-bottom: 8px;
-    border-bottom: 1px solid rgba(0,0,0,0.08); /* Subtle separator */
+    border-bottom: 1px solid var(--shadow-verylight);
 }
 
 .diana-container .activity-time-meta {
@@ -551,27 +546,26 @@
 .diana-container .activity-time-row {
     display: flex;
     align-items: center;
-    gap: 8px; /* Reduced gap */
-    font-size: 13px; /* Slightly smaller */
+    gap: 8px;
+    font-size: 13px;
     line-height: 120%;
     letter-spacing: 0.02em;
     color: var(--text-tertiary);
 }
 
 .diana-container .activity-time-label {
-    min-width: 70px; /* Adjusted width */
+    min-width: 70px;
     color: var(--text-tertiary);
     font-weight: 500;
 }
 
 .diana-container .activity-time-value {
     color: var(--text-secondary);
-    /* font-weight: 500; */ /* Removed bold here */
 }
 
 .diana-container .activity-time-divider {
     color: var(--text-muted);
-    padding: 0 2px; /* Reduced padding */
+    padding: 0 2px;
 }
 
 .diana-container .activity-time-warning-text {
@@ -579,27 +573,27 @@
     padding: 8px 10px;
     box-shadow: 0 1px 3px var(--shadow-light);
     border-radius: 6px;
-    margin-top: 6px; /* Add margin top */
+    margin-top: 6px;
     font-size: 12px;
-    color: #856404; /* Darker warning text */
+    color: var(--text-warning);
 }
 
 
 /* --- Connection Details Styling --- */
 .diana-container .middle-box .connection-elements {
-    border-left: 3px solid var(--border-tertiary); /* Thinner line */
+    border-left: 3px solid var(--border-tertiary);
     padding-left: 15px;
     margin-left: 7px;
-    position: relative; /* For absolute positioning of circles */
+    position: relative;
 }
 
 .diana-container .middle-box .connection-element {
     margin-bottom: 15px;
     position: relative;
-    padding-left: 25px; /* Space for icon and line */
+    padding-left: 25px;
 }
 .diana-container .middle-box .connection-element:last-child {
-    margin-bottom: 0; /* No margin on last element */
+    margin-bottom: 0;
 }
 
 
@@ -656,7 +650,7 @@
 
 .diana-container div#eleCont {
     gap: 4px;
-    background-color: #FBF8F8;
+    background-color: var(--bg-tertiary);
     width: 100px;
     height: 30px;
     align-items: center;
@@ -668,10 +662,10 @@
 }
 
 .diana-container .waiting-block {
-    background: rgba(255, 149, 0, 0.08); /* Lighter background */
+    background: var(--bg-waiting-block);
     border-radius: 6px;
     margin: 10px 0;
-    padding: 8px 10px 8px 25px; /* Match element padding */
+    padding: 8px 10px 8px 25px;
     position: relative;
 }
 .diana-container .waiting-block .element-time {
@@ -684,15 +678,15 @@
     background: transparent;
 }
 .diana-container .waiting-block .element-icon {
-    top: 8px; /* Adjust vertical position */
+    top: 8px;
 }
 
 
 /* --- Error Message --- */
 .diana-container .error-message {
-    color: var(--error-color);
-    background-color: rgba(220, 53, 69, 0.1);
-    border: 1px solid rgba(220, 53, 69, 0.2);
+    color: var(--text-error);
+    background-color: var(--bg-error);
+    border: 1px solid var(--border-error);
     text-align: center;
     padding: 10px 15px;
     margin: 10px 20px;
@@ -701,9 +695,9 @@
 }
 
 .diana-container .info-message {
-    color: #004085; /* A common color for informational text, adjust as needed */
-    background-color: var(--bg-info); /* Using your existing variable for info background */
-    border: 1px solid #b8daff; /* A light blue border, complements --bg-info */
+    color: var(--text-info);
+    background-color: var(--bg-info);
+    border: 1px solid var(--border-info);
     text-align: center;
     padding: 10px 15px;
     margin: 10px 20px;
@@ -714,7 +708,6 @@
 
 
 /* --- Footer --- */
-/* --- MODIFIED: Make footer sticky at the bottom of modal-content --- */
 .diana-container .widget-footer {
     box-sizing: border-box;
     display: flex;
@@ -726,11 +719,11 @@
     height: 24px;
     border-top: 1px solid var(--border-primary);
     color: var(--text-disabled);
-    font-size: 11px; /* Smaller text */
-    position: sticky; /* Stick to bottom */
-    bottom: 0; /* Align to bottom */
+    font-size: 11px;
+    position: sticky;
+    bottom: 0;
     background-color: var(--bg-primary);
-    z-index: 9; /* Above content, below bottom slider */
+    z-index: 9;
     max-height: inherit;
 }
 
@@ -740,26 +733,25 @@
 @media (max-width: 768px) {
   .diana-container .date-input-container input[type="date"] {
     opacity: 1;
-    position: relative; /* Change from absolute */
+    position: relative;
     height: auto;
-    padding: 12px 15px !important; /* Adjust padding */
+    padding: 12px 15px !important;
     border-radius: 5px;
     border: 1px solid var(--border-primary);
     background-color: var(--bg-primary);
     color: var(--text-secondary);
     font-size: 14px;
-    pointer-events: all; /* Enable interaction */
-    width: 100%; /* Take full width */
+    pointer-events: all;
+    width: 100%;
     box-sizing: border-box;
   }
 
   .diana-container .date-input {
-    display: none !important; /* Hide custom input */
+    display: none !important;
   }
 
   /* Style the native date picker button */
   .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
-    /* filter: invert(0.5); */ /* Optional styling */
     padding: 4px;
     cursor: pointer;
     opacity: 0.6;

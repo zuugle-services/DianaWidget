@@ -34,6 +34,8 @@ export default class DianaWidget {
       this.config = this.validateConfig(config);
       this.container = document.getElementById(containerId);
 
+      this.container.style.maxHeight = "790px";
+
       // Determine the initial date based on current time and activity feasibility
       let initialSelectedDate;
       try {
