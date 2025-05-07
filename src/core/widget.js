@@ -100,6 +100,9 @@ export default class DianaWidget {
         }
       };
 
+      this.loadingTextTimeout1 = null;
+      this.loadingTextTimeout2 = null;
+
       // Initialize the widget
       this.injectBaseStyles();
       this.initDOM();
@@ -596,6 +599,15 @@ export default class DianaWidget {
   }
 
   async handleSearch() {
+    if (this.loadingTextTimeout1) {
+        clearTimeout(this.loadingTextTimeout1);
+        this.loadingTextTimeout1 = null;
+    }
+    if (this.loadingTextTimeout2) {
+        clearTimeout(this.loadingTextTimeout2);
+        this.loadingTextTimeout2 = null;
+    }
+
     this.clearMessages(); // Clear previous messages
 
     if (!this.elements.originInput.value) {
@@ -1873,13 +1885,39 @@ export default class DianaWidget {
   setLoadingState(isLoading) {
     this.state.loading = isLoading;
     this.elements.searchBtn.disabled = isLoading;
-    this.elements.searchBtn.innerHTML = isLoading
-        ? `<span class="loading-spinner"></span> ${this.t("loadingStateSearching")}`
-        : this.t('search'); // Use translation key
     this.elements.searchBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    this.elements.originInput.disabled = isLoading; // Also disable origin input during loading
 
-     // Also disable origin input during loading
-    this.elements.originInput.disabled = isLoading;
+    // Clear any existing timeouts to prevent overlapping text changes
+    if (this.loadingTextTimeout1) {
+        clearTimeout(this.loadingTextTimeout1);
+        this.loadingTextTimeout1 = null;
+    }
+    if (this.loadingTextTimeout2) {
+        clearTimeout(this.loadingTextTimeout2);
+        this.loadingTextTimeout2 = null;
+    }
+
+    if (isLoading) {
+        // Initial text
+        this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateToActivity")}`;
+
+        // First timeout for "Loading from activity connections"
+        this.loadingTextTimeout1 = setTimeout(() => {
+            if (this.state.loading) { // Check if still loading
+                this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateFromActivity")}`;
+
+                // Second timeout for the original loading text
+                this.loadingTextTimeout2 = setTimeout(() => {
+                    if (this.state.loading) { // Check if still loading
+                        this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateSearching")}`;
+                    }
+                }, 600); // 0.6 seconds after "Loading from..."
+            }
+        }, 600); // 0.6 seconds after "Loading to..."
+    } else {
+        this.elements.searchBtn.innerHTML = this.t('search'); // Use translation key
+    }
   }
 
   showError(message, page = 'form') { // page can be 'form' or 'results'
