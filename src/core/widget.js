@@ -650,14 +650,19 @@ export default class DianaWidget {
 
   // Data fetching
   async fetchSuggestions(query) {
-    const response = await fetch(
-      `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}`,
-      {
-        headers: {
-          "Authorization": `Bearer ${this.config.apiToken}`
-        }
-      }
-    );
+    try {
+      const response = await fetch(
+          `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}`,
+          {
+            headers: {
+              "Authorization": `Bearer ${this.config.apiToken}`
+            }
+          }
+      );
+    } catch (e) {
+      let errorMsg = this.t('errors.suggestionError');
+      throw new Error(errorMsg);
+    }
 
     if (!response.ok) {
       let errorMsg = `API error: ${response.status}`;

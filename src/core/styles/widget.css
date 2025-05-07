@@ -652,12 +652,11 @@
 .diana-container div#eleCont {
     gap: 4px;
     background-color: var(--bg-tertiary);
-    width: 100px;
+    width: fit-content;
     height: 30px;
     align-items: center;
     border-radius: 8px;
     display: flex;
-    justify-content: center;
     flex-direction: row;
     padding: 4px 8px;
 }
