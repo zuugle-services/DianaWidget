@@ -30,6 +30,8 @@ export default class DianaWidget {
     userStartLocationCacheTTLMinutes: 15,
     overrideUserStartLocation: null,
     overrideUserStartLocationType: null,
+    displayStartDate: null,
+    displayEndDate: null,
   };
 
   constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -37,6 +39,37 @@ export default class DianaWidget {
       // Validate and merge configuration
       this.config = this.validateConfig(config);
       this.container = document.getElementById(containerId);
+
+      // Feature: Display widget only within a specified date range
+      if (this.config.displayStartDate || this.config.displayEndDate) {
+        const now = DateTime.now().startOf('day');
+        let startDate = null;
+        let endDate = null;
+
+        if (this.config.displayStartDate) {
+          startDate = DateTime.fromISO(this.config.displayStartDate).startOf('day');
+        }
+        if (this.config.displayEndDate) {
+          endDate = DateTime.fromISO(this.config.displayEndDate).startOf('day');
+        }
+
+        let shouldDisplay = true;
+        if (startDate && now < startDate) {
+          shouldDisplay = false;
+        }
+        if (endDate && now > endDate) {
+          shouldDisplay = false;
+        }
+
+        if (!shouldDisplay) {
+          if (this.container) {
+            this.container.innerHTML = '';
+          }
+          console.info(`DianaWidget: Current date is outside the display range (${this.config.displayStartDate || 'N/A'} - ${this.config.displayEndDate || 'N/A'}). Widget will not be displayed.`);
+          return;
+        }
+      }
+
       this.CACHE_KEY_USER_START_LOCATION = containerId+'_userStartLocation';
 
       // Add default max-height style for containerId, which can be overridden by element styles
@@ -117,19 +150,22 @@ export default class DianaWidget {
     } catch (error) {
       console.error("Failed to initialize Diana Widget:", error);
       // Fallback UI if initialization fails
-      const fallback = document.createElement('div');
-      fallback.style.padding = '20px';
-      fallback.style.backgroundColor = '#ffebee';
-      fallback.style.border = '1px solid #ef9a9a';
-      fallback.style.borderRadius = '4px';
-      fallback.style.margin = '10px';
-      fallback.innerHTML = `
-        <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
-        <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
-        <p><small>Error: ${error.message}</small></p>
-      `;
-      document.getElementById(containerId).innerHTML = "";
-      document.getElementById(containerId).appendChild(fallback);
+      const fallbackContainer = document.getElementById(containerId);
+      if (fallbackContainer) {
+        const fallback = document.createElement('div');
+        fallback.style.padding = '20px';
+        fallback.style.backgroundColor = '#ffebee';
+        fallback.style.border = '1px solid #ef9a9a';
+        fallback.style.borderRadius = '4px';
+        fallback.style.margin = '10px';
+        fallback.innerHTML = `
+          <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
+          <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
+          <p><small>Error: ${error.message}</small></p>
+        `;
+        fallbackContainer.innerHTML = "";
+        fallbackContainer.appendChild(fallback);
+      }
     }
   }
 
@@ -218,6 +254,30 @@ export default class DianaWidget {
     } else if (config.overrideUserStartLocationType !== null) {
         console.warn(`overrideUserStartLocationType ('${config.overrideUserStartLocationType}') is set but overrideUserStartLocation is null. This option will be ignored.`);
         config.overrideUserStartLocationType = null;
+    }
+
+    // Validate displayStartDate and displayEndDate if they exist
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/; // YYYY-MM-DD
+    if (config.displayStartDate !== null) {
+        if (typeof config.displayStartDate !== 'string' || !dateRegex.test(config.displayStartDate) || !DateTime.fromISO(config.displayStartDate).isValid) {
+            console.warn(`Invalid displayStartDate '${config.displayStartDate}'. Must be a valid YYYY-MM-DD date string or null. Widget will ignore this value.`);
+            config.displayStartDate = null;
+        }
+    }
+    if (config.displayEndDate !== null) {
+        if (typeof config.displayEndDate !== 'string' || !dateRegex.test(config.displayEndDate) || !DateTime.fromISO(config.displayEndDate).isValid) {
+            console.warn(`Invalid displayEndDate '${config.displayEndDate}'. Must be a valid YYYY-MM-DD date string or null. Widget will ignore this value.`);
+            config.displayEndDate = null;
+        }
+    }
+     if (config.displayStartDate && config.displayEndDate) {
+        const startDate = DateTime.fromISO(config.displayStartDate);
+        const endDate = DateTime.fromISO(config.displayEndDate);
+        if (startDate.isValid && endDate.isValid && startDate > endDate) {
+            console.warn(`displayStartDate ('${config.displayStartDate}') is after displayEndDate ('${config.displayEndDate}'). This may lead to unexpected behavior. Widget will ignore these values.`);
+            config.displayStartDate = null;
+            config.displayEndDate = null;
+        }
     }
 
 
