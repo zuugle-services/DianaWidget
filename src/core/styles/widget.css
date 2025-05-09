@@ -86,9 +86,6 @@
     border-bottom: 1px solid var(--border-primary);
     width: 100%;
     background: var(--bg-primary);
-    position: sticky;
-    top: 0;
-    z-index: 10;
 }
 
 .diana-container .widget-header-heading {
@@ -211,7 +208,7 @@
     padding: 0;
     position: relative;
     background-color: var(--bg-secondary);
-    max-height: inherit;
+    height: fit-content;
 }
 
 /* --- Form Specific Styles --- */
