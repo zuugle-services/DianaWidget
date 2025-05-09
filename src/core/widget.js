@@ -26,6 +26,10 @@ export default class DianaWidget {
     apiBaseUrl: "https://api.zuugle-services.net",
     apiToken: "development-token",
     language: 'EN',
+    cacheUserStartLocation: true,
+    userStartLocationCacheTTLMinutes: 15,
+    overrideUserStartLocation: null,
+    overrideUserStartLocationType: null,
   };
 
   constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -33,6 +37,7 @@ export default class DianaWidget {
       // Validate and merge configuration
       this.config = this.validateConfig(config);
       this.container = document.getElementById(containerId);
+      this.CACHE_KEY_USER_START_LOCATION = containerId+'_userStartLocation';
 
       // Add default max-height style for containerId, which can be overridden by element styles
       let style = document.createElement('style');
@@ -108,6 +113,7 @@ export default class DianaWidget {
       this.initDOM();
       this.setupEventListeners();
       this.initCalendar();
+      this._initializeOriginInputWithOverridesAndCache();
     } catch (error) {
       console.error("Failed to initialize Diana Widget:", error);
       // Fallback UI if initialization fails
@@ -184,6 +190,37 @@ export default class DianaWidget {
       }
     });
 
+    // Validate new cache and override options
+    if (typeof config.cacheUserStartLocation !== 'boolean') {
+        console.warn(`Invalid cacheUserStartLocation '${config.cacheUserStartLocation}', defaulting to ${this.defaultConfig.cacheUserStartLocation}.`);
+        config.cacheUserStartLocation = this.defaultConfig.cacheUserStartLocation;
+    }
+    if (typeof config.userStartLocationCacheTTLMinutes !== 'number' || config.userStartLocationCacheTTLMinutes <= 0) {
+        console.warn(`Invalid userStartLocationCacheTTLMinutes '${config.userStartLocationCacheTTLMinutes}', defaulting to ${this.defaultConfig.userStartLocationCacheTTLMinutes}.`);
+        config.userStartLocationCacheTTLMinutes = this.defaultConfig.userStartLocationCacheTTLMinutes;
+    }
+    if (config.overrideUserStartLocation !== null && typeof config.overrideUserStartLocation !== 'string') {
+        console.error(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
+        throw new Error(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
+    }
+    if (config.overrideUserStartLocation !== null) {
+        if (!config.overrideUserStartLocationType || !validLocationTypes.includes(config.overrideUserStartLocationType)) {
+            console.error(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}' when overrideUserStartLocation is set.`);
+            throw new Error(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}'. Required and must be one of: ${validLocationTypes.join(', ')} if overrideUserStartLocation is set.`);
+        }
+        if (config.overrideUserStartLocationType === 'coordinates' || config.overrideUserStartLocationType === 'coord' || config.overrideUserStartLocationType === 'coords') {
+            const coordsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+            if (!coordsRegex.test(config.overrideUserStartLocation)) {
+                console.error(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
+                throw new Error(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
+            }
+        }
+    } else if (config.overrideUserStartLocationType !== null) {
+        console.warn(`overrideUserStartLocationType ('${config.overrideUserStartLocationType}') is set but overrideUserStartLocation is null. This option will be ignored.`);
+        config.overrideUserStartLocationType = null;
+    }
+
+
     return config;
   }
 
@@ -236,6 +273,78 @@ export default class DianaWidget {
     // Set initial date display
     this.updateDateDisplay(this.state.selectedDate);
   }
+
+  // New method to initialize origin input based on overrides and cache
+  _initializeOriginInputWithOverridesAndCache() {
+    if (!this.elements || !this.elements.originInput) return;
+
+    const originInput = this.elements.originInput;
+
+    // 1. Check for overrideUserStartLocation
+    if (this.config.overrideUserStartLocation) {
+      originInput.value = this.config.overrideUserStartLocation;
+      if (this.config.overrideUserStartLocationType === 'coordinates' || this.config.overrideUserStartLocationType === 'coord' || this.config.overrideUserStartLocationType === 'coords') {
+        const parts = this.config.overrideUserStartLocation.split(',');
+        if (parts.length === 2) {
+          originInput.setAttribute('data-lat', parts[0].trim());
+          originInput.setAttribute('data-lon', parts[1].trim());
+        }
+      }
+      return;
+    }
+
+    // 2. Check for cached location if enabled
+    if (this.config.cacheUserStartLocation) {
+      const cachedLocation = this._getCachedStartLocation();
+      if (cachedLocation) {
+        originInput.value = cachedLocation.value;
+        if (cachedLocation.lat && cachedLocation.lon) {
+          originInput.setAttribute('data-lat', cachedLocation.lat);
+          originInput.setAttribute('data-lon', cachedLocation.lon);
+        }
+      }
+    }
+  }
+
+  // New method to get cached start location
+  _getCachedStartLocation() {
+    try {
+      const cachedItem = localStorage.getItem(this.CACHE_KEY_USER_START_LOCATION);
+      if (!cachedItem) return null;
+
+      const data = JSON.parse(cachedItem);
+      const now = Date.now();
+      const ttlMilliseconds = this.config.userStartLocationCacheTTLMinutes * 60 * 1000;
+
+      if (now < data.timestamp + ttlMilliseconds) {
+        return data; // Cache is valid
+      } else {
+        localStorage.removeItem(this.CACHE_KEY_USER_START_LOCATION); // Cache expired
+        return null;
+      }
+    } catch (error) {
+      console.error("Error retrieving cached start location:", error);
+      return null;
+    }
+  }
+
+  // New method to set cached start location
+  _setCachedStartLocation(value, lat, lon) {
+    if (!this.config.cacheUserStartLocation) return;
+
+    try {
+      const locationData = {
+        value: value,
+        lat: lat ? lat.toString() : null,
+        lon: lon ? lon.toString() : null,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(this.CACHE_KEY_USER_START_LOCATION, JSON.stringify(locationData));
+    } catch (error) {
+      console.error("Error saving start location to cache:", error);
+    }
+  }
+
 
   getModalHTML() {
     return `
@@ -551,12 +660,14 @@ export default class DianaWidget {
       const data = await response.json();
 
       if (data.features && data.features.length > 0 && data.features[0].diana_properties && data.features[0].diana_properties.display_name) {
-        this.elements.originInput.value = data.features[0].diana_properties.display_name;
+        const displayName = data.features[0].diana_properties.display_name;
+        this.elements.originInput.value = displayName;
         this.elements.originInput.setAttribute('data-lat', latitude.toString());
         this.elements.originInput.setAttribute('data-lon', longitude.toString());
         this.state.suggestions = []; // Clear any old suggestions
         this.renderSuggestions();
         this.clearMessages(); // Clear info/error messages
+        this._setCachedStartLocation(displayName, latitude, longitude); // New: Cache this location
       } else {
         throw new Error(this.t('errors.reverseGeocodeNoResults'));
       }
@@ -596,6 +707,7 @@ export default class DianaWidget {
     this.renderSuggestions();
     this.elements.originInput.focus();
     this.clearMessages(); // Clear info/error on selection
+    this._setCachedStartLocation(value, lat, lon); // New: Cache this location
   }
 
   async handleSearch() {
