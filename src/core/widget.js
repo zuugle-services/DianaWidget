@@ -1322,14 +1322,11 @@ export default class DianaWidget {
       conn.connection_elements.forEach((element, index) => {
         const departureTime = this.convertUTCToLocalTime(element.departure_time);
         const arrivalTime = this.convertUTCToLocalTime(element.arrival_time);
-        let duration = this.calculateElementDuration(
+        const duration = this.calculateElementDuration(
           element.departure_time,
           element.arrival_time
         );
-
-        if (element.type === "TRSF") {
-          duration += ` ${this.t("durationTransferTime")}`;
-        }
+        let durationString = this.getDurationString(index, type, element, duration);
 
         let icon;
         if (element.type !== 'JNY') {
@@ -1345,7 +1342,7 @@ export default class DianaWidget {
                 <div class="connection-element">
                   <div id="eleCont">
                     <span class="element-icon">${this.getTransportIcon('WALK')}</span>
-                    <span class="element-duration">${duration}</span>
+                    <span class="element-duration">${durationString}</span>
                   </div>
                 </div>
               `;
@@ -1359,7 +1356,7 @@ export default class DianaWidget {
                 <div id="eleCont">
                   <div class="element-circle"></div>
                   <span class="element-icon">${icon}</span>
-                  <span class="element-duration">${element.vehicle_name || duration}</span>
+                  <span class="element-duration">${durationString}</span>
                 </div>
               </div>
             `;
@@ -1373,7 +1370,7 @@ export default class DianaWidget {
               <div id="eleCont">
                 <div class="element-circle"></div>
                 <span class="element-icon">${icon}</span>
-                <span class="element-duration">${element.vehicle_name || duration}</span>
+                <span class="element-duration">${durationString}</span>
               </div>
             </div>
           `;
@@ -1428,7 +1425,32 @@ export default class DianaWidget {
   }
 
 
-    // --- Calendar Methods ---
+  getDurationString(index, type, element, duration) {
+    let durationString = "";
+
+    if (element.vehicle_name && element.type === "JNY") {
+      let n_intermediate_stops = element.n_intermediate_stops + 1 || 0;
+      const stopString = n_intermediate_stops !== 1 ? `, ${n_intermediate_stops} ${this.t("stopPl")})` : `, ${n_intermediate_stops} ${this.t("stopSg")})`;
+      durationString = `${element.vehicle_name} -> ${element.direction} (${duration}`;
+      if (n_intermediate_stops > 0) {
+          durationString += ` ${stopString}`;
+      } else {
+        durationString += `)`;
+      }
+      return durationString;
+    } else {
+      durationString = `${duration}`;
+    }
+    
+    if (element.type === "TRSF") {
+      durationString += ` ${this.t("durationTransferTime")}`;
+    }
+
+    return durationString;
+  }
+  
+
+  // --- Calendar Methods ---
 
   /**
    * Initializes the date picker calendar functionality.
