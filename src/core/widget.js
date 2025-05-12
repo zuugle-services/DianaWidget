@@ -32,6 +32,8 @@ export default class DianaWidget {
     overrideUserStartLocationType: null,
     displayStartDate: null,
     displayEndDate: null,
+    destinationInputName: null,
+    userStartLocationDefault: null,
   };
 
   constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -430,7 +432,7 @@ export default class DianaWidget {
                     <circle cx="12" cy="12" r="10"></circle>
                   </svg>
                   <input type="text" class="input-field" id="originInput"
-                         placeholder="${this.t('enterOrigin')}" value=""
+                         placeholder="${this.t('enterOrigin')}" value="${this.config.userStartLocationDefault || ''}"
                          aria-labelledby="originLabel">
                   <svg id="currentLocationBtn" class="input-icon-right" style="pointer-events: auto; cursor: pointer;" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="${this.t('useCurrentLocation')}" role="button">
                     <circle cx="12" cy="12" r="7"></circle>
@@ -452,7 +454,7 @@ export default class DianaWidget {
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
                   <input type="text" class="input-field disabled" id="destinationInput"
-                         placeholder="${this.t('destination')}" value="${this.config.activityName}" readonly
+                         placeholder="${this.t('destination')}" value="${this.config.destinationInputName || this.config.activityName}" readonly
                          aria-labelledby="destinationLabel">
                 </div>
               </div>
