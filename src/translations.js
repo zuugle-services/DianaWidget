@@ -131,7 +131,7 @@ export default {
     stopPl: "Halte",
     durationHoursShort: "h",
     durationHoursLong: "Stunden",
-    durationMinutesShort: "Min.",
+    durationMinutesShort: "min",
     durationMinutesLong: "Minuten",
     durationTransferTime: "Umsteigezeit",
     activityStart: "Beginn",
