@@ -32,8 +32,7 @@ export default class DianaWidget {
     overrideUserStartLocationType: null,
     displayStartDate: null,
     displayEndDate: null,
-    destinationInputName: null,
-    userStartLocationDefault: null,
+    destinationInputName: null
   };
 
   constructor(config = {}, containerId = "dianaWidgetContainer") {
