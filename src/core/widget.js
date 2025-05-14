@@ -1053,6 +1053,20 @@ export default class DianaWidget {
 
 
     // Set initial active filters using recommended indices IF connections exist
+    for (let i = 0; i < this.state.toConnections.length; i++) {
+      if (this.state.toConnections[i].connection_id === this.state.recommendedToIndex) {
+        this.state.recommendedToIndex = i;
+        break;
+      }
+    }
+
+    for (let i = 0; i < this.state.fromConnections.length; i++) {
+      if (this.state.fromConnections[i].connection_id === this.state.recommendedFromIndex) {
+        this.state.recommendedFromIndex = i;
+        break;
+      }
+    }
+
     if (this.state.toConnections.length > 0 && this.state.recommendedToIndex < this.state.toConnections.length) {
       const recommendedTo = this.state.toConnections[this.state.recommendedToIndex];
       const startTime = this.convertUTCToLocalTime(recommendedTo.connection_start_timestamp);
