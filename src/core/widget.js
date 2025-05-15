@@ -419,7 +419,7 @@ export default class DianaWidget {
                 ${this.config.activityName}
               </div>
             </div>
-            
+
             <div id="infoContainer" class="info-message" style="display: none;" role="status"></div>
             <div id="formErrorContainer" class="error-message" style="display: none;" role="alert"></div>
 
@@ -520,7 +520,7 @@ export default class DianaWidget {
               <div class="slider-wrapper slider-wrap-fixed">
                 <div class="slider" id="bottomSlider" role="group" aria-label="${this.t('ariaLabels.bottomSlider')}"></div>
               </div>
-              
+
               <div class="widget-footer">
                 <a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a>
               </div>
@@ -1281,7 +1281,7 @@ export default class DianaWidget {
                 </div>
               ` : ''}
             </div>
-            
+
             <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
               <span class="activity-time-value">${this.state.activityTimes.end || '--:--'}</span>
@@ -1456,14 +1456,14 @@ export default class DianaWidget {
     } else {
       durationString = `${duration}`;
     }
-    
+
     if (element.type === "TRSF") {
       durationString += ` ${this.t("durationTransferTime")}`;
     }
 
     return durationString;
   }
-  
+
 
   // --- Calendar Methods ---
 
@@ -1951,14 +1951,23 @@ export default class DianaWidget {
         2014: 'errors.api.noToConnections',
         2015: 'errors.api.noFromConnections',
         2016: 'errors.api.dbErrorActivity',
-        2017: 'errors.api.noToConnectionsTimeWindow',
-        2018: 'errors.api.noToConnectionsAfterCurrentTime',
-        2019: 'errors.api.toConnectionsNoScore',
-        2020: 'errors.api.internalErrorRecommendedTo',
-        2021: 'errors.api.errorCalcToConnections',
-        2022: 'errors.api.noReturnConnectionsFlexible',
-        2023: 'errors.api.noReturnConnectionMatchingIncoming',
-        2024: 'errors.api.errorCalcFromConnections',
+        '2017-1': 'errors.api.noToConnectionsFound',
+        '2017-2': 'errors.api.noFromConnectionsFound',
+        '2018-1': 'errors.api.toConnectionsNoScore',
+        '2018-2': 'errors.api.fromConnectionsNoScore',
+        '2019-1': 'errors.api.noToConnectionsMergingMightFail',
+        '2019-2': 'errors.api.noFromConnectionsMergingMightFail',
+        '2020-1': 'errors.api.noToConnectionsMergingFailed',
+        '2020-2': 'errors.api.noFromConnectionsMergingFailed',
+        '2021-1': 'errors.api.noToConnectionsTimeWindow',
+        '2021-2': 'errors.api.noFromConnectionsTimeWindow',
+        '2022-1': 'errors.api.noToConnectionsAfterCurrentTime',
+        '2023-1': 'errors.api.noToConnectionsFilteredByDuration',
+        '2023-2': 'errors.api.noFromConnectionsFilteredByDuration',
+        2024: 'errors.api.noReturnConnectionMatchingIncoming',
+        '2025-1': 'errors.api.errorCalcToConnections',
+        '2025-2': 'errors.api.errorCalcFromConnections',
+        '2026-1': 'errors.api.internalErrorRecommendedTo',
         3001: 'errors.api.internalErrorCalcToProvider',
         3002: 'errors.api.internalErrorCalcFromProvider',
         3003: 'errors.api.internalErrorCalcFromProviderFallback',
