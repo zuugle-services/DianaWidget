@@ -1403,18 +1403,22 @@ export default class DianaWidget {
             `;
           }
         } else {
-          html += `
-            <div class="connection-element">
-              <div class="element-time">
-                <span>${departureTime}</span> ${element.from_location}
+          if (index === conn.connection_elements.length - 1 && type === "to" && duration === `0 ${this.t("durationMinutesShort")}`) {
+
+          } else {
+            html += `
+              <div class="connection-element">
+                <div class="element-time">
+                  <span>${departureTime}</span> ${element.from_location}
+                </div>
+                <div id="eleCont">
+                  <div class="element-circle"></div>
+                  <span class="element-icon">${icon}</span>
+                  <span class="element-duration">${durationString}</span>
+                </div>
               </div>
-              <div id="eleCont">
-                <div class="element-circle"></div>
-                <span class="element-icon">${icon}</span>
-                <span class="element-duration">${durationString}</span>
-              </div>
-            </div>
-          `;
+            `;
+          }
         }
 
         // If this is the last element, also show the final destination (to_location)
