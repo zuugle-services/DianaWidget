@@ -1,2 +1,2 @@
-import DianaWidget from './core/widget.js';
+import DianaWidget from './core/widget';
 export default DianaWidget;

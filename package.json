@@ -14,7 +14,6 @@
         "url": "https://github.com/zuugle-services/DianaWidget.git"
     },
     "private": true,
-    "type": "module",
     "dependencies": {
         "css-loader": "^7.1.2",
         "cssnano": "^7.0.6",

@@ -700,6 +700,13 @@ export default class DianaWidget {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          const responseBody = await response.json();
+          if (this.config.apiToken !== "" && responseBody["detail"] === "Authentication credentials were not provided.") {
+            window.location.reload(true);
+          }
+        }
+
         let errorMsg = `Reverse geocode API error: ${response.status}`;
         let errorCode = null;
         try {
@@ -847,6 +854,13 @@ export default class DianaWidget {
       );
 
       if (!response.ok) {
+        if (response.status === 401) {
+          const responseBody = await response.json();
+          if (this.config.apiToken !== "" && responseBody["detail"] === "Authentication credentials were not provided.") {
+            window.location.reload(true);
+          }
+        }
+
         let errorMsg = `API error: ${response.status}`;
         let errorCode = null;
         try {
@@ -948,9 +962,16 @@ export default class DianaWidget {
 
     // Handle API errors
     if (!response.ok) {
-        const error = new Error(`Failed to fetch connections: ${response.status} ${response.statusText}`);
-        error.response = response;
-        throw error;
+      if (response.status === 401) {
+        const responseBody = await response.json();
+        if (this.config.apiToken !== "" && responseBody["detail"] === "Authentication credentials were not provided.") {
+          window.location.reload(true);
+        }
+      }
+
+      const error = new Error(`Failed to fetch connections: ${response.status} ${response.statusText}`);
+      error.response = response;
+      throw error;
     }
 
     const result = await response.json();
