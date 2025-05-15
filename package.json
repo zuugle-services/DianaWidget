@@ -6,13 +6,15 @@
     "scripts": {
         "dev": "webpack --mode development --watch",
         "build": "webpack --mode production",
-        "analyze": "webpack --mode production --stats=detailed"
+        "analyze": "webpack --mode production --stats=detailed",
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
     },
     "repository": {
         "type": "git",
         "url": "https://github.com/zuugle-services/DianaWidget.git"
     },
     "private": true,
+    "type": "module",
     "dependencies": {
         "css-loader": "^7.1.2",
         "cssnano": "^7.0.6",
@@ -25,5 +27,8 @@
         "webpack": "^5.99.6",
         "webpack-cli": "^6.0.1",
         "webpack-manifest-plugin": "^5.0.1"
+    },
+    "devDependencies": {
+        "jest": "^29.7.0"
     }
 }

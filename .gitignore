@@ -2,6 +2,7 @@
 
 # Codefetch automated markdown files
 /codefetch
+.junie
 
 # compiled output
 /dist
