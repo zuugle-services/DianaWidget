@@ -481,6 +481,10 @@ export default class DianaWidget {
                 <button type="submit" class="btn apply-btn" id="searchBtn">${this.t('search')}</button>
               </div>
             </form>
+
+            <div class="widget-footer">
+              <a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a>
+            </div>
           </div>
 
           <div id="resultsPage" class="modal-page">
