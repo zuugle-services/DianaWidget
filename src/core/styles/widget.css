@@ -426,6 +426,15 @@
     background-color: var(--bg-hover);
 }
 
+
+.diana-container #responseBox .connection-elements > div:nth-child(1) {
+    scroll-margin-top: 0px;
+}
+.diana-container #responseBox-bottom .connection-elements > div:nth-child(1) {
+    scroll-margin-top: -80px;
+}
+
+
 /* Make sliders sticky below the header */
 .diana-container .slider-wrapper {
     background-color: var(--bg-primary);
@@ -516,6 +525,7 @@
     background: var(--bg-info);
     padding: 12px 15px;
     margin: 12px 20px;
+    scroll-margin: 270px;
 }
 
 .diana-container .activity-time-card {

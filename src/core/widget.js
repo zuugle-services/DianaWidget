@@ -1214,6 +1214,11 @@ export default class DianaWidget {
         this.updateActivityTimeBox(filtered[0], type);
         // Render connection details for *all* matching connections (could be multiple options with same time)
         targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+
+        // Scroll to the appropriate connection elements box with animation
+        requestAnimationFrame(() => {
+          targetBox.querySelector('.connection-elements > div:nth-child(1)').scrollIntoView({ behavior: 'smooth', block: 'center'});
+        });
     } else {
         // Handle case where no connection matches the clicked time slot (shouldn't normally happen)
         targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
@@ -2161,6 +2166,12 @@ export default class DianaWidget {
   slideToRecommendedConnections() {
     // Use requestAnimationFrame for smoother scrolling after elements are rendered
     requestAnimationFrame(() => {
+        // First, scroll the activity time box into view
+        if (this.elements.activityTimeBox) {
+            this.elements.activityTimeBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Then scroll the sliders to center the active buttons
         const topSlider = this.elements["topSlider"];
         if (topSlider && topSlider.querySelector('.active-time')) {
             const topActiveBtn = topSlider.querySelector('.active-time');
@@ -2169,7 +2180,7 @@ export default class DianaWidget {
         }
 
         const bottomSlider = this.elements["bottomSlider"];
-         if (bottomSlider && bottomSlider.querySelector('.active-time')) {
+        if (bottomSlider && bottomSlider.querySelector('.active-time')) {
             const bottomActiveBtn = bottomSlider.querySelector('.active-time');
             const scrollPos = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
             bottomSlider.scrollTo({ left: scrollPos, behavior: 'smooth' });
