@@ -255,6 +255,21 @@
 .diana-container .input-icon { left: 12px; }
 .diana-container .input-icon-right { right: 12px; }
 
+
+.diana-container .date-section-wrapper {
+    display: flex;
+    gap: 10px; /* Adjust spacing as needed */
+    align-items: flex-start; /* Align items to the top */
+}
+
+.diana-container .date-input-column {
+    flex: 1; /* Each column takes equal space */
+    min-width: 0; /* Prevent overflow issues with flex items */
+}
+.diana-container .date-input-column.single {
+    flex-basis: 100%; /* Single input takes full width */
+}
+
 .diana-container .date-input-container {
     position: relative;
     cursor: pointer;

@@ -4,6 +4,8 @@ export default {
     enterOrigin: "Enter origin",
     destination: "Destination",
     activityDate: "Activity date",
+    activityStartDateLabel: "Start date",
+    activityEndDateLabel: "End date",
     search: "Search",
     selectDate: "Select",
     datePickerTitle: "Select Activity Date",
@@ -42,6 +44,7 @@ export default {
       dateRequired: "Please select a date.",
       fetchingLocation: "Fetching your location...",
       fetchingAddress: "Looking up address...",
+      endDateAfterStartDate: "End date must be on or after the start date."
     },
     errors: {
       connectionError: "Failed to load connections. Please try again.",
@@ -122,6 +125,8 @@ export default {
     enterOrigin: "Startort eingeben",
     destination: "Zielort",
     activityDate: "Aktivitätsdatum",
+    activityStartDateLabel: "Startdatum",
+    activityEndDateLabel: "Enddatum",
     search: "Suchen",
     selectDate: "Auswählen",
     datePickerTitle: "Aktivitätsdatum wählen",
@@ -160,6 +165,7 @@ export default {
       dateRequired: "Bitte wählen Sie ein Datum.",
       fetchingLocation: "Standort wird abgerufen...",
       fetchingAddress: "Adresse wird gesucht...",
+      endDateAfterStartDate: "Das Enddatum muss am oder nach dem Startdatum liegen."
     },
     errors: {
       connectionError: "Verbindungsdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
