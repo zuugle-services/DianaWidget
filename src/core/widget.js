@@ -1459,7 +1459,7 @@ export default class DianaWidget {
 
         if (index === 0) {
           if (type === "from") {
-            if (parseInt(duration.replace(this.t("durationMinutesShort"), "").trim()) <= 1) {
+            if (parseInt(duration.replace(this.t("durationMinutesShort"), "").trim()) > 1) {
               html += `
                 <div class="connection-element">
                   <div id="eleCont">
@@ -1484,7 +1484,7 @@ export default class DianaWidget {
             `;
           }
         } else {
-          if (index === conn.connection_elements.length - 1 && type === "to" && parseInt(duration.replace(this.t("durationMinutesShort"), "").trim()) <= 1) {
+          if (index === conn.connection_elements.length - 1 && type === "to" && parseInt(duration.replace(this.t("durationMinutesShort"), "").trim()) > 1) {
 
           } else {
             html += `
