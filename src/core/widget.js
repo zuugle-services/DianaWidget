@@ -738,7 +738,7 @@ export default class DianaWidget {
         this.state.suggestions = []; // Clear any old suggestions
         this.renderSuggestions();
         this.clearMessages(); // Clear info/error messages
-        this._setCachedStartLocation(displayName, latitude, longitude); // New: Cache this location
+        this._setCachedStartLocation(displayName, latitude, longitude);
       } else {
         throw new Error(this.t('errors.reverseGeocodeNoResults'));
       }
@@ -763,7 +763,11 @@ export default class DianaWidget {
 
     try {
       const results = await this.fetchSuggestions(query);
-      this.state.suggestions = results.features;
+      if (!results || !results.features || results.features.length === 0) {
+        this.state.suggestions = [];
+      } else {
+        this.state.suggestions = results.features;
+      }
       this.renderSuggestions();
     } catch (error) {
       this.showError(error.message || this.t('errors.suggestionError'), 'form');
@@ -1382,7 +1386,7 @@ export default class DianaWidget {
 
         if (index === 0) {
           if (type === "from") {
-            if (duration !== `0 ${this.t("durationMinutesShort")}`) {
+            if (parseInt(duration.replace(this.t("durationMinutesShort"), "").trim()) <= 1) {
               html += `
                 <div class="connection-element">
                   <div id="eleCont">
@@ -1407,7 +1411,7 @@ export default class DianaWidget {
             `;
           }
         } else {
-          if (index === conn.connection_elements.length - 1 && type === "to" && duration === `0 ${this.t("durationMinutesShort")}`) {
+          if (index === conn.connection_elements.length - 1 && type === "to" && parseInt(duration.replace(this.t("durationMinutesShort"), "").trim()) <= 1) {
 
           } else {
             html += `
