@@ -158,10 +158,19 @@ export default class DianaWidget {
         fallback.style.border = '1px solid #ef9a9a';
         fallback.style.borderRadius = '4px';
         fallback.style.margin = '10px';
+        // Use translations if available, otherwise fallback to English
+        const t = (key) => {
+          try {
+            return this.t ? this.t(key) : translations.EN.errors.api.unknown;
+          } catch (e) {
+            return translations.EN.errors.api.unknown;
+          }
+        };
+
         fallback.innerHTML = `
           <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
           <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
-          <p><small>Error: ${error.message}</small></p>
+          <p><small>${t('errors.api.unknown')}</small></p>
         `;
         fallbackContainer.innerHTML = "";
         fallbackContainer.appendChild(fallback);
@@ -711,21 +720,28 @@ export default class DianaWidget {
           }
         }
 
-        let errorMsg = `Reverse geocode API error: ${response.status}`;
         let errorCode = null;
         try {
             const errorBody = await response.json();
             if (errorBody && errorBody.code) {
                 errorCode = errorBody.code;
                 const translationKey = this.getApiErrorTranslationKey(errorCode);
-                errorMsg = this.t(translationKey);
+                throw new Error(this.t(translationKey));
             } else if (errorBody && errorBody.error) {
-                errorMsg = errorBody.error;
+                // Use a general error message instead of the raw API error
+                throw new Error(this.t('errors.api.unknown'));
             }
         } catch (e) {
-          /* Ignore parsing error, use default errorMsg */
+          if (e instanceof SyntaxError) {
+            // JSON parsing error, use a general error message
+            throw new Error(this.t('errors.api.unknown'));
+          } else {
+            // Re-throw the error from the if/else block
+            throw e;
+          }
         }
-        throw new Error(errorMsg);
+        // If we get here, no specific error was found, use a general error message
+        throw new Error(this.t('errors.api.unknown'));
       }
 
       const data = await response.json();
@@ -745,7 +761,18 @@ export default class DianaWidget {
 
     } catch (error) {
       console.error("Reverse geocode error:", error);
-      this.showError(error.message || this.t('errors.reverseGeocodeFailed'), 'form');
+      let errorMessage = this.t('errors.reverseGeocodeFailed'); // Default error
+
+      // Check for network connectivity errors
+      if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
+        if (!window.navigator.onLine) {
+          errorMessage = this.t('errors.api.networkError');
+        } else {
+          errorMessage = this.t('errors.api.apiUnreachable');
+        }
+      }
+
+      this.showError(errorMessage, 'form');
     } finally {
         if (this.state.info === this.t('infos.fetchingAddress')) { // Clear only if it's our message
             this.showInfo(null);
@@ -778,7 +805,18 @@ export default class DianaWidget {
     } catch (error) {
       // Only show error if this is still the most recent query
       if (query === this.lastQuery) {
-        this.showError(error.message || this.t('errors.suggestionError'), 'form');
+        let errorMessage = this.t('errors.suggestionError'); // Default error
+
+        // Check for network connectivity errors
+        if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
+          if (!window.navigator.onLine) {
+            errorMessage = this.t('errors.api.networkError');
+          } else {
+            errorMessage = this.t('errors.api.apiUnreachable');
+          }
+        }
+
+        this.showError(errorMessage, 'form');
       }
     }
   }
@@ -832,7 +870,14 @@ export default class DianaWidget {
       let errorMessage = this.t('errors.connectionError'); // Default error
       let errorCode = null;
 
-      if (error.response) { // Check if it's a fetch error with a response
+      // Check for network connectivity errors
+      if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
+        if (!window.navigator.onLine) {
+          errorMessage = this.t('errors.api.networkError');
+        } else {
+          errorMessage = this.t('errors.api.apiUnreachable');
+        }
+      } else if (error.response) { // Check if it's a fetch error with a response
         try {
             const errorBody = await error.response.json();
             if (errorBody && errorBody.code) {
@@ -840,17 +885,17 @@ export default class DianaWidget {
                 const translationKey = this.getApiErrorTranslationKey(errorCode);
                 errorMessage = this.t(translationKey);
             } else if (errorBody && errorBody.error) {
-                errorMessage = errorBody.error; // Use error message from API if no code
+                // Use a general error message instead of the raw API error
+                errorMessage = this.t('errors.api.unknown');
             }
         } catch (parseError) {
             console.error("Could not parse API error response:", parseError);
-            // Stick to generic if parsing fails, or use statusText if available
-            if (error.response.statusText) {
-                errorMessage = `${this.t('errors.connectionError')} (Status: ${error.response.status} ${error.response.statusText})`;
-            }
+            // Use a general error message
+            errorMessage = this.t('errors.api.unknown');
         }
       } else if (error.message) {
-          errorMessage = error.message; // For other types of errors
+          // Use a general error message instead of the raw error message
+          errorMessage = this.t('errors.api.unknown');
       }
       this.showError(errorMessage, 'form');
     } finally {
@@ -878,28 +923,46 @@ export default class DianaWidget {
           }
         }
 
-        let errorMsg = `API error: ${response.status}`;
         let errorCode = null;
         try {
             const errorBody = await response.json();
             if (errorBody && errorBody.code) {
                 errorCode = errorBody.code;
                 const translationKey = this.getApiErrorTranslationKey(errorCode);
-                errorMsg = this.t(translationKey);
+                throw new Error(this.t(translationKey));
             } else if (errorBody && errorBody.error) {
-                errorMsg = errorBody.error;
+                // Use a general error message instead of the raw API error
+                throw new Error(this.t('errors.api.unknown'));
             }
         } catch (e) {
-          /* Ignore parsing error, use default errorMsg */
+          if (e instanceof SyntaxError) {
+            // JSON parsing error, use a general error message
+            throw new Error(this.t('errors.api.unknown'));
+          } else {
+            // Re-throw the error from the if/else block
+            throw e;
+          }
         }
-        throw new Error(errorMsg);
+        // If we get here, no specific error was found, use a general error message
+        throw new Error(this.t('errors.api.unknown'));
       }
 
       return response.json();
 
     } catch (e) {
       console.error("Suggestions error:", e);
-      this.showError(e.message || this.t('errors.suggestionError'), 'form');
+      let errorMessage = this.t('errors.suggestionError'); // Default error
+
+      // Check for network connectivity errors
+      if (e.message && e.message.toLowerCase().includes('failed to fetch')) {
+        if (!window.navigator.onLine) {
+          errorMessage = this.t('errors.api.networkError');
+        } else {
+          errorMessage = this.t('errors.api.apiUnreachable');
+        }
+      }
+
+      this.showError(errorMessage, 'form');
     }
   }
 
@@ -986,7 +1049,8 @@ export default class DianaWidget {
         }
       }
 
-      const error = new Error(`Failed to fetch connections: ${response.status} ${response.statusText}`);
+      // Use a general error message instead of the raw error
+      const error = new Error(this.t('errors.api.unknown'));
       error.response = response;
       throw error;
     }
@@ -997,7 +1061,7 @@ export default class DianaWidget {
     if (!result?.connections?.from_activity || !result?.connections?.to_activity) {
       console.error("API response missing expected connection data:", result);
       // Create an error object that can be caught by handleSearch
-      const apiError = new Error("Invalid connection data received from API.");
+      const apiError = new Error(this.t('errors.api.invalidDataReceived'));
       // Simulate an API-like error structure if needed for consistent handling
       apiError.response = {
         json: async () => ({ error: "Invalid connection data received from API.", code: "APP_INVALID_DATA" }),
