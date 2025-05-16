@@ -1140,33 +1140,179 @@ export default class DianaWidget {
   }
 
   renderConnectionDetails(connections, type) {
-    if (!connections || connections.length === 0) return `<div>${this.t('noConnectionDetails')}</div>`;
+    if (!connections || connections.length === 0) {
+      return `<div>${this.t('noConnectionDetails')}</div>`;
+    }
+
     return connections.map(conn => {
-      if (!conn.connection_elements || conn.connection_elements.length === 0) return `<div>${this.t('noConnectionElements')}</div>`;
+      if (!conn.connection_elements || conn.connection_elements.length === 0) {
+        return `<div>${this.t('noConnectionElements')}</div>`;
+      }
+
+      // Filter connection elements based on duration
+      const filteredElements = conn.connection_elements.filter((element, index, arr) => {
+        // Use element.duration (numeric, in minutes, from API) for filtering if available and reliable.
+        // Otherwise, calculate from timestamps and parse.
+        let durationMinutes = 0;
+        if (typeof element.duration === 'number') {
+            durationMinutes = element.duration;
+        } else {
+            // Fallback to calculating from timestamps if element.duration is not a number
+            const durationStr = this.calculateElementDuration(element.departure_time, element.arrival_time);
+            durationMinutes = this.parseDurationToMinutes(durationStr);
+        }
+
+        if (type === 'from' && index === 0 && durationMinutes <= 1) {
+          return false; // Exclude this element
+        }
+        if (type === 'to' && index === arr.length - 1 && durationMinutes <= 1) {
+          return false; // Exclude this element
+        }
+        return true; // Include this element
+      });
+
+      // If all elements were filtered out
+      if (filteredElements.length === 0) {
+          if (conn.connection_elements.length > 0) { // Check if original had elements
+              if (type === 'to') return `<div class="info-message-inline">${this.t('infos.lastToLegTooShort')}</div>`;
+              if (type === 'from') return `<div class="info-message-inline">${this.t('infos.firstFromLegTooShort')}</div>`;
+          }
+          return `<div>${this.t('noConnectionElements')}</div>`;
+      }
+
       let html = `<div class="connection-elements">`;
-      // --- Waiting time rendering logic (omitted for brevity but would be similar to original) ---
-      conn.connection_elements.forEach((element, index) => {
+      let currentLegDateStr = null;
+
+      // --- Waiting time before the first leg (for 'from' type) ---
+      if (type === 'from' && this.state.activityTimes.end) {
+          // Use the departure_time of the *first filteredElement*
+          const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
+          const connectionStartLocalTime = this.convertUTCToLocalTime(firstEffectiveLegDepartureISO);
+          const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : this.state.selectedDate;
+
+          const activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', { zone: this.config.timezone })
+                                          .set({ year: activityEndDate.getFullYear(), month: activityEndDate.getMonth() + 1, day: activityEndDate.getDate() });
+
+          const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {zone: 'utc'}).setZone(this.config.timezone);
+
+          if (activityEndDateTime.isValid && firstLegDepartureDateTime.isValid && firstLegDepartureDateTime > activityEndDateTime) {
+              const waitDuration = this.calculateDurationLocalWithDates(activityEndDateTime, firstLegDepartureDateTime);
+              if (waitDuration.totalMinutes > 0) {
+                  html += `
+                  <div class="connection-element waiting-block">
+                      <div class="element-time">
+                      <span>${this.state.activityTimes.end}</span> 
+                      ${this.t('waiting.afterActivity')}
+                      </div>
+                      <div id="eleCont">
+                      <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                      <span class="element-duration">
+                          ${waitDuration.text}
+                      </span>
+                      </div>
+                  </div>`;
+              }
+          }
+      }
+
+      filteredElements.forEach((element, index) => {
         const departureTime = this.convertUTCToLocalTime(element.departure_time);
         const arrivalTime = this.convertUTCToLocalTime(element.arrival_time);
-        const duration = this.calculateElementDuration(element.departure_time, element.arrival_time);
-        let durationString = this.getDurationString(index, type, element, duration);
+        // For display string, calculate from timestamps. element.duration is used for filtering.
+        const durationDisplayString = this.calculateElementDuration(element.departure_time, element.arrival_time);
+
         let icon = (element.type !== 'JNY') ? this.getTransportIcon(element.type || 'DEFAULT') : this.getTransportIcon(element.vehicle_type || 'DEFAULT');
-        // --- Element rendering logic (omitted for brevity but would be similar to original, using SVG placeholders) ---
-        // Example for one element part:
-         html += `
-              <div class="connection-element">
-                <div class="element-time"><span>${departureTime}</span> ${index === 0 && type === "to" ? this.elements.originInput.value : element.from_location}</div>
-                <div id="eleCont">
-                  <div class="element-circle"></div>
-                  <span class="element-icon">${icon}</span>
-                  <span class="element-duration">${durationString}</span>
-                </div>
-              </div>`;
-        if (index === conn.connection_elements.length - 1 && type === "from") {
-             html += `<div class="connection-element"><div class="element-time"><span>${arrivalTime}</span> ${this.elements.originInput.value}</div><div class="element-circle"></div></div>`;
+
+        const legDepartureDateStr = this.formatLegDateForDisplay(element.departure_time);
+        let dateDisplayHtml = '';
+        if (legDepartureDateStr && (index === 0 || legDepartureDateStr !== currentLegDateStr)) {
+          dateDisplayHtml = `<div class="connection-leg-date-display">${legDepartureDateStr}</div>`;
+          currentLegDateStr = legDepartureDateStr;
+        }
+
+        let fromLocationDisplay = element.from_location;
+        if (type === "to" && index === 0) { // If it's the first leg of 'to' connection from filtered list
+          fromLocationDisplay = this.elements.originInput.value;
+        }
+
+        html += `
+          <div class="connection-element">
+            ${dateDisplayHtml}
+            <div class="element-time">
+              <span>${departureTime}</span> ${fromLocationDisplay}
+            </div>
+            <div id="eleCont">
+              <div class="element-circle"></div>
+              <span class="element-icon">${icon}</span>
+              <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
+            </div>
+          </div>
+        `;
+
+        // Display final arrival for the last element in the filtered list
+        if (index === filteredElements.length - 1) {
+          let toLocationDisplay = element.to_location;
+          let finalArrivalTime = arrivalTime;
+
+          if (type === "to") {
+            toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+          } else { // type === "from"
+            toLocationDisplay = this.elements.originInput.value;
+          }
+
+          html += `
+            <div class="connection-element">
+              <div class="element-time">
+                <span>${finalArrivalTime}</span> ${toLocationDisplay}
+              </div>
+              <div class="element-circle"></div>
+            </div>
+          `;
         }
       });
-      html += `</div>`; return html;
+
+      // --- Waiting time after the last leg (for 'to' type) ---
+      if (type === 'to' && this.state.activityTimes.start && filteredElements.length > 0) {
+          const lastLegArrivalTimeISO = filteredElements[filteredElements.length - 1].arrival_time;
+          // const lastLegArrivalLocalTime = this.convertUTCToLocalTime(lastLegArrivalTimeISO); // Already calculated as 'arrivalTime' for the last leg
+
+          if (lastLegArrivalTimeISO) { // Ensure lastLegArrivalTimeISO is valid
+              const connectionEndDateTime = DateTime.fromISO(lastLegArrivalTimeISO, { zone: 'utc' }).setZone(this.config.timezone);
+
+              // Activity start time is just HH:mm, need to set it on the correct date
+              // The date should be the same date as the connection's arrival if the activity starts "same day"
+              // or could be next day if connection arrives late and activity starts early next day.
+              // For simplicity, assume activity starts on the same day as the connection end for this waiting calc.
+              // More complex scenarios would require passing full activity start datetime.
+              const activityActualStartDateTime = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', { zone: this.config.timezone })
+                                                  .set({
+                                                      year: connectionEndDateTime.year,
+                                                      month: connectionEndDateTime.month,
+                                                      day: connectionEndDateTime.day
+                                                  });
+
+              if (connectionEndDateTime.isValid && activityActualStartDateTime.isValid && activityActualStartDateTime > connectionEndDateTime) {
+                  const waitDuration = this.calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime);
+                   if (waitDuration.totalMinutes > 0) {
+                      html += `
+                      <div class="connection-element waiting-block">
+                          <div class="element-time">
+                          <span>${this.convertUTCToLocalTime(lastLegArrivalTimeISO)}</span> 
+                          ${this.t('waiting.beforeActivity')}
+                          </div>
+                          <div id="eleCont">
+                          <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                          <span class="element-duration">
+                              ${waitDuration.text}
+                          </span>
+                          </div>
+                      </div>`;
+                  }
+              }
+          }
+      }
+      html += `</div>`; // Close .connection-elements
+      return html;
     }).join('');
   }
 
@@ -1405,6 +1551,44 @@ export default class DianaWidget {
     } else {
       displayElement.textContent = this.t('selectDate');
       displayElement.classList.add("placeholder");
+    }
+  }
+
+  parseDurationToMinutes(durationString) {
+    if (!durationString || typeof durationString !== 'string') return 0;
+    try {
+      if (durationString.includes(this.t("durationHoursShort"))) {
+          const parts = durationString.replace(this.t("durationHoursShort"), "").split(':');
+          const hours = parseInt(parts[0], 10);
+          const minutes = parseInt(parts[1], 10);
+          if (isNaN(hours) || isNaN(minutes)) return 0;
+          return (hours * 60) + minutes;
+      } else if (durationString.includes(this.t("durationMinutesShort"))) {
+          const minutes = parseInt(durationString.replace(this.t("durationMinutesShort"), "").trim(), 10);
+          return isNaN(minutes) ? 0 : minutes;
+      }
+    } catch (e) {
+      console.error("Error parsing duration string:", durationString, e);
+    }
+    return 0;
+  }
+
+  formatLegDateForDisplay(isoString) {
+    try {
+      // Ensure the input is treated as UTC and then converted to the configured display timezone
+      const localDt = DateTime.fromISO(isoString, { zone: 'utc' }).setZone(this.config.timezone);
+      if (!localDt.isValid) {
+          console.warn(`Invalid ISO string for leg date display: ${isoString}`);
+          return "";
+      }
+      // Format to a short, readable date like "May 16"
+      // Luxon's toFormat('MMM d') produces this.
+      // For locale-specific month names, you might use:
+      // return localDt.toLocaleString({ month: 'short', day: 'numeric' });
+      return localDt.toFormat('MMM d');
+    } catch (error) {
+      console.error("Error formatting leg date for display:", error);
+      return ""; // Fallback
     }
   }
 

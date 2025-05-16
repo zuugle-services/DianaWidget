@@ -615,10 +615,39 @@
     margin-bottom: 15px;
     position: relative;
     padding-left: 25px;
+    padding-right: 65px;
 }
 .diana-container .middle-box .connection-element:last-child {
     margin-bottom: 0;
 }
+
+.diana-container .connection-leg-date-display {
+    position: absolute;
+    right: 8px; /* Position from the right edge of .connection-element */
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: var(--bg-info); /* Using existing info background, or choose a new one */
+    color: var(--text-info);       /* Using existing info text color */
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500; /* Make it slightly less bold than main times if desired */
+    line-height: 1.2;
+    box-shadow: 0 1px 2px var(--shadow-light);
+    white-space: nowrap; /* Prevent date from wrapping */
+    z-index: 1; /* Ensure it's above the connection line if they overlap */
+}
+
+/* Optional: Adjust if the date display overlaps with very long location names */
+.diana-container .middle-box .element-time {
+    /* You might need to add max-width or ellipsis to element-time if overlap becomes an issue */
+    /* Example: */
+    /* max-width: calc(100% - 70px); */ /* Adjust 70px based on date display width + padding */
+    /* overflow: hidden; */
+    /* text-overflow: ellipsis; */
+    /* white-space: nowrap; */
+}
+
 
 
 .diana-container .middle-box .element-time span {
