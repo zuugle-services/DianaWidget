@@ -761,16 +761,25 @@ export default class DianaWidget {
       return;
     }
 
+    // Store the current query to check if it's still relevant when the response arrives
+    this.lastQuery = query;
+
     try {
       const results = await this.fetchSuggestions(query);
-      if (!results || !results.features || results.features.length === 0) {
-        this.state.suggestions = [];
-      } else {
-        this.state.suggestions = results.features;
+      // Only update suggestions if this response is for the most recent query
+      if (query === this.lastQuery) {
+        if (!results || !results.features || results.features.length === 0) {
+          this.state.suggestions = [];
+        } else {
+          this.state.suggestions = results.features;
+        }
+        this.renderSuggestions();
       }
-      this.renderSuggestions();
     } catch (error) {
-      this.showError(error.message || this.t('errors.suggestionError'), 'form');
+      // Only show error if this is still the most recent query
+      if (query === this.lastQuery) {
+        this.showError(error.message || this.t('errors.suggestionError'), 'form');
+      }
     }
   }
 
