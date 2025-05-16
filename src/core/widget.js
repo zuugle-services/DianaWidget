@@ -588,7 +588,7 @@ export default class DianaWidget {
       this.elements.originInput.removeAttribute("data-lon");
       this.clearMessages(); // Clear info/error on input change
       this.debounce(
-        () => this.handleAddressInput(e.target.value), // Pass function reference
+        () => this.handleAddressInput(e.target.value.trim()), // Pass function reference
         300
       )();
     });
