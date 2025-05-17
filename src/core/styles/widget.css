@@ -379,6 +379,229 @@
     to { transform: rotate(360deg); }
 }
 
+/* --- Range Calendar Modal Styles --- */
+.diana-container .range-calendar-overlay {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* High z-index to be on top */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.diana-container .range-calendar-modal {
+    background-color: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    width: auto;
+    max-width: 700px; /* Adjust as needed for two calendars */
+    min-width: 300px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    font-family: "DM Sans", sans-serif !important; /* Ensure font is applied */
+}
+
+.diana-container .range-calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--border-tertiary);
+}
+
+.diana-container .range-calendar-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.diana-container .range-calendar-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+.diana-container .range-calendar-close-btn:hover {
+    color: var(--text-primary);
+}
+
+.diana-container .range-calendar-body {
+    display: flex;
+    padding: 10px;
+    gap: 10px; /* Space between the two calendar instances */
+    justify-content: center; /* Center calendars if space allows */
+}
+
+.diana-container .range-calendar-instance {
+    flex: 1; /* Each calendar takes up equal space */
+    min-width: 280px; /* Minimum width for a calendar */
+    border: 1px solid var(--border-tertiary);
+    border-radius: 8px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.diana-container .range-calendar-instance .calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0px; /* Reduced padding for range modal */
+    margin-bottom: 5px;
+}
+.diana-container .range-calendar-instance .calendar-nav-btn { /* Ensure buttons in range calendar are styled */
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-tertiary);
+    padding: 5px;
+}
+.diana-container .range-calendar-instance .calendar-nav-btn:hover {
+    color: var(--text-primary);
+}
+.diana-container .range-calendar-instance .calendar-month-year {
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    flex-grow: 1;
+}
+
+
+.diana-container .range-calendar-instance .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px; /* Slightly reduced gap */
+}
+
+.diana-container .range-calendar-instance .calendar-day-header {
+    text-align: center;
+    font-size: 11px; /* Slightly smaller */
+    font-weight: 500;
+    color: var(--text-disabled);
+    padding: 3px 0;
+}
+
+.diana-container .range-calendar-instance .calendar-day {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 50%;
+    cursor: pointer !important;
+    width: 30px; /* Adjust size as needed */
+    height: 30px;
+    margin: 1px auto; /* Adjust margin for tighter packing */
+    font-size: 12px;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+    position: relative; /* For pseudo-elements if needed for range */
+}
+.diana-container .range-calendar-instance .calendar-day.empty {
+    background: none;
+    cursor: default;
+}
+.diana-container .range-calendar-instance .calendar-day:not(.empty):not(.disabled):hover {
+    background-color: var(--bg-hover);
+}
+.diana-container .range-calendar-instance .calendar-day.today {
+    border: 1px solid var(--primary-color);
+    font-weight: bold;
+}
+.diana-container .range-calendar-instance .calendar-day.selected {
+    background-color: var(--primary-color) !important;
+    color: var(--bg-primary) !important;
+    font-weight: bold;
+}
+.diana-container .range-calendar-instance .calendar-day.selected:hover {
+    background-color: var(--bg-apply-hover) !important;
+}
+.diana-container .range-calendar-instance .calendar-day.disabled {
+    color: var(--secondary-color);
+    cursor: not-allowed;
+    background: none;
+    text-decoration: line-through;
+}
+
+/* Styles for date range selection */
+.diana-container .range-calendar-instance .calendar-day.start-date,
+.diana-container .range-calendar-instance .calendar-day.end-date {
+    background-color: var(--primary-color);
+    color: var(--bg-primary);
+    border-radius: 50%; /* Ensure it's a circle */
+}
+
+.diana-container .range-calendar-instance .calendar-day.in-range {
+    background-color: var(--bg-info); /* A lighter color for dates within the range */
+    color: var(--text-info);
+    border-radius: 0; /* Make it a bar, or keep 50% for circles */
+}
+/* To make a bar effect, you might need to adjust padding/margin or use pseudo-elements */
+.diana-container .range-calendar-instance .calendar-day.start-date.in-range {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.diana-container .range-calendar-instance .calendar-day.end-date.in-range {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+
+.diana-container .range-calendar-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px 15px;
+    border-top: 1px solid var(--border-tertiary);
+    gap: 10px;
+}
+
+/* Use existing button styles if they match, or define new ones */
+.diana-container .range-calendar-footer .calendar-footer-btn {
+    padding: 8px 15px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+}
+.diana-container .range-calendar-footer .calendar-footer-btn:hover {
+    background-color: var(--bg-hover);
+}
+.diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn { /* For the apply button */
+    background-color: var(--primary-color);
+    color: var(--bg-primary);
+    border-color: var(--primary-color);
+}
+.diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn:hover {
+    background-color: var(--bg-apply-hover);
+}
+
+/* Responsive adjustments for range calendar */
+@media (max-width: 768px) {
+    .diana-container .range-calendar-modal {
+        width: 95%;
+        max-width: 95%;
+    }
+    .diana-container .range-calendar-body {
+        flex-direction: column; /* Stack calendars vertically on small screens */
+    }
+    .diana-container .range-calendar-instance {
+        min-width: unset; /* Allow shrinking */
+        width: 100%;
+    }
+}
+
 
 /* --- Calendar Styles --- */
 .diana-container .calendar-container {

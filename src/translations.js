@@ -37,6 +37,7 @@ export default {
     noConnectionElements: "No connection elements available.",
     selectTimeSlot: "Please select a time slot above.",
     useCurrentLocation: "Use current location",
+    selectDateRange: "Select date range",
     warnings: {
       earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
       lateEnd: "Warning: Later Departure than recommended ending time of activity!",
@@ -162,6 +163,7 @@ export default {
     noConnectionElements: "Keine Verbindungselemente verfügbar.",
     selectTimeSlot: "Bitte wählen Sie ein Zeitfenster aus.",
     useCurrentLocation: "Aktuellen Standort verwenden",
+    selectDateRange: "Datumsbereich auswählen",
     warnings: {
       earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
       lateEnd: "Warnung: Spätere Abfahrt als empfohlene Endzeit!",

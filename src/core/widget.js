@@ -1,6 +1,32 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 import { DateTime } from 'luxon';
-import translations from '../translations'; // Assuming translations.js is in the parent directory
+import translations from '../translations';
+import { SingleCalendar, RangeCalendarModal } from "./calendar";
+import {
+    getMonthName,
+    getShortDayName,
+    formatDateForDisplay,
+    throttle,
+    debounce,
+    getApiErrorTranslationKey
+} from '../utils';
+import {
+    calculateInitialStartDate,
+    convertLocalTimeToUTC,
+    convertLocalTimeToUTCDatetime,
+    convertConfigTimeToLocalTime,
+    convertUTCToLocalTime,
+    calculateTimeDifference,
+    addMinutesToDate,
+    getLaterTime,
+    getEarlierTime,
+    calculateDurationLocalWithDates,
+    getTimeFormatFromMinutes,
+    formatDatetime,
+    parseDurationToMinutes,
+    formatLegDateForDisplay,
+    formatFullDateForDisplay
+} from '../datetimeUtils';
 
 export default class DianaWidget {
   // Default configuration
@@ -33,7 +59,6 @@ export default class DianaWidget {
     displayStartDate: null,
     displayEndDate: null,
     destinationInputName: null,
-    // New multi-day config options
     multiday: false,
     overrideActivityStartDate: null, // YYYY-MM-DD
     overrideActivityEndDate: null    // YYYY-MM-DD
@@ -92,10 +117,10 @@ export default class DianaWidget {
               initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, { zone: 'utc' }).toJSDate();
           } catch (e) {
               console.warn(`Invalid overrideActivityStartDate format: ${this.config.overrideActivityStartDate}. Defaulting...`);
-              initialSelectedStartDate = this._calculateInitialStartDate();
+              initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
           }
       } else {
-          initialSelectedStartDate = this._calculateInitialStartDate();
+          initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
       }
 
 
@@ -170,32 +195,6 @@ export default class DianaWidget {
       }
     }
   }
-
-  _calculateInitialStartDate() {
-    let initialDate;
-    try {
-        const now = DateTime.now().setZone(this.config.timezone);
-        const latestEndTimeStr = this.config.activityLatestEndTime;
-        const durationMinutes = parseInt(this.config.activityDurationMinutes, 10);
-        const [endHours, endMinutes, endSeconds] = ([...(latestEndTimeStr.split(':')), '0', '0']).slice(0, 3).map(Number);
-        const latestEndTimeToday = now.set({
-            hour: endHours, minute: endMinutes, second: endSeconds || 0, millisecond: 0
-        });
-        const thresholdTime = latestEndTimeToday.minus({
-            minutes: durationMinutes, hours: 1
-        });
-        if (now > thresholdTime) {
-            initialDate = now.plus({ days: 1 }).toJSDate();
-        } else {
-            initialDate = now.toJSDate();
-        }
-    } catch (error) {
-        console.error("Error calculating initial start date, defaulting to today:", error);
-        initialDate = new Date();
-    }
-    return initialDate;
-  }
-
 
   validateConfig(userConfig) {
     const config = { ...this.defaultConfig, ...userConfig };
@@ -604,7 +603,7 @@ export default class DianaWidget {
       this.elements.originInput.removeAttribute("data-lat");
       this.elements.originInput.removeAttribute("data-lon");
       this.clearMessages();
-      this.debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
+      debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
     });
 
     this.elements.suggestionsContainer.addEventListener('click', (e) => {
@@ -697,7 +696,7 @@ export default class DianaWidget {
             const errorBody = await response.json();
             if (errorBody && errorBody.code) {
                 errorCode = errorBody.code;
-                throw new Error(this.t(this.getApiErrorTranslationKey(errorCode)));
+                throw new Error(this.t(getApiErrorTranslationKey(errorCode)));
             } else if (errorBody && errorBody.error) throw new Error(this.t('errors.api.unknown'));
         } catch (e) {
           if (e instanceof SyntaxError) throw new Error(this.t('errors.api.unknown'));
@@ -810,7 +809,7 @@ export default class DianaWidget {
       } else if (error.response) {
         try {
             const errorBody = await error.response.json();
-            if (errorBody && errorBody.code) errorMessage = this.t(this.getApiErrorTranslationKey(errorBody.code));
+            if (errorBody && errorBody.code) errorMessage = this.t(getApiErrorTranslationKey(errorBody.code));
             else if (errorBody && errorBody.error) errorMessage = this.t('errors.api.unknown');
         } catch (parseError) { errorMessage = this.t('errors.api.unknown'); }
       } else if (error.message) {
@@ -838,7 +837,7 @@ export default class DianaWidget {
         let errorCode = null;
         try {
             const errorBody = await response.json();
-            if (errorBody && errorBody.code) throw new Error(this.t(this.getApiErrorTranslationKey(errorBody.code)));
+            if (errorBody && errorBody.code) throw new Error(this.t(getApiErrorTranslationKey(errorBody.code)));
             else if (errorBody && errorBody.error) throw new Error(this.t('errors.api.unknown'));
         } catch (e) {
           if (e instanceof SyntaxError) throw new Error(this.t('errors.api.unknown')); else throw e;
@@ -867,13 +866,13 @@ export default class DianaWidget {
                                        ? this.state.selectedEndDate
                                        : activityStartDate;
 
-    const utcEarliestStart = this.convertLocalTimeToUTC(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
-    const utcLatestStart = this.convertLocalTimeToUTC(this.config.activityLatestStartTime, activityStartDate, this.config.timezone);
-    const utcEarliestEnd = this.convertLocalTimeToUTC(this.config.activityEarliestEndTime, referenceDateForEndTimes, this.config.timezone);
-    const utcLatestEnd = this.convertLocalTimeToUTC(this.config.activityLatestEndTime, referenceDateForEndTimes, this.config.timezone);
+    const utcEarliestStart = convertLocalTimeToUTC(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
+    const utcLatestStart = convertLocalTimeToUTC(this.config.activityLatestStartTime, activityStartDate, this.config.timezone);
+    const utcEarliestEnd = convertLocalTimeToUTC(this.config.activityEarliestEndTime, referenceDateForEndTimes, this.config.timezone);
+    const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime, referenceDateForEndTimes, this.config.timezone);
 
     let params = {
-      date: this.formatDatetime(activityStartDate), // API 'date' is always the start date
+      date: formatDatetime(activityStartDate), // API 'date' is always the start date
       activity_name: this.config.activityName,
       activity_type: this.config.activityType,
       activity_start_location: this.config.activityStartLocation,
@@ -988,11 +987,11 @@ export default class DianaWidget {
 
     if (this.state.toConnections.length > 0 && this.state.recommendedToIndex < this.state.toConnections.length) {
       const recTo = this.state.toConnections[this.state.recommendedToIndex];
-      this.filterConnectionsByTime('to', this.convertUTCToLocalTime(recTo.connection_start_timestamp), this.convertUTCToLocalTime(recTo.connection_end_timestamp));
+      this.filterConnectionsByTime('to', convertUTCToLocalTime(recTo.connection_start_timestamp, this.config.timezone), convertUTCToLocalTime(recTo.connection_end_timestamp, this.config.timezone));
     }
     if (this.state.fromConnections.length > 0 && this.state.recommendedFromIndex < this.state.fromConnections.length) {
       const recFrom = this.state.fromConnections[this.state.recommendedFromIndex];
-      this.filterConnectionsByTime('from', this.convertUTCToLocalTime(recFrom.connection_start_timestamp), this.convertUTCToLocalTime(recFrom.connection_end_timestamp));
+      this.filterConnectionsByTime('from', convertUTCToLocalTime(recFrom.connection_start_timestamp, this.config.timezone), convertUTCToLocalTime(recFrom.connection_end_timestamp, this.config.timezone));
     }
     this.addSwipeBehavior('topSlider'); this.addSwipeBehavior('bottomSlider');
   }
@@ -1000,9 +999,9 @@ export default class DianaWidget {
   renderTimeSlots(sliderId, connections, type) {
     const slider = this.elements[sliderId]; slider.innerHTML = '';
     connections.forEach((conn, index) => {
-      const startTimeLocal = this.convertUTCToLocalTime(conn.connection_start_timestamp);
-      const endTimeLocal = this.convertUTCToLocalTime(conn.connection_end_timestamp);
-      const duration = this.calculateTimeDifference(conn.connection_start_timestamp, conn.connection_end_timestamp);
+      const startTimeLocal = convertUTCToLocalTime(conn.connection_start_timestamp, this.config.timezone);
+      const endTimeLocal = convertUTCToLocalTime(conn.connection_end_timestamp, this.config.timezone);
+      const duration = calculateTimeDifference(conn.connection_start_timestamp, conn.connection_end_timestamp, (key) => this.t(key));
       const anytime = conn.connection_anytime;
       const btn = document.createElement('button');
       // SVG icons are omitted here as requested
@@ -1037,11 +1036,11 @@ export default class DianaWidget {
       if (conn.connection_anytime && conn.connection_elements && conn.connection_elements.length > 0) {
         const connectionDuration = conn.connection_elements[0].duration; // Assuming duration is in minutes
         if (type === "to") {
-          conn.connection_end_timestamp = this.convertLocalTimeToUTCDatetime(this.config.activityEarliestStartTime, activityDateForCalc, this.config.timezone);
-          conn.connection_start_timestamp = this.addMinutesToDate(conn.connection_end_timestamp, -connectionDuration);
+          conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(this.config.activityEarliestStartTime, activityDateForCalc, this.config.timezone);
+          conn.connection_start_timestamp = addMinutesToDate(conn.connection_end_timestamp, -connectionDuration);
         } else { // type === "from"
-          conn.connection_start_timestamp = this.convertLocalTimeToUTCDatetime(this.config.activityLatestEndTime, activityDateForCalc, this.config.timezone);
-          conn.connection_end_timestamp = this.addMinutesToDate(conn.connection_start_timestamp, connectionDuration);
+          conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(this.config.activityLatestEndTime, activityDateForCalc, this.config.timezone);
+          conn.connection_end_timestamp = addMinutesToDate(conn.connection_start_timestamp, connectionDuration);
         }
         conn.connection_elements[0].departure_time = conn.connection_start_timestamp;
         conn.connection_elements[0].arrival_time = conn.connection_end_timestamp;
@@ -1059,8 +1058,8 @@ export default class DianaWidget {
       if (btn.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) btn.classList.add('active-time');
     });
     const filtered = connections.filter(conn =>
-      this.convertUTCToLocalTime(conn.connection_start_timestamp) === startTimeLocal &&
-      this.convertUTCToLocalTime(conn.connection_end_timestamp) === endTimeLocal
+      convertUTCToLocalTime(conn.connection_start_timestamp, this.config.timezone) === startTimeLocal &&
+      convertUTCToLocalTime(conn.connection_end_timestamp, this.config.timezone) === endTimeLocal
     );
     if (filtered.length > 0) {
         this.updateActivityTimeBox(filtered[0], type);
@@ -1083,20 +1082,20 @@ export default class DianaWidget {
                               ? this.state.selectedEndDate // JS Date object
                               : activityStartDate;    // Single day, so end date is same as start
 
-      const connectionStartTimeLocal = this.convertUTCToLocalTime(connection.connection_start_timestamp);
-      const connectionEndTimeLocal = this.convertUTCToLocalTime(connection.connection_end_timestamp);
+      const connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
+      const connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
 
       let calculatedActivityStartLocal, calculatedActivityEndLocal;
 
       if (type === 'to') {
-        const earliestConfigStartLocal = this.convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate);
-        calculatedActivityStartLocal = this.getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal);
+        const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
+        calculatedActivityStartLocal = getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal, this.config.timezone);
         // Preserve existing end time if already calculated from a 'from' connection, otherwise it's not yet determined
         calculatedActivityEndLocal = this.state.activityTimes.end || null;
         this.state.activityTimes.start = calculatedActivityStartLocal;
       } else { // type === 'from'
-        const latestConfigEndLocal = this.convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate);
-        calculatedActivityEndLocal = this.getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal);
+        const latestConfigEndLocal = convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate, this.config.timezone);
+        calculatedActivityEndLocal = getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal, this.config.timezone);
         // Preserve existing start time if already calculated from a 'to' connection
         calculatedActivityStartLocal = this.state.activityTimes.start || null;
         this.state.activityTimes.end = calculatedActivityEndLocal;
@@ -1110,8 +1109,8 @@ export default class DianaWidget {
                                activityStartDate.getTime() !== activityEndDate.getTime();
 
       if (isMultiDayDisplay) {
-        const formattedStartDate = this.formatFullDateForDisplay(activityStartDate);
-        const formattedEndDate = this.formatFullDateForDisplay(activityEndDate);
+        const formattedStartDate = formatFullDateForDisplay(activityStartDate, this.config.language);
+        const formattedEndDate = formatFullDateForDisplay(activityEndDate, this.config.language);
         dateRangeDisplayHtml = `
           <div class="activity-time-row">
             <span class="activity-time-label"><strong>${this.t('dateRangeLabel')}</strong></span>
@@ -1134,7 +1133,7 @@ export default class DianaWidget {
           const endDateForDuration = DateTime.fromFormat(calculatedActivityEndLocal, 'HH:mm', { zone: this.config.timezone })
                                         .set({ year: activityStartDate.getFullYear(), month: activityStartDate.getMonth() + 1, day: activityStartDate.getDate() });
 
-          const durationResult = this.calculateDurationLocalWithDates(startDateForDuration, endDateForDuration);
+          const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
           durationDisplayHtml = `
               <div class="activity-time-row">
                   <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
@@ -1159,23 +1158,23 @@ export default class DianaWidget {
             ${isMultiDayDisplay ? dateRangeDisplayHtml : ''}
             <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${isMultiDayDisplay ? `(${this.formatLegDateForDisplay(activityStartDate.toISOString())})` : ''}</span>
+              <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${isMultiDayDisplay ? `(${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)})` : ''}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
             </div>
-  
+
             ${durationDisplayHtml}
             ${this.state.activityTimes.warning_duration ? `
               <div class="activity-time-row">
                   <span class="activity-time-label"></span> <div class="activity-time-warning-text">
-                      ${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})
+                      ${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})
                   </div>
               </div>
             ` : ''}
-  
+
             <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${isMultiDayDisplay ? `(${this.formatLegDateForDisplay(activityEndDate.toISOString())})` : ''}</span>
+              <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${isMultiDayDisplay ? `(${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, this.config.language)})` : ''}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
             </div>
@@ -1206,8 +1205,8 @@ export default class DianaWidget {
             durationMinutes = element.duration;
         } else {
             // Fallback to calculating from timestamps if element.duration is not a number
-            const durationStr = this.calculateElementDuration(element.departure_time, element.arrival_time);
-            durationMinutes = this.parseDurationToMinutes(durationStr);
+            const durationStr = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
+            durationMinutes = parseDurationToMinutes(durationStr, (key) => this.t(key));
         }
 
         if (arr.length === 1) {
@@ -1235,7 +1234,6 @@ export default class DianaWidget {
       if (type === 'from' && this.state.activityTimes.end) {
           // Use the departure_time of the *first filteredElement*
           const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
-          const connectionStartLocalTime = this.convertUTCToLocalTime(firstEffectiveLegDepartureISO);
           const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : this.state.selectedDate;
 
           const activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', { zone: this.config.timezone })
@@ -1244,12 +1242,12 @@ export default class DianaWidget {
           const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {zone: 'utc'}).setZone(this.config.timezone);
 
           if (activityEndDateTime.isValid && firstLegDepartureDateTime.isValid && firstLegDepartureDateTime > activityEndDateTime) {
-              const waitDuration = this.calculateDurationLocalWithDates(activityEndDateTime, firstLegDepartureDateTime);
+              const waitDuration = calculateDurationLocalWithDates(activityEndDateTime, firstLegDepartureDateTime, (key) => this.t(key));
               if (waitDuration.totalMinutes > 0) {
                   html += `
                   <div class="connection-element waiting-block">
                       <div class="element-time">
-                      <span>${this.state.activityTimes.end}</span> 
+                      <span>${this.state.activityTimes.end}</span>
                       ${this.t('waiting.afterActivity')}
                       </div>
                       <div id="eleCont">
@@ -1264,14 +1262,14 @@ export default class DianaWidget {
       }
 
       filteredElements.forEach((element, index) => {
-        const departureTime = this.convertUTCToLocalTime(element.departure_time);
-        const arrivalTime = this.convertUTCToLocalTime(element.arrival_time);
+        const departureTime = convertUTCToLocalTime(element.departure_time, this.config.timezone);
+        const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
         // For display string, calculate from timestamps. element.duration is used for filtering.
-        const durationDisplayString = this.calculateElementDuration(element.departure_time, element.arrival_time);
+        const durationDisplayString = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
 
         let icon = (element.type !== 'JNY') ? this.getTransportIcon(element.type || 'DEFAULT') : this.getTransportIcon(element.vehicle_type || 'DEFAULT');
 
-        const legDepartureDateStr = this.formatLegDateForDisplay(element.departure_time);
+        const legDepartureDateStr = formatLegDateForDisplay(element.departure_time, this.config.timezone, this.config.language);
         let dateDisplayHtml = '';
         if (legDepartureDateStr && (index === 0 || legDepartureDateStr !== currentLegDateStr)) {
           dateDisplayHtml = `<div class="connection-leg-date-display">${legDepartureDateStr}</div>`;
@@ -1322,16 +1320,9 @@ export default class DianaWidget {
       // --- Waiting time after the last leg (for 'to' type) ---
       if (type === 'to' && this.state.activityTimes.start && filteredElements.length > 0) {
           const lastLegArrivalTimeISO = filteredElements[filteredElements.length - 1].arrival_time;
-          // const lastLegArrivalLocalTime = this.convertUTCToLocalTime(lastLegArrivalTimeISO); // Already calculated as 'arrivalTime' for the last leg
 
-          if (lastLegArrivalTimeISO) { // Ensure lastLegArrivalTimeISO is valid
+          if (lastLegArrivalTimeISO) {
               const connectionEndDateTime = DateTime.fromISO(lastLegArrivalTimeISO, { zone: 'utc' }).setZone(this.config.timezone);
-
-              // Activity start time is just HH:mm, need to set it on the correct date
-              // The date should be the same date as the connection's arrival if the activity starts "same day"
-              // or could be next day if connection arrives late and activity starts early next day.
-              // For simplicity, assume activity starts on the same day as the connection end for this waiting calc.
-              // More complex scenarios would require passing full activity start datetime.
               const activityActualStartDateTime = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', { zone: this.config.timezone })
                                                   .set({
                                                       year: connectionEndDateTime.year,
@@ -1340,12 +1331,12 @@ export default class DianaWidget {
                                                   });
 
               if (connectionEndDateTime.isValid && activityActualStartDateTime.isValid && activityActualStartDateTime > connectionEndDateTime) {
-                  const waitDuration = this.calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime);
+                  const waitDuration = calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime, (key) => this.t(key));
                    if (waitDuration.totalMinutes > 0) {
                       html += `
                       <div class="connection-element waiting-block">
                           <div class="element-time">
-                          <span>${this.convertUTCToLocalTime(lastLegArrivalTimeISO)}</span> 
+                          <span>${convertUTCToLocalTime(lastLegArrivalTimeISO, this.config.timezone)}</span>
                           ${this.t('waiting.beforeActivity')}
                           </div>
                           <div id="eleCont">
@@ -1359,7 +1350,7 @@ export default class DianaWidget {
               }
           }
       }
-      html += `</div>`; // Close .connection-elements
+      html += `</div>`;
       return html;
     }).join('');
   }
@@ -1401,7 +1392,7 @@ export default class DianaWidget {
                 this.updateDateDisplay(this.state[stateDateKey], dateDisplayElementId);
                 this.clearMessages();
             });
-            dateInputElement.value = this.formatDatetime(this.state[stateDateKey]);
+            dateInputElement.value = formatDatetime(this.state[stateDateKey]);
             this.updateDateDisplay(this.state[stateDateKey], dateDisplayElementId);
             return;
         }
@@ -1431,12 +1422,11 @@ export default class DianaWidget {
                 <div class="calendar-body">
                     <div class="calendar-nav">
                         <button class="calendar-nav-btn prev-month" aria-label="${this.t('ariaLabels.previousMonthButton')}"></button>
-                        <div class="calendar-month-year">${this.getMonthName(currentViewMonth)} ${currentViewYear}</div>
+                        <div class="calendar-month-year">${getMonthName(currentViewMonth, (key) => this.t(key))} ${currentViewYear}</div>
                         <button class="calendar-nav-btn next-month" aria-label="${this.t('ariaLabels.nextMonthButton')}"></button>
                     </div>
                     <div class="calendar-grid">
-                        ${this.t("shortDays").map(day => `<div class="calendar-day-header">${day}</div>`).join('')}
-                        ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonthIndex, currentViewYear, currentViewMonth, selectedDateInCalendar)}
+                        ${getShortDayName(0, (key) => this.t(key))} ${this.generateCalendarDaysHTML(daysInMonth, firstDayOfMonthIndex, currentViewYear, currentViewMonth, selectedDateInCalendar)}
                     </div>
                 </div>
                 <div class="calendar-footer">
@@ -1474,7 +1464,7 @@ export default class DianaWidget {
             calContainer.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
                 e.preventDefault(); e.stopPropagation();
                 this.state[stateDateKey] = selectedDateInCalendar;
-                dateInputElement.value = this.formatDatetime(this.state[stateDateKey]);
+                dateInputElement.value = formatDatetime(this.state[stateDateKey]);
                 this.updateDateDisplay(this.state[stateDateKey], dateDisplayElementId);
                 calendarContainer.classList.remove("active"); calendarContainer.style.display = 'none';
                 this.clearMessages();
@@ -1545,7 +1535,7 @@ export default class DianaWidget {
         window.addEventListener('scroll', () => { if (calendarContainer.classList.contains('active')) throttledReposition(); }, true);
         window.addEventListener('resize', () => { if (calendarContainer.classList.contains('active')) throttledReposition(); });
 
-        dateInputElement.value = this.formatDatetime(this.state[stateDateKey]);
+        dateInputElement.value = formatDatetime(this.state[stateDateKey]);
         this.updateDateDisplay(this.state[stateDateKey], dateDisplayElementId);
     };
 
@@ -1563,15 +1553,6 @@ export default class DianaWidget {
     }
   }
 
-
-  formatDatetime(date) {
-    if (!date || isNaN(date.getTime())) return ''; // Handle invalid or null dates
-    let year = date.getUTCFullYear(); // Use UTC to avoid timezone issues with formatting
-    let month = date.getUTCMonth() + 1;
-    let day = date.getUTCDate();
-    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  }
-
   generateCalendarDaysHTML(daysInMonth, firstDayOfMonth, year, month, selectedDateInCalendar) {
     let html = ""; const today = new Date(); today.setUTCHours(0, 0, 0, 0);
     for (let i = 0; i < firstDayOfMonth; i++) html += "<div class='calendar-day empty'></div>";
@@ -1584,8 +1565,6 @@ export default class DianaWidget {
     return html;
   }
 
-  getMonthName(month) { return this.t('months')[month]; }
-
   updateDateDisplay(date, displayElementId) {
     const displayElement = this.elements[displayElementId];
     if (!displayElement) return;
@@ -1593,213 +1572,13 @@ export default class DianaWidget {
     const localeMap = { EN: 'en-GB', DE: 'de-DE' };
     const locale = localeMap[this.config.language] || 'en-GB';
     if (date && !isNaN(date.getTime())) {
-      const options = { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }; // Display in UTC
-      displayElement.textContent = date.toLocaleDateString(locale, options);
+      displayElement.textContent = formatDateForDisplay(date, locale, "UTC"); // Using imported formatDateForDisplay
       displayElement.classList.remove("placeholder");
     } else {
       displayElement.textContent = this.t('selectDate');
       displayElement.classList.add("placeholder");
     }
   }
-
-  parseDurationToMinutes(durationString) {
-    if (!durationString || typeof durationString !== 'string') return 0;
-    try {
-      if (durationString.includes(this.t("durationHoursShort"))) {
-          const parts = durationString.replace(this.t("durationHoursShort"), "").split(':');
-          const hours = parseInt(parts[0], 10);
-          const minutes = parseInt(parts[1], 10);
-          if (isNaN(hours) || isNaN(minutes)) return 0;
-          return (hours * 60) + minutes;
-      } else if (durationString.includes(this.t("durationMinutesShort"))) {
-          const minutes = parseInt(durationString.replace(this.t("durationMinutesShort"), "").trim(), 10);
-          return isNaN(minutes) ? 0 : minutes;
-      }
-    } catch (e) {
-      console.error("Error parsing duration string:", durationString, e);
-    }
-    return 0;
-  }
-
-  formatLegDateForDisplay(isoString) {
-    try {
-      // Ensure the input is treated as UTC and then converted to the configured display timezone
-      const localDt = DateTime.fromISO(isoString, { zone: 'utc' }).setZone(this.config.timezone);
-      if (!localDt.isValid) {
-          console.warn(`Invalid ISO string for leg date display: ${isoString}`);
-          return "";
-      }
-      const localeMap = { EN: 'en-GB', DE: 'de-DE' };
-      const locale = localeMap[this.config.language] || 'en-GB';
-      return localDt.toFormat('dd. MMM', { locale });
-    } catch (error) {
-      console.error("Error formatting leg date for display:", error);
-      return ""; // Fallback
-    }
-  }
-
-  formatFullDateForDisplay(date) {
-    if (!date || isNaN(date.getTime())) return '';
-    try {
-      const localeMap = { EN: 'en-GB', DE: 'de-DE' }; // Use en-GB for DD/MM/YYYY format consistency
-      const locale = localeMap[this.config.language] || 'en-GB';
-      // Format date for display using locale settings
-      const options = { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" };
-      return date.toLocaleDateString(locale, options);
-    } catch (error) {
-      console.error("Error formatting full date for display:", error);
-      return "";
-    }
-  }
-
-  /**
-   * Calculates the difference between two ISO 8601 timestamps (UTC).
-   * Returns a human-readable duration string (e.g., "45 min", "1:30 h").
-   */
-  calculateTimeDifference(startISO, endISO) {
-    try {
-        const start = DateTime.fromISO(startISO, { zone: 'utc' });
-        const end = DateTime.fromISO(endISO, { zone: 'utc' });
-        if (!start.isValid || !end.isValid) {
-            throw new Error(`Invalid date format: ${startISO} or ${endISO}`);
-        }
-        const diff = end.diff(start, ['hours', 'minutes']);
-        const hours = Math.floor(diff.as('hours')); // Get whole hours
-        const minutes = Math.round(diff.as('minutes')) % 60; // Get remaining minutes
-
-        if (hours === 0) {
-            return `${minutes} ${this.t("durationMinutesShort")}`;
-        } else {
-            return `${hours}:${String(minutes).padStart(2, '0')}${this.t("durationHoursShort")}`;
-        }
-    } catch (error) {
-        console.error("Error calculating time difference:", error);
-        return "--"; // Fallback duration
-    }
-  }
-
-  calculateElementDuration(startISO, endISO) { return this.calculateTimeDifference(startISO, endISO); }
-  addMinutesToDate(dateISO, minutes) {
-    const dateTime = DateTime.fromISO(dateISO, { zone: 'utc' });
-    if (!dateTime.isValid) throw new Error(`Invalid date format: ${dateISO}`);
-    return dateTime.plus({ minutes }).toISO();
-  }
-
-  /**
-   * Converts a local time string (HH:MM or HH:MM:SS) from the configured timezone
-   * to a UTC time string (HH:MM:SS) for the given date.
-   */
-  convertLocalTimeToUTC(localTime, date, timezone) {
-    try {
-        const [hours, minutes, seconds] = ([...(localTime.split(':')), '0', '0']).slice(0, 3).map(Number);
-
-        const localDt = DateTime.fromObject({
-            year: date.getFullYear(),
-            month: date.getMonth() + 1,
-            day: date.getDate(),
-            hour: hours,
-            minute: minutes,
-            second: seconds || 0 // Use provided seconds or default to 0
-            },
-            {
-            zone: timezone // Interpret the input time in the configured timezone
-            }
-        );
-
-        if (!localDt.isValid) {
-            throw new Error(`Invalid local time or timezone: ${localTime}, ${timezone}. Reason: ${localDt.invalidReason}`);
-        }
-
-        return localDt.toUTC().toFormat('HH:mm:ss'); // Output UTC in HH:mm:ss format
-    } catch(error) {
-        console.error("Error converting local time to UTC:", error);
-        return "00:00:00"; // Fallback value
-    }
-  }
-
-
-  convertLocalTimeToUTCDatetime(localTime, date, timezone) {
-    try {
-        const [hours, minutes, seconds] = ([...(localTime.split(':')), '0', '0']).slice(0, 3).map(Number);
-
-        const localDt = DateTime.fromObject({
-            year: date.getFullYear(),
-            month: date.getMonth() + 1,
-            day: date.getDate(),
-            hour: hours,
-            minute: minutes,
-            second: seconds || 0 // Use provided seconds or default to 0
-            },
-            {
-            zone: timezone // Interpret the input time in the configured timezone
-            }
-        );
-
-        if (!localDt.isValid) {
-            throw new Error(`Invalid local time or timezone: ${localTime}, ${timezone}. Reason: ${localDt.invalidReason}`);
-        }
-
-        return localDt.toUTC().toISO();
-    } catch(error) {
-        console.error("Error converting local time to UTC:", error);
-        return "0000-00-00T00:00:00Z"; // Fallback value
-    }
-  }
-
-
-  /**
-   * Converts a configuration time string (HH:MM or HH:MM:SS) for a specific date
-   * to the display timezone (which is also the configured timezone).
-   * Returns time in HH:mm format.
-   */
-  convertConfigTimeToLocalTime(configTime, date) {
-     try {
-        const [hours, minutes, seconds] = ([...(configTime.split(':')), '0', '0']).slice(0, 3).map(Number);
-
-        // Create DateTime object assuming the configTime is already in the target display timezone
-        const localDt = DateTime.fromObject({
-            year: date.getFullYear(),
-            month: date.getMonth() + 1,
-            day: date.getDate(),
-            hour: hours,
-            minute: minutes,
-            second: seconds || 0
-            },
-            {
-            zone: this.config.timezone // The config time is already in this zone
-            }
-        );
-
-         if (!localDt.isValid) {
-            throw new Error(`Invalid config time or timezone: ${configTime}, ${this.config.timezone}. Reason: ${localDt.invalidReason}`);
-        }
-
-        return localDt.toFormat('HH:mm'); // Output in local HH:mm format
-    } catch(error) {
-        console.error("Error converting config time to local time:", error);
-        return "--:--"; // Fallback value
-    }
-  }
-
-
-  /**
-   * Converts a UTC ISO 8601 timestamp string to the configured local timezone.
-   * Returns time in HH:mm format.
-   */
-  convertUTCToLocalTime(isoString) {
-     try {
-        const utcDt = DateTime.fromISO(isoString, { zone: 'utc' });
-         if (!utcDt.isValid) {
-            throw new Error(`Invalid UTC timestamp: ${isoString}. Reason: ${utcDt.invalidReason}`);
-        }
-        return utcDt.setZone(this.config.timezone) // Convert to configured local zone
-                    .toFormat('HH:mm');
-    } catch(error) {
-        console.error("Error converting UTC to local time:", error);
-        return "--:--"; // Fallback value
-    }
-  }
-
 
   // --- Helper Functions ---
 
@@ -1829,129 +1608,6 @@ export default class DianaWidget {
     };
     // Use || 'DEFAULT' to handle null or undefined types gracefully
     return icons[type] || icons["DEFAULT"];
-  }
-
-  getApiErrorTranslationKey(errorCode) {
-    const codeMap = {
-        1001: 'errors.api.queryParamMissing',
-        1002: 'errors.api.invalidLimitParam',
-        1003: 'errors.api.autocompleteFailed',
-        2001: 'errors.api.invalidUserStartCoordinates',
-        2002: 'errors.api.geocodeUserStartFailed',
-        2003: 'errors.api.geocodeUserStartFailedInternal',
-        2004: 'errors.api.unsupportedUserStartType',
-        2005: 'errors.api.invalidActivityStartCoordinates',
-        2006: 'errors.api.geocodeActivityStartFailed',
-        2007: 'errors.api.geocodeActivityStartFailedInternal',
-        2008: 'errors.api.unsupportedActivityStartType',
-        2009: 'errors.api.invalidActivityEndCoordinates',
-        2010: 'errors.api.geocodeActivityEndFailed',
-        2011: 'errors.api.geocodeActivityEndFailedInternal',
-        2012: 'errors.api.unsupportedActivityEndType',
-        2013: 'errors.api.activityNotFound',
-        2014: 'errors.api.noToConnections',
-        2015: 'errors.api.noFromConnections',
-        2016: 'errors.api.dbErrorActivity',
-        '2017-1': 'errors.api.noToConnectionsFound',
-        '2017-2': 'errors.api.noFromConnectionsFound',
-        '2018-1': 'errors.api.toConnectionsNoScore',
-        '2018-2': 'errors.api.fromConnectionsNoScore',
-        '2019-1': 'errors.api.noToConnectionsMergingMightFail',
-        '2019-2': 'errors.api.noFromConnectionsMergingMightFail',
-        '2020-1': 'errors.api.noToConnectionsMergingFailed',
-        '2020-2': 'errors.api.noFromConnectionsMergingFailed',
-        '2021-1': 'errors.api.noToConnectionsTimeWindow',
-        '2021-2': 'errors.api.noFromConnectionsTimeWindow',
-        '2022-1': 'errors.api.noToConnectionsAfterCurrentTime',
-        '2023-1': 'errors.api.noToConnectionsFilteredByDuration',
-        '2023-2': 'errors.api.noFromConnectionsFilteredByDuration',
-        2024: 'errors.api.noReturnConnectionMatchingIncoming',
-        '2025-1': 'errors.api.errorCalcToConnections',
-        '2025-2': 'errors.api.errorCalcFromConnections',
-        '2026-1': 'errors.api.internalErrorRecommendedTo',
-        3001: 'errors.api.internalErrorCalcToProvider',
-        3002: 'errors.api.internalErrorCalcFromProvider',
-        3003: 'errors.api.internalErrorCalcFromProviderFallback',
-        4001: 'errors.api.reverseGeocodeParameterMissing',
-        4002: 'errors.api.reverseGeocodeFailed',
-        'APP_INVALID_DATA': 'errors.api.invalidDataReceived'
-    };
-    return codeMap[errorCode] || 'errors.api.unknown';
-  }
-
-  /**
-   * Compares two time strings (HH:MM) and returns the later one.
-   */
-  getLaterTime(time1, time2) {
-    try {
-        const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: this.config.timezone });
-        const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: this.config.timezone });
-         if (!t1.isValid || !t2.isValid) {
-            throw new Error(`Invalid time format for comparison: ${time1} or ${time2}`);
-        }
-        return t1 > t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
-    } catch(error) {
-        console.error("Error comparing times (getLaterTime):", error);
-        return time1 || time2 || "--:--"; // Fallback
-    }
-  }
-
-  /**
-   * Compares two time strings (HH:MM) and returns the earlier one.
-   */
-  getEarlierTime(time1, time2) {
-     try {
-        const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: this.config.timezone });
-        const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: this.config.timezone });
-         if (!t1.isValid || !t2.isValid) {
-            throw new Error(`Invalid time format for comparison: ${time1} or ${time2}`);
-        }
-        return t1 < t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
-    } catch(error) {
-        console.error("Error comparing times (getEarlierTime):", error);
-        return time1 || time2 || "--:--";
-    }
-  }
-
-  calculateDurationLocalWithDates(startDateTime, endDateTime) {
-    // Expects Luxon DateTime objects already set to the correct dates and times in the configured timezone
-    try {
-        if (!startDateTime.isValid || !endDateTime.isValid) {
-            return { text: "--", hours: 0, minutes: 0, totalMinutes: 0 };
-        }
-        if (endDateTime < startDateTime) { // Should be handled by prior validation, but good to check
-             return { text: this.t('errors.endDateBeforeStart'), hours: 0, minutes: 0, totalMinutes: 0 };
-        }
-        const diff = endDateTime.diff(startDateTime, ['hours', 'minutes']);
-        const totalMinutes = Math.round(diff.as('minutes'));
-        const hours = Math.floor(totalMinutes / 60);
-        const minutes = totalMinutes % 60;
-        let durationText = hours > 0 ? `${hours}:${String(minutes).padStart(2, '0')}${this.t("durationHoursShort")}` : `${minutes} ${this.t("durationMinutesShort")}`;
-        return { text: durationText, hours: hours, minutes: minutes, totalMinutes: totalMinutes };
-    } catch (error) {
-        console.error("Error calculating duration with dates:", error);
-        return { text: "--", hours: 0, minutes: 0, totalMinutes: 0 };
-    }
-  }
-
-  /**
-   * Formats a duration in minutes into a human-readable string (e.g., "45 min", "1:30 h").
-   */
-  getTimeFormatFromMinutes(minutes) {
-    try {
-      minutes = parseInt(minutes);
-    } catch {
-      return '--';
-    }
-    if (typeof minutes !== 'number' || isNaN(minutes) || minutes < 0) {
-        return '--';
-    }
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours > 0) {
-      return `${hours}:${String(mins).padStart(2, '0')}${this.t("durationHoursShort")}`;
-    }
-    return `${mins} ${this.t("durationMinutesShort")}`;
   }
 
   addSwipeBehavior(sliderId) {
@@ -1996,16 +1652,6 @@ export default class DianaWidget {
         // e.preventDefault(); // Prevent default scroll only if needed, can interfere with page scroll
         handleMove(e.touches[0].pageX);
     }, { passive: false }); // Set passive to false if preventDefault is used
-  }
-
-
-  debounce(func, wait) {
-    let timeout;
-    return (...args) => {
-      const context = this;
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(context, args), wait);
-    };
   }
 
   // Navigation methods
@@ -2132,30 +1778,4 @@ export default class DianaWidget {
     this.showError(null, 'results');
     this.showInfo(null);
   }
-}
-
-/**
- * Throttles a function using requestAnimationFrame to synchronize with browser repaints.
- * Ensures the function is called at most once per frame during frequent events.
- * @param {Function} func The function to throttle.
- * @param {number} delay The delay in ms (not directly used by rAF, but common for throttle)
- * @returns {Function} The throttled function.
- */
-function throttle(func, delay) {
-  let isScheduled = false;
-  let lastArgs = null;
-  let lastContext = null;
-
-  return function(...args) {
-    lastArgs = args;
-    lastContext = this;
-
-    if (!isScheduled) {
-      isScheduled = true;
-      requestAnimationFrame(() => {
-        func.apply(lastContext, lastArgs);
-        isScheduled = false;
-      });
-    }
-  };
 }
