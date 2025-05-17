@@ -410,6 +410,7 @@ export default class DianaWidget {
       }
       originInput.disabled = true; originInput.classList.add('disabled');
       if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
+      if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
       return;
     }
     if (this.config.cacheUserStartLocation) {
@@ -421,6 +422,15 @@ export default class DianaWidget {
           originInput.setAttribute('data-lon', cachedLocation.lon);
         }
       }
+    }
+
+    // Set initial button state based on input value
+    if (originInput.value.trim()) {
+      if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
+      if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
+    } else {
+      if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
+      if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'block';
     }
   }
 
@@ -552,6 +562,9 @@ export default class DianaWidget {
                 <div class="input-container">
                   <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
                   <input type="text" class="input-field" id="originInput" placeholder="${this.t('enterOrigin')}" value="${this.config.userStartLocationDefault || ''}" aria-labelledby="originLabel">
+                  <svg id="clearInputBtn" class="input-icon-right" style="pointer-events: auto; cursor: pointer; display: none;" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="${this.t('clearInput')}" role="button">
+                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
                   <svg id="currentLocationBtn" class="input-icon-right" style="pointer-events: auto; cursor: pointer;" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="${this.t('useCurrentLocation')}" role="button">
                     <circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="0" x2="12" y2="5"></line><line x1="0" y1="12" x2="5" y2="12"></line><line x1="12" y1="19" x2="12" y2="24"></line><line x1="19" y1="12" x2="24" y2="12"></line>
                   </svg>
@@ -616,6 +629,7 @@ export default class DianaWidget {
       bottomSlider: this.container.querySelector("#bottomSlider"),
       activityTimeBox: this.container.querySelector("#activity-time"),
       currentLocationBtn: this.container.querySelector("#currentLocationBtn"),
+      clearInputBtn: this.container.querySelector("#clearInputBtn"),
       activityDateStart: this.container.querySelector("#activityDateStart"),
       dateDisplayStart: this.container.querySelector("#dateDisplayStart"),
       activityDateEnd: this.container.querySelector("#activityDateEnd"),
@@ -647,6 +661,9 @@ export default class DianaWidget {
     if (this.elements.currentLocationBtn) {
         this.elements.currentLocationBtn.setAttribute('aria-label', this.t('useCurrentLocation'));
     }
+    if (this.elements.clearInputBtn) {
+        this.elements.clearInputBtn.setAttribute('aria-label', this.t('clearInput'));
+    }
     this.elements.responseBox.setAttribute('aria-busy', 'false');
     this.elements.responseBoxBottom.setAttribute('aria-busy', 'false');
   }
@@ -656,6 +673,15 @@ export default class DianaWidget {
         this.elements.originInput.addEventListener('input', (e) => {
           this.elements.originInput.removeAttribute("data-lat"); this.elements.originInput.removeAttribute("data-lon");
           this.clearMessages(); debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
+
+          // Toggle between clear button and location button based on input value
+          if (e.target.value.trim()) {
+            this.elements.clearInputBtn.style.display = 'block';
+            this.elements.currentLocationBtn.style.display = 'none';
+          } else {
+            this.elements.clearInputBtn.style.display = 'none';
+            this.elements.currentLocationBtn.style.display = 'block';
+          }
         });
         this.elements.suggestionsContainer.addEventListener('click', (e) => {
           if (e.target.classList.contains('suggestion-item')) this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
@@ -670,6 +696,18 @@ export default class DianaWidget {
           else if (e.key === 'Enter') this.handleSuggestionEnter(e);
         });
         if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
+
+        // Add event listener for clear input button
+        if (this.elements.clearInputBtn) this.elements.clearInputBtn.addEventListener('click', () => {
+          this.elements.originInput.value = '';
+          this.elements.originInput.removeAttribute("data-lat");
+          this.elements.originInput.removeAttribute("data-lon");
+          this.elements.clearInputBtn.style.display = 'none';
+          this.elements.currentLocationBtn.style.display = 'block';
+          this.elements.originInput.focus();
+          this.state.suggestions = []; 
+          this.renderSuggestions();
+        });
     }
     this.elements.searchBtn.addEventListener('click', (e) => { e.preventDefault(); this.handleSearch(); });
     this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
@@ -748,6 +786,10 @@ export default class DianaWidget {
         this.elements.originInput.setAttribute('data-lon', longitude.toString());
         this.state.suggestions = []; this.renderSuggestions(); this.clearMessages();
         this._setCachedStartLocation(displayName, latitude, longitude);
+
+        // Update button visibility
+        if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
+        if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
       } else {
         throw new Error(this.t('errors.reverseGeocodeNoResults'));
       }
@@ -789,6 +831,10 @@ export default class DianaWidget {
     this.elements.originInput.setAttribute('data-lon', lon);
     this.state.suggestions = []; this.renderSuggestions(); this.elements.originInput.focus(); this.clearMessages();
     this._setCachedStartLocation(value, lat, lon);
+
+    // Update button visibility
+    if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
+    if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
   }
 
   async handleSearch() {

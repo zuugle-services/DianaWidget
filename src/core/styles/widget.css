@@ -31,7 +31,7 @@
     --bg-tertiary: #f5f5f5;
     --bg-hover: #f0f0f0;
     --bg-error: rgba(220, 53, 69, 0.1);
-    --bg-info: #dee4f3; /* Used for in-range background */
+    --bg-info: #dee4f3;
     --bg-transparent: rgba(128,128,128,0.05);
     --bg-apply-hover: #357ae8;
     --bg-waiting-block: rgba(255, 149, 0, 0.08);
@@ -238,6 +238,18 @@
     font-size: 14px;
 }
 
+.diana-container #clearInputBtn:hover {
+    background-color: var(--bg-hover);
+    transition: background-color 0.2s ease;
+    border-radius: 8px;
+}
+
+.diana-container #currentLocationBtn:hover {
+    background-color: var(--bg-hover);
+    transition: background-color 0.2s ease;
+    border-radius: 8px;
+}
+
 .diana-container .input-field {
     width: 100%;
     padding: 12px 40px!important;
@@ -302,7 +314,7 @@
 .diana-container .date-input-container.disabled .date-input-display {
     color: var(--text-disabled);
 }
-.diana-container .date-input { /* The clickable div for old style date input */
+.diana-container .date-input {
     font-family: "DM Sans",sans-serif !important;
     padding: 12px 40px!important;
     border-radius: 5px;
