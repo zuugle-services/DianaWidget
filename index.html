@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Marktschellenberger Eishöhle Adventure</title>
+    <title>Adventure Planner: Eishöhle & Rax Hike</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Apply Inter font globally */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6; /* Light gray background */
-            color: #1f2937; /* Default dark gray text */
+            background-color: #f3f4f6;
+            color: #1f2937;
+            transition: background-color 0.3s ease; /* Smooth background transition */
         }
-        /* Widget container base style */
         #dianaWidgetContainer {
             background-color: #ffffff;
             border-radius: 0.75rem;
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); /* Softer shadow */
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             overflow: hidden;
             transition: box-shadow 0.3s ease-in-out;
+            max-height: 620px !important;
         }
         #dianaWidgetContainer:hover {
              box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
         }
-        /* Simple transition for gallery images */
         .gallery-img {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
@@ -32,87 +31,190 @@
             transform: scale(1.03);
             box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
         }
+        .activity-content {
+            display: none; /* Hidden by default */
+        }
+        .activity-content.active {
+            display: block; /* Shown when active */
+        }
+        .nav-button {
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+        }
+        .nav-button.active {
+            background-color: #4f46e5; /* Indigo for active tab */
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+        }
+        .nav-button:hover:not(.active) {
+            background-color: #6366f1; /* Lighter indigo on hover */
+            color: white;
+        }
+        .header-gradient-eishoehle {
+             background-image: linear-gradient(to right, #3b82f6, #60a5fa); /* Blue gradient */
+        }
+        .header-gradient-rax {
+            background-image: linear-gradient(to right, #10b981, #34d399); /* Green gradient */
+        }
     </style>
 </head>
 <body class="antialiased">
 
-    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white shadow-lg">
+    <header id="pageHeader" class="text-white shadow-lg header-gradient-eishoehle transition-all duration-500 ease-in-out">
         <div class="container mx-auto px-4 py-6 md:px-8 md:py-10 text-center">
-            <h1 class="text-3xl md:text-5xl font-bold mb-2 drop-shadow-md">Explore the Marktschellenberger Eishöhle!</h1>
-            <p class="text-lg md:text-xl text-blue-100">Plan your journey to the fascinating ice cave in Untersberg.</p>
+            <h1 id="pageTitle" class="text-3xl md:text-5xl font-bold mb-2 drop-shadow-md">Explore the Marktschellenberger Eishöhle!</h1>
+            <p id="pageSubtitle" class="text-lg md:text-xl text-blue-100">Plan your journey to the fascinating ice cave in Untersberg.</p>
         </div>
     </header>
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl mt-8">
 
+        <div class="mb-8 flex justify-center space-x-2 sm:space-x-4 bg-white p-3 rounded-xl shadow-md">
+            <button id="navEishoehle" class="nav-button active px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('eishoehle')">
+                Eishöhle Adventure
+            </button>
+            <button id="navRax" class="nav-button px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('rax')">
+                Rax 2-Day Hike
+            </button>
+        </div>
+
         <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
 
             <div class="lg:w-3/5 space-y-8">
-                <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Your Adventure to the Ice Kingdom</h2>
-                    <img
-                        src="https://placehold.co/800x450/a0aec0/ffffff?text=Marktschellenberger+Eish%C3%B6hle+Entrance"
-                        alt="Entrance or impressive ice formation of Marktschellenberger Eishöhle"
-                        class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
-                        onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
-                    >
-                    <p class="mb-4 text-gray-700 leading-relaxed">
-                        Embark on an unforgettable journey into the Marktschellenberger Eishöhle, Germany's largest ice cave, nestled within the majestic Untersberg massif. Discover a subterranean world of glittering ice formations, frozen waterfalls, and vast caverns. This natural wonder offers a unique experience for adventurers and nature lovers alike, showcasing the raw beauty sculpted by millennia of ice and rock.
-                    </p>
-                    <p class="text-gray-700 leading-relaxed">
-                        Accessing the ice cave is an adventure in itself, typically involving a scenic hike. Our travel planner helps you find the best public transport connections to the starting points of the trails leading to this icy marvel. Prepare for a cool experience, both literally and figuratively!
-                    </p>
-                </section>
+                <div id="contentEishoehle" class="activity-content active">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Your Adventure to the Ice Kingdom</h2>
+                        <img
+                            src="https://placehold.co/800x450/a0aec0/ffffff?text=Marktschellenberger+Eish%C3%B6hle+Entrance"
+                            alt="Entrance or impressive ice formation of Marktschellenberger Eishöhle"
+                            class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
+                            onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
+                        >
+                        <p class="mb-4 text-gray-700 leading-relaxed">
+                            Embark on an unforgettable journey into the Marktschellenberger Eishöhle, Germany's largest ice cave, nestled within the majestic Untersberg massif. Discover a subterranean world of glittering ice formations, frozen waterfalls, and vast caverns. This natural wonder offers a unique experience for adventurers and nature lovers alike, showcasing the raw beauty sculpted by millennia of ice and rock.
+                        </p>
+                        <p class="text-gray-700 leading-relaxed">
+                            Accessing the ice cave is an adventure in itself, typically involving a scenic hike. Our travel planner helps you find the best public transport connections to the starting points of the trails leading to this icy marvel. Prepare for a cool experience, both literally and figuratively!
+                        </p>
+                    </section>
 
-                <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Cave Highlights</h3>
-                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
-                        <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-                            <span>Spectacular Ice Formations</span>
-                        </li>
-                        <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                             <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.0006 1.50098L20.5006 18.001H3.50061L12.0006 1.50098ZM12.0006 4.7312L7.13461 16.001H16.8666L12.0006 4.7312Z M10.0006 19.001C10.0006 18.4487 10.4483 18.001 11.0006 18.001H13.0006C13.5529 18.001 14.0006 18.4487 14.0006 19.001V22.001H10.0006V19.001Z"/></svg>
-                            <span>Germany's Largest Ice Cave</span>
-                        </li>
-                         <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                            <span>Guided Tours Available</span>
-                        </li>
-                        <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                            <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0zM9 9a3 3 0 100-6 3 3 0 000 6zm0 0v1.5M15 15a3 3 0 100-6 3 3 0 000 6zm0 0v1.5M12 6.75h.008v.008H12V6.75zm0 10.5h.008v.008H12v-.008zM4.5 12H3m1.5 0H6m10.5 0h1.5m-1.5 0h-1.5M9 4.5V3M15 4.5V3M7.5 7.5S7.65 6 9 6s1.5 1.5 1.5 1.5M15 7.5S14.85 6 13.5 6s-1.5 1.5-1.5 1.5"></path></svg>
-                            <span>Consistently Low Temperatures (around 0°C)</span>
-                        </li>
-                    </ul>
-                </section>
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Cave Highlights</h3>
+                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+                            <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                                <span>Spectacular Ice Formations</span>
+                            </li>
+                            <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                 <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.0006 1.50098L20.5006 18.001H3.50061L12.0006 1.50098ZM12.0006 4.7312L7.13461 16.001H16.8666L12.0006 4.7312Z M10.0006 19.001C10.0006 18.4487 10.4483 18.001 11.0006 18.001H13.0006C13.5529 18.001 14.0006 18.4487 14.0006 19.001V22.001H10.0006V19.001Z"/></svg>
+                                <span>Germany's Largest Ice Cave</span>
+                            </li>
+                             <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <span>Guided Tours Available</span>
+                            </li>
+                            <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                                <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0zM9 9a3 3 0 100-6 3 3 0 000 6zm0 0v1.5M15 15a3 3 0 100-6 3 3 0 000 6zm0 0v1.5M12 6.75h.008v.008H12V6.75zm0 10.5h.008v.008H12v-.008zM4.5 12H3m1.5 0H6m10.5 0h1.5m-1.5 0h-1.5M9 4.5V3M15 4.5V3M7.5 7.5S7.65 6 9 6s1.5 1.5 1.5 1.5M15 7.5S14.85 6 13.5 6s-1.5 1.5-1.5 1.5"></path></svg>
+                                <span>Consistently Low Temperatures (around 0°C)</span>
+                            </li>
+                        </ul>
+                    </section>
 
-                 <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear</h3>
-                    <ul class="list-disc list-inside space-y-2 text-gray-700">
-                        <li>Warm, layered clothing (temperature inside is near freezing)</li>
-                        <li>Waterproof and sturdy hiking boots with good grip</li>
-                        <li>Gloves and a warm hat</li>
-                        <li>Headlamp or flashlight (though tours are usually lit)</li>
-                        <li>Small backpack for water and snacks</li>
-                        <li>Sunscreen and sunglasses for the hike to the cave</li>
-                        <li>Camera to capture the icy beauty!</li>
-                    </ul>
-                </section>
+                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li>Warm, layered clothing (temperature inside is near freezing)</li>
+                            <li>Waterproof and sturdy hiking boots with good grip</li>
+                            <li>Gloves and a warm hat</li>
+                            <li>Headlamp or flashlight (though tours are usually lit)</li>
+                            <li>Small backpack for water and snacks</li>
+                            <li>Sunscreen and sunglasses for the hike to the cave</li>
+                            <li>Camera to capture the icy beauty!</li>
+                        </ul>
+                    </section>
 
-                <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
-                    <h3 class="text-xl font-semibold mb-4 text-gray-800">Gallery</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                        <img src="https://placehold.co/300x200/81e6d9/ffffff?text=Ice+Formations" alt="Ice formations inside the cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
-                        <img src="https://placehold.co/300x200/f6ad55/ffffff?text=Untersberg+Trail" alt="Hiking trail in Untersberg" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
-                        <img src="https://placehold.co/300x200/9f7aea/ffffff?text=Cave+Interior" alt="View inside the ice cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
-                    </div>
-                </section>
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Gallery</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <img src="https://placehold.co/300x200/81e6d9/ffffff?text=Ice+Formations" alt="Ice formations inside the cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                            <img src="https://placehold.co/300x200/f6ad55/ffffff?text=Untersberg+Trail" alt="Hiking trail in Untersberg" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                            <img src="https://placehold.co/300x200/9f7aea/ffffff?text=Cave+Interior" alt="View inside the ice cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                        </div>
+                    </section>
+                </div>
+
+                <div id="contentRax" class="activity-content">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Conquer the Rax: A 2-Day Alpine Adventure</h2>
+                         <img
+                            src="https://placehold.co/800x450/34d399/ffffff?text=Rax+Mountain+Panorama"
+                            alt="Panoramic view of the Rax mountain range"
+                            class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
+                            onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
+                        >
+                        <p class="mb-4 text-gray-700 leading-relaxed">
+                            Experience the breathtaking beauty of the Rax massif on an invigorating 2-day hike. This adventure is perfect for those looking to immerse themselves in alpine scenery, enjoy stunning vistas, and spend a night in a cozy mountain hut. The Rax offers a variety of trails, from gentle paths across alpine meadows to more challenging ascents.
+                        </p>
+                        <p class="text-gray-700 leading-relaxed">
+                            Our planned route takes you through some of the most scenic parts of the Rax, with an overnight stay at a traditional Austrian "Hütte". Wake up to crisp mountain air and unparalleled views before continuing your journey. This trip is designed to be a memorable escape into nature.
+                        </p>
+                    </section>
+
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Rax Hike Highlights</h3>
+                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+                            <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
+                                <svg class="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"></path></svg>
+                                <span>Stunning Alpine Scenery & Panoramas</span>
+                            </li>
+                            <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
+                                <svg class="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                                <span>Overnight Stay in a Mountain Hut</span>
+                            </li>
+                             <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
+                                <svg class="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                <span>Varied Trails for Different Fitness Levels</span>
+                            </li>
+                            <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
+                                <svg class="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                <span>Fresh Mountain Air & Tranquility</span>
+                            </li>
+                        </ul>
+                    </section>
+
+                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear for 2-Day Hike</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li>Backpack (30-40 liters)</li>
+                            <li>Sturdy, broken-in hiking boots</li>
+                            <li>Weather-appropriate clothing (layers, rain gear, warm jacket)</li>
+                            <li>Sleeping bag liner (for hut stays)</li>
+                            <li>Headlamp or flashlight</li>
+                            <li>Water bottles or hydration system (min. 2 liters)</li>
+                            <li>High-energy snacks and food for 2 days</li>
+                            <li>First-aid kit</li>
+                            <li>Sunscreen, sunglasses, and sun hat</li>
+                            <li>Map and compass/GPS device</li>
+                            <li>Cash (for hut and potential transport)</li>
+                            <li>Toiletries and personal medication</li>
+                        </ul>
+                    </section>
+
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h3 class="text-xl font-semibold mb-4 text-gray-800">Gallery</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <img src="https://placehold.co/300x200/6ee7b7/ffffff?text=Rax+Trail" alt="Hiking trail on the Rax" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                            <img src="https://placehold.co/300x200/38bdf8/ffffff?text=Mountain+Hut" alt="Typical mountain hut in the Alps" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                            <img src="https://placehold.co/300x200/fbbf24/ffffff?text=Rax+Viewpoint" alt="Viewpoint on the Rax" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                        </div>
+                    </section>
+                </div>
             </div>
 
             <div class="lg:w-2/5">
                 <div class="sticky top-8">
-                    <h2 class="text-2xl font-semibold mb-4 text-center lg:text-left text-gray-800">Travel Planner</h2>
-                    <div id="dianaWidgetContainer" style="max-height: 600px;">
+                    <h2 id="widgetTitle" class="text-2xl font-semibold mb-4 text-center lg:text-left text-gray-800">Travel Planner</h2>
+                    <div id="dianaWidgetContainer">
                         </div>
                 </div>
             </div>
@@ -125,40 +227,120 @@
 
     </div>
 
-    <!-- For local version / deployed index.html -->
     <script src="./dist/DianaWidget.bundle.js"></script>
-    <!-- For live version: -->
-    <!-- <script src="https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"></script> -->
-
     <script>
-        // Configuration for the DianaWidget
-        dianaActivityConfig = {
-            activityName: "Marktschellenberger Eishöhle im Untersberg", // Name of the activity or destination
-            activityType: "Hiking", // Type of activity (e.g., Skiing, Hiking, MuseumVisit)
-            activityStartLocation: "47.72620173410345, 13.042174020936743", // Coordinates for the start of the activity (e.g. cable car valley station)
-            activityStartLocationDisplayName: "Untersbergbahn Talstation", // Display name for the start location
-            activityStartLocationType: "coordinates", // Type of start location (can be "address" or "coordinates")
-            activityEndLocation: "47.70487271915757, 13.038710343883247", // Coordinates for the end of the activity (e.g. the ice cave itself)
-            activityEndLocationDisplayName: "Eishöhle, Marktschellenberg", // Display name for the end location
-            activityEndLocationType: "coordinates", // Type of end location
-            activityEarliestStartTime: "08:00:00", // Earliest possible start time for the activity (e.g., first cave tour)
-            activityLatestStartTime: "14:00:00",   // Latest possible start time for the activity (e.g., last cave tour entry)
-            activityEarliestEndTime: "10:00:00",   // Earliest possible end time for the activity
-            activityLatestEndTime: "20:00:00",   // Latest possible end time for the activity
-            activityDurationMinutes: "300",        // Estimated duration of the activity itself (e.g., cave tour duration)
-            multiday: true,
-            // overrideActivityStartDate: "2025-05-19",
-            // activityDurationDaysFixed: 2,
-            activityStartTimeLabel: "Beginn", // Label for the start time in the widget
-            activityEndTimeLabel: "Ende",     // Label for the end time in the widget
-            timezone: "Europe/Berlin", // Timezone for the activity times (Germany uses Europe/Berlin)
-            language: "DE",                   // Language for the widget (German)
-            // apiBaseUrl: "http://localhost:8000/", // Optional: For development/testing against a local API
-            // apiToken: "test_token"                // Optional: API token if required
+        // DianaWidget Configurations
+        const dianaConfigs = {
+            eishoehle: {
+                activityName: "Marktschellenberger Eishöhle im Untersberg",
+                activityType: "Hiking",
+                activityStartLocation: "47.72620173410345, 13.042174020936743",
+                activityStartLocationDisplayName: "Untersbergbahn Talstation",
+                activityStartLocationType: "coordinates",
+                activityEndLocation: "47.70487271915757, 13.038710343883247",
+                activityEndLocationDisplayName: "Eishöhle, Marktschellenberg",
+                activityEndLocationType: "coordinates",
+                activityEarliestStartTime: "08:00:00",
+                activityLatestStartTime: "14:00:00",
+                activityEarliestEndTime: "10:00:00",
+                activityLatestEndTime: "20:00:00",
+                activityDurationMinutes: "180", // Duration of the cave tour itself, hike is separate
+                multiday: false, // Eishöhle is a single day activity
+                activityStartTimeLabel: "Beginn Tour",
+                activityEndTimeLabel: "Ende Tour",
+                timezone: "Europe/Berlin",
+                language: "DE",
+                // apiBaseUrl: "http://localhost:8000/",
+                // apiToken: "test_token"
+            },
+            rax: {
+                activityName: "Rax 2-Tages Wanderung mit Hüttenübernachtung",
+                activityType: "Hiking",
+                activityStartLocation: "47.71568304486876, 15.80409680698376",
+                activityStartLocationDisplayName: "Raxseilbahn Talstation",
+                activityStartLocationType: "coordinates",
+                activityEndLocation: "47.71568304486876, 15.80409680698376",
+                activityEndLocationDisplayName: "Raxseilbahn Talstation",
+                activityEndLocationType: "coordinates",
+                activityEarliestStartTime: "08:00:00", // Earliest start time Day 1
+                activityLatestStartTime: "14:00:00",   // Latest start time Day 1
+                activityEarliestEndTime: "12:00:00",   // Earliest end time Day 2
+                activityLatestEndTime: "20:00:00",     // Latest end time Day 2
+                multiday: true,
+                activityDurationDaysFixed: 2, // Specify it's a 2-day activity
+                activityStartTimeLabel: "Beginn",
+                activityEndTimeLabel: "Ende",
+                timezone: "Europe/Vienna",
+                language: "DE",
+                // apiBaseUrl: "http://localhost:8000/",
+                // apiToken: "test_token"
+            }
         };
 
-        new window.DianaWidget(dianaActivityConfig, "dianaWidgetContainer");
+        let currentWidgetInstance = null;
+
+        // Function to show selected activity and initialize/update widget
+        function showActivity(activityKey) {
+            // Hide all content sections
+            document.querySelectorAll('.activity-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            // Deactivate all nav buttons
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.classList.remove('active');
+                button.classList.remove('bg-indigo-600', 'text-white'); // Ensure active styles are removed
+                 button.classList.add('text-gray-700', 'hover:bg-indigo-100');
+            });
+
+            // Show selected content
+            document.getElementById('content' + activityKey.charAt(0).toUpperCase() + activityKey.slice(1)).classList.add('active');
+            // Activate selected nav button
+            const activeButton = document.getElementById('nav' + activityKey.charAt(0).toUpperCase() + activityKey.slice(1));
+            activeButton.classList.add('active');
+            activeButton.classList.add('bg-indigo-600', 'text-white');
+            activeButton.classList.remove('text-gray-700', 'hover:bg-indigo-100');
+
+
+            // Update page header based on activity
+            const pageHeader = document.getElementById('pageHeader');
+            const pageTitle = document.getElementById('pageTitle');
+            const pageSubtitle = document.getElementById('pageSubtitle');
+            const widgetTitleElement = document.getElementById('widgetTitle');
+
+
+            if (activityKey === 'eishoehle') {
+                pageHeader.classList.remove('header-gradient-rax');
+                pageHeader.classList.add('header-gradient-eishoehle');
+                pageTitle.textContent = 'Explore the Marktschellenberger Eishöhle!';
+                pageSubtitle.textContent = 'Plan your journey to the fascinating ice cave in Untersberg.';
+                widgetTitleElement.textContent = 'Eishöhle Travel Planner';
+            } else if (activityKey === 'rax') {
+                pageHeader.classList.remove('header-gradient-eishoehle');
+                pageHeader.classList.add('header-gradient-rax');
+                pageTitle.textContent = 'Conquer the Rax: 2-Day Alpine Adventure!';
+                pageSubtitle.textContent = 'Plan your multi-day hike with an overnight hut stay.';
+                widgetTitleElement.textContent = 'Rax Hike Planner';
+            }
+
+
+            // Clear previous widget instance if it exists
+            const widgetContainer = document.getElementById('dianaWidgetContainer');
+            widgetContainer.innerHTML = ''; // Clear out previous widget
+
+            // Initialize new DianaWidget with the selected config
+            if (window.DianaWidget) {
+                currentWidgetInstance = new window.DianaWidget(dianaConfigs[activityKey], "dianaWidgetContainer");
+            } else {
+                console.error("DianaWidget is not loaded.");
+                widgetContainer.innerHTML = "<p class='p-4 text-red-500'>Error: DianaWidget could not be loaded. Please check the script include.</p>";
+            }
+        }
+
+        // Initialize with the default activity (Eishöhle)
+        window.onload = function() {
+            showActivity('eishoehle'); // Show Eishöhle by default
+        };
     </script>
 
-    </body>
+</body>
 </html>

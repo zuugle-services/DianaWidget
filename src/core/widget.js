@@ -206,7 +206,7 @@ export default class DianaWidget {
         fallback.innerHTML = `
           <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
           <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
-          <p><small>${t('errors.api.unknown')}</small></p>
+          <p><small>${error.message}</small></p>
         `;
         fallbackContainer.innerHTML = "";
         fallbackContainer.appendChild(fallback);
@@ -225,6 +225,14 @@ export default class DianaWidget {
     const missingFields = this.defaultConfig.requiredFields.filter(
       field => !config[field]
     );
+
+    // ignore activityDurationMinutes missing if multiday = true
+    if (config.multiday) {
+      if (!config.activityDurationMinutes) {
+        missingFields.splice(missingFields.indexOf('activityDurationMinutes'), 1);
+        config.activityDurationMinutes = 1;
+      }
+    }
 
     if (missingFields.length > 0) {
       const errorMsg = `Missing required configuration: ${missingFields.join(', ')}`;
@@ -368,10 +376,22 @@ export default class DianaWidget {
     this.container.innerHTML = this.getModalHTML();
     this.cacheDOMElements();
     this.setupAccessibility();
+
     if (this.config.multiday) {
+        if (this.elements.activityDateStart && this.state.selectedDate) {
+            this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
+        }
+        if (this.elements.activityDateEnd && this.state.selectedEndDate) {
+            this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
+        }
+        // Update display elements as before
         this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
         this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
     } else {
+        if (this.elements.activityDate && this.state.selectedDate) {
+            this.elements.activityDate.value = formatDatetime(this.state.selectedDate);
+        }
+        // Update display element as before
         this.updateDateDisplay(this.state.selectedDate, 'dateDisplay');
     }
   }
@@ -765,8 +785,13 @@ export default class DianaWidget {
         const activityDateStartInput = this.config.multiday ? this.elements.activityDateStart : this.elements.activityDate;
         const activityDateEndInput = this.config.multiday ? this.elements.activityDateEnd : null;
 
-        if (!this.config.overrideActivityStartDate && (!activityDateStartInput || !activityDateStartInput.value)) { this.showError(this.t('infos.dateRequired'), 'form'); return; }
-        if (this.config.multiday && !this.config.overrideActivityEndDate && (!activityDateEndInput || !activityDateEndInput.value) && !this.config.activityDurationDaysFixed) { this.showError(this.t('infos.endDateRequired'), 'form'); return; }
+        if (!this.config.overrideActivityStartDate && (!activityDateStartInput || !activityDateStartInput.value)) {
+          this.showInfo(this.t('infos.dateRequired'), 'form');
+          return; }
+        if (this.config.multiday && !this.config.overrideActivityEndDate && (!activityDateEndInput || !activityDateEndInput.value) && !this.config.activityDurationDaysFixed) {
+          this.showInfo(this.t('infos.endDateRequired'), 'form');
+          return;
+        }
     }
 
     // Update state.selectedDate and state.selectedEndDate based on inputs if not overridden or fully determined
@@ -1255,6 +1280,8 @@ export default class DianaWidget {
         let fromLocationDisplay = element.from_location;
         if (type === "to" && index === 0) {
           fromLocationDisplay = this.elements.originInput.value;
+        } else if (type === "from" && index === 0) {
+          fromLocationDisplay = this.config.activityEndLocationDisplayName;
         }
 
         html += `
