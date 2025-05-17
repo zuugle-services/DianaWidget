@@ -1012,7 +1012,12 @@ export default class DianaWidget {
           <div style="display: flex; justify-content:space-between; width: 100%; width: -moz-available; width: -webkit-fill-available; width: fill-available; align-items: center; font-size: 12px; color: #666;">
             <span>${duration}</span>
             <div style="display: flex; gap:2px; align-items: center;">
-              ${anytime ? this.getTransportIcon("WALK_BLACK") : `<span>${conn.connection_transfers}</span>`}
+              ${anytime ? this.getTransportIcon("WALK_BLACK") : `
+              <span>${conn.connection_transfers}</span>
+              <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/>
+              </svg>
+              `}
             </div>
           </div>
         </div>`;
@@ -1071,63 +1076,106 @@ export default class DianaWidget {
 
   updateActivityTimeBox(connection, type) {
     if (!connection) return;
+
     try {
-        const activityStartDate = this.state.selectedDate;
-        const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
+      const activityStartDate = this.state.selectedDate; // This is a JS Date object
+      const activityEndDate = this.config.multiday && this.state.selectedEndDate
+                              ? this.state.selectedEndDate // JS Date object
+                              : activityStartDate;    // Single day, so end date is same as start
 
-        const connectionStartTimeLocal = this.convertUTCToLocalTime(connection.connection_start_timestamp);
-        const connectionEndTimeLocal = this.convertUTCToLocalTime(connection.connection_end_timestamp);
+      const connectionStartTimeLocal = this.convertUTCToLocalTime(connection.connection_start_timestamp);
+      const connectionEndTimeLocal = this.convertUTCToLocalTime(connection.connection_end_timestamp);
 
-        let calculatedActivityStartLocal, calculatedActivityEndLocal, durationText, hours, minutes;
+      let calculatedActivityStartLocal, calculatedActivityEndLocal;
 
-        if (type === 'to') {
-            const earliestConfigStartLocal = this.convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate);
-            calculatedActivityStartLocal = this.getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal);
-            calculatedActivityEndLocal = this.state.activityTimes.end; // Use previously calculated/stored end time
-            this.state.activityTimes.start = calculatedActivityStartLocal;
-        } else { // type === 'from'
-            const latestConfigEndLocal = this.convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate);
-            calculatedActivityEndLocal = this.getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal);
-            calculatedActivityStartLocal = this.state.activityTimes.start; // Use previously calculated/stored start time
-            this.state.activityTimes.end = calculatedActivityEndLocal;
-        }
+      if (type === 'to') {
+        const earliestConfigStartLocal = this.convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate);
+        calculatedActivityStartLocal = this.getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal);
+        // Preserve existing end time if already calculated from a 'from' connection, otherwise it's not yet determined
+        calculatedActivityEndLocal = this.state.activityTimes.end || null;
+        this.state.activityTimes.start = calculatedActivityStartLocal;
+      } else { // type === 'from'
+        const latestConfigEndLocal = this.convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate);
+        calculatedActivityEndLocal = this.getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal);
+        // Preserve existing start time if already calculated from a 'to' connection
+        calculatedActivityStartLocal = this.state.activityTimes.start || null;
+        this.state.activityTimes.end = calculatedActivityEndLocal;
+      }
 
-        // Calculate duration based on potentially updated start/end times
-        if (this.state.activityTimes.start && this.state.activityTimes.end) {
-            // For duration calculation, we need to consider if start and end are on different days for multiday
-            const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', { zone: this.config.timezone })
-                                            .set({ year: activityStartDate.getFullYear(), month: activityStartDate.getMonth() + 1, day: activityStartDate.getDate() });
-            const endDateForDuration = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', { zone: this.config.timezone })
-                                          .set({ year: activityEndDate.getFullYear(), month: activityEndDate.getMonth() + 1, day: activityEndDate.getDate() });
+      let dateRangeDisplayHtml = '';
+      let durationDisplayHtml = '';
+      let warningDuration = false;
 
-            const durationResult = this.calculateDurationLocalWithDates(startDateForDuration, endDateForDuration);
-            durationText = durationResult.text;
-            const totalMinutesDuration = durationResult.totalMinutes;
-            this.state.activityTimes.warning_duration = totalMinutesDuration < parseInt(this.config.activityDurationMinutes, 10);
-            this.state.activityTimes.duration = durationText;
+      const isMultiDayDisplay = this.config.multiday && activityStartDate && activityEndDate &&
+                               activityStartDate.getTime() !== activityEndDate.getTime();
+
+      if (isMultiDayDisplay) {
+        const formattedStartDate = this.formatFullDateForDisplay(activityStartDate);
+        const formattedEndDate = this.formatFullDateForDisplay(activityEndDate);
+        dateRangeDisplayHtml = `
+          <div class="activity-time-row">
+            <span class="activity-time-label"><strong>${this.t('dateRangeLabel')}</strong></span>
+            <span class="activity-time-value">${formattedStartDate} - ${formattedEndDate}</span>
+          </div>`;
+
+        const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
+
+        durationDisplayHtml = `
+          <div class="activity-time-row">
+              <span class="activity-time-label">${this.t('activityDuration')}</span>
+              <span class="activity-time-value">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>
+          </div>`;
+        warningDuration = false; // Suppress duration warning for multi-day in this box
+      } else { // Single Day Display
+        if (calculatedActivityStartLocal && calculatedActivityEndLocal) {
+          // For single day, start and end are on the same activityStartDate
+          const startDateForDuration = DateTime.fromFormat(calculatedActivityStartLocal, 'HH:mm', { zone: this.config.timezone })
+                                          .set({ year: activityStartDate.getFullYear(), month: activityStartDate.getMonth() + 1, day: activityStartDate.getDate() });
+          const endDateForDuration = DateTime.fromFormat(calculatedActivityEndLocal, 'HH:mm', { zone: this.config.timezone })
+                                        .set({ year: activityStartDate.getFullYear(), month: activityStartDate.getMonth() + 1, day: activityStartDate.getDate() });
+
+          const durationResult = this.calculateDurationLocalWithDates(startDateForDuration, endDateForDuration);
+          durationDisplayHtml = `
+              <div class="activity-time-row">
+                  <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
+                  <span class="activity-time-value">${durationResult.text}</span>
+              </div>`;
+          warningDuration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
         } else {
-            this.state.activityTimes.duration = '--';
-            this.state.activityTimes.warning_duration = false;
+          durationDisplayHtml = `
+              <div class="activity-time-row">
+                  <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
+                  <span class="activity-time-value">--</span>
+              </div>`;
         }
+      }
+      this.state.activityTimes.warning_duration = warningDuration;
+
 
       this.elements.activityTimeBox.innerHTML = `
         <div class="activity-time-card">
           <div class="activity-time-header">${this.config.activityName}</div>
           <div class="activity-time-meta">
+            ${isMultiDayDisplay ? dateRangeDisplayHtml : ''}
             <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.start || '--:--'}</span>
+              <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${isMultiDayDisplay ? `(${this.formatLegDateForDisplay(activityStartDate.toISOString())})` : ''}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
             </div>
-            <div class="activity-time-row">
-              <span class="activity-time-label">${this.t("activityDuration")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.duration || '--'}</span>
-              ${this.state.activityTimes.warning_duration ? `<div class="activity-time-warning-text">${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})</div>` : ''}
-            </div>
+  
+            ${durationDisplayHtml}
+            ${this.state.activityTimes.warning_duration ? `
+              <div class="activity-time-row">
+                  <span class="activity-time-label"></span> <div class="activity-time-warning-text">
+                      ${this.t("warnings.duration")} (${this.getTimeFormatFromMinutes(this.config.activityDurationMinutes)})
+                  </div>
+              </div>
+            ` : ''}
+  
             <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.end || '--:--'}</span>
+              <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${isMultiDayDisplay ? `(${this.formatLegDateForDisplay(activityEndDate.toISOString())})` : ''}</span>
               <span class="activity-time-divider">•</span>
               <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
             </div>
@@ -1587,6 +1635,20 @@ export default class DianaWidget {
     } catch (error) {
       console.error("Error formatting leg date for display:", error);
       return ""; // Fallback
+    }
+  }
+
+  formatFullDateForDisplay(date) {
+    if (!date || isNaN(date.getTime())) return '';
+    try {
+      const localeMap = { EN: 'en-GB', DE: 'de-DE' }; // Use en-GB for DD/MM/YYYY format consistency
+      const locale = localeMap[this.config.language] || 'en-GB';
+      // Format date for display using locale settings
+      const options = { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" };
+      return date.toLocaleDateString(locale, options);
+    } catch (error) {
+      console.error("Error formatting full date for display:", error);
+      return "";
     }
   }
 
