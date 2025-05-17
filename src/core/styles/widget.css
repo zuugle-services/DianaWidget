@@ -269,12 +269,23 @@
     flex-basis: 100%;
 }
 
+/* Styles for the old date input display (multiday or overridden single day) */
 .diana-container .date-input-container {
     position: relative;
     cursor: pointer;
 }
-
-.diana-container .date-input {
+.diana-container .date-input-container.disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+.diana-container .date-input-container.disabled .date-input {
+    background-color: var(--bg-tertiary);
+    pointer-events: none;
+}
+.diana-container .date-input-container.disabled .date-input-display {
+    color: var(--text-disabled);
+}
+.diana-container .date-input { /* The clickable div for old style date input */
     font-family: "DM Sans",sans-serif !important;
     padding: 12px 40px!important;
     border-radius: 5px;
@@ -287,20 +298,17 @@
     align-items: center;
     position: relative;
 }
-
-.diana-container .date-input-display {
+.diana-container .date-input-display { /* The span showing the date in old style */
     color: var(--text-secondary);
     font-size: 14px;
     pointer-events: none;
     font-family: "DM Sans",sans-serif !important;
     flex-grow: 1;
 }
-
 .diana-container .date-input-display.placeholder {
     color: var(--text-disabled);
 }
-
-.diana-container .date-input-icon {
+.diana-container .date-input-icon { /* Icon in old style date input */
     position: absolute;
     left: 12px;
     top: 50%;
@@ -308,17 +316,19 @@
     color: var(--icon-input-color);
     pointer-events: none;
 }
-
-.diana-container .date-input-arrow {
+.diana-container .date-input-arrow { /* Arrow in old style date input OR in new "Other Date" button */
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--icon-input-color);
+    color: var(--icon-input-color); /* Default color for arrow in old input */
     pointer-events: none;
 }
 
-.diana-container input[type=date] {
+/* Hidden input[type=date] used by both old and new single day logic */
+.diana-container input[type=date].native-date-picker-single {
+    /* Kept hidden via inline style in JS, but good to ensure */
+    display: none !important;
     position: absolute;
     opacity: 0;
     left: 0;
@@ -327,8 +337,91 @@
     height: 100%;
     cursor: pointer;
     font-family: "DM Sans",sans-serif !important;
-    pointer-events: none;
+    pointer-events: none; /* Important: allow clicks to pass through to button on desktop */
 }
+
+/* New Date Selector Buttons for Single Day (Desktop and Mobile) */
+.diana-container .date-selector-buttons {
+    display: flex;
+    gap: 8px; /* Space between buttons */
+    margin-bottom: 5px; /* Space below the button group */
+}
+
+.diana-container .date-selector-btn {
+    padding: 10px 12px;
+    border: 1px solid var(--border-primary);
+    background-color: transparent; /* Default transparent background */
+    color: var(--text-secondary);
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: "DM Sans", sans-serif !important;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    text-align: center;
+    display: flex; /* For aligning content within the button (icon and text) */
+    align-items: center;
+    justify-content: center; /* Center text for Today/Tomorrow */
+    line-height: 1.2; /* Adjust for better vertical alignment of text */
+    min-width: 0; /* Allow buttons to shrink if needed */
+}
+
+/* Sizing for Today and Tomorrow buttons */
+.diana-container .date-selector-btn#dateBtnToday,
+.diana-container .date-selector-btn#dateBtnTomorrow {
+    flex: 2; /* Smaller proportion */
+}
+
+/* Sizing for Other Date button */
+.diana-container .date-selector-btn#dateBtnOther {
+    flex: 3; /* Larger proportion */
+    justify-content: space-between; /* Align text to left, arrow to right */
+    position: relative; /* For potential absolute positioning of arrow if needed, though flex is better */
+}
+
+.diana-container .date-selector-btn:hover {
+    border-color: var(--secondary-color); /* Slightly darker border on hover */
+    background-color: var(--bg-hover); /* Light background on hover */
+}
+
+/* Active state for all selector buttons */
+.diana-container .date-selector-btn.active {
+    background-color: var(--primary-color); /* Solid background when active */
+    color: var(--bg-primary); /* White text when active */
+    border-color: var(--primary-color); /* Border matches background */
+    font-weight: 500; /* Slightly bolder text */
+}
+.diana-container .date-selector-btn.active:hover {
+    background-color: var(--bg-apply-hover); /* Darker shade of primary on hover when active */
+    border-color: var(--bg-apply-hover);
+}
+
+/* Styling for the text span within "Other Date" button */
+.diana-container #dateBtnOther #otherDateText {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1; /* Allow text to take available space */
+    text-align: left; /* Align text to the left */
+    margin-right: 5px; /* Space between text and arrow */
+}
+
+/* Styling for the arrow icon specifically within the "Other Date" button */
+.diana-container #dateBtnOther .date-input-arrow {
+    position: static; /* Override absolute positioning from .date-input-arrow */
+    transform: none; /* Override transform */
+    width: 16px; /* Explicit size for the arrow SVG */
+    height: 16px;
+    stroke-width: 2px; /* Thicker arrow */
+    flex-shrink: 0; /* Prevent arrow from shrinking */
+    color: var(--text-secondary); /* Default arrow color (matches button text) */
+}
+
+/* Arrow color when "Other Date" button is active */
+.diana-container .date-selector-btn.active #dateBtnOther .date-input-arrow {
+    color: var(--bg-primary); /* White arrow to match text color */
+    stroke: var(--bg-primary); /* Ensure SVG stroke also changes if it's an inline SVG */
+}
+
 
 .diana-container .form-footer {
     display: flex;
@@ -399,17 +492,16 @@
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     width: auto;
-    /* max-width: 700px; Adjusted for single calendar view if needed */
-    max-width: 350px; /* Max width for a single calendar view */
-    min-width: 280px; /* Min width for a single calendar */
+    max-width: 350px;
+    min-width: 280px;
     position: relative;
     display: flex;
     flex-direction: column;
     font-family: "DM Sans", sans-serif !important;
 }
-/* If you added a specific class like .single-month-range for the modal element in JS */
+
 .diana-container .range-calendar-modal.single-month-range {
-    max-width: 380px; /* Example: Adjust max-width for single calendar */
+    max-width: 380px;
 }
 
 
@@ -442,7 +534,7 @@
 }
 
 .diana-container .range-calendar-body {
-    display: flex; /* Will contain only one .range-calendar-instance now */
+    display: flex;
     padding: 10px;
     justify-content: center;
 }
@@ -450,7 +542,7 @@
 .diana-container .range-calendar-instance {
     flex: 1;
     min-width: 280px;
-    max-width: 320px; /* Control max width of the calendar content itself */
+    max-width: 320px;
     border: 1px solid var(--border-tertiary);
     border-radius: 8px;
     padding: 10px;
@@ -486,8 +578,8 @@
 .diana-container .range-calendar-instance .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0; /* MODIFICATION: Remove gap to allow backgrounds to touch */
-    padding: 2px 0; /* Optional: Add some padding to the grid container */
+    gap: 0;
+    padding: 2px 0;
 }
 
 .diana-container .range-calendar-instance .calendar-day-header {
@@ -504,9 +596,9 @@
     align-items: center;
     text-align: center;
     cursor: pointer !important;
-    width: 100%; /* MODIFICATION: Make day fill the grid cell width */
-    height: 32px; /* MODIFICATION: Fixed height for days */
-    margin: 0;    /* MODIFICATION: Ensure no margin so backgrounds can touch */
+    width: 100%;
+    height: 32px;
+    margin: 0;
     font-size: 12px;
     color: var(--text-primary);
     transition: background-color 0.2s ease, color 0.2s ease;
@@ -515,9 +607,9 @@
     border-radius: 0;
 }
 .diana-container .range-calendar-instance .calendar-day.empty {
-    background: none !important; /* Ensure empty cells are truly empty */
+    background: none !important;
     cursor: default;
-    border-radius: 0 !important; /* Ensure empty cells don't get rounded by hover */
+    border-radius: 0 !important;
 }
 .diana-container .range-calendar-instance .calendar-day:not(.empty):not(.disabled):hover {
     background-color: var(--bg-hover);
@@ -525,7 +617,6 @@
 }
 .diana-container .range-calendar-instance .calendar-day.today {
     font-weight: bold;
-    /* The dot for 'today' will be on top of any background color */
 }
 .diana-container .range-calendar-instance .calendar-day.today::after {
     content: '';
@@ -533,73 +624,64 @@
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background-color: var(--primary-color); /* Dot color for today */
+    background-color: var(--primary-color);
     position: absolute;
     bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1; /* Ensure dot is above day background */
+    z-index: 1;
 }
-/* Change dot color if today is selected or in range */
+
 .diana-container .range-calendar-instance .calendar-day.today.start-date::after,
 .diana-container .range-calendar-instance .calendar-day.today.end-date::after {
-    background-color: var(--bg-primary); /* White dot on primary color background */
+    background-color: var(--bg-primary);
 }
 .diana-container .range-calendar-instance .calendar-day.today.in-range::after {
-     background-color: var(--text-info); /* Darker dot on info background */
+     background-color: var(--text-info);
 }
 
 
 .diana-container .range-calendar-instance .calendar-day.disabled {
     color: var(--secondary-color);
     cursor: not-allowed;
-    background: none !important; /* Ensure no background */
+    background: none !important;
     text-decoration: line-through;
-    border-radius: 0 !important; /* Ensure no radius on disabled */
+    border-radius: 0 !important;
 }
 .diana-container .range-calendar-instance .calendar-day.disabled:hover {
     background: none !important;
 }
 
-
-/* --- Styles for date range selection in RangeCalendar --- */
-
-/* Days strictly between start and end */
 .diana-container .range-calendar-instance .calendar-day.in-range {
     background-color: var(--bg-info) !important;
     color: var(--text-info) !important;
-    border-radius: 0 !important; /* Flat bar segment */
+    border-radius: 0 !important;
 }
 
-/* Start date of the range */
 .diana-container .range-calendar-instance .calendar-day.start-date {
     background-color: var(--primary-color) !important;
     color: var(--bg-primary) !important;
     font-weight: bold;
-    border-radius: 16px 0 0 16px !important; /* Rounded left (half of 32px height), flat right */
+    border-radius: 16px 0 0 16px !important;
 }
 
-/* End date of the range */
 .diana-container .range-calendar-instance .calendar-day.end-date {
     background-color: var(--primary-color) !important;
     color: var(--bg-primary) !important;
     font-weight: bold;
-    border-radius: 0 16px 16px 0 !important; /* Flat left, rounded right (half of 32px height) */
+    border-radius: 0 16px 16px 0 !important;
 }
 
-/* If a day is both start and end (single day selection in range mode) */
 .diana-container .range-calendar-instance .calendar-day.start-date.end-date {
-    border-radius: 16px !important; /* Fully circular (half of 32px height) */
+    border-radius: 16px !important;
 }
 
-/* Ensure hover on selected/in-range items doesn't remove their specific styling */
-/* The !important on background and color above helps, hover can be subtle or just use default */
 .diana-container .range-calendar-instance .calendar-day.start-date:hover,
 .diana-container .range-calendar-instance .calendar-day.end-date:hover {
-     filter: brightness(90%); /* Slightly darken on hover */
+     filter: brightness(90%);
 }
 .diana-container .range-calendar-instance .calendar-day.in-range:hover {
-    filter: brightness(95%); /* Slightly darken on hover */
+    filter: brightness(95%);
 }
 
 
@@ -632,13 +714,11 @@
     background-color: var(--bg-apply-hover);
 }
 
-/* Responsive adjustments for range calendar */
 @media (max-width: 768px) {
     .diana-container .range-calendar-modal {
         width: 95%;
         max-width: 95%;
     }
-    /* Body already flex-direction: column from previous changes if needed */
     .diana-container .range-calendar-instance {
         min-width: unset;
         width: 100%;
@@ -646,18 +726,17 @@
 }
 
 
-/* --- Calendar Styles (for SingleCalendar) --- */
-/* The JS positions it relative to the input field it's associated with. */
-/* CSS here defines its appearance. */
+/* SingleCalendar pop-up styles */
 .diana-container.calendar-container {
-    display: none; /* JS controls visibility */
-    position: absolute; /* JS sets top/left/width dynamically */
-    z-index: 1001; /* Above suggestions (1000), below range modal overlay (2000) */
+    display: none;
+    position: absolute;
+    z-index: 1050; /* Ensure it's above most other elements */
     background: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow-medium);
     font-family: "DM Sans",sans-serif !important;
     height: fit-content;
+    min-width: 280px; /* Ensure calendar has a decent minimum width */
 }
 
 .diana-container .calendar-container.active { display: block; }
@@ -720,7 +799,6 @@
 }
 
 
-/* Make sliders sticky below the header */
 .diana-container .slider-wrapper {
     background-color: var(--bg-primary);
     align-items: center;
@@ -786,7 +864,6 @@
      border-color: var(--primary-color);
 }
 
-/* --- Content Boxes (Response, Activity, etc.) --- */
 .diana-container .middle-box {
     background: var(--bg-primary);
     padding: 12px 15px;
@@ -873,7 +950,6 @@
 }
 
 
-/* --- Connection Details Styling --- */
 .diana-container .middle-box .connection-elements {
     border-left: 3px solid var(--border-tertiary);
     padding-left: 15px;
@@ -999,7 +1075,6 @@
 }
 
 
-/* --- Error Message --- */
 .diana-container .error-message {
     color: var(--text-error);
     background-color: var(--bg-error);
@@ -1024,7 +1099,6 @@
 }
 
 
-/* --- Footer --- */
 .diana-container .widget-footer {
     box-sizing: border-box;
     display: flex;
@@ -1052,11 +1126,13 @@
     text-decoration: none !important;
 }
 
-
-
 /* --- Mobile Date Input Handling --- */
+/* The .date-selector-buttons are now always flex by default for single day */
+/* The input[type=date]#activityDate for single day is always hidden via inline style in JS */
+
+/* Styles for native date input for MULTIDAY on mobile, if applicable */
 @media (max-width: 768px) {
-  .diana-container .date-input-container input[type="date"] {
+  .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Target multiday native inputs */
     opacity: 1;
     position: relative;
     height: auto;
@@ -1069,21 +1145,42 @@
     pointer-events: all;
     width: 100%;
     box-sizing: border-box;
+    display: block !important; /* Ensure it's visible */
   }
 
-  .diana-container .date-input {
+  .diana-container .date-input-column:not(.single) .date-input { /* Hide custom styled div for multiday on mobile */
     display: none !important;
   }
 
+  /* For ALL native date pickers on mobile (single and multi) */
   .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 4px;
     cursor: pointer;
     opacity: 0.6;
   }
+
+  /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
+  .diana-container input[type="date"].native-date-picker-single {
+      /* While it's styled as display:none !important in HTML,
+         if JS needs to interact with it (e.g. for .showPicker()),
+         it might need to be briefly visible or at least not pointer-events:none.
+         However, the primary interaction is through the buttons.
+         The .showPicker() method works on hidden inputs.
+      */
+  }
 }
 
 @media (min-width: 769px) {
-  .diana-container .date-input-container input[type="date"] {
-    display: none;
+  .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Hide native multiday input on desktop */
+    display: none !important;
+  }
+   .diana-container .date-input-column:not(.single) .date-input { /* Show custom styled div for multiday on desktop */
+    display: flex !important;
+  }
+
+  /* On desktop, ensure the single day native picker remains completely non-interactive */
+  .diana-container input[type="date"].native-date-picker-single {
+      pointer-events: none !important; /* Ensure no interaction on desktop */
+      display: none !important; /* Keep it hidden */
   }
 }
