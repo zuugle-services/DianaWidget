@@ -44,9 +44,9 @@
     --shadow-gray: rgba(255, 255, 255, 0.3);
 
     font-family: "DM Sans", sans-serif !important;
-    isolation: isolate;
+    isolation: isolate; /* Ensures this container is a stacking context */
     height: 100%;
-    position: relative;
+    position: relative; /* Crucial for absolute positioning of children like the range calendar overlay */
     max-height: inherit;
 }
 
@@ -162,7 +162,6 @@
 }
 
 .diana-container .modal-content::-webkit-scrollbar {
-    /* display: none; */ /* Uncomment to hide */
     width: 6px;
 }
 .diana-container .modal-content::-webkit-scrollbar-thumb {
@@ -381,17 +380,17 @@
 
 /* --- Range Calendar Modal Styles --- */
 .diana-container .range-calendar-overlay {
-    display: none; /* Hidden by default */
-    position: fixed;
+    display: none; /* Hidden by default, JS controls visibility */
+    position: absolute; /* MODIFIED: Was 'fixed'. Now relative to .diana-container */
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    justify-content: center;
-    align-items: center;
-    z-index: 2000; /* High z-index to be on top */
-    padding: 20px;
+    width: 100%; /* Covers the .diana-container */
+    height: 100%; /* Covers the .diana-container */
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background over the widget */
+    justify-content: center; /* To center .range-calendar-modal */
+    align-items: center; /* To center .range-calendar-modal */
+    z-index: 2000; /* High z-index to be on top of other widget content */
+    padding: 20px; /* Optional: provides spacing if modal is near edge of widget */
     box-sizing: border-box;
 }
 
@@ -402,7 +401,7 @@
     width: auto;
     max-width: 700px; /* Adjust as needed for two calendars */
     min-width: 300px;
-    position: relative;
+    position: relative; /* Stays relative within the overlay */
     display: flex;
     flex-direction: column;
     font-family: "DM Sans", sans-serif !important; /* Ensure font is applied */
@@ -456,10 +455,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 0px; /* Reduced padding for range modal */
+    padding: 5px 0px;
     margin-bottom: 5px;
 }
-.diana-container .range-calendar-instance .calendar-nav-btn { /* Ensure buttons in range calendar are styled */
+.diana-container .range-calendar-instance .calendar-nav-btn {
     background: none;
     border: none;
     cursor: pointer;
@@ -481,12 +480,12 @@
 .diana-container .range-calendar-instance .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 2px; /* Slightly reduced gap */
+    gap: 2px;
 }
 
 .diana-container .range-calendar-instance .calendar-day-header {
     text-align: center;
-    font-size: 11px; /* Slightly smaller */
+    font-size: 11px;
     font-weight: 500;
     color: var(--text-disabled);
     padding: 3px 0;
@@ -499,13 +498,13 @@
     text-align: center;
     border-radius: 50%;
     cursor: pointer !important;
-    width: 30px; /* Adjust size as needed */
+    width: 30px;
     height: 30px;
-    margin: 1px auto; /* Adjust margin for tighter packing */
+    margin: 1px auto;
     font-size: 12px;
     color: var(--text-primary);
     transition: background-color 0.2s ease, color 0.2s ease;
-    position: relative; /* For pseudo-elements if needed for range */
+    position: relative;
 }
 .diana-container .range-calendar-instance .calendar-day.empty {
     background: none;
@@ -538,15 +537,14 @@
 .diana-container .range-calendar-instance .calendar-day.end-date {
     background-color: var(--primary-color);
     color: var(--bg-primary);
-    border-radius: 50%; /* Ensure it's a circle */
+    border-radius: 50%;
 }
 
 .diana-container .range-calendar-instance .calendar-day.in-range {
-    background-color: var(--bg-info); /* A lighter color for dates within the range */
+    background-color: var(--bg-info);
     color: var(--text-info);
-    border-radius: 0; /* Make it a bar, or keep 50% for circles */
+    border-radius: 0;
 }
-/* To make a bar effect, you might need to adjust padding/margin or use pseudo-elements */
 .diana-container .range-calendar-instance .calendar-day.start-date.in-range {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
@@ -565,7 +563,6 @@
     gap: 10px;
 }
 
-/* Use existing button styles if they match, or define new ones */
 .diana-container .range-calendar-footer .calendar-footer-btn {
     padding: 8px 15px;
     border: 1px solid var(--border-secondary);
@@ -578,7 +575,7 @@
 .diana-container .range-calendar-footer .calendar-footer-btn:hover {
     background-color: var(--bg-hover);
 }
-.diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn { /* For the apply button */
+.diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
     color: var(--bg-primary);
     border-color: var(--primary-color);
@@ -590,7 +587,7 @@
 /* Responsive adjustments for range calendar */
 @media (max-width: 768px) {
     .diana-container .range-calendar-modal {
-        width: 95%;
+        width: 95%; /* Takes 95% of the overlay width (which is 100% of widget width) */
         max-width: 95%;
     }
     .diana-container .range-calendar-body {
@@ -603,18 +600,18 @@
 }
 
 
-/* --- Calendar Styles --- */
-.diana-container .calendar-container {
-    display: none;
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    width: 100%;
-    z-index: 1001;
+/* --- Calendar Styles (for SingleCalendar) --- */
+/* The JS positions it relative to the input field it's associated with. */
+/* CSS here defines its appearance. */
+.diana-container.calendar-container {
+    display: none; /* JS controls visibility */
+    position: absolute; /* JS sets top/left/width dynamically */
+    z-index: 1001; /* Above suggestions (1000), below range modal overlay (2000) */
     background: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow-medium);
     font-family: "DM Sans",sans-serif !important;
+    height: fit-content;
 }
 
 .diana-container .calendar-container.active { display: block; }
@@ -846,22 +843,21 @@
 
 .diana-container .connection-leg-date-display {
     position: absolute;
-    right: 8px; /* Position from the right edge of .connection-element */
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    background-color: var(--bg-info); /* Using existing info background, or choose a new one */
-    color: var(--text-info);       /* Using existing info text color */
+    background-color: var(--bg-info);
+    color: var(--text-info);
     padding: 3px 7px;
     border-radius: 4px;
     font-size: 11px;
-    font-weight: 500; /* Make it slightly less bold than main times if desired */
+    font-weight: 500;
     line-height: 1.2;
     box-shadow: 0 1px 2px var(--shadow-light);
-    white-space: nowrap; /* Prevent date from wrapping */
-    z-index: 1; /* Ensure it's above the connection line if they overlap */
+    white-space: nowrap;
+    z-index: 1;
 }
 
-/* Optional: Adjust if the date display overlaps with very long location names */
 .diana-container .middle-box .element-time {
     /* You might need to add max-width or ellipsis to element-time if overlap becomes an issue */
     /* Example: */
@@ -921,7 +917,6 @@
     z-index: 0
 }
 
- /* Hide circle if it's just a waiting block */
  .diana-container .middle-box .waiting-block .element-circle {
     display: none;
  }
