@@ -1162,6 +1162,10 @@ export default class DianaWidget {
             durationMinutes = this.parseDurationToMinutes(durationStr);
         }
 
+        if (arr.length === 1) {
+          return true;
+        }
+
         if (type === 'from' && index === 0 && durationMinutes <= 1) {
           return false; // Exclude this element
         }
@@ -1173,10 +1177,6 @@ export default class DianaWidget {
 
       // If all elements were filtered out
       if (filteredElements.length === 0) {
-          if (conn.connection_elements.length > 0) { // Check if original had elements
-              if (type === 'to') return `<div class="info-message-inline">${this.t('infos.lastToLegTooShort')}</div>`;
-              if (type === 'from') return `<div class="info-message-inline">${this.t('infos.firstFromLegTooShort')}</div>`;
-          }
           return `<div>${this.t('noConnectionElements')}</div>`;
       }
 
@@ -1581,11 +1581,9 @@ export default class DianaWidget {
           console.warn(`Invalid ISO string for leg date display: ${isoString}`);
           return "";
       }
-      // Format to a short, readable date like "May 16"
-      // Luxon's toFormat('MMM d') produces this.
-      // For locale-specific month names, you might use:
-      // return localDt.toLocaleString({ month: 'short', day: 'numeric' });
-      return localDt.toFormat('MMM d');
+      const localeMap = { EN: 'en-GB', DE: 'de-DE' };
+      const locale = localeMap[this.config.language] || 'en-GB';
+      return localDt.toFormat('dd. MMM', { locale });
     } catch (error) {
       console.error("Error formatting leg date for display:", error);
       return ""; // Fallback
