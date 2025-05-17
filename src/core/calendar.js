@@ -160,45 +160,66 @@ export class SingleCalendar {
     }
 
     _attachEventListeners() {
+        // Ensure the trigger element for the custom calendar exists.
         if (!this.triggerElement) return;
 
-        // This listener is specifically for the `this.triggerElement` (e.g., "Other Date" button)
-        // to open/close the custom calendar.
+        // Event listener for the triggerElement (e.g., "Other Date" button).
         this.triggerElement.addEventListener("click", (e) => {
-            e.stopPropagation(); // Prevent event from bubbling up, e.g., to document click listener
+            // Check if the current view matches mobile screen dimensions.
+            // This uses the same media query as in widget.js for consistency.
+            if (window.matchMedia("(max-width: 768px)").matches) {
+                // If on mobile, this listener should not open the custom calendar.
+                // The widget.js listener for the "Other Date" button is responsible
+                // for showing the native date picker and should have stopped event propagation.
+                // This 'return' acts as a safeguard if the event still reaches here.
+                return;
+            }
+
+            // Desktop behavior: Toggle the custom calendar's visibility.
+            e.stopPropagation(); // Prevent this click from also triggering the document-wide click listener
+                                 // which is used to close the calendar when clicking outside.
             if (this.calendarContainer.classList.contains("active")) {
-                this.hide();
+                this.hide(); // If calendar is open, hide it.
             } else {
+                // If calendar is closed, sync its date with the widget's current state and show it.
                 const currentDateFromWidget = this.widget.state.selectedDate || new Date();
-                this.setSelectedDate(currentDateFromWidget, false);
+                this.setSelectedDate(currentDateFromWidget, false); // Update date without triggering callback
                 this.show();
             }
         });
 
-        // Hide calendar when clicking outside
+        // Event listener on the document to hide the calendar when clicking outside of it.
         document.addEventListener("click", (e) => {
+            // Check if the calendar is currently active/visible.
             if (this.calendarContainer && this.calendarContainer.classList.contains("active")) {
-                // Check if the click is outside the calendar itself
+                // Determine if the click was inside the calendar itself.
                 const isClickInsideCalendar = this.calendarContainer.contains(e.target);
-                // Check if the click is on the trigger element (which handles its own toggle)
+                // Determine if the click was on the element that triggers the calendar
+                // (its own click handler above will manage toggling).
                 const isClickOnTrigger = this.triggerElement && this.triggerElement.contains(e.target);
 
+                // If the click was neither inside the calendar nor on its trigger, hide the calendar.
                 if (!isClickInsideCalendar && !isClickOnTrigger) {
                     this.hide();
                 }
             }
         });
 
+        // Throttle repositioning calls for performance during scroll and resize events.
         const throttledReposition = throttle(this._reposition.bind(this), 50);
-        // Use anchorElement for scroll/resize listeners related to positioning
+
+        // Add scroll event listeners to the anchor element's scrollable parents
+        // to ensure the calendar repositions correctly if the anchor moves due to scrolling.
         let scrollableParent = this.anchorElement ? this.anchorElement.parentElement : null;
         while(scrollableParent) {
             if (scrollableParent.scrollHeight > scrollableParent.clientHeight || scrollableParent.scrollWidth > scrollableParent.clientWidth) {
                  scrollableParent.addEventListener('scroll', throttledReposition, true);
             }
+            // Stop traversing up if we reach the document body.
             if (scrollableParent === document.body) break;
             scrollableParent = scrollableParent.parentElement;
         }
+        // Add listeners to window for global scroll and resize events.
         window.addEventListener('scroll', throttledReposition, true);
         window.addEventListener('resize', throttledReposition);
     }

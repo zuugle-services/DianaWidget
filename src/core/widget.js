@@ -1710,7 +1710,6 @@ export default class DianaWidget {
                     }
                 }
             }
-            // On desktop, the SingleCalendar's internal listener on this.triggerElement (dateBtnOther) handles the toggle.
         });
 
         if (this.elements.activityDate) {
