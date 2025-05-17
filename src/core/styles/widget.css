@@ -14,7 +14,7 @@
     --bg-tertiary: #f5f5f5;
     --bg-hover: #f0f0f0;
     --bg-error: rgba(220, 53, 69, 0.1);
-    --bg-info: #dee4f3;
+    --bg-info: #dee4f3; /* Used for in-range background */
     --bg-transparent: rgba(128,128,128,0.05);
     --bg-apply-hover: #357ae8;
     --bg-waiting-block: rgba(255, 149, 0, 0.08);
@@ -26,7 +26,7 @@
     --text-muted: #838383;
     --text-disabled: #999;
     --text-error: #dc3545;
-    --text-info: #004085;
+    --text-info: #004085; /* Used for in-range text */
     --text-warning: #856404;
 
     /* Borders */
@@ -44,9 +44,9 @@
     --shadow-gray: rgba(255, 255, 255, 0.3);
 
     font-family: "DM Sans", sans-serif !important;
-    isolation: isolate; /* Ensures this container is a stacking context */
+    isolation: isolate;
     height: 100%;
-    position: relative; /* Crucial for absolute positioning of children like the range calendar overlay */
+    position: relative;
     max-height: inherit;
 }
 
@@ -149,7 +149,7 @@
     margin: 0;
     height: 100%;
     max-width: 470px;
-    overflow-y: auto; /* <<<<< PRIMARY SCROLLBAR HERE >>>>> */
+    overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
     transition: all .3s ease-in-out;
@@ -257,16 +257,16 @@
 
 .diana-container .date-section-wrapper {
     display: flex;
-    gap: 10px; /* Adjust spacing as needed */
-    align-items: flex-start; /* Align items to the top */
+    gap: 10px;
+    align-items: flex-start;
 }
 
 .diana-container .date-input-column {
-    flex: 1; /* Each column takes equal space */
-    min-width: 0; /* Prevent overflow issues with flex items */
+    flex: 1;
+    min-width: 0;
 }
 .diana-container .date-input-column.single {
-    flex-basis: 100%; /* Single input takes full width */
+    flex-basis: 100%;
 }
 
 .diana-container .date-input-container {
@@ -380,17 +380,17 @@
 
 /* --- Range Calendar Modal Styles --- */
 .diana-container .range-calendar-overlay {
-    display: none; /* Hidden by default, JS controls visibility */
-    position: absolute; /* MODIFIED: Was 'fixed'. Now relative to .diana-container */
+    display: none;
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100%; /* Covers the .diana-container */
-    height: 100%; /* Covers the .diana-container */
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background over the widget */
-    justify-content: center; /* To center .range-calendar-modal */
-    align-items: center; /* To center .range-calendar-modal */
-    z-index: 2000; /* High z-index to be on top of other widget content */
-    padding: 20px; /* Optional: provides spacing if modal is near edge of widget */
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    padding: 20px;
     box-sizing: border-box;
 }
 
@@ -399,13 +399,19 @@
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     width: auto;
-    max-width: 700px; /* Adjust as needed for two calendars */
-    min-width: 300px;
-    position: relative; /* Stays relative within the overlay */
+    /* max-width: 700px; Adjusted for single calendar view if needed */
+    max-width: 350px; /* Max width for a single calendar view */
+    min-width: 280px; /* Min width for a single calendar */
+    position: relative;
     display: flex;
     flex-direction: column;
-    font-family: "DM Sans", sans-serif !important; /* Ensure font is applied */
+    font-family: "DM Sans", sans-serif !important;
 }
+/* If you added a specific class like .single-month-range for the modal element in JS */
+.diana-container .range-calendar-modal.single-month-range {
+    max-width: 380px; /* Example: Adjust max-width for single calendar */
+}
+
 
 .diana-container .range-calendar-header {
     display: flex;
@@ -436,15 +442,15 @@
 }
 
 .diana-container .range-calendar-body {
-    display: flex;
+    display: flex; /* Will contain only one .range-calendar-instance now */
     padding: 10px;
-    gap: 10px; /* Space between the two calendar instances */
-    justify-content: center; /* Center calendars if space allows */
+    justify-content: center;
 }
 
 .diana-container .range-calendar-instance {
-    flex: 1; /* Each calendar takes up equal space */
-    min-width: 280px; /* Minimum width for a calendar */
+    flex: 1;
+    min-width: 280px;
+    max-width: 320px; /* Control max width of the calendar content itself */
     border: 1px solid var(--border-tertiary);
     border-radius: 8px;
     padding: 10px;
@@ -480,7 +486,8 @@
 .diana-container .range-calendar-instance .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 2px;
+    gap: 0; /* MODIFICATION: Remove gap to allow backgrounds to touch */
+    padding: 2px 0; /* Optional: Add some padding to the grid container */
 }
 
 .diana-container .range-calendar-instance .calendar-day-header {
@@ -496,62 +503,103 @@
     justify-content: center;
     align-items: center;
     text-align: center;
-    border-radius: 50%;
     cursor: pointer !important;
-    width: 30px;
-    height: 30px;
-    margin: 1px auto;
+    width: 100%; /* MODIFICATION: Make day fill the grid cell width */
+    height: 32px; /* MODIFICATION: Fixed height for days */
+    margin: 0;    /* MODIFICATION: Ensure no margin so backgrounds can touch */
     font-size: 12px;
     color: var(--text-primary);
     transition: background-color 0.2s ease, color 0.2s ease;
     position: relative;
+    box-sizing: border-box;
+    border-radius: 0;
 }
 .diana-container .range-calendar-instance .calendar-day.empty {
-    background: none;
+    background: none !important; /* Ensure empty cells are truly empty */
     cursor: default;
+    border-radius: 0 !important; /* Ensure empty cells don't get rounded by hover */
 }
 .diana-container .range-calendar-instance .calendar-day:not(.empty):not(.disabled):hover {
     background-color: var(--bg-hover);
+    border-radius: 50%;
 }
 .diana-container .range-calendar-instance .calendar-day.today {
-    border: 1px solid var(--primary-color);
     font-weight: bold;
+    /* The dot for 'today' will be on top of any background color */
 }
-.diana-container .range-calendar-instance .calendar-day.selected {
-    background-color: var(--primary-color) !important;
-    color: var(--bg-primary) !important;
-    font-weight: bold;
+.diana-container .range-calendar-instance .calendar-day.today::after {
+    content: '';
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background-color: var(--primary-color); /* Dot color for today */
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1; /* Ensure dot is above day background */
 }
-.diana-container .range-calendar-instance .calendar-day.selected:hover {
-    background-color: var(--bg-apply-hover) !important;
+/* Change dot color if today is selected or in range */
+.diana-container .range-calendar-instance .calendar-day.today.start-date::after,
+.diana-container .range-calendar-instance .calendar-day.today.end-date::after {
+    background-color: var(--bg-primary); /* White dot on primary color background */
 }
+.diana-container .range-calendar-instance .calendar-day.today.in-range::after {
+     background-color: var(--text-info); /* Darker dot on info background */
+}
+
+
 .diana-container .range-calendar-instance .calendar-day.disabled {
     color: var(--secondary-color);
     cursor: not-allowed;
-    background: none;
+    background: none !important; /* Ensure no background */
     text-decoration: line-through;
+    border-radius: 0 !important; /* Ensure no radius on disabled */
+}
+.diana-container .range-calendar-instance .calendar-day.disabled:hover {
+    background: none !important;
 }
 
-/* Styles for date range selection */
-.diana-container .range-calendar-instance .calendar-day.start-date,
-.diana-container .range-calendar-instance .calendar-day.end-date {
-    background-color: var(--primary-color);
-    color: var(--bg-primary);
-    border-radius: 50%;
-}
 
+/* --- Styles for date range selection in RangeCalendar --- */
+
+/* Days strictly between start and end */
 .diana-container .range-calendar-instance .calendar-day.in-range {
-    background-color: var(--bg-info);
-    color: var(--text-info);
-    border-radius: 0;
+    background-color: var(--bg-info) !important;
+    color: var(--text-info) !important;
+    border-radius: 0 !important; /* Flat bar segment */
 }
-.diana-container .range-calendar-instance .calendar-day.start-date.in-range {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+
+/* Start date of the range */
+.diana-container .range-calendar-instance .calendar-day.start-date {
+    background-color: var(--primary-color) !important;
+    color: var(--bg-primary) !important;
+    font-weight: bold;
+    border-radius: 16px 0 0 16px !important; /* Rounded left (half of 32px height), flat right */
 }
-.diana-container .range-calendar-instance .calendar-day.end-date.in-range {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+
+/* End date of the range */
+.diana-container .range-calendar-instance .calendar-day.end-date {
+    background-color: var(--primary-color) !important;
+    color: var(--bg-primary) !important;
+    font-weight: bold;
+    border-radius: 0 16px 16px 0 !important; /* Flat left, rounded right (half of 32px height) */
+}
+
+/* If a day is both start and end (single day selection in range mode) */
+.diana-container .range-calendar-instance .calendar-day.start-date.end-date {
+    border-radius: 16px !important; /* Fully circular (half of 32px height) */
+}
+
+/* Ensure hover on selected/in-range items doesn't remove their specific styling */
+/* The !important on background and color above helps, hover can be subtle or just use default */
+.diana-container .range-calendar-instance .calendar-day.start-date:hover,
+.diana-container .range-calendar-instance .calendar-day.end-date:hover {
+     filter: brightness(90%); /* Slightly darken on hover */
+}
+.diana-container .range-calendar-instance .calendar-day.in-range:hover {
+    filter: brightness(95%); /* Slightly darken on hover */
 }
 
 
@@ -587,14 +635,12 @@
 /* Responsive adjustments for range calendar */
 @media (max-width: 768px) {
     .diana-container .range-calendar-modal {
-        width: 95%; /* Takes 95% of the overlay width (which is 100% of widget width) */
+        width: 95%;
         max-width: 95%;
     }
-    .diana-container .range-calendar-body {
-        flex-direction: column; /* Stack calendars vertically on small screens */
-    }
+    /* Body already flex-direction: column from previous changes if needed */
     .diana-container .range-calendar-instance {
-        min-width: unset; /* Allow shrinking */
+        min-width: unset;
         width: 100%;
     }
 }
@@ -633,8 +679,8 @@
 .diana-container .calendar-footer { display: flex; justify-content: flex-end; padding: 10px; border-top: 1px solid var(--border-tertiary); gap: 10px; }
 .diana-container .calendar-footer-btn { padding: 8px 15px; border: 1px solid var(--border-secondary); border-radius: 4px; cursor: pointer; font-size: 12px; background-color: var(--bg-primary); color: var(--text-secondary); }
 .diana-container .calendar-footer-btn.calendar-apply-btn { background-color: var(--primary-color); color: var(--bg-primary); border-color: var(--primary-color); }
- .diana-container .calendar-footer-btn:hover { background-color: var(--bg-hover); }
- .diana-container .calendar-footer-btn.calendar-apply-btn:hover { background-color: var(--bg-apply-hover); }
+.diana-container .calendar-footer-btn:hover { background-color: var(--bg-hover); }
+.diana-container .calendar-footer-btn.calendar-apply-btn:hover { background-color: var(--bg-apply-hover); }
 
 
 /* --- Results Page Specific Styles --- */
@@ -679,11 +725,11 @@
     padding: 5px 0;
     border-bottom: 1px solid var(--border-primary);
 }
-.diana-container .slider-wrapper.etc { /* Top slider */
+.diana-container .slider-wrapper.etc {
     top: 0;
     padding-top: 0;
 }
-.diana-container .slider-wrapper.slider-wrap-fixed { /* Bottom slider */
+.diana-container .slider-wrapper.slider-wrap-fixed {
     bottom: 24px;
     border-top: 1px solid var(--border-primary);
     border-bottom: none;
@@ -859,12 +905,6 @@
 }
 
 .diana-container .middle-box .element-time {
-    /* You might need to add max-width or ellipsis to element-time if overlap becomes an issue */
-    /* Example: */
-    /* max-width: calc(100% - 70px); */ /* Adjust 70px based on date display width + padding */
-    /* overflow: hidden; */
-    /* text-overflow: ellipsis; */
-    /* white-space: nowrap; */
 }
 
 
@@ -1011,7 +1051,6 @@
 
 
 /* --- Mobile Date Input Handling --- */
-/* Show native date input on mobile */
 @media (max-width: 768px) {
   .diana-container .date-input-container input[type="date"] {
     opacity: 1;
@@ -1032,7 +1071,6 @@
     display: none !important;
   }
 
-  /* Style the native date picker button */
   .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 4px;
     cursor: pointer;
@@ -1040,7 +1078,6 @@
   }
 }
 
-/* Hide native date input on desktop */
 @media (min-width: 769px) {
   .diana-container .date-input-container input[type="date"] {
     display: none;
