@@ -924,6 +924,12 @@
     border-bottom: 1px solid var(--shadow-verylight);
 }
 
+.diana-container .activity-time-header a:hover svg {
+    cursor: pointer;
+    filter: brightness(20%);
+    transition: filter 0.2s ease;
+}
+
 .diana-container .activity-time-meta {
     display: flex;
     flex-direction: column;
