@@ -149,12 +149,10 @@
             multiday: true,
             activityStartTimeLabel: "Beginn", // Label for the start time in the widget
             activityEndTimeLabel: "Ende",     // Label for the end time in the widget
-            overrideActivityStartDate: "2025-05-19",
-            overrideActivityEndDate: "2025-05-22",
             timezone: "Europe/Berlin", // Timezone for the activity times (Germany uses Europe/Berlin)
             language: "DE",                   // Language for the widget (German)
-            apiBaseUrl: "http://localhost:8000/", // Optional: For development/testing against a local API
-            apiToken: "test_token"                // Optional: API token if required
+            // apiBaseUrl: "http://localhost:8000/", // Optional: For development/testing against a local API
+            // apiToken: "test_token"                // Optional: API token if required
         };
 
         new window.DianaWidget(dianaActivityConfig, "dianaWidgetContainer");

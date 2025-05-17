@@ -287,7 +287,7 @@ export class RangeCalendarModal {
 
         // Create modal
         this.modalElement = document.createElement('div');
-        this.modalElement.className = 'diana-container range-calendar-modal';
+        this.modalElement.className = 'range-calendar-modal';
         this.modalElement.innerHTML = `
             <div class="range-calendar-header">
                 <h3>${this.t('selectDateRange')}</h3> 
@@ -304,7 +304,7 @@ export class RangeCalendarModal {
         `; // Assuming selectDateRange is a new translation key
 
         this.modalOverlay.appendChild(this.modalElement);
-        document.body.appendChild(this.modalOverlay);
+        this.widget.container.appendChild(this.modalOverlay);
 
         this.calendarLeftInstance = this.modalElement.querySelector('#rangeCalendarLeft');
         this.calendarRightInstance = this.modalElement.querySelector('#rangeCalendarRight');
