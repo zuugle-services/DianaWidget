@@ -1,16 +1,20 @@
 // =============== FILE: calendar.js ===============
 import { DateTime } from 'luxon';
 import { getMonthName, getShortDayName, throttle, formatDateForDisplay } from "../utils";
+import { formatDatetime } from "../datetimeUtils"
 
 export class SingleCalendar {
-    constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback) {
-        this.inputElement = inputElement;
-        this.displayElement = displayElement;
-        this.dateInputContainer = this.inputElement.closest('.date-input-container');
+    constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerAndAnchorElement) {
+        this.inputElement = inputElement; // Hidden input for date value
+        this.displayElement = displayElement; // Span inside "Other Date" button for text
         this.widget = widgetInstance;
         this.config = widgetInstance.config;
         this.t = widgetInstance.t.bind(widgetInstance);
         this.onDateSelectCallback = onDateSelectCallback;
+
+        // Use the provided triggerAndAnchorElement (e.g., "Other Date" button) for positioning and click events.
+        // Fallback to legacy behavior if not provided.
+        this.triggerElement = triggerAndAnchorElement || this.inputElement.closest('.date-input-container');
 
         this.selectedDate = initialDate ? new Date(initialDate.valueOf()) : new Date();
         if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
@@ -27,31 +31,13 @@ export class SingleCalendar {
     }
 
     _init() {
-        if (window.matchMedia("(max-width: 768px)").matches) {
-            this.inputElement.style.display = 'block';
-            if (this.displayElement.closest('.date-input')) {
-                 this.displayElement.closest('.date-input').style.display = 'none';
-            }
-            this.inputElement.addEventListener("change", (e) => {
-                const [year, month, day] = e.target.value.split('-').map(Number);
-                const newSelectedDate = new Date(Date.UTC(year, month - 1, day));
-                this.selectedDate = newSelectedDate;
-                this._updateInputElement();
-                this._updateDisplayElement();
-                if (this.onDateSelectCallback) {
-                    this.onDateSelectCallback(newSelectedDate);
-                }
-                this.widget.clearMessages();
-            });
-            this._updateInputElement();
-            this._updateDisplayElement();
-            return;
-        }
+        // Removed the mobile-specific (max-width: 768px) block.
+        // The custom calendar will now be used on all screen sizes when triggered.
 
         this._createCalendarContainer();
         this._attachEventListeners();
-        this._updateInputElement();
-        this._updateDisplayElement();
+        this._updateInputElement(); // Updates hidden input
+        this._updateDisplayElement(); // Updates text in "Other Date" button span
     }
 
     _createCalendarContainer() {
@@ -74,13 +60,13 @@ export class SingleCalendar {
         }
 
         this.calendarContainer.style.position = 'absolute';
-        this.calendarContainer.style.zIndex = '1050';
+        this.calendarContainer.style.zIndex = '1050'; // Ensure it's above other elements
         this.calendarContainer.style.display = 'none';
-        this.calendarContainer.className = "diana-container calendar-container";
+        this.calendarContainer.className = "diana-container calendar-container"; // Ensure styles apply
     }
 
     _render() {
-        if (!this.calendarContainer || window.matchMedia("(max-width: 768px)").matches) return;
+        if (!this.calendarContainer) return;
 
         const daysInMonth = new Date(this.currentViewYear, this.currentViewMonth + 1, 0).getDate();
         let firstDayOfMonthIndex = new Date(this.currentViewYear, this.currentViewMonth, 1).getDay();
@@ -109,8 +95,7 @@ export class SingleCalendar {
 
     _generateDaysHTML(daysInMonth, firstDayOfMonthIndex) {
         let html = "";
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = new Date(); today.setUTCHours(0,0,0,0);
 
         for (let i = 0; i < firstDayOfMonthIndex; i++) {
             html += "<div class='calendar-day empty'></div>";
@@ -119,7 +104,9 @@ export class SingleCalendar {
             const date = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, day));
             const isToday = date.getTime() === new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).getTime();
             const isSelected = this.selectedDate && !isNaN(this.selectedDate.getTime()) &&
-                               date.getTime() === new Date(Date.UTC(this.selectedDate.getUTCFullYear(), this.selectedDate.getUTCMonth(), this.selectedDate.getUTCDate())).getTime();
+              date.getFullYear() === this.selectedDate.getFullYear() &&
+              date.getMonth() === this.selectedDate.getMonth() &&
+              date.getDate() === this.selectedDate.getDate();
 
             html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}" data-day="${day}">${day}</div>`;
         }
@@ -157,7 +144,7 @@ export class SingleCalendar {
             e.preventDefault();
             e.stopPropagation();
             this._updateInputElement();
-            this._updateDisplayElement();
+            this._updateDisplayElement(); // This will update the "Other Date" button text
             if (this.onDateSelectCallback) {
                 this.onDateSelectCallback(new Date(this.selectedDate.valueOf()));
             }
@@ -169,15 +156,15 @@ export class SingleCalendar {
             dayElement.addEventListener("click", (e) => {
                 e.stopPropagation();
                 this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt(dayElement.dataset.day)));
-                this._render();
+                this._render(); // Re-render to show selection, but don't apply yet
             });
         });
     }
 
     _attachEventListeners() {
-        if (!this.dateInputContainer || window.matchMedia("(max-width: 768px)").matches) return;
+        if (!this.triggerElement) return;
 
-        this.dateInputContainer.addEventListener("click", (e) => {
+        this.triggerElement.addEventListener("click", (e) => {
             e.stopPropagation();
             if (this.calendarContainer.classList.contains("active")) {
                 this.hide();
@@ -188,7 +175,7 @@ export class SingleCalendar {
 
         document.addEventListener("click", (e) => {
             if (this.calendarContainer && this.calendarContainer.classList.contains("active") &&
-                !this.dateInputContainer.contains(e.target) &&
+                !this.triggerElement.contains(e.target) && // Check against the new triggerElement
                 !this.calendarContainer.contains(e.target)) {
                 this.hide();
             }
@@ -196,7 +183,7 @@ export class SingleCalendar {
 
         const throttledReposition = throttle(this._reposition.bind(this), 50);
 
-        let scrollableParent = this.dateInputContainer.parentElement;
+        let scrollableParent = this.triggerElement.parentElement;
         while(scrollableParent) {
             if (scrollableParent.scrollHeight > scrollableParent.clientHeight || scrollableParent.scrollWidth > scrollableParent.clientWidth) {
                  scrollableParent.addEventListener('scroll', throttledReposition, true);
@@ -208,60 +195,100 @@ export class SingleCalendar {
         window.addEventListener('resize', throttledReposition);
     }
 
-    _updateDisplayElement() {
+    _updateDisplayElement() { // Updates the text of the displayElement (e.g., span in "Other Date" button)
         const localeMap = { EN: 'en-GB', DE: 'de-DE' };
         const locale = localeMap[this.config.language] || 'en-GB';
-        if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-            this.displayElement.textContent = formatDateForDisplay(this.selectedDate, locale, 'UTC');
-            this.displayElement.classList.remove("placeholder");
-        } else {
-            this.displayElement.textContent = this.t('selectDate');
-            this.displayElement.classList.add("placeholder");
+
+        // This method is called by DianaWidget._updateSingleDayDateButtonStates for the "Other Date" button.
+        // And also internally by SingleCalendar when applying a date.
+        // The DianaWidget._updateSingleDayDateButtonStates will handle setting the "Other date" text or the formatted date.
+        // So, this internal update should only format the date if a specific date is selected.
+        if (this.displayElement) { // Check if displayElement is provided
+            if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
+                // Check if the current displayElement is part of the "Other Date" button logic in DianaWidget
+                const isOtherDateButtonText = this.widget.elements && this.displayElement === this.widget.elements.otherDateText;
+                const today = DateTime.now().setZone(this.config.timezone).startOf('day').toJSDate();
+                const tomorrow = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toJSDate();
+                const selectedJSDate = DateTime.fromJSDate(this.selectedDate).setZone(this.config.timezone).startOf('day').toJSDate();
+
+                if (isOtherDateButtonText && (selectedJSDate.getTime() === today.getTime() || selectedJSDate.getTime() === tomorrow.getTime())) {
+                    // If it's today or tomorrow, DianaWidget's _updateSingleDayDateButtonStates will set "Other Date"
+                    // So, we don't set the formatted date here to avoid conflict.
+                    // However, if the calendar is applying, it means a specific date was chosen.
+                    // This logic is now more complex due to shared responsibility.
+                    // The primary update path is: Calendar apply -> callback to DianaWidget -> _updateSingleDayDateButtonStates.
+                    // This _updateDisplayElement here is mostly for internal calendar rendering.
+                } else {
+                     this.displayElement.textContent = formatDateForDisplay(this.selectedDate, locale, this.config.timezone);
+                }
+                this.displayElement.classList.remove("placeholder");
+            } else {
+                this.displayElement.textContent = this.t('selectDate');
+                this.displayElement.classList.add("placeholder");
+            }
         }
     }
 
-    _updateInputElement() {
-        if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-            const year = this.selectedDate.getUTCFullYear();
-            const month = String(this.selectedDate.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(this.selectedDate.getUTCDate()).padStart(2, '0');
-            this.inputElement.value = `${year}-${month}-${day}`;
-        } else {
-            this.inputElement.value = '';
+    _updateInputElement() { // Updates the hidden input field's value
+        if (this.inputElement) { // Check if inputElement is provided
+            if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
+                this.inputElement.value = formatDatetime(this.selectedDate, this.config.timezone);
+            } else {
+                this.inputElement.value = '';
+            }
         }
     }
 
     _reposition() {
-        if (!this.calendarContainer || !this.dateInputContainer || !this.calendarContainer.classList.contains('active')) {
+        if (!this.calendarContainer || !this.triggerElement || !this.calendarContainer.classList.contains('active')) {
             return;
         }
 
-        const inputRect = this.dateInputContainer.getBoundingClientRect();
-        this.calendarContainer.style.width = `${inputRect.width}px`;
+        const triggerRect = this.triggerElement.getBoundingClientRect(); // Use triggerElement for positioning
+        this.calendarContainer.style.width = `${triggerRect.width}px`; // Can also set a fixed width or min-width for calendar
+
+        // If the trigger is the button group, match its width. If it's a single button, match that.
+        // For better appearance, a min-width for the calendar itself might be good.
+        const desiredCalendarWidth = Math.max(280, triggerRect.width); // Example: min-width of 280px
+        this.calendarContainer.style.width = `${desiredCalendarWidth}px`;
+
+
         const calendarHeight = this.calendarContainer.offsetHeight;
-        const calendarWidth = this.calendarContainer.offsetWidth;
+        const calendarWidth = this.calendarContainer.offsetWidth; // Use the actual calendar width after setting it
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        const gap = 5;
-        const offset = 400;
-        let finalTop = inputRect.bottom + scrollTop + gap;
+        const gap = 5; // Gap between trigger and calendar
 
-        if (inputRect.bottom + offset + gap + calendarHeight > viewportHeight && inputRect.top + offset - calendarHeight - gap > scrollTop) {
-            finalTop = inputRect.top + scrollTop - calendarHeight - gap;
-        } else if (inputRect.bottom + offset + gap + calendarHeight > viewportHeight) {
+        let finalTop = triggerRect.bottom + scrollTop + gap;
+        // Check if it fits below, otherwise try above
+        if (triggerRect.bottom + gap + calendarHeight > viewportHeight && // Not enough space below
+            triggerRect.top - calendarHeight - gap > scrollTop) { // Enough space above
+            finalTop = triggerRect.top + scrollTop - calendarHeight - gap;
+        } else if (triggerRect.bottom + gap + calendarHeight > viewportHeight) { // Still not enough space below (and not enough above)
+            // Try to fit it as best as possible, might overflow if viewport is too small
+            if (finalTop + calendarHeight > scrollTop + viewportHeight) {
+                 finalTop = scrollTop + viewportHeight - calendarHeight - gap;
+            }
             if (finalTop < scrollTop) finalTop = scrollTop + gap;
         }
-        let finalLeft = inputRect.left + scrollLeft;
-        if (inputRect.left + calendarWidth > viewportWidth) finalLeft = inputRect.right + scrollLeft - calendarWidth;
-        if (finalLeft < scrollLeft) finalLeft = scrollLeft;
+
+        let finalLeft = triggerRect.left + scrollLeft;
+        if (triggerRect.left + calendarWidth > viewportWidth) { // If it overflows right
+            finalLeft = triggerRect.right + scrollLeft - calendarWidth;
+        }
+        if (finalLeft < scrollLeft) { // Ensure it doesn't go off-screen left
+            finalLeft = scrollLeft;
+        }
+
         this.calendarContainer.style.top = `${finalTop}px`;
         this.calendarContainer.style.left = `${finalLeft}px`;
     }
 
     show() {
-        if (window.matchMedia("(max-width: 768px)").matches) return;
+        if (!this.calendarContainer) return; // Ensure container exists
+
         if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
             this.currentViewMonth = this.selectedDate.getUTCMonth();
             this.currentViewYear = this.selectedDate.getUTCFullYear();
@@ -273,26 +300,30 @@ export class SingleCalendar {
         this._render();
         this.calendarContainer.style.display = 'block';
         this.calendarContainer.classList.add("active");
-        this._reposition();
+        this._reposition(); // Reposition after display block to get correct dimensions
     }
 
     hide() {
-        if (window.matchMedia("(max-width: 768px)").matches || !this.calendarContainer) return;
+        if (!this.calendarContainer) return;
         this.calendarContainer.style.display = 'none';
         this.calendarContainer.classList.remove("active");
     }
 
-    setSelectedDate(date) {
+    setSelectedDate(date) { // Called by DianaWidget to sync date
         this.selectedDate = new Date(date.valueOf());
         if (!isNaN(this.selectedDate.getTime())) {
             this.currentViewMonth = this.selectedDate.getUTCMonth();
             this.currentViewYear = this.selectedDate.getUTCFullYear();
         }
-        this._updateInputElement(); this._updateDisplayElement();
-        if (this.calendarContainer && this.calendarContainer.classList.contains("active")) this._render();
+        this._updateInputElement();
+        this._updateDisplayElement(); // This will update the text on the "Other Date" button span
+        if (this.calendarContainer && this.calendarContainer.classList.contains("active")) {
+            this._render(); // Re-render calendar if visible
+        }
     }
 }
 
+// RangeCalendarModal remains unchanged for this request
 export class RangeCalendarModal {
     constructor(initialStartDate, initialEndDate, widgetInstance, onRangeSelectCallback, overrideStartDateStr, overrideEndDateStr, activityDurationDaysFixed) {
         this.widget = widgetInstance;

@@ -38,6 +38,9 @@ export default {
     selectTimeSlot: "Please select a time slot above.",
     useCurrentLocation: "Use current location",
     selectDateRange: "Select date range",
+    today: "Today",
+    tomorrow: "Tomorrow",
+    otherDate: "Other date",
     warnings: {
       earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
       lateEnd: "Warning: Later Departure than recommended ending time of activity!",
@@ -164,6 +167,9 @@ export default {
     selectTimeSlot: "Bitte wählen Sie ein Zeitfenster aus.",
     useCurrentLocation: "Aktuellen Standort verwenden",
     selectDateRange: "Datumsbereich auswählen",
+    today: "Heute",
+    tomorrow: "Morgen",
+    otherDate: "Anderes Datum",
     warnings: {
       earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
       lateEnd: "Warnung: Spätere Abfahrt als empfohlene Endzeit!",

@@ -303,13 +303,14 @@ export function getTimeFormatFromMinutes(minutesInput, tFunction) {
 /**
  * Formats a JavaScript Date object into "YYYY-MM-DD" string using UTC values.
  * @param {Date} date - The JavaScript Date object.
+ * @param {string} timezone - The timezone of the date object
  * @returns {string} The formatted date string, or an empty string if date is invalid.
  */
-export function formatDatetime(date) {
+export function formatDatetime(date, timezone="utc") {
     if (!date || isNaN(date.getTime())) return '';
     // Use Luxon for consistency, ensuring UTC interpretation for formatting
     try {
-        return DateTime.fromJSDate(date).setZone('utc').toFormat('yyyy-MM-dd');
+        return DateTime.fromJSDate(date).setZone(timezone).toFormat('yyyy-MM-dd');
     } catch (error) {
         console.error("Error formatting datetime to YYYY-MM-DD:", error);
         // Fallback to manual formatting if Luxon fails
