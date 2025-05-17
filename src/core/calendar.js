@@ -245,11 +245,12 @@ export class SingleCalendar {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
         const gap = 5;
+        const offset = 400;
         let finalTop = inputRect.bottom + scrollTop + gap;
 
-        if (inputRect.bottom + gap + calendarHeight > viewportHeight && inputRect.top - calendarHeight - gap > scrollTop) {
+        if (inputRect.bottom + offset + gap + calendarHeight > viewportHeight && inputRect.top + offset - calendarHeight - gap > scrollTop) {
             finalTop = inputRect.top + scrollTop - calendarHeight - gap;
-        } else if (inputRect.bottom + gap + calendarHeight > viewportHeight) {
+        } else if (inputRect.bottom + offset + gap + calendarHeight > viewportHeight) {
             if (finalTop < scrollTop) finalTop = scrollTop + gap;
         }
         let finalLeft = inputRect.left + scrollLeft;

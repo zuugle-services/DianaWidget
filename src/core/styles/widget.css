@@ -97,7 +97,7 @@
     line-height: 120%;
     letter-spacing: 0.02em;
     width: 100%;
-    padding: 18px 14px 18px 0;
+    padding: 18px 9px 18px 9px;
     border-left: 1px solid var(--border-primary);
     text-align: center;
 }
