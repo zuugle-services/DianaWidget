@@ -768,11 +768,11 @@ export default class DianaWidget {
     const activityDateStartInput = this.config.multiday ? this.elements.activityDateStart : this.elements.activityDate;
     const activityDateEndInput = this.config.multiday ? this.elements.activityDateEnd : null;
 
-    if (!activityDateStartInput.value && !this.config.overrideActivityStartDate) {
+    if (!this.config.overrideActivityStartDate && !activityDateStartInput.value) {
         this.showError(this.t('infos.dateRequired'), 'form'); return;
     }
-    if (this.config.multiday && !activityDateEndInput.value && !this.config.overrideActivityEndDate) {
-        this.showError(this.t('infos.dateRequired'), 'form'); return; // Or a more specific "End date required"
+    if (this.config.multiday && !this.config.overrideActivityEndDate && !activityDateEndInput.value) {
+        this.showError(this.t('infos.endDateRequired'), 'form'); return;
     }
 
     // Ensure state dates are set if inputs were hidden by overrides

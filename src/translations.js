@@ -45,6 +45,7 @@ export default {
     infos: {
       originRequired: "Please enter an origin location.",
       dateRequired: "Please select a date.",
+      endDateRequired: "Please select an end date.",
       fetchingLocation: "Fetching your location...",
       fetchingAddress: "Looking up address...",
       endDateAfterStartDate: "End date must be on or after the start date."
@@ -169,6 +170,7 @@ export default {
     infos: {
       originRequired: "Bitte geben Sie einen Startort ein.",
       dateRequired: "Bitte wählen Sie ein Datum.",
+      endDateRequired: "Bitte wählen Sie ein Enddatum.",
       fetchingLocation: "Standort wird abgerufen...",
       fetchingAddress: "Adresse wird gesucht...",
       endDateAfterStartDate: "Das Enddatum muss am oder nach dem Startdatum liegen."
