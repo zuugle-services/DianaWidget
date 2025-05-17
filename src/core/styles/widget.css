@@ -682,6 +682,10 @@
 .diana-container .calendar-footer-btn:hover { background-color: var(--bg-hover); }
 .diana-container .calendar-footer-btn.calendar-apply-btn:hover { background-color: var(--bg-apply-hover); }
 
+.diana-container .calendar-day.fixed-date { background-color: #e9ecef !important; color: #6c757d !important; cursor: not-allowed !important; font-weight: bold; border: 1px solid #ced4da; }
+.diana-container .calendar-day.fixed-date.selected, .calendar-day.fixed-date.start-date, .calendar-day.fixed-date.end-date { background-color: #adb5bd !important; color: #ffffff !important; }
+.diana-container .calendar-day.fixed-date:hover { background-color: #e9ecef !important; }
+
 
 /* --- Results Page Specific Styles --- */
 

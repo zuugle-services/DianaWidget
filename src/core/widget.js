@@ -1,7 +1,7 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 import { DateTime } from 'luxon';
 import translations from '../translations';
-import { SingleCalendar, RangeCalendarModal } from "./calendar"; // Removed this import
+import { SingleCalendar, RangeCalendarModal } from "./calendar";
 import {
     getMonthName,
     getShortDayName,
@@ -60,7 +60,8 @@ export default class DianaWidget {
     destinationInputName: null,
     multiday: false,
     overrideActivityStartDate: null,
-    overrideActivityEndDate: null
+    overrideActivityEndDate: null,
+    activityDurationDaysFixed: null
   };
 
   constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -108,31 +109,55 @@ export default class DianaWidget {
       document.body.appendChild(style);
 
       let initialSelectedStartDate;
-      if (this.config.overrideActivityStartDate) {
-          try {
-              initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, { zone: 'utc' }).toJSDate();
-          } catch (e) {
-              console.warn(`Invalid overrideActivityStartDate format: ${this.config.overrideActivityStartDate}. Defaulting...`);
-              initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
-          }
-      } else {
-          initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+      let initialSelectedEndDate = null;
+
+      if (this.config.multiday && this.config.activityDurationDaysFixed) {
+        if (this.config.overrideActivityEndDate) {
+            try {
+                const endDt = DateTime.fromISO(this.config.overrideActivityEndDate, { zone: 'utc' });
+                initialSelectedEndDate = endDt.toJSDate();
+                initialSelectedStartDate = endDt.minus({ days: this.config.activityDurationDaysFixed - 1 }).toJSDate();
+            } catch (e) { /* Fallback if date parsing fails */ }
+        } else if (this.config.overrideActivityStartDate) {
+            try {
+                const startDt = DateTime.fromISO(this.config.overrideActivityStartDate, { zone: 'utc' });
+                initialSelectedStartDate = startDt.toJSDate();
+                initialSelectedEndDate = startDt.plus({ days: this.config.activityDurationDaysFixed - 1 }).toJSDate();
+            } catch (e) { /* Fallback */ }
+        }
       }
 
+      if (!initialSelectedStartDate) { // If not set by fixed duration logic
+          if (this.config.overrideActivityStartDate) {
+              try {
+                  initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, { zone: 'utc' }).toJSDate();
+              } catch (e) {
+                  initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+              }
+          } else {
+              initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+          }
+      }
 
-      let initialSelectedEndDate = null;
-      if (this.config.multiday) {
+      if (this.config.multiday && !initialSelectedEndDate) { // If not set by fixed duration logic
           if (this.config.overrideActivityEndDate) {
               try {
                   initialSelectedEndDate = DateTime.fromISO(this.config.overrideActivityEndDate, { zone: 'utc' }).toJSDate();
               } catch (e) {
-                  console.warn(`Invalid overrideActivityEndDate format: ${this.config.overrideActivityEndDate}. Defaulting...`);
                   initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({ days: 1 }).toJSDate();
               }
           } else {
               initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({ days: 1 }).toJSDate();
           }
       }
+
+      // Final check for multiday date validity
+      if (this.config.multiday && initialSelectedStartDate && initialSelectedEndDate) {
+          if (DateTime.fromJSDate(initialSelectedEndDate) < DateTime.fromJSDate(initialSelectedStartDate)) {
+              initialSelectedEndDate = new Date(initialSelectedStartDate.valueOf());
+          }
+      }
+
 
       this.state = {
         fromConnections: [],
@@ -301,6 +326,10 @@ export default class DianaWidget {
         }
     }
 
+    if (config.multiday && config.overrideActivityStartDate && config.overrideActivityEndDate && !config.activityDurationDaysFixed) {
+      const oS = DateTime.fromISO(config.overrideActivityStartDate), oE = DateTime.fromISO(config.overrideActivityEndDate);
+      if (oS.isValid && oE.isValid && oE < oS) config.overrideActivityEndDate = config.overrideActivityStartDate;
+    }
     return config;
   }
 
@@ -339,7 +368,6 @@ export default class DianaWidget {
     this.container.innerHTML = this.getModalHTML();
     this.cacheDOMElements();
     this.setupAccessibility();
-
     if (this.config.multiday) {
         this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
         this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
@@ -360,6 +388,8 @@ export default class DianaWidget {
           originInput.setAttribute('data-lon', parts[1].trim());
         }
       }
+      originInput.disabled = true; originInput.classList.add('disabled');
+      if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
       return;
     }
     if (this.config.cacheUserStartLocation) {
@@ -406,13 +436,18 @@ export default class DianaWidget {
   }
 
   getModalHTML() {
-    const showStartDateInput = !this.config.overrideActivityStartDate;
-    const showEndDateInput = this.config.multiday && !this.config.overrideActivityEndDate;
-    const showAnyDateInput = showStartDateInput || (this.config.multiday && showEndDateInput) || (!this.config.multiday && showStartDateInput);
+    const datesFullyDeterminedByFixedDurationAndOverride =
+        this.config.multiday &&
+        this.config.activityDurationDaysFixed &&
+        (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
 
+    const showStartDateInput = !this.config.overrideActivityStartDate && !datesFullyDeterminedByFixedDurationAndOverride;
+    const showEndDateInput = this.config.multiday && !this.config.overrideActivityEndDate && !datesFullyDeterminedByFixedDurationAndOverride;
+
+    const showAnyDateSection = this.config.multiday || !this.config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride;
 
     let dateSectionHTML = '';
-    if (showAnyDateInput) {
+    if (showAnyDateSection) {
         dateSectionHTML += `<div class="form-section date-section-wrapper">`;
         if (this.config.multiday) {
             if (showStartDateInput) {
@@ -467,7 +502,6 @@ export default class DianaWidget {
         }
         dateSectionHTML += `</div>`;
     }
-
 
     return `
       <div id="activityModal" class="modal visible">
@@ -549,17 +583,13 @@ export default class DianaWidget {
       bottomSlider: this.container.querySelector("#bottomSlider"),
       activityTimeBox: this.container.querySelector("#activity-time"),
       currentLocationBtn: this.container.querySelector("#currentLocationBtn"),
+      activityDateStart: this.container.querySelector("#activityDateStart"),
+      dateDisplayStart: this.container.querySelector("#dateDisplayStart"),
+      activityDateEnd: this.container.querySelector("#activityDateEnd"),
+      dateDisplayEnd: this.container.querySelector("#dateDisplayEnd"),
+      activityDate: this.container.querySelector("#activityDate"),
+      dateDisplay: this.container.querySelector("#dateDisplay"),
     };
-
-    if (this.config.multiday) {
-        this.elements.activityDateStart = this.container.querySelector("#activityDateStart");
-        this.elements.dateDisplayStart = this.container.querySelector("#dateDisplayStart");
-        this.elements.activityDateEnd = this.container.querySelector("#activityDateEnd");
-        this.elements.dateDisplayEnd = this.container.querySelector("#dateDisplayEnd");
-    } else {
-        this.elements.activityDate = this.container.querySelector("#activityDate");
-        this.elements.dateDisplay = this.container.querySelector("#dateDisplay");
-    }
   }
 
   setupAccessibility() {
@@ -584,44 +614,27 @@ export default class DianaWidget {
   }
 
   setupEventListeners() {
-    this.elements.originInput.addEventListener('input', (e) => {
-      this.elements.originInput.removeAttribute("data-lat");
-      this.elements.originInput.removeAttribute("data-lon");
-      this.clearMessages();
-      debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
-    });
-
-    this.elements.suggestionsContainer.addEventListener('click', (e) => {
-      if (e.target.classList.contains('suggestion-item')) {
-        this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
-      }
-    });
-
-    document.addEventListener("click", (e) => {
-      if (this.elements.suggestionsContainer.style.display &&
-          !this.elements.suggestionsContainer.contains(e.target) &&
-          !this.elements.originInput.contains(e.target)
-        ) {
-        this.state.suggestions = [];
-        this.renderSuggestions();
-      }
-    });
-
-    this.elements.searchBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.handleSearch();
-    });
-
-    this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
-
-    this.elements.originInput.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
-      else if (e.key === 'Enter') this.handleSuggestionEnter(e);
-    });
-
-    if (this.elements.currentLocationBtn) {
-        this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
+    if (!this.config.overrideUserStartLocation) {
+        this.elements.originInput.addEventListener('input', (e) => {
+          this.elements.originInput.removeAttribute("data-lat"); this.elements.originInput.removeAttribute("data-lon");
+          this.clearMessages(); debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
+        });
+        this.elements.suggestionsContainer.addEventListener('click', (e) => {
+          if (e.target.classList.contains('suggestion-item')) this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
+        });
+        document.addEventListener("click", (e) => {
+          if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(e.target) && !this.elements.originInput.contains(e.target)) {
+            this.state.suggestions = []; this.renderSuggestions();
+          }
+        });
+        this.elements.originInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
+          else if (e.key === 'Enter') this.handleSuggestionEnter(e);
+        });
+        if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
     }
+    this.elements.searchBtn.addEventListener('click', (e) => { e.preventDefault(); this.handleSearch(); });
+    this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
   }
 
   async handleCurrentLocation() {
@@ -741,42 +754,38 @@ export default class DianaWidget {
   }
 
   async handleSearch() {
-    if (this.loadingTextTimeout1) clearTimeout(this.loadingTextTimeout1);
-    if (this.loadingTextTimeout2) clearTimeout(this.loadingTextTimeout2);
-    this.loadingTextTimeout1 = null; this.loadingTextTimeout2 = null;
-    this.clearMessages();
+    if (this.loadingTextTimeout1) clearTimeout(this.loadingTextTimeout1); if (this.loadingTextTimeout2) clearTimeout(this.loadingTextTimeout2);
+    this.loadingTextTimeout1 = null; this.loadingTextTimeout2 = null; this.clearMessages();
 
-    if (!this.elements.originInput.value) { this.showInfo(this.t('infos.originRequired')); return; }
+    if (!this.config.overrideUserStartLocation && !this.elements.originInput.value) { this.showInfo(this.t('infos.originRequired')); return; }
 
-    const activityDateStartInput = this.config.multiday ? this.elements.activityDateStart : this.elements.activityDate;
-    const activityDateEndInput = this.config.multiday ? this.elements.activityDateEnd : null;
+    const datesFullyDetermined = this.config.multiday && this.config.activityDurationDaysFixed && (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
 
-    if (!this.config.overrideActivityStartDate && (!activityDateStartInput || !activityDateStartInput.value)) {
-        this.showError(this.t('infos.dateRequired'), 'form'); return;
-    }
-    if (this.config.multiday && !this.config.overrideActivityEndDate && (!activityDateEndInput || !activityDateEndInput.value)) {
-        this.showError(this.t('infos.endDateRequired'), 'form'); return;
+    if (!datesFullyDetermined) {
+        const activityDateStartInput = this.config.multiday ? this.elements.activityDateStart : this.elements.activityDate;
+        const activityDateEndInput = this.config.multiday ? this.elements.activityDateEnd : null;
+
+        if (!this.config.overrideActivityStartDate && (!activityDateStartInput || !activityDateStartInput.value)) { this.showError(this.t('infos.dateRequired'), 'form'); return; }
+        if (this.config.multiday && !this.config.overrideActivityEndDate && (!activityDateEndInput || !activityDateEndInput.value) && !this.config.activityDurationDaysFixed) { this.showError(this.t('infos.endDateRequired'), 'form'); return; }
     }
 
-    if (this.config.overrideActivityStartDate) {
-        this.state.selectedDate = DateTime.fromISO(this.config.overrideActivityStartDate, { zone: 'utc' }).toJSDate();
-    } else if (activityDateStartInput) {
-        this.state.selectedDate = DateTime.fromISO(activityDateStartInput.value, { zone: 'utc' }).toJSDate();
+    // Update state.selectedDate and state.selectedEndDate based on inputs if not overridden or fully determined
+    if (!this.config.overrideActivityStartDate && !datesFullyDetermined) {
+        const inputVal = this.config.multiday ? this.elements.activityDateStart?.value : this.elements.activityDate?.value;
+        if (inputVal) this.state.selectedDate = DateTime.fromISO(inputVal, { zone: 'utc' }).toJSDate();
     }
-
-    if (this.config.multiday) {
-        if (this.config.overrideActivityEndDate) {
-            this.state.selectedEndDate = DateTime.fromISO(this.config.overrideActivityEndDate, { zone: 'utc' }).toJSDate();
-        } else if (activityDateEndInput) {
-            this.state.selectedEndDate = DateTime.fromISO(activityDateEndInput.value, { zone: 'utc' }).toJSDate();
-        }
-
-        if (this.state.selectedDate && this.state.selectedEndDate && DateTime.fromJSDate(this.state.selectedDate).startOf('day') > DateTime.fromJSDate(this.state.selectedEndDate).startOf('day')) {
-            this.showInfo(this.t('infos.endDateAfterStartDate'));
-            return;
+    if (this.config.multiday && !this.config.overrideActivityEndDate && !datesFullyDetermined) {
+        if (this.elements.activityDateEnd?.value) {
+            this.state.selectedEndDate = DateTime.fromISO(this.elements.activityDateEnd.value, { zone: 'utc' }).toJSDate();
+        } else if (this.config.activityDurationDaysFixed && this.state.selectedDate) {
+            this.state.selectedEndDate = DateTime.fromJSDate(this.state.selectedDate).plus({ days: this.config.activityDurationDaysFixed - 1 }).toJSDate();
         }
     }
 
+
+    if (this.config.multiday && this.state.selectedDate && this.state.selectedEndDate && DateTime.fromJSDate(this.state.selectedDate).startOf('day') > DateTime.fromJSDate(this.state.selectedEndDate).startOf('day')) {
+      this.showInfo(this.t('infos.endDateAfterStartDate')); return;
+    }
 
     this.setLoadingState(true);
     try {
@@ -839,11 +848,8 @@ export default class DianaWidget {
   }
 
   async fetchActivityData() {
-    const activityStartDateValue = this.config.overrideActivityStartDate || (this.config.multiday && this.elements.activityDateStart ? this.elements.activityDateStart.value : (this.elements.activityDate ? this.elements.activityDate.value : null));
-    if (!activityStartDateValue) {
-        throw new Error("Activity start date is not available.");
-    }
-    const activityStartDate = DateTime.fromISO(activityStartDateValue, { zone: 'utc' }).toJSDate();
+    const activityStartDate = this.state.selectedDate;
+    if (!activityStartDate) throw new Error("Activity start date is not available.");
 
     const referenceDateForEndTimes = this.config.multiday && this.state.selectedEndDate
                                        ? this.state.selectedEndDate
@@ -1057,7 +1063,6 @@ export default class DianaWidget {
 
   updateActivityTimeBox(connection, type) {
     if (!connection) return;
-
     try {
       const activityStartDate = this.state.selectedDate;
       const activityEndDate = this.config.multiday && this.state.selectedEndDate
@@ -1339,122 +1344,78 @@ export default class DianaWidget {
     return durationString;
   }
 
-    _initCustomCalendar() {
+  _initCustomCalendar() {
+    const datesFullyDetermined = this.config.multiday && this.config.activityDurationDaysFixed && (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
+
     if (this.config.multiday) {
-      // For multiday, always use RangeCalendarModal when a date input is clicked.
-      // Ensure the modal is created only once.
-      if (!this.rangeCalendarModal) {
-        this.rangeCalendarModal = new RangeCalendarModal(
-          this.state.selectedDate,
-          this.state.selectedEndDate,
-          this,
-          (startDate, endDate) => {
-            this.state.selectedDate = startDate;
-            this.state.selectedEndDate = endDate;
-
-            if (this.elements.activityDateStart) {
-              this.elements.activityDateStart.value = formatDatetime(startDate);
-            }
-            if (this.elements.dateDisplayStart) {
-              this.updateDateDisplay(startDate, 'dateDisplayStart');
-            }
-            if (this.elements.activityDateEnd) {
-              this.elements.activityDateEnd.value = formatDatetime(endDate);
-            }
-            if (this.elements.dateDisplayEnd) {
-              this.updateDateDisplay(endDate, 'dateDisplayEnd');
-            }
-            this.clearMessages();
-
-            // Validate that end date is not before start date after selection
-            if (DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) {
-              this.showInfo(this.t('infos.endDateAfterStartDate'));
-               // Optionally reset or adjust dates here if invalid
-              // For example, set end date to start date:
-              // this.state.selectedEndDate = new Date(this.state.selectedDate.valueOf());
-              // if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
-              // if (this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-            }
-          }
-        );
-      }
-
-      const showRangeCalendar = () => {
-        if (window.matchMedia("(max-width: 768px)").matches) {
-          // For mobile, rely on native inputs.
-          // If start date native input is focused, then end date native input should be focused next.
-          // This logic might need more refinement based on exact UX desired for mobile native inputs.
-          if (document.activeElement === this.elements.activityDateStart && this.elements.activityDateEnd) {
-            // this.elements.activityDateEnd.focus(); // This might be too aggressive
-          } else if (document.activeElement === this.elements.activityDateEnd && this.elements.activityDateStart) {
-            // this.elements.activityDateStart.focus();
-          }
-          return;
+        if (!this.rangeCalendarModal) {
+            this.rangeCalendarModal = new RangeCalendarModal(
+                this.state.selectedDate, this.state.selectedEndDate, this,
+                (startDate, endDate) => {
+                    this.state.selectedDate = startDate; this.state.selectedEndDate = endDate;
+                    if (this.elements.activityDateStart) this.elements.activityDateStart.value = formatDatetime(startDate);
+                    if (this.elements.dateDisplayStart) this.updateDateDisplay(startDate, 'dateDisplayStart');
+                    if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(endDate);
+                    if (this.elements.dateDisplayEnd) this.updateDateDisplay(endDate, 'dateDisplayEnd');
+                    this.clearMessages();
+                    if (DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
+                },
+                this.config.overrideActivityStartDate, this.config.overrideActivityEndDate, this.config.activityDurationDaysFixed
+            );
         }
-        this.rangeCalendarModal.show(this.state.selectedDate, this.state.selectedEndDate);
-      };
 
-      // Attach event listener to start date input container (if it exists and not overridden)
-      if (!this.config.overrideActivityStartDate && this.elements.activityDateStart) {
-        const startDateInputContainer = this.elements.activityDateStart.closest('.date-input-container');
-        if (startDateInputContainer) {
-          startDateInputContainer.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showRangeCalendar();
-          });
+        const showRangeCalendar = () => {
+            if (window.matchMedia("(max-width: 768px)").matches) return;
+            this.rangeCalendarModal.show(this.state.selectedDate, this.state.selectedEndDate);
+        };
+
+        if (!datesFullyDetermined) {
+            if (!this.config.overrideActivityStartDate && this.elements.activityDateStart) {
+                const sDIC = this.elements.activityDateStart.closest('.date-input-container');
+                if (sDIC) sDIC.addEventListener('click', (e) => { e.stopPropagation(); showRangeCalendar(); });
+            }
+            if (!this.config.overrideActivityEndDate && this.elements.activityDateEnd && !this.config.activityDurationDaysFixed) { // Only add if end date not fixed by duration
+                const eDIC = this.elements.activityDateEnd.closest('.date-input-container');
+                if (eDIC) eDIC.addEventListener('click', (e) => { e.stopPropagation(); showRangeCalendar(); });
+            }
         }
-         // Handle native input change for mobile for start date
-        this.elements.activityDateStart.addEventListener('change', (e) => {
-          const [year, month, day] = e.target.value.split('-').map(Number);
-          const newStartDate = new Date(Date.UTC(year, month - 1, day));
-          this.state.selectedDate = newStartDate;
-          this.updateDateDisplay(newStartDate, 'dateDisplayStart');
-          if (this.state.selectedEndDate && newStartDate > this.state.selectedEndDate) {
-            this.state.selectedEndDate = new Date(newStartDate.valueOf());
-            if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
-            this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-          }
-          this.clearMessages();
-        });
-      }
 
-      // Attach event listener to end date input container (if it exists and not overridden)
-      if (!this.config.overrideActivityEndDate && this.elements.activityDateEnd) {
-        const endDateInputContainer = this.elements.activityDateEnd.closest('.date-input-container');
-        if (endDateInputContainer) {
-            endDateInputContainer.addEventListener('click', (e) => {
-                e.stopPropagation();
-                showRangeCalendar();
+        if (this.elements.activityDateStart) {
+            this.elements.activityDateStart.addEventListener('change', (e) => {
+                const [y, m, d] = e.target.value.split('-').map(Number); const nSD = new Date(Date.UTC(y, m - 1, d));
+                this.state.selectedDate = nSD; this.updateDateDisplay(nSD, 'dateDisplayStart');
+                if (this.config.activityDurationDaysFixed) {
+                    this.state.selectedEndDate = DateTime.fromJSDate(nSD).plus({ days: this.config.activityDurationDaysFixed - 1 }).toJSDate();
+                    if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
+                    this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+                } else if (this.state.selectedEndDate && nSD > this.state.selectedEndDate) {
+                    this.state.selectedEndDate = new Date(nSD.valueOf());
+                    if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
+                    this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+                } this.clearMessages();
             });
         }
-        // Handle native input change for mobile for end date
-        this.elements.activityDateEnd.addEventListener('change', (e) => {
-          const [year, month, day] = e.target.value.split('-').map(Number);
-          const newEndDate = new Date(Date.UTC(year, month - 1, day));
-          this.state.selectedEndDate = newEndDate;
-          this.updateDateDisplay(newEndDate, 'dateDisplayEnd');
-          if (this.state.selectedDate && newEndDate < this.state.selectedDate) {
-            this.state.selectedDate = new Date(newEndDate.valueOf());
-            if (this.elements.activityDateStart) this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
-            this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-          }
-          this.clearMessages();
-          if (DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) {
-            this.showInfo(this.t('infos.endDateAfterStartDate'));
-          }
-        });
-      }
+        if (this.elements.activityDateEnd) {
+            this.elements.activityDateEnd.addEventListener('change', (e) => {
+                if (this.config.activityDurationDaysFixed) return; // End date is derived if duration is fixed
+                const [y, m, d] = e.target.value.split('-').map(Number); const nED = new Date(Date.UTC(y, m - 1, d));
+                this.state.selectedEndDate = nED; this.updateDateDisplay(nED, 'dateDisplayEnd');
+                if (this.state.selectedDate && nED < this.state.selectedDate) {
+                    this.state.selectedDate = new Date(nED.valueOf());
+                    if (this.elements.activityDateStart) this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
+                    this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+                } this.clearMessages();
+                if (DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
+            });
+        }
+        if (this.config.overrideActivityStartDate && this.elements.dateDisplayStart) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+        if (this.config.overrideActivityEndDate && this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+        if (datesFullyDetermined) { // Ensure display is updated if dates were determined by fixed duration + override
+            if(this.elements.dateDisplayStart) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+            if(this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+        }
 
-      // Initial display update for overridden dates
-      if (this.config.overrideActivityStartDate && this.elements.dateDisplayStart) {
-        this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-      }
-      if (this.config.overrideActivityEndDate && this.elements.dateDisplayEnd) {
-        this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-      }
-
-    } else {
-      // Single day configuration: use SingleCalendar
+    } else { // Single day
       if (!this.config.overrideActivityStartDate && this.elements.activityDate && this.elements.dateDisplay) {
         const dateInputElement = this.elements.activityDate;
         const dateDisplayElement = this.elements.dateDisplay;
@@ -1470,13 +1431,10 @@ export default class DianaWidget {
           }
         );
       } else if (this.config.overrideActivityStartDate && this.elements.dateDisplay) {
-        // If date is overridden and it's single day, just update display
         this.updateDateDisplay(this.state.selectedDate, 'dateDisplay');
       }
     }
   }
-
-
 
   updateDateDisplay(date, displayElementId) {
     const displayElement = this.elements[displayElementId];
@@ -1591,7 +1549,6 @@ export default class DianaWidget {
         }
     });
   }
-
 
   navigateToForm() {
     this.clearMessages();
