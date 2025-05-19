@@ -28,6 +28,10 @@ import { PageManager } from '../components/PageManager';
 import { UIManager } from '../components/UIManager';
 import { SingleCalendar, RangeCalendarModal } from "../components/Calendar";
 
+import { helpContent } from '../templates/helpContent.js';
+import { contactContent } from '../templates/contactContent.js';
+import { legalContent } from '../templates/legalContent.js';
+
 export default class DianaWidget {
   defaultConfig = {
     activityName: "[Activity Name]",
@@ -1623,20 +1627,23 @@ export default class DianaWidget {
     let title = '';
     let contentHTML = '';
 
-    // This is where you would define the actual content for each page
-    // For now, using placeholders from translations
+    // Get the current language, fallback to EN if not supported
+    const language = this.config.language && (helpContent[this.config.language] || contactContent[this.config.language] || legalContent[this.config.language]) 
+      ? this.config.language 
+      : 'EN';
+
     switch (this.state.currentContentKey) {
         case 'help':
             title = this.t('menu.helpAndSupport');
-            contentHTML = `<p>${this.t('content.helpText')}</p>`;
+            contentHTML = helpContent[language];
             break;
         case 'contact':
             title = this.t('menu.contact');
-            contentHTML = `<p>${this.t('content.contactText')}</p>`;
+            contentHTML = contactContent[language];
             break;
         case 'legal':
             title = this.t('menu.legal');
-            contentHTML = `<p>${this.t('content.legalText')}</p>`;
+            contentHTML = legalContent[language];
             break;
         default:
             title = this.t('content.defaultTitle');
