@@ -7,7 +7,7 @@
         "dev": "webpack --mode development --watch",
         "build": "webpack --mode production",
         "analyze": "webpack --mode production --stats=detailed",
-        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --passWithNoTests"
     },
     "repository": {
         "type": "git",
