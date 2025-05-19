@@ -1,7 +1,7 @@
 /**
  * Utility functions for DianaWidget
  */
-import { DateTime } from 'luxon'; // Added for formatDateForDisplay if it stays here
+import { DateTime } from 'luxon';
 
 /**
  * Gets the localized month name.
@@ -11,7 +11,16 @@ import { DateTime } from 'luxon'; // Added for formatDateForDisplay if it stays 
  */
 export function getMonthName(monthIndex, tFunction) {
   // Ensure monthIndex is within a valid range if necessary, or trust tFunction to handle it.
-  return tFunction(`months.${monthIndex}`); // Assuming tFunction handles array access for months
+  // Assuming tFunction can access an array like `months.0`, `months.1` etc., or a nested object
+  // For example, if translations are structured as: { EN: { months: ["Jan", "Feb", ...] } }
+  // and tFunction is bound to the correct language object, then tFunction(`months.${monthIndex}`) might work
+  // if tFunction handles dot notation for array access or if months is an object {0: "Jan", 1: "Feb"}.
+  // A safer bet if `months` is an array in the translation file:
+  const monthsArray = tFunction('months'); // This should return the array ["Jan", "Feb", ...]
+  if (Array.isArray(monthsArray) && monthIndex >= 0 && monthIndex < monthsArray.length) {
+    return monthsArray[monthIndex];
+  }
+  return `months.${monthIndex}`; // Fallback or error indicator
 }
 
 /**
@@ -21,13 +30,12 @@ export function getMonthName(monthIndex, tFunction) {
  * @returns {string} The localized short day name.
  */
 export function getShortDayName(dayIndex, tFunction) {
-  // Ensure dayIndex is within a valid range if necessary.
-  // The original widget.js used t("shortDays").map(...), implying shortDays is an array.
-  // This utility should probably accept the array directly or the tFunction should return the array.
-  // For simplicity, assuming tFunction can access an array like `shortDays.0`, `shortDays.1` etc.
-  // Or, if tFunction(`shortDays`) returns the array:
-  // const daysArray = tFunction('shortDays'); return daysArray[dayIndex];
-  return tFunction(`shortDays.${dayIndex}`); // Adjust if tFunction expects a different key structure
+  // Similar to getMonthName, assuming tFunction('shortDays') returns the array ["M", "T", ...]
+  const daysArray = tFunction('shortDays');
+  if (Array.isArray(daysArray) && dayIndex >= 0 && dayIndex < daysArray.length) {
+    return daysArray[dayIndex];
+  }
+  return `shortDays.${dayIndex}`; // Fallback
 }
 
 
@@ -42,12 +50,25 @@ export function formatDateForDisplay(date, locale, timeZone = "UTC") {
   if (!date || isNaN(date.getTime())) return '';
   // Using Luxon for robust date formatting, consistent with the rest of the widget
   try {
-    return DateTime.fromJSDate(date).setZone(timeZone).setLocale(locale).toFormat('dd MMM yyyy');
+    // Ensure the input JS Date is correctly interpreted (e.g., if it's UTC or local)
+    // If `date` is a JS Date object from a picker, it might be local midnight.
+    // If it's from internal state, it might be UTC midnight.
+    // For display, we want to show it in the target `timeZone`.
+    // Let's assume `date` represents a specific day, and we want to format that day in `timeZone`.
+    return DateTime.fromJSDate(date, { zone: 'utc' }) // Assume JS Date is UTC midnight for consistency
+                   .setZone(timeZone) // Convert to target timezone for display day
+                   .setLocale(locale)
+                   .toFormat('dd. MMM yyyy');
   } catch (error) {
     console.error("Error formatting date for display:", error);
-    // Fallback to native toLocaleDateString if Luxon fails for some reason, though less likely
-    const options = { day: "numeric", month: "short", year: "numeric", timeZone };
-    return date.toLocaleDateString(locale, options);
+    // Fallback to native toLocaleDateString if Luxon fails
+    const options = { day: "numeric", month: "short", year: "numeric", timeZone: timeZone };
+    try {
+        return date.toLocaleDateString(locale, options);
+    } catch (nativeError) {
+        console.error("Native toLocaleDateString also failed:", nativeError);
+        return ''; // Ultimate fallback
+    }
   }
 }
 

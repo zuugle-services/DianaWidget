@@ -1,12 +1,8 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 import { DateTime } from 'luxon';
 import translations from '../translations';
-import { SingleCalendar, RangeCalendarModal } from "./calendar";
 import {
-    getMonthName,
-    getShortDayName,
     formatDateForDisplay,
-    throttle,
     debounce,
     getApiErrorTranslationKey
 } from '../utils';
@@ -27,6 +23,10 @@ import {
     formatLegDateForDisplay,
     formatFullDateForDisplay
 } from '../datetimeUtils';
+
+import { PageManager } from '../components/PageManager';
+import { UIManager } from '../components/UIManager';
+import { SingleCalendar, RangeCalendarModal } from "../components/Calendar";
 
 export default class DianaWidget {
   defaultConfig = {
@@ -67,7 +67,7 @@ export default class DianaWidget {
   constructor(config = {}, containerId = "dianaWidgetContainer") {
     try {
       this.config = this.validateConfig(config);
-      this.container = document.getElementById(containerId);
+      this.container = document.getElementById(containerId); // This is the user-provided container
 
       if (this.config.displayStartDate || this.config.displayEndDate) {
         const now = DateTime.now().startOf('day');
@@ -181,12 +181,23 @@ export default class DianaWidget {
       this.loadingTextTimeout1 = null;
       this.loadingTextTimeout2 = null;
       this.singleCalendarInstance = null;
+      this.pageManager = null;
+      this.uiManager = null;
+
 
       this.injectBaseStyles();
-      this.initDOM();
-      this.setupEventListeners();
-      this._initCustomCalendar();
-      this._initializeOriginInputWithOverridesAndCache();
+      this.initDOM().then(() => {
+        // Post-DOM initialization steps that might depend on async initDOM
+        // For example, if any method needs to be called specifically after full DOM setup
+        // and it's not already covered by initDOM's flow.
+      }).catch(error => {
+         console.error("Error during async DOM initialization:", error);
+         // Handle initialization error, maybe display a message in the container
+         const fallbackContainer = document.getElementById(containerId);
+         if (fallbackContainer) {
+            fallbackContainer.innerHTML = `<p>Error initializing widget: ${error.message}</p>`;
+         }
+      });
     } catch (error) {
       console.error("Failed to initialize Diana Widget:", error);
       const fallbackContainer = document.getElementById(containerId);
@@ -371,15 +382,60 @@ export default class DianaWidget {
     }
   }
 
-  initDOM() {
-    let dianaContainer = document.createElement('div');
-    dianaContainer.className = 'diana-container';
-    this.container.appendChild(dianaContainer);
-    this.container = dianaContainer;
-    this.container.innerHTML = this.getModalHTML();
+  async initDOM() {
+    // Initialize UIManager
+    this.uiManager = new UIManager();
+
+    // Create and set up the main diana-container within the user-provided container
+    let dianaWidgetRootContainer = document.createElement('div');
+    dianaWidgetRootContainer.className = 'diana-container';
+
+    // this.container is the user-provided DOM element (e.g., document.getElementById(containerId))
+    this.container.innerHTML = ''; // Clear the user-provided container
+    this.container.appendChild(dianaWidgetRootContainer);
+    // From now on, this.dianaWidgetRootContainer will be the root for all widget elements
+    this.dianaWidgetRootContainer = dianaWidgetRootContainer;
+
+
+    // Prepare arguments for template functions
+    const templateArgs = {
+        config: this.config,
+        t: (key) => this.t(key),
+        state: this.state,
+        formatDateForDisplay: formatDateForDisplay, // Pass the imported function
+        formatDatetime: formatDatetime, // Pass the imported function
+        getTransportIcon: (type) => this.getTransportIcon(type)
+    };
+
+    // Load templates using UIManager
+    const formPageHTML = await this.uiManager.loadTemplate('formPageTemplate', templateArgs);
+    const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
+
+    // Set the innerHTML for the main structure including the loaded templates
+    this.dianaWidgetRootContainer.innerHTML = `
+      <div id="activityModal" class="modal visible">
+        <div id="innerContainer" class="modal-content">
+          ${formPageHTML}
+          ${resultsPageHTML}
+        </div>
+      </div>
+    `;
+
+    // Cache DOM elements now that the templates are loaded and injected
     this.cacheDOMElements();
+
+    // Initialize PageManager after DOM elements are cached
+    // Pass references to the page elements and the inner container for style manipulation
+    this.pageManager = new PageManager(
+        this.elements.formPage,
+        this.elements.resultsPage,
+        this.elements.innerContainer
+    );
+
+    // Setup accessibility attributes on the newly created/cached elements
     this.setupAccessibility();
 
+    // Initialize date inputs based on config and state
     if (this.config.multiday) {
         if (this.elements.activityDateStart && this.state.selectedDate) {
             this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
@@ -394,7 +450,13 @@ export default class DianaWidget {
             this.elements.activityDate.value = formatDatetime(this.state.selectedDate, this.config.timezone);
         }
     }
+
+    // Call other setup methods that depend on the DOM being ready
+    this.setupEventListeners();
+    this._initCustomCalendar();
+    this._initializeOriginInputWithOverridesAndCache();
   }
+
 
   _initializeOriginInputWithOverridesAndCache() {
     if (!this.elements || !this.elements.originInput) return;
@@ -425,12 +487,14 @@ export default class DianaWidget {
     }
 
     // Set initial button state based on input value
-    if (originInput.value.trim()) {
-      if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
-      if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
-    } else {
-      if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
-      if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'block';
+    if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
+        if (originInput.value.trim()) {
+            this.elements.clearInputBtn.style.display = 'block';
+            this.elements.currentLocationBtn.style.display = 'none';
+        } else {
+            this.elements.clearInputBtn.style.display = 'none';
+            this.elements.currentLocationBtn.style.display = 'block';
+        }
     }
   }
 
@@ -465,189 +529,53 @@ export default class DianaWidget {
     }
   }
 
-  getModalHTML() {
-    const datesFullyDeterminedByFixedDurationAndOverride =
-        this.config.multiday &&
-        this.config.activityDurationDaysFixed &&
-        (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
-
-    const showStartDateInput = !this.config.overrideActivityStartDate && !datesFullyDeterminedByFixedDurationAndOverride;
-    const showEndDateInput = this.config.multiday && !this.config.overrideActivityEndDate && !datesFullyDeterminedByFixedDurationAndOverride;
-    const showAnyDateSection = this.config.multiday || !this.config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride;
-
-    let dateSectionHTML = '';
-    if (showAnyDateSection) {
-        dateSectionHTML += `<div class="form-section date-section-wrapper">`;
-        if (this.config.multiday) {
-            if (showStartDateInput) {
-                dateSectionHTML += `
-                  <div class="date-input-column">
-                    <p id="dateLabelStart">${this.t('activityStartDateLabel')}</p>
-                    <div class="date-input-container" role="button" aria-labelledby="dateLabelStart" tabindex="0">
-                      <div class="date-input">
-                        <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span id="dateDisplayStart" class="date-input-display placeholder">${this.t('selectDate')}</span>
-                        <svg class="date-input-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      </div>
-                      <input type="date" id="activityDateStart" class="native-date-picker-multiday" aria-hidden="true">
-                    </div>
-                  </div>`;
-            }
-            if (showEndDateInput) {
-                 dateSectionHTML += `
-                  <div class="date-input-column">
-                    <p id="dateLabelEnd">${this.t('activityEndDateLabel')}</p>
-                    <div class="date-input-container" role="button" aria-labelledby="dateLabelEnd" tabindex="0">
-                      <div class="date-input">
-                        <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-                        </svg>
-                        <span id="dateDisplayEnd" class="date-input-display placeholder">${this.t('selectDate')}</span>
-                        <svg class="date-input-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                      </div>
-                      <input type="date" id="activityDateEnd" class="native-date-picker-multiday" aria-hidden="true">
-                    </div>
-                  </div>`;
-            }
-        } else { // Single day
-            if (showStartDateInput) { // Not overridden
-                dateSectionHTML += `
-                  <div class="date-input-column single">
-                    <p id="dateLabel">${this.t('activityDate')}</p>
-                    <div class="date-selector-buttons" role="group" aria-labelledby="dateLabel">
-                        <button type="button" id="dateBtnToday" class="date-selector-btn">${this.t('today')}</button>
-                        <button type="button" id="dateBtnTomorrow" class="date-selector-btn">${this.t('tomorrow')}</button>
-                        <button type="button" id="dateBtnOther" class="date-selector-btn">
-                            <span id="otherDateText">${this.t('otherDate')}</span>
-                            <svg class="date-input-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </button>
-                    </div>
-                    <input type="date" id="activityDate" class="native-date-picker-single" aria-hidden="true" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
-                  </div>`;
-            } else if (this.config.overrideActivityStartDate) { // Overridden single day
-                 dateSectionHTML += `
-                  <div class="date-input-column single">
-                    <p id="dateLabel">${this.t('activityDate')}</p>
-                    <div class="date-input-container disabled" role="button" aria-labelledby="dateLabel" tabindex="-1">
-                      <div class="date-input">
-                         <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
-                         </svg>
-                        <span id="dateDisplay" class="date-input-display">${formatDateForDisplay(this.state.selectedDate, this.config.language === 'DE' ? 'de-DE' : 'en-GB', this.config.timezone)}</span>
-                      </div>
-                      <input type="date" id="activityDate" class="native-date-picker-single" aria-hidden="true" style="display:none !important;" value="${formatDatetime(this.state.selectedDate)}">
-                    </div>
-                  </div>`;
-            }
-        }
-        dateSectionHTML += `</div>`;
-    }
-
-
-    return `
-      <div id="activityModal" class="modal visible">
-        <div id="innerContainer" class="modal-content">
-          <div id="formPage" class="modal-page active">
-            <div class="widget-header">
-              <div class="widget-header-button"><button class="back-btn">&#9776;</button></div>
-              <div class="widget-header-heading">${this.config.activityName}</div>
-            </div>
-            <div id="infoContainer" class="info-message" style="display: none;" role="status"></div>
-            <div id="formErrorContainer" class="error-message" style="display: none;" role="alert"></div>
-            <form class="modal-body" aria-labelledby="formHeading">
-              <div style="position:relative" class="form-section">
-                <p id="originLabel">${this.t('origin')}</p>
-                <div class="input-container">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
-                  <input type="text" class="input-field" id="originInput" placeholder="${this.t('enterOrigin')}" value="${this.config.userStartLocationDefault || ''}" aria-labelledby="originLabel">
-                  <svg id="clearInputBtn" class="input-icon-right" style="pointer-events: auto; cursor: pointer; display: none;" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="${this.t('clearInput')}" role="button">
-                    <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                  <svg id="currentLocationBtn" class="input-icon-right" style="pointer-events: auto; cursor: pointer;" width="18.75" height="18.75" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-label="${this.t('useCurrentLocation')}" role="button">
-                    <circle cx="12" cy="12" r="7"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="0" x2="12" y2="5"></line><line x1="0" y1="12" x2="5" y2="12"></line><line x1="12" y1="19" x2="12" y2="24"></line><line x1="19" y1="12" x2="24" y2="12"></line>
-                  </svg>
-                </div>
-                <div id="suggestions" class="suggestions-container" role="listbox"></div>
-              </div>
-              <div class="form-section">
-                <p id="destinationLabel">${this.t('destination')}</p>
-                <div class="input-container">
-                  <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                  <input type="text" class="input-field disabled" id="destinationInput" placeholder="${this.t('destination')}" value="${this.config.destinationInputName || this.config.activityName}" readonly aria-labelledby="destinationLabel">
-                </div>
-              </div>
-              ${dateSectionHTML}
-              <div class="form-footer">
-                <button type="submit" class="btn apply-btn" id="searchBtn">${this.t('search')}</button>
-              </div>
-            </form>
-            <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
-          </div>
-          <div id="resultsPage" class="modal-page">
-            <div class="modal-body-result">
-              <div id="resultsErrorContainer" class="error-message" style="display: none" role="alert"></div>
-              <div class="slider-wrapper etc">
-                <div class="widget-header">
-                  <div class="widget-header-button"><button class="back-btn">&#9776;</button></div>
-                  <div class="widget-header-heading">${this.config.activityName}</div>
-                </div>
-                <div id="backBtn" class="widget-response-back-button" role="button" tabindex="0"><div>&#x2190;</div><div>${this.t('back')}</div></div>
-                <div class="slider" id="topSlider" role="group" aria-label="${this.t('ariaLabels.topSlider')}"></div>
-              </div>
-              <div class="middle-box" id="responseBox" aria-live="polite">${this.t('loadingConnectionsI')}</div>
-              <div id="activity-time" class="middle-box">${this.config.activityName}</div>
-              <div class="middle-box" id="responseBox-bottom" aria-live="polite">${this.t('loadingConnectionsO')}</div>
-              <div class="slider-wrapper slider-wrap-fixed">
-                <div class="slider" id="bottomSlider" role="group" aria-label="${this.t('ariaLabels.bottomSlider')}"></div>
-              </div>
-              <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   cacheDOMElements() {
+    // Ensure elements are cached from this.dianaWidgetRootContainer
     this.elements = {
-      modal: this.container.querySelector("#activityModal"),
-      innerContainer: this.container.querySelector("#innerContainer"),
-      formPage: this.container.querySelector("#formPage"),
-      resultsPage: this.container.querySelector("#resultsPage"),
-      originInput: this.container.querySelector("#originInput"),
-      suggestionsContainer: this.container.querySelector("#suggestions"),
-      searchBtn: this.container.querySelector("#searchBtn"),
-      backBtn: this.container.querySelector("#backBtn"),
-      formErrorContainer: this.container.querySelector("#formErrorContainer"),
-      resultsErrorContainer: this.container.querySelector("#resultsErrorContainer"),
-      infoContainer: this.container.querySelector("#infoContainer"),
-      responseBox: this.container.querySelector("#responseBox"),
-      responseBoxBottom: this.container.querySelector("#responseBox-bottom"),
-      topSlider: this.container.querySelector("#topSlider"),
-      bottomSlider: this.container.querySelector("#bottomSlider"),
-      activityTimeBox: this.container.querySelector("#activity-time"),
-      currentLocationBtn: this.container.querySelector("#currentLocationBtn"),
-      clearInputBtn: this.container.querySelector("#clearInputBtn"),
-      activityDateStart: this.container.querySelector("#activityDateStart"),
-      dateDisplayStart: this.container.querySelector("#dateDisplayStart"),
-      activityDateEnd: this.container.querySelector("#activityDateEnd"),
-      dateDisplayEnd: this.container.querySelector("#dateDisplayEnd"),
-      activityDate: this.container.querySelector("#activityDate"), // Hidden input for single day
-      dateDisplay: this.container.querySelector("#dateDisplay"), // Legacy display for single day (now hidden by default)
-      dateBtnToday: this.container.querySelector("#dateBtnToday"),
-      dateBtnTomorrow: this.container.querySelector("#dateBtnTomorrow"),
-      dateBtnOther: this.container.querySelector("#dateBtnOther"),
-      otherDateText: this.container.querySelector("#otherDateText"), // Span inside dateBtnOther
-      dateSelectorButtonsGroup: this.container.querySelector(".date-selector-buttons"), // The group of date buttons
+      modal: this.dianaWidgetRootContainer.querySelector("#activityModal"),
+      innerContainer: this.dianaWidgetRootContainer.querySelector("#innerContainer"),
+      formPage: this.dianaWidgetRootContainer.querySelector("#formPage"),
+      resultsPage: this.dianaWidgetRootContainer.querySelector("#resultsPage"),
+      originInput: this.dianaWidgetRootContainer.querySelector("#originInput"),
+      suggestionsContainer: this.dianaWidgetRootContainer.querySelector("#suggestions"),
+      searchBtn: this.dianaWidgetRootContainer.querySelector("#searchBtn"),
+      backBtn: this.dianaWidgetRootContainer.querySelector("#backBtn"), // This is on the results page
+      formErrorContainer: this.dianaWidgetRootContainer.querySelector("#formErrorContainer"),
+      resultsErrorContainer: this.dianaWidgetRootContainer.querySelector("#resultsErrorContainer"),
+      infoContainer: this.dianaWidgetRootContainer.querySelector("#infoContainer"),
+      responseBox: this.dianaWidgetRootContainer.querySelector("#responseBox"),
+      responseBoxBottom: this.dianaWidgetRootContainer.querySelector("#responseBox-bottom"),
+      topSlider: this.dianaWidgetRootContainer.querySelector("#topSlider"),
+      bottomSlider: this.dianaWidgetRootContainer.querySelector("#bottomSlider"),
+      activityTimeBox: this.dianaWidgetRootContainer.querySelector("#activity-time"),
+      currentLocationBtn: this.dianaWidgetRootContainer.querySelector("#currentLocationBtn"),
+      clearInputBtn: this.dianaWidgetRootContainer.querySelector("#clearInputBtn"),
+      activityDateStart: this.dianaWidgetRootContainer.querySelector("#activityDateStart"),
+      dateDisplayStart: this.dianaWidgetRootContainer.querySelector("#dateDisplayStart"),
+      activityDateEnd: this.dianaWidgetRootContainer.querySelector("#activityDateEnd"),
+      dateDisplayEnd: this.dianaWidgetRootContainer.querySelector("#dateDisplayEnd"),
+      activityDate: this.dianaWidgetRootContainer.querySelector("#activityDate"), // Hidden input for single day
+      dateDisplay: this.dianaWidgetRootContainer.querySelector("#dateDisplay"), // Display for overridden single day
+      dateBtnToday: this.dianaWidgetRootContainer.querySelector("#dateBtnToday"),
+      dateBtnTomorrow: this.dianaWidgetRootContainer.querySelector("#dateBtnTomorrow"),
+      dateBtnOther: this.dianaWidgetRootContainer.querySelector("#dateBtnOther"),
+      otherDateText: this.dianaWidgetRootContainer.querySelector("#otherDateText"), // Span inside dateBtnOther
+      dateSelectorButtonsGroup: this.dianaWidgetRootContainer.querySelector(".date-selector-buttons"),
+      // Add back button from form page header if it's different
+      formPageBackBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
+      resultsPageBackBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn") // if they are distinct
     };
   }
 
   setupAccessibility() {
-    this.elements.originInput.setAttribute('aria-autocomplete', 'list');
-    this.elements.originInput.setAttribute('aria-controls', 'suggestions');
-    this.elements.originInput.setAttribute('aria-expanded', 'false');
+    if (!this.elements) return; // Guard against elements not being cached yet
+
+    if (this.elements.originInput) {
+        this.elements.originInput.setAttribute('aria-autocomplete', 'list');
+        this.elements.originInput.setAttribute('aria-controls', 'suggestions');
+        this.elements.originInput.setAttribute('aria-expanded', 'false');
+    }
+
 
     if (this.config.multiday) {
         if (this.elements.activityDateStart) this.elements.activityDateStart.setAttribute('aria-hidden', 'true');
@@ -656,38 +584,45 @@ export default class DianaWidget {
         if (this.elements.activityDate) this.elements.activityDate.setAttribute('aria-hidden', 'true');
     }
 
-    this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
-    this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
+    if (this.elements.searchBtn) this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
+    // The general back button for results page to form page navigation
+    if (this.elements.backBtn) this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
+
     if (this.elements.currentLocationBtn) {
         this.elements.currentLocationBtn.setAttribute('aria-label', this.t('useCurrentLocation'));
     }
     if (this.elements.clearInputBtn) {
         this.elements.clearInputBtn.setAttribute('aria-label', this.t('clearInput'));
     }
-    this.elements.responseBox.setAttribute('aria-busy', 'false');
-    this.elements.responseBoxBottom.setAttribute('aria-busy', 'false');
+    if (this.elements.responseBox) this.elements.responseBox.setAttribute('aria-busy', 'false');
+    if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.setAttribute('aria-busy', 'false');
   }
 
   setupEventListeners() {
-    if (!this.config.overrideUserStartLocation) {
+    if (!this.elements) return; // Guard
+
+    if (!this.config.overrideUserStartLocation && this.elements.originInput) {
         this.elements.originInput.addEventListener('input', (e) => {
           this.elements.originInput.removeAttribute("data-lat"); this.elements.originInput.removeAttribute("data-lon");
           this.clearMessages(); debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
 
-          // Toggle between clear button and location button based on input value
-          if (e.target.value.trim()) {
-            this.elements.clearInputBtn.style.display = 'block';
-            this.elements.currentLocationBtn.style.display = 'none';
-          } else {
-            this.elements.clearInputBtn.style.display = 'none';
-            this.elements.currentLocationBtn.style.display = 'block';
+          if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
+            if (e.target.value.trim()) {
+                this.elements.clearInputBtn.style.display = 'block';
+                this.elements.currentLocationBtn.style.display = 'none';
+            } else {
+                this.elements.clearInputBtn.style.display = 'none';
+                this.elements.currentLocationBtn.style.display = 'block';
+            }
           }
         });
-        this.elements.suggestionsContainer.addEventListener('click', (e) => {
-          if (e.target.classList.contains('suggestion-item')) this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
-        });
+        if (this.elements.suggestionsContainer) {
+            this.elements.suggestionsContainer.addEventListener('click', (e) => {
+              if (e.target.classList.contains('suggestion-item')) this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
+            });
+        }
         document.addEventListener("click", (e) => {
-          if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(e.target) && !this.elements.originInput.contains(e.target)) {
+          if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(e.target) && this.elements.originInput && !this.elements.originInput.contains(e.target)) {
             this.state.suggestions = []; this.renderSuggestions();
           }
         });
@@ -697,20 +632,40 @@ export default class DianaWidget {
         });
         if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
 
-        // Add event listener for clear input button
         if (this.elements.clearInputBtn) this.elements.clearInputBtn.addEventListener('click', () => {
           this.elements.originInput.value = '';
           this.elements.originInput.removeAttribute("data-lat");
           this.elements.originInput.removeAttribute("data-lon");
-          this.elements.clearInputBtn.style.display = 'none';
-          this.elements.currentLocationBtn.style.display = 'block';
+          if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
+          if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'block';
           this.elements.originInput.focus();
-          this.state.suggestions = []; 
+          this.state.suggestions = [];
           this.renderSuggestions();
         });
     }
-    this.elements.searchBtn.addEventListener('click', (e) => { e.preventDefault(); this.handleSearch(); });
-    this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
+    if (this.elements.searchBtn) this.elements.searchBtn.addEventListener('click', (e) => { e.preventDefault(); this.handleSearch(); });
+
+    // This is the specific back button on the results page (labeled "← Back")
+    if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
+
+    // Handle header back buttons (☰ icon) if they are meant for main navigation
+    // Assuming they both navigate to the "form" or a conceptual "previous" main state
+    if (this.elements.formPageBackBtn) {
+        this.elements.formPageBackBtn.addEventListener('click', () => {
+            // Define behavior for form page header back button, e.g., close widget or go to an external page
+            // For now, let's assume it does nothing or is for a menu not yet implemented
+            console.log("Form page header back button clicked.");
+        });
+    }
+    if (this.elements.resultsPageBackBtn) {
+         this.elements.resultsPageBackBtn.addEventListener('click', () => {
+            // This could also navigate to form, or open a menu.
+            // If it's for navigating back to form, it's redundant with the other backBtn.
+            // Let's assume it's for a menu or similar, or could be removed if redundant.
+            console.log("Results page header back button clicked.");
+            // If it should go back to form: this.navigateToForm();
+        });
+    }
   }
 
   async handleCurrentLocation() {
@@ -719,9 +674,12 @@ export default class DianaWidget {
       this.showError(this.t('errors.geolocationNotSupported'), 'form');
       return;
     }
-    this.elements.currentLocationBtn.style.pointerEvents = 'none';
-    this.elements.currentLocationBtn.style.opacity = '0.5';
-    this.elements.originInput.disabled = true;
+    if (this.elements.currentLocationBtn) {
+        this.elements.currentLocationBtn.style.pointerEvents = 'none';
+        this.elements.currentLocationBtn.style.opacity = '0.5';
+    }
+    if (this.elements.originInput) this.elements.originInput.disabled = true;
+
     this.showInfo(this.t('infos.fetchingLocation'));
     try {
       const position = await new Promise((resolve, reject) => {
@@ -742,9 +700,11 @@ export default class DianaWidget {
       }
       this.showError(errorMsg, 'form');
     } finally {
-      this.elements.currentLocationBtn.style.pointerEvents = 'auto';
-      this.elements.currentLocationBtn.style.opacity = '1';
-      this.elements.originInput.disabled = false;
+      if (this.elements.currentLocationBtn) {
+        this.elements.currentLocationBtn.style.pointerEvents = 'auto';
+        this.elements.currentLocationBtn.style.opacity = '1';
+      }
+      if (this.elements.originInput) this.elements.originInput.disabled = false;
       if (this.state.info === this.t('infos.fetchingLocation')) this.showInfo(null);
     }
   }
@@ -787,7 +747,6 @@ export default class DianaWidget {
         this.state.suggestions = []; this.renderSuggestions(); this.clearMessages();
         this._setCachedStartLocation(displayName, latitude, longitude);
 
-        // Update button visibility
         if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
         if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
       } else {
@@ -832,7 +791,6 @@ export default class DianaWidget {
     this.state.suggestions = []; this.renderSuggestions(); this.elements.originInput.focus(); this.clearMessages();
     this._setCachedStartLocation(value, lat, lon);
 
-    // Update button visibility
     if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
     if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
   }
@@ -841,7 +799,8 @@ export default class DianaWidget {
     if (this.loadingTextTimeout1) clearTimeout(this.loadingTextTimeout1); if (this.loadingTextTimeout2) clearTimeout(this.loadingTextTimeout2);
     this.loadingTextTimeout1 = null; this.loadingTextTimeout2 = null; this.clearMessages();
 
-    if (!this.config.overrideUserStartLocation && !this.elements.originInput.value) { this.showInfo(this.t('infos.originRequired')); return; }
+    if (!this.config.overrideUserStartLocation && this.elements.originInput && !this.elements.originInput.value) { this.showInfo(this.t('infos.originRequired')); return; }
+
 
     const datesFullyDetermined = this.config.multiday && this.config.activityDurationDaysFixed && (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
 
@@ -858,7 +817,9 @@ export default class DianaWidget {
         }
     }
 
+
     if (!this.config.multiday && !this.config.overrideActivityStartDate) {
+        // Single day date is already in this.state.selectedDate via _updateSingleDayDateButtonStates or native picker change
     } else if (this.config.multiday) {
         if (!this.config.overrideActivityStartDate && !datesFullyDetermined) {
             const inputVal = this.elements.activityDateStart?.value;
@@ -895,7 +856,8 @@ export default class DianaWidget {
             else if (errorBody && errorBody.error) errorMessage = this.t('errors.api.unknown');
         } catch (parseError) { errorMessage = this.t('errors.api.unknown'); }
       } else if (error.message) {
-          errorMessage = this.t('errors.api.unknown');
+          // Use the error message directly if it's not one of the known API error patterns
+          errorMessage = error.message || this.t('errors.api.unknown');
       }
       this.showError(errorMessage, 'form');
     } finally {
@@ -952,7 +914,7 @@ export default class DianaWidget {
     const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime, referenceDateForEndTimes, this.config.timezone);
 
     let params = {
-      date: formatDatetime(activityStartDate, this.config.timezone),
+      date: formatDatetime(activityStartDate, this.config.timezone), // Use timezone for date formatting if it's local
       activity_name: this.config.activityName,
       activity_type: this.config.activityType,
       activity_start_location: this.config.activityStartLocation,
@@ -1023,10 +985,11 @@ export default class DianaWidget {
   }
 
   renderSuggestions() {
+    if (!this.elements.suggestionsContainer || !this.elements.originInput) return;
     this.elements.suggestionsContainer.innerHTML = this.state.suggestions
       .map(feature => `
         <div class="suggestion-item" role="option" tabindex="0"
-             data-value="${feature.diana_properties.display_name.replace(/"/g, '&quot;')}"
+             data-value="${feature.diana_properties.display_name.replace(/"/g, '"')}"
              data-location_type="${feature.diana_properties.location_type}"
              data-lat="${feature.geometry.coordinates[1]}" data-lon="${feature.geometry.coordinates[0]}">
           ${feature.diana_properties.display_name}
@@ -1043,7 +1006,10 @@ export default class DianaWidget {
     this.elements.activityTimeBox.innerHTML = this.config.activityName;
 
     if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
-      this.showError(this.t('errors.api.noConnectionsFound'), 'form'); return;
+      this.showError(this.t('errors.api.noConnectionsFound'), 'results'); // Show error on results page
+      this.navigateToForm(); // Optionally navigate back or handle UI differently
+      this.showError(this.t('errors.api.noConnectionsFound'), 'form'); // Also show on form page
+      return;
     }
     if (this.state.toConnections.length === 0) {
       this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
@@ -1058,12 +1024,35 @@ export default class DianaWidget {
       this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
     }
 
-    for (let i = 0; i < this.state.toConnections.length; i++) {
-      if (this.state.toConnections[i].connection_id === this.state.recommendedToIndex) { this.state.recommendedToIndex = i; break; }
+    // Ensure recommended indices are valid after potential filtering or empty arrays
+    if (this.state.toConnections.length > 0) {
+        let foundRecommendedTo = false;
+        for (let i = 0; i < this.state.toConnections.length; i++) {
+          if (this.state.toConnections[i].connection_id === this.state.recommendedToIndex) { // Original recommendedToIndex was an ID
+            this.state.recommendedToIndex = i; // Update to be an array index
+            foundRecommendedTo = true;
+            break;
+          }
+        }
+        if (!foundRecommendedTo) this.state.recommendedToIndex = 0; // Default to first if ID not found
+    } else {
+        this.state.recommendedToIndex = 0; // Or handle as no connections
     }
-    for (let i = 0; i < this.state.fromConnections.length; i++) {
-      if (this.state.fromConnections[i].connection_id === this.state.recommendedFromIndex) { this.state.recommendedFromIndex = i; break; }
+
+    if (this.state.fromConnections.length > 0) {
+        let foundRecommendedFrom = false;
+        for (let i = 0; i < this.state.fromConnections.length; i++) {
+          if (this.state.fromConnections[i].connection_id === this.state.recommendedFromIndex) { // Original recommendedFromIndex was an ID
+            this.state.recommendedFromIndex = i; // Update to be an array index
+            foundRecommendedFrom = true;
+            break;
+          }
+        }
+        if (!foundRecommendedFrom) this.state.recommendedFromIndex = 0;
+    } else {
+        this.state.recommendedFromIndex = 0;
     }
+
 
     if (this.state.toConnections.length > 0 && this.state.recommendedToIndex < this.state.toConnections.length) {
       const recTo = this.state.toConnections[this.state.recommendedToIndex];
@@ -1168,14 +1157,15 @@ export default class DianaWidget {
       if (type === 'to') {
         const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
         calculatedActivityStartLocal = getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal, this.config.timezone);
-        calculatedActivityEndLocal = this.state.activityTimes.end || null;
+        calculatedActivityEndLocal = this.state.activityTimes.end || null; // Keep existing end time if already set
         this.state.activityTimes.start = calculatedActivityStartLocal;
-      } else {
+      } else { // type === 'from'
         const latestConfigEndLocal = convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate, this.config.timezone);
         calculatedActivityEndLocal = getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal, this.config.timezone);
-        calculatedActivityStartLocal = this.state.activityTimes.start || null;
+        calculatedActivityStartLocal = this.state.activityTimes.start || null; // Keep existing start time
         this.state.activityTimes.end = calculatedActivityEndLocal;
       }
+
 
       let dateRangeDisplayHtml = '';
       let durationDisplayHtml = '';
@@ -1200,13 +1190,16 @@ export default class DianaWidget {
               <span class="activity-time-label">${this.t('activityDuration')}</span>
               <span class="activity-time-value">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>
           </div>`;
-        warningDuration = false;
-      } else {
-        if (calculatedActivityStartLocal && calculatedActivityEndLocal) {
-          const startDateForDuration = DateTime.fromFormat(calculatedActivityStartLocal, 'HH:mm', { zone: this.config.timezone })
+        warningDuration = false; // Duration warning logic might differ for multi-day activities or be based on total hours.
+      } else { // Single day activity
+        if (this.state.activityTimes.start && this.state.activityTimes.end) {
+          const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', { zone: this.config.timezone })
                                           .set({ year: activityStartDate.getFullYear(), month: activityStartDate.getMonth() + 1, day: activityStartDate.getDate() });
-          const endDateForDuration = DateTime.fromFormat(calculatedActivityEndLocal, 'HH:mm', { zone: this.config.timezone })
+          // For end date, ensure it's on the correct day if activity spans midnight (though less common for single-day definitions)
+          // Assuming activity ends on the same day as it starts for this calculation.
+          const endDateForDuration = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', { zone: this.config.timezone })
                                         .set({ year: activityStartDate.getFullYear(), month: activityStartDate.getMonth() + 1, day: activityStartDate.getDate() });
+
 
           const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
           durationDisplayHtml = `
@@ -1229,7 +1222,7 @@ export default class DianaWidget {
       this.elements.activityTimeBox.innerHTML = `
         <div class="activity-time-card">
           <div class="activity-time-header">
-            <a style="display: inline-flex;" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${this.config.activityStartLocation}">
+            <a style="display: inline-flex;" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=$${this.config.activityStartLocation}">
               ${this.config.activityName}
               <svg style="margin: 0 0 5px 4px;" width="12px" height="12px" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" mirror-in-rtl="true" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill="var(--bg-apply-hover)" d="M12.1.6a.944.944 0 0 0 .2 1.04l1.352 1.353L10.28 6.37a.956.956 0 0 0 1.35 1.35l3.382-3.38 1.352 1.352a.944.944 0 0 0 1.04.2.958.958 0 0 0 .596-.875V.96a.964.964 0 0 0-.96-.96h-4.057a.958.958 0 0 0-.883.6z"></path> <path fill="var(--bg-apply-hover)" d="M14 11v5a2.006 2.006 0 0 1-2 2H2a2.006 2.006 0 0 1-2-2V6a2.006 2.006 0 0 1 2-2h5a1 1 0 0 1 0 2H2v10h10v-5a1 1 0 0 1 2 0z"></path> </g></svg>
             </a>
@@ -1285,27 +1278,29 @@ export default class DianaWidget {
             durationMinutes = parseDurationToMinutes(durationStr, (key) => this.t(key));
         }
 
-        if (arr.length === 1) {
+        if (arr.length === 1) { // If only one leg, always show it
           return true;
         }
 
-        if (type === 'from' && index === 0 && durationMinutes <= 1) {
+        // Filter out very short (e.g., 1 min) walk legs at the absolute start/end of a multi-leg journey
+        if (type === 'from' && index === 0 && durationMinutes <= 1 && element.type === "WALK") {
           return false;
         }
-        if (type === 'to' && index === arr.length - 1 && durationMinutes <= 1) {
+        if (type === 'to' && index === arr.length - 1 && durationMinutes <= 1 && element.type === "WALK") {
           return false;
         }
         return true;
       });
 
-      if (filteredElements.length === 0) {
+      if (filteredElements.length === 0) { // If filtering removed all elements
           return `<div>${this.t('noConnectionElements')}</div>`;
       }
 
       let html = `<div class="connection-elements">`;
       let currentLegDateStr = null;
 
-      if (type === 'from' && this.state.activityTimes.end) {
+      // Display waiting time after activity ends (for 'from' connections)
+      if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
           const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
           const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : this.state.selectedDate;
 
@@ -1334,6 +1329,7 @@ export default class DianaWidget {
           }
       }
 
+
       filteredElements.forEach((element, index) => {
         const departureTime = convertUTCToLocalTime(element.departure_time, this.config.timezone);
         const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
@@ -1349,11 +1345,15 @@ export default class DianaWidget {
         }
 
         let fromLocationDisplay = element.from_location;
+        // For the very first leg of a "to activity" journey, use the user's origin input.
         if (type === "to" && index === 0) {
           fromLocationDisplay = this.elements.originInput.value;
-        } else if (type === "from" && index === 0) {
-          fromLocationDisplay = this.config.activityEndLocationDisplayName;
         }
+        // For the very first leg of a "from activity" journey, use the activity's end location display name.
+        else if (type === "from" && index === 0) {
+          fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
+        }
+
 
         html += `
           <div class="connection-element">
@@ -1369,15 +1369,20 @@ export default class DianaWidget {
           </div>
         `;
 
+        // After the last leg, display the final arrival.
         if (index === filteredElements.length - 1) {
           let toLocationDisplay = element.to_location;
-          let finalArrivalTime = arrivalTime;
+          let finalArrivalTime = arrivalTime; // This is already the arrival time of the last leg.
 
+          // For the very last leg of a "to activity" journey, the destination is the activity's start location.
           if (type === "to") {
             toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
-          } else {
+          }
+          // For the very last leg of a "from activity" journey, the destination is the user's origin (which was the start of the "to" journey).
+          else { // type === "from"
             toLocationDisplay = this.elements.originInput.value;
           }
+
 
           html += `
             <div class="connection-element">
@@ -1390,11 +1395,13 @@ export default class DianaWidget {
         }
       });
 
+      // Display waiting time before activity starts (for 'to' connections)
       if (type === 'to' && this.state.activityTimes.start && filteredElements.length > 0) {
           const lastLegArrivalTimeISO = filteredElements[filteredElements.length - 1].arrival_time;
 
-          if (lastLegArrivalTimeISO) {
+          if (lastLegArrivalTimeISO) { // Ensure lastLegArrivalTimeISO is valid
               const connectionEndDateTime = DateTime.fromISO(lastLegArrivalTimeISO, { zone: 'utc' }).setZone(this.config.timezone);
+              // Ensure activityActualStartDateTime is on the same day as connectionEndDateTime for correct diff
               const activityActualStartDateTime = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', { zone: this.config.timezone })
                                                   .set({
                                                       year: connectionEndDateTime.year,
@@ -1404,7 +1411,7 @@ export default class DianaWidget {
 
               if (connectionEndDateTime.isValid && activityActualStartDateTime.isValid && activityActualStartDateTime > connectionEndDateTime) {
                   const waitDuration = calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime, (key) => this.t(key));
-                   if (waitDuration.totalMinutes > 0) {
+                   if (waitDuration.totalMinutes > 0) { // Only show if there's actual waiting time
                       html += `
                       <div class="connection-element waiting-block">
                           <div class="element-time">
@@ -1422,6 +1429,7 @@ export default class DianaWidget {
               }
           }
       }
+
       html += `</div>`;
       return html;
     }).join('');
@@ -1430,10 +1438,10 @@ export default class DianaWidget {
   getDurationString(index, type, element, duration) {
     let durationString = "";
     if (element.vehicle_name && element.type === "JNY") {
-      let n_intermediate_stops = element.n_intermediate_stops + 1 || 0;
+      let n_intermediate_stops = element.n_intermediate_stops + 1 || 0; // n_intermediate_stops seems to be exclusive of final stop
       const stopString = n_intermediate_stops !== 1 ? `, ${n_intermediate_stops} ${this.t("stopPl")})` : `, ${n_intermediate_stops} ${this.t("stopSg")})`;
       durationString = `${element.vehicle_name} -> ${element.direction} (${duration}`;
-      durationString += (n_intermediate_stops > 0) ? ` ${stopString}` : `)`;
+      durationString += (n_intermediate_stops > 0) ? ` ${stopString}` : `)`; // Only add stop string if stops > 0
       return durationString;
     } else {
       durationString = `${duration}`;
@@ -1492,32 +1500,34 @@ export default class DianaWidget {
     const handleMove = (pageX) => {
       if (!isDown) return;
       const x = pageX - slider.offsetLeft;
-      const walk = (x - startX) * 1.5;
+      const walk = (x - startX) * 1.5; // Multiplier for faster swipe
       slider.scrollLeft = scrollLeft - walk;
     };
 
+    // Mouse events
     slider.addEventListener('mousedown', (e) => handleStart(e.pageX));
     slider.addEventListener('mouseleave', handleEnd);
     slider.addEventListener('mouseup', handleEnd);
     slider.addEventListener('mousemove', (e) => {
-        e.preventDefault();
+        e.preventDefault(); // Prevent text selection during drag
         handleMove(e.pageX);
     });
 
+    // Touch events
     slider.addEventListener('touchstart', (e) => handleStart(e.touches[0].pageX), { passive: true });
     slider.addEventListener('touchend', handleEnd);
     slider.addEventListener('touchcancel', handleEnd);
     slider.addEventListener('touchmove', (e) => {
+        // e.preventDefault(); // Can cause issues on some browsers if not needed for scroll prevention on page
         handleMove(e.touches[0].pageX);
-    }, { passive: false });
+    }, { passive: false }); // passive: false if you need to preventDefault inside handleMove
   }
 
   navigateToResults() {
     this.clearMessages();
-    this.elements.formPage.classList.remove("active");
-    this.elements.resultsPage.classList.add("active");
-    this.elements.innerContainer.style.transform = "unset";
-    this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-secondary) !important";
+    if (this.pageManager) {
+        this.pageManager.navigateToResults();
+    }
   }
 
   slideToRecommendedConnections() {
@@ -1544,9 +1554,9 @@ export default class DianaWidget {
 
   navigateToForm() {
     this.clearMessages();
-    this.elements.resultsPage.classList.remove("active");
-    this.elements.formPage.classList.add("active");
-    this.container.querySelector("#innerContainer").style.backgroundColor = "var(--bg-primary) !important";
+    if (this.pageManager) {
+        this.pageManager.navigateToForm();
+    }
     this.state.toConnections = [];
     this.state.fromConnections = [];
     this.state.activityTimes = { start: '', end: '', duration: '', warning_duration: false };
@@ -1554,9 +1564,12 @@ export default class DianaWidget {
 
   setLoadingState(isLoading) {
     this.state.loading = isLoading;
-    this.elements.searchBtn.disabled = isLoading;
-    this.elements.searchBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
-    this.elements.originInput.disabled = isLoading;
+    if (this.elements.searchBtn) {
+        this.elements.searchBtn.disabled = isLoading;
+        this.elements.searchBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+    }
+    if (this.elements.originInput) this.elements.originInput.disabled = isLoading;
+
 
     if (this.loadingTextTimeout1) {
         clearTimeout(this.loadingTextTimeout1);
@@ -1568,21 +1581,22 @@ export default class DianaWidget {
     }
 
     if (isLoading) {
-        this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateToActivity")}`;
+        if (this.elements.searchBtn) this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateToActivity")}`;
+
 
         this.loadingTextTimeout1 = setTimeout(() => {
-            if (this.state.loading) {
+            if (this.state.loading && this.elements.searchBtn) {
                 this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateFromActivity")}`;
 
                 this.loadingTextTimeout2 = setTimeout(() => {
-                    if (this.state.loading) {
+                    if (this.state.loading && this.elements.searchBtn) {
                         this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateSearching")}`;
                     }
                 }, 600);
             }
         }, 600);
     } else {
-        this.elements.searchBtn.innerHTML = this.t('search');
+        if (this.elements.searchBtn) this.elements.searchBtn.innerHTML = this.t('search');
     }
   }
 
@@ -1598,12 +1612,12 @@ export default class DianaWidget {
 
     if (message) {
       console.error(`Widget Error: ${message}`);
-       if (page === 'results' && this.elements.resultsPage.classList.contains('active')) {
-            this.elements.responseBox.innerHTML = '';
-            this.elements.responseBoxBottom.innerHTML = '';
-            this.elements.activityTimeBox.innerHTML = '';
-            this.elements.topSlider.innerHTML = '';
-            this.elements.bottomSlider.innerHTML = '';
+       if (page === 'results' && this.elements.resultsPage?.classList.contains('active')) {
+            if (this.elements.responseBox) this.elements.responseBox.innerHTML = '';
+            if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.innerHTML = '';
+            if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = '';
+            if (this.elements.topSlider) this.elements.topSlider.innerHTML = '';
+            if (this.elements.bottomSlider) this.elements.bottomSlider.innerHTML = '';
        }
     }
   }
@@ -1650,22 +1664,22 @@ export default class DianaWidget {
             if (window.matchMedia("(max-width: 768px)").matches && e.target.closest('.date-input-container')) {
                 const nativeInput = e.target.closest('.date-input-container').querySelector('input[type="date"]');
                 if (nativeInput) {
-                    // Allow native picker to proceed or trigger it if necessary
-                    // For this path, we usually let the native input's default behavior handle it.
-                    // If the click was on the container and not the input itself, we might need to manually trigger.
-                    // However, current setup has native input covering the area or being directly clickable.
-                    return;
+                    return; // Let native picker proceed
                 }
+            }
+            // Prevent default if the click was on the container but not the native input, to show custom calendar
+            if (e.target.closest('.date-input-container') && e.target.tagName !== 'INPUT') {
+                 e.preventDefault();
             }
             this.rangeCalendarModal.show(this.state.selectedDate, this.state.selectedEndDate);
         };
+
 
         if (!datesFullyDetermined) {
             if (!this.config.overrideActivityStartDate && this.elements.activityDateStart) {
                 const sDIC = this.elements.activityDateStart.closest('.date-input-container');
                 if (sDIC) sDIC.addEventListener('click', (e) => { e.stopPropagation(); showRangeCalendar(e); });
             }
-            // Attach listener to end date container if end date is not fixed or overridden
             if (!this.config.overrideActivityEndDate && this.elements.activityDateEnd) {
                 const eDIC = this.elements.activityDateEnd.closest('.date-input-container');
                 if (eDIC) eDIC.addEventListener('click', (e) => { e.stopPropagation(); showRangeCalendar(e); });
@@ -1688,11 +1702,11 @@ export default class DianaWidget {
         }
         if (this.elements.activityDateEnd) {
             this.elements.activityDateEnd.addEventListener('change', (e) => {
-                if (this.config.activityDurationDaysFixed) return;
+                if (this.config.activityDurationDaysFixed) return; // End date is fixed relative to start
                 const [y, m, d] = e.target.value.split('-').map(Number); const nED = new Date(Date.UTC(y, m - 1, d));
                 this.state.selectedEndDate = nED; this.updateDateDisplay(nED, 'dateDisplayEnd');
-                if (this.state.selectedDate && nED < this.state.selectedDate) {
-                    this.state.selectedDate = new Date(nED.valueOf());
+                if (this.state.selectedDate && nED < this.state.selectedDate) { // If new end date is before start date
+                    this.state.selectedDate = new Date(nED.valueOf()); // Adjust start date to be same as end date
                     if (this.elements.activityDateStart) this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
                     this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
                 } this.clearMessages();
@@ -1700,12 +1714,15 @@ export default class DianaWidget {
             });
         }
 
+
         if (this.config.overrideActivityStartDate && this.elements.dateDisplayStart) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
         if (this.config.overrideActivityEndDate && this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+
         if (datesFullyDetermined) {
             if(this.elements.dateDisplayStart) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
             if(this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
         }
+
 
     } else { // Single day
       if (!this.config.overrideActivityStartDate && this.elements.activityDate && this.elements.otherDateText && this.elements.dateBtnOther && this.elements.dateSelectorButtonsGroup) {
@@ -1728,8 +1745,8 @@ export default class DianaWidget {
                     this._updateSingleDayDateButtonStates();
                     this.clearMessages();
                 },
-                otherDateButtonElement,    // Trigger element for the custom calendar
-                dateButtonsGroupElement    // Anchor element for the custom calendar
+                otherDateButtonElement,
+                dateButtonsGroupElement
             );
         }
 
@@ -1743,43 +1760,47 @@ export default class DianaWidget {
             this.onDateSelectedByButton(tomorrow);
         });
 
-        // "Other Date" button listener in widget.js now only handles native picker logic for mobile.
-        // The SingleCalendar's own listener (attached to dateBtnOther) will handle showing/hiding for desktop.
+
         otherDateButtonElement.addEventListener('click', (e) => {
             if (window.matchMedia("(max-width: 768px)").matches) {
-                e.stopPropagation(); // Prevent calendar's listener if on mobile
+                e.stopPropagation();
                 if (this.elements.activityDate) {
                     try {
                         if (typeof this.elements.activityDate.showPicker === 'function') {
                             this.elements.activityDate.showPicker();
                         } else {
-                            this.elements.activityDate.focus();
+                            this.elements.activityDate.focus(); // Fallback for browsers not supporting showPicker
                         }
                     } catch (err) {
                         console.warn("Error trying to show native date picker:", err);
-                        this.elements.activityDate.focus();
+                        this.elements.activityDate.focus(); // Fallback
                     }
                 }
             }
+            // For desktop, the SingleCalendar's own listener will handle toggling the custom calendar.
         });
+
 
         if (this.elements.activityDate) {
             this.elements.activityDate.addEventListener('change', (e) => {
-                if(e.target.value) {
+                if(e.target.value) { // Ensure a value is selected
+                    // Parse date as UTC to avoid timezone issues from native picker
                     const [year, month, day] = e.target.value.split('-').map(Number);
                     const newSelectedDate = new Date(Date.UTC(year, month - 1, day));
+
                     this.state.selectedDate = newSelectedDate;
                     this._updateSingleDayDateButtonStates();
                     this.clearMessages();
                     if (this.singleCalendarInstance) {
-                        this.singleCalendarInstance.setSelectedDate(newSelectedDate, false);
+                        this.singleCalendarInstance.setSelectedDate(newSelectedDate, false); // Update custom calendar without triggering callback
                     }
                 }
             });
         }
-        this._updateSingleDayDateButtonStates();
+        this._updateSingleDayDateButtonStates(); // Initial state update
 
       } else if (this.config.overrideActivityStartDate && this.elements.dateDisplay) {
+         // If date is overridden, just display it.
          this.updateDateDisplay(this.state.selectedDate, 'dateDisplay');
       }
     }
@@ -1793,15 +1814,15 @@ export default class DianaWidget {
     this._updateSingleDayDateButtonStates();
 
     if (this.singleCalendarInstance) {
-        this.singleCalendarInstance.setSelectedDate(date, false);
-        this.singleCalendarInstance.hide(); // Explicitly hide if "Today" or "Tomorrow" is clicked
+        this.singleCalendarInstance.setSelectedDate(date, false); // Update calendar's date
+        this.singleCalendarInstance.hide(); // Hide custom calendar if open
     }
     this.clearMessages();
   }
 
   _updateSingleDayDateButtonStates() {
     if (this.config.multiday || !this.elements.dateBtnToday || !this.elements.dateBtnTomorrow || !this.elements.dateBtnOther || !this.elements.otherDateText) {
-        return;
+        return; // Not applicable for multiday or if elements are missing
     }
 
     const today = DateTime.now().setZone(this.config.timezone).startOf('day').toJSDate();
@@ -1811,12 +1832,12 @@ export default class DianaWidget {
     this.elements.dateBtnToday.classList.remove('active');
     this.elements.dateBtnTomorrow.classList.remove('active');
     this.elements.dateBtnOther.classList.remove('active');
-    this.elements.otherDateText.textContent = this.t('otherDate');
-    if (this.elements.dateBtnOther.children[1]) this.elements.dateBtnOther.children[1].setAttribute("stroke", "#000");
+    this.elements.otherDateText.textContent = this.t('otherDate'); // Default text
+    if (this.elements.dateBtnOther.children[1]) this.elements.dateBtnOther.children[1].setAttribute("stroke", "#000"); // Default arrow color
 
 
     if (selected) {
-        const locale = this.config.language === 'DE' ? 'de-DE' : 'en-GB';
+        const locale = this.config.language === 'DE' ? 'de-DE' : 'en-GB'; // Or use Luxon's locale system more directly
         if (selected.getTime() === today.getTime()) {
             this.elements.dateBtnToday.classList.add('active');
         } else if (selected.getTime() === tomorrow.getTime()) {
@@ -1824,12 +1845,14 @@ export default class DianaWidget {
         } else {
             this.elements.dateBtnOther.classList.add('active');
             this.elements.otherDateText.textContent = formatDateForDisplay(selected, locale, this.config.timezone);
-            if (this.elements.dateBtnOther.children[1]) this.elements.dateBtnOther.children[1].setAttribute("stroke", "#fff");
+            if (this.elements.dateBtnOther.children[1]) this.elements.dateBtnOther.children[1].setAttribute("stroke", "#fff"); // Active arrow color
         }
+        // Ensure hidden input is also updated
         if (this.elements.activityDate) {
             this.elements.activityDate.value = formatDatetime(selected, this.config.timezone);
         }
     } else {
+         // No date selected, reset "Other Date" text and hidden input
          this.elements.otherDateText.textContent = this.t('otherDate');
          if (this.elements.activityDate) {
             this.elements.activityDate.value = '';
@@ -1842,14 +1865,15 @@ export default class DianaWidget {
     const displayElement = this.elements[displayElementId];
     if (!displayElement) return;
 
-    const localeMap = { EN: 'en-GB', DE: 'de-DE' };
-    const locale = localeMap[this.config.language] || 'en-GB';
+    const localeMap = { EN: 'en-GB', DE: 'de-DE' }; // Simple map for common cases
+    const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
     if (date && !isNaN(date.getTime())) {
       displayElement.textContent = formatDateForDisplay(date, locale, this.config.timezone);
       displayElement.classList.remove("placeholder");
     } else {
-      displayElement.textContent = this.t('selectDate');
+      displayElement.textContent = this.t('selectDate'); // Fallback or placeholder text
       displayElement.classList.add("placeholder");
     }
   }
 }
+

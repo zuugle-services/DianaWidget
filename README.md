@@ -327,7 +327,7 @@ You can even set more complex styles to the outermost container, e.g.:
 ├── src/
 │   ├── core/
 │   │   ├── widget.js       # Main widget logic
-│   │   ├── calendar.js     # Calendar logic 
+│   │   ├── Calendar.js     # Calendar logic 
 │   │   └── styles/         # Component styles (CSS)
 │   ├── translations.js     # Language file
 │   ├── utils.js            # Utility functions
