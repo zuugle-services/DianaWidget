@@ -175,7 +175,8 @@ export default class DianaWidget {
           end: '',
           duration: '',
           warning_duration: false,
-        }
+        },
+        currentContentKey: null,
       };
 
       this.loadingTextTimeout1 = null;
@@ -410,6 +411,9 @@ export default class DianaWidget {
     // Load templates using UIManager
     const formPageHTML = await this.uiManager.loadTemplate('formPageTemplate', templateArgs);
     const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
+    const menuPageHTML = await this.uiManager.loadTemplate('menuPageTemplate', templateArgs);
+    const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
+
 
     // Set the innerHTML for the main structure including the loaded templates
     this.dianaWidgetRootContainer.innerHTML = `
@@ -417,6 +421,8 @@ export default class DianaWidget {
         <div id="innerContainer" class="modal-content">
           ${formPageHTML}
           ${resultsPageHTML}
+          ${menuPageHTML}
+          ${contentPageHTML}
         </div>
       </div>
     `;
@@ -429,10 +435,12 @@ export default class DianaWidget {
     this.pageManager = new PageManager(
         this.elements.formPage,
         this.elements.resultsPage,
-        this.elements.innerContainer
+        this.elements.innerContainer,
+        this.elements.menuPage,
+        this.elements.contentPage
     );
+    this.pageManager.navigateToForm();
 
-    // Setup accessibility attributes on the newly created/cached elements
     this.setupAccessibility();
 
     // Initialize date inputs based on config and state
@@ -536,10 +544,12 @@ export default class DianaWidget {
       innerContainer: this.dianaWidgetRootContainer.querySelector("#innerContainer"),
       formPage: this.dianaWidgetRootContainer.querySelector("#formPage"),
       resultsPage: this.dianaWidgetRootContainer.querySelector("#resultsPage"),
+      menuPage: this.dianaWidgetRootContainer.querySelector("#menuPage"),
+      contentPage: this.dianaWidgetRootContainer.querySelector("#contentPage"),
       originInput: this.dianaWidgetRootContainer.querySelector("#originInput"),
       suggestionsContainer: this.dianaWidgetRootContainer.querySelector("#suggestions"),
       searchBtn: this.dianaWidgetRootContainer.querySelector("#searchBtn"),
-      backBtn: this.dianaWidgetRootContainer.querySelector("#backBtn"), // This is on the results page
+      backBtn: this.dianaWidgetRootContainer.querySelector("#backBtn"),
       formErrorContainer: this.dianaWidgetRootContainer.querySelector("#formErrorContainer"),
       resultsErrorContainer: this.dianaWidgetRootContainer.querySelector("#resultsErrorContainer"),
       infoContainer: this.dianaWidgetRootContainer.querySelector("#infoContainer"),
@@ -562,8 +572,15 @@ export default class DianaWidget {
       otherDateText: this.dianaWidgetRootContainer.querySelector("#otherDateText"), // Span inside dateBtnOther
       dateSelectorButtonsGroup: this.dianaWidgetRootContainer.querySelector(".date-selector-buttons"),
       // Add back button from form page header if it's different
-      formPageBackBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
-      resultsPageBackBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn") // if they are distinct
+      formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"), // Hamburger on form page
+      resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn"), // Hamburger on results page
+      menuPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#menuPageHamburgerBtn"), // Hamburger on menu page
+      menuPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#menuPageCloseBtn"), // Close button on menu page
+      menuList: this.dianaWidgetRootContainer.querySelector("#menuPage .menu-list"), // Menu list
+      contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"), // Hamburger on content page
+      contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"), // Close button on content page
+      contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"), // Title on content page
+      contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"), // Body of content page
     };
   }
 
@@ -596,6 +613,13 @@ export default class DianaWidget {
     }
     if (this.elements.responseBox) this.elements.responseBox.setAttribute('aria-busy', 'false');
     if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.setAttribute('aria-busy', 'false');
+
+    if (this.elements.formPageHamburgerBtn) this.elements.formPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
+    if (this.elements.resultsPageHamburgerBtn) this.elements.resultsPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
+    if (this.elements.menuPageHamburgerBtn) this.elements.menuPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
+    if (this.elements.menuPageCloseBtn) this.elements.menuPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
+    if (this.elements.contentPageHamburgerBtn) this.elements.contentPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
+    if (this.elements.contentPageCloseBtn) this.elements.contentPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
   }
 
   setupEventListeners() {
@@ -648,23 +672,38 @@ export default class DianaWidget {
     // This is the specific back button on the results page (labeled "← Back")
     if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
 
-    // Handle header back buttons (☰ icon) if they are meant for main navigation
-    // Assuming they both navigate to the "form" or a conceptual "previous" main state
-    if (this.elements.formPageBackBtn) {
-        this.elements.formPageBackBtn.addEventListener('click', () => {
-            // Define behavior for form page header back button, e.g., close widget or go to an external page
-            // For now, let's assume it does nothing or is for a menu not yet implemented
-            console.log("Form page header back button clicked.");
+
+    // Hamburger icon on Form Page
+    if (this.elements.formPageHamburgerBtn) {
+        this.elements.formPageHamburgerBtn.addEventListener('click', () => this.navigateToMenu());
+    }
+    // Hamburger icon on Results Page
+    if (this.elements.resultsPageHamburgerBtn) {
+        this.elements.resultsPageHamburgerBtn.addEventListener('click', () => this.navigateToMenu());
+    }
+    // Hamburger icon on Menu Page (might take back to form or do nothing, let's make it go to form)
+    if (this.elements.menuPageHamburgerBtn) {
+        this.elements.menuPageHamburgerBtn.addEventListener('click', () => this.closeMenuOrContentPage());
+    }
+    // Close button on Menu Page
+    if (this.elements.menuPageCloseBtn) {
+        this.elements.menuPageCloseBtn.addEventListener('click', () => this.closeMenuOrContentPage());
+    }
+    // Menu items
+    if (this.elements.menuList) {
+        this.elements.menuList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('menu-item') && e.target.dataset.contentKey) {
+                this.navigateToContentPage(e.target.dataset.contentKey);
+            }
         });
     }
-    if (this.elements.resultsPageBackBtn) {
-         this.elements.resultsPageBackBtn.addEventListener('click', () => {
-            // This could also navigate to form, or open a menu.
-            // If it's for navigating back to form, it's redundant with the other backBtn.
-            // Let's assume it's for a menu or similar, or could be removed if redundant.
-            console.log("Results page header back button clicked.");
-            // If it should go back to form: this.navigateToForm();
-        });
+    // Hamburger icon on Content Page (takes back to Menu)
+    if (this.elements.contentPageHamburgerBtn) {
+        this.elements.contentPageHamburgerBtn.addEventListener('click', () => this.navigateToMenu());
+    }
+    // Close button on Content Page
+    if (this.elements.contentPageCloseBtn) {
+        this.elements.contentPageCloseBtn.addEventListener('click', () => this.closeMenuOrContentPage());
     }
   }
 
@@ -1222,7 +1261,7 @@ export default class DianaWidget {
       this.elements.activityTimeBox.innerHTML = `
         <div class="activity-time-card">
           <div class="activity-time-header">
-            <a style="display: inline-flex;" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=$${this.config.activityStartLocation}">
+            <a style="display: inline-flex;" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=$$${this.config.activityStartLocation}">
               ${this.config.activityName}
               <svg style="margin: 0 0 5px 4px;" width="12px" height="12px" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" mirror-in-rtl="true" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill="var(--bg-apply-hover)" d="M12.1.6a.944.944 0 0 0 .2 1.04l1.352 1.353L10.28 6.37a.956.956 0 0 0 1.35 1.35l3.382-3.38 1.352 1.352a.944.944 0 0 0 1.04.2.958.958 0 0 0 .596-.875V.96a.964.964 0 0 0-.96-.96h-4.057a.958.958 0 0 0-.883.6z"></path> <path fill="var(--bg-apply-hover)" d="M14 11v5a2.006 2.006 0 0 1-2 2H2a2.006 2.006 0 0 1-2-2V6a2.006 2.006 0 0 1 2-2h5a1 1 0 0 1 0 2H2v10h10v-5a1 1 0 0 1 2 0z"></path> </g></svg>
             </a>
@@ -1562,6 +1601,61 @@ export default class DianaWidget {
     this.state.activityTimes = { start: '', end: '', duration: '', warning_duration: false };
   }
 
+  navigateToMenu() {
+    this.clearMessages();
+    if (this.pageManager) {
+        this.pageManager.navigateToMenu();
+    }
+  }
+
+  navigateToContentPage(contentKey) {
+    this.clearMessages();
+    this.state.currentContentKey = contentKey;
+    if (this.pageManager) {
+        this.pageManager.navigateToContentPage();
+    }
+    this.renderContentPage(); // Method to render the actual content
+  }
+
+  renderContentPage() {
+    if (!this.elements.contentPageTitle || !this.elements.contentPageBody) return;
+
+    let title = '';
+    let contentHTML = '';
+
+    // This is where you would define the actual content for each page
+    // For now, using placeholders from translations
+    switch (this.state.currentContentKey) {
+        case 'help':
+            title = this.t('menu.helpAndSupport');
+            contentHTML = `<p>${this.t('content.helpText')}</p>`;
+            break;
+        case 'contact':
+            title = this.t('menu.contact');
+            contentHTML = `<p>${this.t('content.contactText')}</p>`;
+            break;
+        case 'legal':
+            title = this.t('menu.legal');
+            contentHTML = `<p>${this.t('content.legalText')}</p>`;
+            break;
+        default:
+            title = this.t('content.defaultTitle');
+            contentHTML = `<p>${this.t('content.defaultText')}</p>`;
+    }
+
+    this.elements.contentPageTitle.textContent = title;
+    this.elements.contentPageBody.innerHTML = contentHTML;
+  }
+
+  closeMenuOrContentPage() {
+    this.clearMessages();
+    if (this.pageManager) {
+        this.pageManager.returnToActivePage();
+    }
+    this.state.currentContentKey = null;
+  }
+
+
   setLoadingState(isLoading) {
     this.state.loading = isLoading;
     if (this.elements.searchBtn) {
@@ -1876,4 +1970,3 @@ export default class DianaWidget {
     }
   }
 }
-

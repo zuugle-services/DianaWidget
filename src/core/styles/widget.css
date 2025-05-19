@@ -103,6 +103,8 @@
     border-bottom: 1px solid var(--border-primary);
     width: 100%;
     background: var(--bg-primary);
+    min-height: 56px; /* Ensure consistent header height */
+    box-sizing: border-box;
 }
 
 .diana-container .widget-header-heading {
@@ -113,22 +115,34 @@
     font-size: 16px;
     line-height: 120%;
     letter-spacing: 0.02em;
-    width: 100%;
-    padding: 18px 9px 18px 9px;
+    flex-grow: 1; /* Allow heading to take available space */
+    padding: 18px 9px;
     border-left: 1px solid var(--border-primary);
+    border-right: 1px solid var(--border-primary); /* Add right border for consistency */
     text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
+/* Special case for menu/content pages where title might be empty or different */
+.diana-container #menuPage .widget-header-heading,
+.diana-container #contentPage .widget-header-heading {
+    border-left: none; /* No left border if hamburger is the first element */
+}
+
 
 .diana-container .widget-header-button {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 7px 24px 7px 24px;
+    padding: 7px 24px; /* Consistent padding */
     gap: 10px;
-    height: 40px;
+    height: 100%; /* Make button area take full header height */
+    box-sizing: border-box;
 }
 
-.diana-container .back-btn {
+.diana-container .back-btn,
+.diana-container .close-btn {
     background: none;
     border: none;
     padding: 0;
@@ -138,7 +152,13 @@
     align-items: center;
     gap: 6px;
     cursor: pointer;
+    line-height: 1; /* Ensure icon is vertically centered */
 }
+
+.diana-container .close-btn {
+    font-size: 20px; /* Slightly smaller X */
+}
+
 
 /* --- Modal Structure --- */
 .diana-container .modal {
@@ -196,10 +216,12 @@
     display: none; /* Hide inactive pages */
     font-family: "DM Sans",sans-serif !important;
     flex-grow: 1;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Prevent shrinking beyond content size */
     flex-direction: column;
-    min-height: 0;
-    max-height: inherit;
+    min-height: 0; /* Allow shrinking if content is small */
+    max-height: inherit; /* Ensure it doesn't exceed parent */
+    width: 100%; /* Ensure pages take full width */
+    box-sizing: border-box;
 }
 
 .diana-container .modal-page.active {
@@ -208,23 +230,22 @@
 
 /* --- Modal Body Areas --- */
 .diana-container .modal-body,
-.diana-container .modal-body-result {
+.diana-container .modal-body-result,
+.diana-container .menu-body,
+.diana-container .content-page-body {
     display: flex;
     flex-direction: column;
     font-family: "DM Sans",sans-serif !important;
-    flex-grow: 1;
-    padding-bottom: 10px;
-}
-
-.diana-container .modal-body {
-    padding: 20px;
+    flex-grow: 1; /* Allow body to take remaining space */
+    padding: 20px; /* Default padding */
+    overflow-y: auto; /* Add scroll if content overflows body */
 }
 
 .diana-container .modal-body-result {
-    padding: 0;
+    padding: 0; /* Results page has specific padding for its sections */
     position: relative;
     background-color: var(--bg-secondary);
-    height: fit-content;
+    /* height: fit-content; Removed, let flex-grow handle height */
 }
 
 /* --- Form Specific Styles --- */
@@ -1160,6 +1181,47 @@
     color: var(--bg-apply-hover) !important;
     text-decoration: none !important;
 }
+
+/* --- Menu Page Specific Styles --- */
+.diana-container .menu-body {
+    padding-top: 10px;
+}
+.diana-container .menu-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.diana-container .menu-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-tertiary);
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-secondary);
+    transition: background-color 0.2s ease;
+}
+.diana-container .menu-item:hover {
+    background-color: var(--bg-hover);
+}
+.diana-container .menu-item:last-child {
+    border-bottom: none;
+}
+
+/* --- Content Page Specific Styles --- */
+.diana-container .content-page-body {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+.diana-container .content-page-body h2 {
+    font-size: 18px;
+    color: var(--text-primary);
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.diana-container .content-page-body p {
+    margin-bottom: 10px;
+}
+
 
 /* --- Mobile Date Input Handling --- */
 /* The .date-selector-buttons are now always flex by default for single day */
