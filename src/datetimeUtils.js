@@ -312,7 +312,7 @@ export function formatDatetime(date, timezone="utc") {
     try {
         return DateTime.fromJSDate(date).setZone(timezone).toFormat('yyyy-MM-dd');
     } catch (error) {
-        console.error("Error formatting datetime to YYYY-MM-DD:", error);
+        console.error("Error formatting datetime to yyyy-MM-dd:", error);
         // Fallback to manual formatting if Luxon fails
         let year = date.getUTCFullYear();
         let month = date.getUTCMonth() + 1;
@@ -364,7 +364,7 @@ export function formatLegDateForDisplay(isoString, timezone, language) {
           return "";
       }
       const localeMap = { EN: 'en-GB', DE: 'de-DE' }; // Map language to full locale
-      const locale = localeMap[language.toUpperCase()] || `{$language.toLowerCase()}-${language.toUpperCase()}`; // Fallback e.g. en-EN
+      const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`; // Fallback e.g. en-EN
       return localDt.setLocale(locale).toFormat('dd. MMM');
     } catch (error) {
       console.error("Error formatting leg date for display:", error);

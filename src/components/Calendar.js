@@ -1,7 +1,6 @@
-// =============== FILE: calendar.js ===============
 import { DateTime } from 'luxon';
 import { getMonthName, getShortDayName, throttle, formatDateForDisplay } from "../utils";
-import { formatDatetime } from "../datetimeUtils"
+import { formatDatetime } from "../datetimeUtils";
 
 export class SingleCalendar {
     constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerElement, anchorElement) {
@@ -60,7 +59,7 @@ export class SingleCalendar {
         this.calendarContainer.style.position = 'absolute';
         this.calendarContainer.style.zIndex = '1050';
         this.calendarContainer.style.display = 'none';
-        this.calendarContainer.className = "diana-container calendar-container";
+        this.calendarContainer.className = "diana-container calendar-container"; // Ensure it's styled within widget scope
     }
 
     _render() {
@@ -68,7 +67,7 @@ export class SingleCalendar {
 
         const daysInMonth = new Date(this.currentViewYear, this.currentViewMonth + 1, 0).getDate();
         let firstDayOfMonthIndex = new Date(this.currentViewYear, this.currentViewMonth, 1).getDay();
-        firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1;
+        firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1; // Adjust for Monday start
 
         this.calendarContainer.innerHTML = `
             <div class="calendar-header"><p class="calendar-title">${this.t("datePickerTitle")}</p></div>
@@ -93,7 +92,7 @@ export class SingleCalendar {
 
     _generateDaysHTML(daysInMonth, firstDayOfMonthIndex) {
         let html = "";
-        const today = new Date(); today.setUTCHours(0,0,0,0);
+        const today = new Date(); today.setUTCHours(0,0,0,0); // Use UTC for comparison to avoid timezone shifts
 
         for (let i = 0; i < firstDayOfMonthIndex; i++) {
             html += "<div class='calendar-day empty'></div>";
@@ -101,11 +100,15 @@ export class SingleCalendar {
         for (let day = 1; day <= daysInMonth; day++) {
             const date = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, day));
             const isToday = date.getTime() === new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).getTime();
-            const isSelected = this.selectedDate && !isNaN(this.selectedDate.getTime()) &&
-              date.getFullYear() === this.selectedDate.getFullYear() &&
-              date.getMonth() === this.selectedDate.getMonth() &&
-              date.getDate() === this.selectedDate.getDate();
-            let isDisabled = date < today;
+
+            // Ensure selectedDate is also treated as UTC for comparison
+            const selectedDateUTC = this.selectedDate && !isNaN(this.selectedDate.getTime())
+                ? new Date(Date.UTC(this.selectedDate.getUTCFullYear(), this.selectedDate.getUTCMonth(), this.selectedDate.getUTCDate()))
+                : null;
+
+            const isSelected = selectedDateUTC && date.getTime() === selectedDateUTC.getTime();
+
+            let isDisabled = date < today; // Disable past dates
 
             html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}${isDisabled ? " disabled" : ""}" data-day="${day}">${day}</div>`;
         }
@@ -134,7 +137,7 @@ export class SingleCalendar {
         });
 
         this.calendarContainer.querySelector(".calendar-cancel-btn").addEventListener("click", (e) => {
-            e.preventDefault();
+            e.preventDefault(); // Prevent form submission if calendar is in a form
             e.stopPropagation();
             this.hide();
         });
@@ -142,106 +145,96 @@ export class SingleCalendar {
         this.calendarContainer.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this._updateInputElement();
+            this._updateInputElement(); // Ensure input value is set with the selected date
             if (this.onDateSelectCallback) {
+                // Pass a new Date object to avoid mutations if selectedDate is modified elsewhere
                 this.onDateSelectCallback(new Date(this.selectedDate.valueOf()));
             }
             this.hide();
-            this.widget.clearMessages();
+            this.widget.clearMessages(); // Clear any widget messages
         });
 
         this.calendarContainer.querySelectorAll(".calendar-day:not(.empty):not(.disabled)").forEach(dayElement => {
             dayElement.addEventListener("click", (e) => {
                 e.stopPropagation();
+                // When a day is clicked, update selectedDate to UTC to match internal logic
                 this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt(dayElement.dataset.day)));
-                this._render();
+                this._render(); // Re-render to show selection
             });
         });
     }
 
     _attachEventListeners() {
-        // Ensure the trigger element for the custom calendar exists.
         if (!this.triggerElement) return;
 
-        // Event listener for the triggerElement (e.g., "Other Date" button).
         this.triggerElement.addEventListener("click", (e) => {
-            // Check if the current view matches mobile screen dimensions.
-            // This uses the same media query as in widget.js for consistency.
             if (window.matchMedia("(max-width: 768px)").matches) {
-                // If on mobile, this listener should not open the custom calendar.
-                // The widget.js listener for the "Other Date" button is responsible
-                // for showing the native date picker and should have stopped event propagation.
-                // This 'return' acts as a safeguard if the event still reaches here.
+                // On mobile, widget.js handles showing the native date picker
+                // This listener should not interfere.
                 return;
             }
-
-            // Desktop behavior: Toggle the custom calendar's visibility.
-            e.stopPropagation(); // Prevent this click from also triggering the document-wide click listener
-                                 // which is used to close the calendar when clicking outside.
+            e.stopPropagation();
             if (this.calendarContainer.classList.contains("active")) {
-                this.hide(); // If calendar is open, hide it.
+                this.hide();
             } else {
-                // If calendar is closed, sync its date with the widget's current state and show it.
+                // Sync calendar with widget's current date before showing
                 const currentDateFromWidget = this.widget.state.selectedDate || new Date();
                 this.setSelectedDate(currentDateFromWidget, false); // Update date without triggering callback
                 this.show();
             }
         });
 
-        // Event listener on the document to hide the calendar when clicking outside of it.
         document.addEventListener("click", (e) => {
-            // Check if the calendar is currently active/visible.
             if (this.calendarContainer && this.calendarContainer.classList.contains("active")) {
-                // Determine if the click was inside the calendar itself.
                 const isClickInsideCalendar = this.calendarContainer.contains(e.target);
-                // Determine if the click was on the element that triggers the calendar
-                // (its own click handler above will manage toggling).
                 const isClickOnTrigger = this.triggerElement && this.triggerElement.contains(e.target);
-
-                // If the click was neither inside the calendar nor on its trigger, hide the calendar.
                 if (!isClickInsideCalendar && !isClickOnTrigger) {
                     this.hide();
                 }
             }
         });
 
-        // Throttle repositioning calls for performance during scroll and resize events.
         const throttledReposition = throttle(this._reposition.bind(this), 50);
-
-        // Add scroll event listeners to the anchor element's scrollable parents
-        // to ensure the calendar repositions correctly if the anchor moves due to scrolling.
         let scrollableParent = this.anchorElement ? this.anchorElement.parentElement : null;
         while(scrollableParent) {
             if (scrollableParent.scrollHeight > scrollableParent.clientHeight || scrollableParent.scrollWidth > scrollableParent.clientWidth) {
                  scrollableParent.addEventListener('scroll', throttledReposition, true);
             }
-            // Stop traversing up if we reach the document body.
             if (scrollableParent === document.body) break;
             scrollableParent = scrollableParent.parentElement;
         }
-        // Add listeners to window for global scroll and resize events.
         window.addEventListener('scroll', throttledReposition, true);
         window.addEventListener('resize', throttledReposition);
     }
 
     _updateDisplayElement() {
+        // This method is called by widget._updateSingleDayDateButtonStates
+        // or when the calendar's "Apply" button is clicked.
+        // It updates the text of the "Other Date" button.
         if (this.displayElement && this.displayElement === this.widget.elements?.otherDateText) {
             const localeMap = { EN: 'en-GB', DE: 'de-DE' };
-            const locale = localeMap[this.config.language] || 'en-GB';
+            const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
+
 
             if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-                const today = DateTime.now().setZone(this.config.timezone).startOf('day').toJSDate();
-                const tomorrow = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toJSDate();
-                const selectedJSDate = DateTime.fromJSDate(this.selectedDate).setZone(this.config.timezone).startOf('day').toJSDate();
+                 // Use Luxon for consistent timezone handling for display checks
+                const todayLocal = DateTime.now().setZone(this.config.timezone).startOf('day');
+                const tomorrowLocal = todayLocal.plus({ days: 1 });
+                // Convert selectedDate (which is UTC internally) to the display timezone for comparison
+                const selectedDateInDisplayZone = DateTime.fromJSDate(this.selectedDate, {zone: 'utc'}).setZone(this.config.timezone).startOf('day');
 
-                if (selectedJSDate.getTime() !== today.getTime() && selectedJSDate.getTime() !== tomorrow.getTime()) {
+
+                if (!selectedDateInDisplayZone.equals(todayLocal) && !selectedDateInDisplayZone.equals(tomorrowLocal)) {
                     this.displayElement.textContent = formatDateForDisplay(this.selectedDate, locale, this.config.timezone);
                     this.displayElement.classList.remove("placeholder");
                 } else {
                     // If it IS today or tomorrow, widget._updateSingleDayDateButtonStates handles the "Other Date" text.
+                    // We can ensure it's reset to default if the calendar was showing a different date.
+                    // this.displayElement.textContent = this.t('otherDate');
+                    // this.displayElement.classList.add("placeholder");
                 }
             } else {
-                this.displayElement.textContent = this.t('otherDate'); // Default for the span if no date
+                this.displayElement.textContent = this.t('otherDate');
                 this.displayElement.classList.add("placeholder");
             }
         }
@@ -251,7 +244,9 @@ export class SingleCalendar {
     _updateInputElement() {
         if (this.inputElement) {
             if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-                this.inputElement.value = formatDatetime(this.selectedDate, this.config.timezone);
+                // formatDatetime expects a JS Date and timezone for formatting to YYYY-MM-DD
+                // Since selectedDate is UTC, pass 'utc' or the target display timezone if input should reflect that
+                this.inputElement.value = formatDatetime(this.selectedDate, 'utc'); // Store as YYYY-MM-DD in UTC
             } else {
                 this.inputElement.value = '';
             }
@@ -263,17 +258,31 @@ export class SingleCalendar {
             return;
         }
         const anchorRect = this.anchorElement.getBoundingClientRect();
-
-        const desiredCalendarWidth = Math.max(280, anchorRect.width);
+        const desiredCalendarWidth = Math.max(280, anchorRect.width); // Ensure minimum width
         this.calendarContainer.style.width = `${desiredCalendarWidth}px`;
 
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+        const gap = 5; // Gap between anchor and calendar
 
-        const gap = 5;
+        // Position below the anchor element
+        let finalTop = anchorRect.bottom + scrollTop + gap;
+        let finalLeft = anchorRect.left + scrollLeft;
 
-        const finalTop = anchorRect.bottom + scrollTop + gap;
-        const finalLeft = anchorRect.left + scrollLeft;
+        // Adjust if it goes off-screen
+        const calendarHeight = this.calendarContainer.offsetHeight;
+        const calendarWidth = this.calendarContainer.offsetWidth; // Use actual width after setting it
+
+        if (finalTop + calendarHeight > window.innerHeight + scrollTop) { // Off bottom
+            finalTop = anchorRect.top + scrollTop - calendarHeight - gap; // Position above
+        }
+        if (finalLeft + calendarWidth > window.innerWidth + scrollLeft) { // Off right
+            finalLeft = window.innerWidth + scrollLeft - calendarWidth - gap;
+        }
+        if (finalLeft < scrollLeft + gap) { // Off left
+            finalLeft = scrollLeft + gap;
+        }
+
 
         this.calendarContainer.style.top = `${finalTop}px`;
         this.calendarContainer.style.left = `${finalLeft}px`;
@@ -282,10 +291,11 @@ export class SingleCalendar {
     show() {
         if (!this.calendarContainer) return;
 
+        // Ensure current view is based on the selectedDate (which is UTC)
         if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
             this.currentViewMonth = this.selectedDate.getUTCMonth();
             this.currentViewYear = this.selectedDate.getUTCFullYear();
-        } else {
+        } else { // Default to current month/year in UTC if no date selected
             const now = new Date();
             this.currentViewMonth = now.getUTCMonth();
             this.currentViewYear = now.getUTCFullYear();
@@ -293,7 +303,7 @@ export class SingleCalendar {
         this._render();
         this.calendarContainer.style.display = 'block';
         this.calendarContainer.classList.add("active");
-        this._reposition();
+        this._reposition(); // Reposition after display block to get correct dimensions
     }
 
     hide() {
@@ -303,23 +313,27 @@ export class SingleCalendar {
     }
 
     setSelectedDate(date, triggerCallback = true) {
-        this.selectedDate = new Date(date.valueOf());
+        // Ensure the date is treated as UTC internally for consistency
+        this.selectedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+
         if (!isNaN(this.selectedDate.getTime())) {
             this.currentViewMonth = this.selectedDate.getUTCMonth();
             this.currentViewYear = this.selectedDate.getUTCFullYear();
         }
         this._updateInputElement();
-        // _updateDisplayElement is called by widget's _updateSingleDayDateButtonStates
-        // or by calendar's apply button.
+        // _updateDisplayElement is typically called by the widget's logic (_updateSingleDayDateButtonStates)
+        // or by the calendar's apply button. If called programmatically, the widget should handle display update.
 
         if (this.calendarContainer && this.calendarContainer.classList.contains("active")) {
-            this._render();
+            this._render(); // Re-render if visible to reflect new date
         }
-        // Callback is generally for when the calendar itself causes the date change (Apply button).
-        // Programmatic changes from widget (Today/Tomorrow buttons) don't need to re-trigger this.
-        // if (triggerCallback && this.onDateSelectCallback) {
-        //     this.onDateSelectCallback(new Date(this.selectedDate.valueOf()));
-        // }
+
+        // This callback is primarily for when the calendar's "Apply" button is used.
+        // Programmatic changes from widget (e.g., Today/Tomorrow buttons) usually don't need to re-trigger this,
+        // as the widget itself is initiating the change.
+        if (triggerCallback && this.onDateSelectCallback) {
+            this.onDateSelectCallback(new Date(this.selectedDate.valueOf())); // Pass a copy
+        }
     }
 }
 
@@ -331,56 +345,59 @@ export class RangeCalendarModal {
         this.onRangeSelectCallback = onRangeSelectCallback;
         this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(activityDurationDaysFixed, 10) : null;
 
-        this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, { zone: 'utc' }).toJSDate() : null;
+        // Parse fixed dates as UTC
+        this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, { zone: 'utc' }).startOf('day').toJSDate() : null;
         if (this.fixedStartDate && isNaN(this.fixedStartDate.getTime())) this.fixedStartDate = null;
-        if (this.fixedStartDate) this.fixedStartDate.setUTCHours(0,0,0,0);
 
-        this.fixedEndDate = overrideEndDateStr ? DateTime.fromISO(overrideEndDateStr, { zone: 'utc' }).toJSDate() : null;
+        this.fixedEndDate = overrideEndDateStr ? DateTime.fromISO(overrideEndDateStr, { zone: 'utc' }).startOf('day').toJSDate() : null;
         if (this.fixedEndDate && isNaN(this.fixedEndDate.getTime())) this.fixedEndDate = null;
-        if (this.fixedEndDate) this.fixedEndDate.setUTCHours(0,0,0,0);
 
-        const today = new Date(); today.setUTCHours(0,0,0,0);
+        const today = DateTime.now().setZone('utc').startOf('day').toJSDate(); // Work with UTC dates
 
         this.tempStartDate = this.fixedStartDate
                              ? new Date(this.fixedStartDate.valueOf())
                              : (initialStartDate && !isNaN(new Date(initialStartDate.valueOf()))
-                                ? new Date(initialStartDate.valueOf())
+                                ? DateTime.fromJSDate(initialStartDate).setZone('utc').startOf('day').toJSDate()
                                 : new Date(today.valueOf()));
-        this.tempStartDate.setUTCHours(0,0,0,0);
+
 
         this.tempEndDate = this.fixedEndDate
                            ? new Date(this.fixedEndDate.valueOf())
                            : (initialEndDate && !isNaN(new Date(initialEndDate.valueOf()))
-                              ? new Date(initialEndDate.valueOf())
+                              ? DateTime.fromJSDate(initialEndDate).setZone('utc').startOf('day').toJSDate()
                               : new Date(this.tempStartDate.valueOf()));
-        this.tempEndDate.setUTCHours(0,0,0,0);
+
 
         if (this.activityDurationDaysFixed && !this.fixedStartDate && !this.fixedEndDate) {
-            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
+            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
         }
 
         if (this.tempEndDate < this.tempStartDate) {
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
         if (this.fixedStartDate && this.fixedEndDate && this.fixedStartDate > this.fixedEndDate) {
-            this.fixedEndDate = null;
+            // This case should ideally be caught by config validation, but handle defensively
+            this.fixedEndDate = null; // Or adjust one of them
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
+
 
         this.currentViewMonth = this.tempStartDate.getUTCMonth();
         this.currentViewYear = this.tempStartDate.getUTCFullYear();
 
+        // Determine initial selection mode
         if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
-            this.selectingStartDate = false;
+            this.selectingStartDate = false; // Selecting end date
         } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) {
-            this.selectingStartDate = true;
+            this.selectingStartDate = true; // Selecting start date
         } else if (this.fixedStartDate && this.fixedEndDate) {
-            this.selectingStartDate = false;
+            this.selectingStartDate = false; // Both fixed, no selection
         } else if (this.activityDurationDaysFixed) {
-            this.selectingStartDate = true;
+            this.selectingStartDate = true; // Selecting start date, end date is derived
         } else {
-            this.selectingStartDate = true;
+            this.selectingStartDate = true; // Default: selecting start date first
         }
+
 
         this.modalOverlay = null;
         this.modalElement = null;
@@ -392,14 +409,14 @@ export class RangeCalendarModal {
 
     _initDOM() {
         this.modalOverlay = document.createElement('div');
-        this.modalOverlay.className = 'range-calendar-overlay';
+        this.modalOverlay.className = 'range-calendar-overlay diana-container'; // Add diana-container for scoping
 
         this.modalElement = document.createElement('div');
         this.modalElement.className = 'range-calendar-modal';
         this.modalElement.innerHTML = `
             <div class="range-calendar-header">
                 <h3>${this.t('selectDateRange')}</h3>
-                <button type="button" class="range-calendar-close-btn">&times;</button>
+                <button type="button" class="range-calendar-close-btn" aria-label="${this.t('cancel')}">&times;</button>
             </div>
             <div class="range-calendar-body">
                 <div class="range-calendar-instance" id="rangeCalendarInstance_${Date.now()}"></div>
@@ -411,7 +428,9 @@ export class RangeCalendarModal {
         `;
 
         this.modalOverlay.appendChild(this.modalElement);
-        this.widget.container.appendChild(this.modalOverlay);
+        // Append to the widget's main container to ensure it's within the widget's scope
+        this.widget.dianaWidgetRootContainer.appendChild(this.modalOverlay);
+
 
         this.calendarInstance = this.modalElement.querySelector('.range-calendar-instance');
         this._renderCalendar();
@@ -422,9 +441,9 @@ export class RangeCalendarModal {
     }
 
     _renderMonth(year, month, targetElement) {
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        let firstDayOfMonthIndex = new Date(year, month, 1).getDay();
-        firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1;
+        const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate(); // Use UTC functions
+        let firstDayOfMonthIndex = new Date(Date.UTC(year, month, 1)).getUTCDay();
+        firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1; // Monday start
 
         targetElement.innerHTML = `
             <div class="calendar-nav">
@@ -441,7 +460,7 @@ export class RangeCalendarModal {
 
     _generateRangeDaysHTML(daysInMonth, firstDayOfMonthIndex, year, month) {
         let html = "";
-        const today = new Date(); today.setUTCHours(0,0,0,0);
+        const today = DateTime.now().setZone('utc').startOf('day').toJSDate(); // UTC today
 
         for (let i = 0; i < firstDayOfMonthIndex; i++) {
             html += "<div class='calendar-day empty'></div>";
@@ -451,34 +470,40 @@ export class RangeCalendarModal {
             const currentDate = new Date(Date.UTC(year, month, day));
             let classes = "calendar-day";
 
-            const normTempStartDate = this.tempStartDate ? new Date(Date.UTC(this.tempStartDate.getUTCFullYear(), this.tempStartDate.getUTCMonth(), this.tempStartDate.getUTCDate())) : null;
-            const normTempEndDate = this.tempEndDate ? new Date(Date.UTC(this.tempEndDate.getUTCFullYear(), this.tempEndDate.getUTCMonth(), this.tempEndDate.getUTCDate())) : null;
-            const normFixedStartDate = this.fixedStartDate ? new Date(Date.UTC(this.fixedStartDate.getUTCFullYear(), this.fixedStartDate.getUTCMonth(), this.fixedStartDate.getUTCDate())) : null;
-            const normFixedEndDate = this.fixedEndDate ? new Date(Date.UTC(this.fixedEndDate.getUTCFullYear(), this.fixedEndDate.getUTCMonth(), this.fixedEndDate.getUTCDate())) : null;
+            // Normalize temp and fixed dates to UTC start of day for comparison
+            const normTempStartDate = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
+            const normTempEndDate = this.tempEndDate ? DateTime.fromJSDate(this.tempEndDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
+            const normFixedStartDate = this.fixedStartDate ? DateTime.fromJSDate(this.fixedStartDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
+            const normFixedEndDate = this.fixedEndDate ? DateTime.fromJSDate(this.fixedEndDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
+
 
             if (currentDate.getTime() === today.getTime()) classes += " today";
 
-            let isDisabled = currentDate < today;
+            let isDisabled = currentDate < today; // Disable past dates by default
 
+            // Apply fixed date styling and disabled state
             if (normFixedStartDate && currentDate.getTime() === normFixedStartDate.getTime()) {
                 classes += " fixed-date start-date selected";
-                isDisabled = true;
+                isDisabled = true; // Fixed dates are not clickable for modification here
             } else if (normFixedEndDate && currentDate.getTime() === normFixedEndDate.getTime()) {
                 classes += " fixed-date end-date selected";
                 isDisabled = true;
             } else {
+                // Apply selection styling for temporary dates
                 if (normTempStartDate && currentDate.getTime() === normTempStartDate.getTime()) classes += " start-date selected";
                 if (normTempEndDate && currentDate.getTime() === normTempEndDate.getTime()) classes += " end-date selected";
                 if (normTempStartDate && normTempEndDate && currentDate > normTempStartDate && currentDate < normTempEndDate) classes += " in-range";
             }
 
-            if (normFixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
+            // Additional disabling logic based on fixed dates
+            if (normFixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) { // Only start is fixed
                 if (currentDate < normFixedStartDate) isDisabled = true;
-            } else if (normFixedEndDate && !this.fixedStartDate && !this.activityDurationDaysFixed) {
+            } else if (normFixedEndDate && !this.fixedStartDate && !this.activityDurationDaysFixed) { // Only end is fixed
                 if (currentDate > normFixedEndDate) isDisabled = true;
-            } else if (this.activityDurationDaysFixed && normTempStartDate) {
-                //
             }
+            // If activityDurationDaysFixed, and start is selected, disable days that would violate duration with fixed end (if any)
+            // This logic can get complex and might be better handled during click event.
+
 
             if(isDisabled) classes += " disabled";
 
@@ -508,42 +533,58 @@ export class RangeCalendarModal {
         targetElement.querySelectorAll(".calendar-day:not(.empty):not(.disabled)").forEach(dayElement => {
             dayElement.addEventListener("click", (e) => {
                 e.stopPropagation();
-                const [year, month, day] = dayElement.dataset.date.split('-').map(Number);
-                const clickedDate = new Date(Date.UTC(year, month - 1, day));
+                const [year, monthIdx, day] = dayElement.dataset.date.split('-').map(Number);
+                const clickedDate = new Date(Date.UTC(year, monthIdx - 1, day));
 
                 if (this.fixedStartDate && this.fixedEndDate) {
-                    return;
+                    return; // Both dates are fixed, no selection possible
                 }
 
-                if (this.activityDurationDaysFixed && !this.fixedStartDate && !this.fixedEndDate) {
-                    this.tempStartDate = clickedDate;
-                    this.tempEndDate = DateTime.fromJSDate(clickedDate).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
+                if (this.activityDurationDaysFixed) {
+                    // If duration is fixed, clicking a date sets the start date, and end date is derived.
+                    // This applies unless one of the dates is already fixed by override.
+                    if (!this.fixedStartDate && !this.fixedEndDate) {
+                        this.tempStartDate = clickedDate;
+                        this.tempEndDate = DateTime.fromJSDate(clickedDate, {zone: 'utc'}).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
+                    } else if (this.fixedStartDate && !this.fixedEndDate) { // Start is fixed, duration sets end
+                        // This scenario implies the duration is already accounted for by fixedStartDate + activityDurationDaysFixed
+                        // So, no user selection should change this.
+                        // However, if we allow picking an end date that respects duration:
+                        // this.tempEndDate = clickedDate;
+                        // if (DateTime.fromJSDate(clickedDate).diff(DateTime.fromJSDate(this.fixedStartDate), 'days').days + 1 !== this.activityDurationDaysFixed) {
+                        // Potentially show error or adjust. For now, assume fixed duration means start date selection only if start isn't fixed.
+                        // }
+                        return; // Or handle specific logic if start is fixed and duration is fixed.
+                    } else if (!this.fixedStartDate && this.fixedEndDate) { // End is fixed, duration sets start
+                         // Similar to above, if end is fixed and duration is fixed, start is determined.
+                        return;
+                    }
                 }
-                else if (this.fixedStartDate) {
+                else if (this.fixedStartDate) { // Start is fixed, selecting end date
                     if (clickedDate >= this.fixedStartDate) {
                         this.tempEndDate = clickedDate;
                     } else {
-                        return;
+                        return; // Clicked date is before fixed start date
                     }
                 }
-                else if (this.fixedEndDate) {
+                else if (this.fixedEndDate) { // End is fixed, selecting start date
                     if (clickedDate <= this.fixedEndDate) {
                         this.tempStartDate = clickedDate;
                     } else {
-                        return;
+                        return; // Clicked date is after fixed end date
                     }
                 }
-                else {
+                else { // No fixed dates, standard range selection
                     if (this.selectingStartDate || clickedDate < this.tempStartDate) {
                         this.tempStartDate = clickedDate;
-                        this.tempEndDate = new Date(clickedDate.valueOf());
-                        this.selectingStartDate = false;
+                        this.tempEndDate = new Date(clickedDate.valueOf()); // Reset end date
+                        this.selectingStartDate = false; // Next click selects end date
                     } else {
                         this.tempEndDate = clickedDate;
-                        if (this.tempEndDate < this.tempStartDate) {
+                        if (this.tempEndDate < this.tempStartDate) { // Should not happen if logic is correct
                             this.tempStartDate = new Date(this.tempEndDate.valueOf());
                         }
-                        this.selectingStartDate = true;
+                        this.selectingStartDate = true; // Next click selects start date again
                     }
                 }
                 this._renderCalendar();
@@ -556,25 +597,28 @@ export class RangeCalendarModal {
         this.modalElement.querySelector('.range-calendar-cancel-btn').addEventListener('click', () => this.hide());
         this.modalElement.querySelector('.range-calendar-apply-btn').addEventListener('click', () => this._handleApply());
         this.modalOverlay.addEventListener('click', (e) => {
-            if (e.target === this.modalOverlay) {
+            if (e.target === this.modalOverlay) { // Click on overlay itself, not content
                 this.hide();
             }
         });
     }
 
     _handleApply() {
+        // Ensure date validity before applying
         if (this.fixedStartDate && this.tempEndDate < this.fixedStartDate) {
-            this.tempEndDate = new Date(this.fixedStartDate.valueOf());
+            this.tempEndDate = new Date(this.fixedStartDate.valueOf()); // Or show error
         }
         if (this.fixedEndDate && this.tempStartDate > this.fixedEndDate) {
-            this.tempStartDate = new Date(this.fixedEndDate.valueOf());
+            this.tempStartDate = new Date(this.fixedEndDate.valueOf()); // Or show error
         }
         if (this.tempStartDate && this.tempEndDate && this.tempEndDate < this.tempStartDate) {
+            // If end date is somehow before start date, make them the same or show error
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
 
+
         if (this.onRangeSelectCallback) {
-            const finalStartDate = this.tempStartDate ? new Date(this.tempStartDate.valueOf()) : new Date();
+            const finalStartDate = this.tempStartDate ? new Date(this.tempStartDate.valueOf()) : new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate())); // Fallback to today UTC
             const finalEndDate = this.tempEndDate ? new Date(this.tempEndDate.valueOf()) : new Date(finalStartDate.valueOf());
             this.onRangeSelectCallback(finalStartDate, finalEndDate);
         }
@@ -583,55 +627,58 @@ export class RangeCalendarModal {
     }
 
     show(currentStartDate, currentEndDate) {
-        const today = new Date(); today.setUTCHours(0,0,0,0);
+        const today = DateTime.now().setZone('utc').startOf('day').toJSDate();
 
+        // Initialize tempStartDate
         if (this.fixedStartDate) {
             this.tempStartDate = new Date(this.fixedStartDate.valueOf());
         } else if (currentStartDate && !isNaN(new Date(currentStartDate.valueOf()))) {
-            this.tempStartDate = new Date(currentStartDate.valueOf());
+            this.tempStartDate = DateTime.fromJSDate(currentStartDate).setZone('utc').startOf('day').toJSDate();
         } else {
             this.tempStartDate = new Date(today.valueOf());
         }
-        this.tempStartDate.setUTCHours(0,0,0,0);
 
+        // Initialize tempEndDate
         if (this.fixedEndDate) {
             this.tempEndDate = new Date(this.fixedEndDate.valueOf());
         } else if (this.activityDurationDaysFixed && this.tempStartDate) {
-             this.tempEndDate = DateTime.fromJSDate(this.tempStartDate).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
+             this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
         } else if (currentEndDate && !isNaN(new Date(currentEndDate.valueOf()))) {
-            this.tempEndDate = new Date(currentEndDate.valueOf());
-        } else {
+            this.tempEndDate = DateTime.fromJSDate(currentEndDate).setZone('utc').startOf('day').toJSDate();
+        } else { // Fallback for tempEndDate
             this.tempEndDate = this.fixedStartDate
-                               ? DateTime.fromJSDate(this.fixedStartDate).plus({ days: (this.activityDurationDaysFixed || 1) -1 }).toJSDate()
-                               : new Date(this.tempStartDate.valueOf());
+                               ? DateTime.fromJSDate(this.fixedStartDate, {zone: 'utc'}).plus({ days: (this.activityDurationDaysFixed || 1) -1 }).toJSDate()
+                               : new Date(this.tempStartDate.valueOf()); // Default to same as start date
         }
-        this.tempEndDate.setUTCHours(0,0,0,0);
 
+        // Ensure tempEndDate is not before tempStartDate
         if (this.tempEndDate < this.tempStartDate) {
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
 
-        if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
+        // Determine current view and selection mode based on fixed dates and duration
+        if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) { // Start fixed, select end
             this.selectingStartDate = false;
             this.currentViewMonth = this.tempEndDate.getUTCMonth();
             this.currentViewYear = this.tempEndDate.getUTCFullYear();
-        } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) {
+        } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) { // End fixed, select start
             this.selectingStartDate = true;
             this.currentViewMonth = this.tempStartDate.getUTCMonth();
             this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        } else if (this.fixedStartDate && this.fixedEndDate) {
-            this.selectingStartDate = false;
+        } else if (this.fixedStartDate && this.fixedEndDate) { // Both fixed
+            this.selectingStartDate = false; // No selection
             this.currentViewMonth = this.fixedStartDate.getUTCMonth();
             this.currentViewYear = this.fixedStartDate.getUTCFullYear();
-        } else if (this.activityDurationDaysFixed) {
-            this.selectingStartDate = true;
+        } else if (this.activityDurationDaysFixed) { // Duration fixed, select start (unless start is also fixed)
+            this.selectingStartDate = !this.fixedStartDate;
             this.currentViewMonth = this.tempStartDate.getUTCMonth();
             this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        } else {
+        } else { // No fixed aspects, default to selecting start
             this.selectingStartDate = true;
             this.currentViewMonth = this.tempStartDate.getUTCMonth();
             this.currentViewYear = this.tempStartDate.getUTCFullYear();
         }
+
 
         this._renderCalendar();
         this.modalOverlay.style.display = 'flex';
@@ -641,3 +688,4 @@ export class RangeCalendarModal {
         this.modalOverlay.style.display = 'none';
     }
 }
+

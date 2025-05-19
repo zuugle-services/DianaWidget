@@ -42,6 +42,18 @@ export default {
     today: "Today",
     tomorrow: "Tomorrow",
     otherDate: "Other date",
+    menu: {
+      helpAndSupport: "Help and Support",
+      contact: "Contact",
+      legal: "Legal"
+    },
+    content: {
+      helpText: "This is the help and support information. Please find relevant articles and FAQs here.",
+      contactText: "For inquiries, please reach out to us via our contact channels listed here.",
+      legalText: "Please find our terms of service, privacy policy, and other legal information here.",
+      defaultTitle: "Information",
+      defaultText: "No content available for this topic yet."
+    },
     warnings: {
       earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
       lateEnd: "Warning: Later Departure than recommended ending time of activity!",
@@ -122,7 +134,9 @@ export default {
       searchButton: "Search for connections",
       backButton: "Go back to search form",
       previousMonthButton: "Previous month",
-      nextMonthButton: "Next month"
+      nextMonthButton: "Next month",
+      menuButton: "Open menu",
+      closeButton: "Close"
     },
     waiting: {
       beforeActivity: "Waiting for activity to start",
@@ -172,6 +186,18 @@ export default {
     today: "Heute",
     tomorrow: "Morgen",
     otherDate: "Anderes Datum",
+    menu: {
+      helpAndSupport: "Hilfe und Support",
+      contact: "Kontakt",
+      legal: "Rechtliches"
+    },
+    content: {
+      helpText: "Das sind die Hilfe- und Supportinformationen. Hier finden Sie relevante Artikel und FAQs.",
+      contactText: "Für Anfragen erreichen Sie uns über die hier aufgeführten Kontaktkanäle.",
+      legalText: "Hier finden Sie unsere Nutzungsbedingungen, Datenschutzrichtlinien und andere rechtliche Informationen.",
+      defaultTitle: "Information",
+      defaultText: "Für dieses Thema ist noch kein Inhalt verfügbar."
+    },
     warnings: {
       earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
       lateEnd: "Warnung: Spätere Abfahrt als empfohlene Endzeit!",
@@ -252,7 +278,9 @@ export default {
       searchButton: "Verbindungen suchen",
       backButton: "Zurück zum Suchformular",
       previousMonthButton: "Vorheriger Monat",
-      nextMonthButton: "Nächster Monat"
+      nextMonthButton: "Nächster Monat",
+      menuButton: "Menü öffnen",
+      closeButton: "Schließen"
     },
     waiting: {
       beforeActivity: "Warten auf den Beginn der Aktivität",
