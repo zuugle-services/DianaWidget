@@ -4,6 +4,7 @@ on:
   release:
     types: [created]
   workflow_dispatch:
+
 jobs:
   deploy:
     name: 🎉 Deploy to Pseudo-CDN
@@ -21,6 +22,9 @@ jobs:
     - name: 📦 Install dependencies
       run: npm ci
 
+    - name: 🧪 Run tests
+      run: npm test
+
     - name: 🔨 Build production bundle
       run: npm run build
 
@@ -34,7 +38,7 @@ jobs:
       run: |
         cp ./dist/DianaWidget.bundle.js "./dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js"
 
-    - name: 📤 Deploy main to Server
+    - name: 📤 Deploy main bundle to Server
       uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
         username: ${{ secrets.FTP_USERNAME }}
@@ -45,7 +49,7 @@ jobs:
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 📤 Deploy version to Server
+    - name: 📤 Deploy versioned bundle to Server
       uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
         username: ${{ secrets.FTP_USERNAME }}
@@ -66,3 +70,9 @@ jobs:
         remote_path: './'
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
+
+    - name: 💾 Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: diana-widget-dist # Name of the artifact
+        path: ./dist/
