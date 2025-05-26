@@ -1905,13 +1905,13 @@ export default class DianaWidget {
 
         this.elements.dateBtnToday?.addEventListener('click', () => {
             const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
-            const today = new Date(Date.UTC(today_object.year, today_object.month - 1, today_object.day));
+            const today = new Date(today_object.year, today_object.month - 1, today_object.day);
             this.onDateSelectedByButton(today);
         });
 
         this.elements.dateBtnTomorrow?.addEventListener('click', () => {
             const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toObject();
-            const tomorrow = new Date(Date.UTC(tomorrow_object.year, tomorrow_object.month - 1, tomorrow_object.day));
+            const tomorrow = new Date(tomorrow_object.year, tomorrow_object.month - 1, tomorrow_object.day);
             this.onDateSelectedByButton(tomorrow);
         });
 
