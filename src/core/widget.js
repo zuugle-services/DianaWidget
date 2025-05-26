@@ -189,6 +189,7 @@ export default class DianaWidget {
       this.pageManager = null;
       this.uiManager = null;
 
+      this.debouncedHandleAddressInput = debounce((query) => this.handleAddressInput(query), 700);
 
       this.injectBaseStyles();
       this.initDOM().then(() => {
@@ -633,7 +634,7 @@ export default class DianaWidget {
         this.elements.originInput.addEventListener('input', (e) => {
           this.elements.originInput.removeAttribute("data-lat"); this.elements.originInput.removeAttribute("data-lon");
           this.clearMessages();
-          debounce(() => this.handleAddressInput(e.target.value.trim()), 1000)();
+          this.debouncedHandleAddressInput(e.target.value.trim());
 
           if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
             if (e.target.value.trim()) {
