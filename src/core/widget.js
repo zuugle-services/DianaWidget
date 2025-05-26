@@ -632,7 +632,8 @@ export default class DianaWidget {
     if (!this.config.overrideUserStartLocation && this.elements.originInput) {
         this.elements.originInput.addEventListener('input', (e) => {
           this.elements.originInput.removeAttribute("data-lat"); this.elements.originInput.removeAttribute("data-lon");
-          this.clearMessages(); debounce(() => this.handleAddressInput(e.target.value.trim()), 300)();
+          this.clearMessages();
+          debounce(() => this.handleAddressInput(e.target.value.trim()), 1000)();
 
           if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
             if (e.target.value.trim()) {
@@ -1346,7 +1347,6 @@ export default class DianaWidget {
       if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
           const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
           const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : this.state.selectedDate;
-          console.log("activityEndDate:", activityEndDate);
 
           const activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', { zone: this.config.timezone })
                                           .set({ year: activityEndDate.getFullYear(), month: activityEndDate.getMonth() + 1, day: activityEndDate.getDate() });
