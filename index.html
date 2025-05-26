@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adventure Planner: Eishöhle & Rax Hike</title>
+    <title>Adventure Planner: Eishöhle, Rax Hike & Bangkok Aquarium</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f3f4f6;
-            color: #1f2937;
-            transition: background-color 0.3s ease; /* Smooth background transition */
+            background-color: #f3f4f6; /* Light gray background */
+            color: #1f2937; /* Dark gray text */
+            transition: background-color 0.3s ease;
         }
         #dianaWidgetContainer {
             background-color: #ffffff;
-            border-radius: 0.75rem;
+            border-radius: 0.75rem; /* 12px */
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
             overflow: hidden;
             transition: box-shadow 0.3s ease-in-out;
-            max-height: 620px !important;
+            max-height: 620px !important; /* Fixed height for the widget container */
         }
         #dianaWidgetContainer:hover {
              box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
@@ -38,7 +38,7 @@
             display: block; /* Shown when active */
         }
         .nav-button {
-            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.3s ease, color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
         }
         .nav-button.active {
             background-color: #4f46e5; /* Indigo for active tab */
@@ -50,11 +50,17 @@
             background-color: #6366f1; /* Lighter indigo on hover */
             color: white;
         }
+        /* Header gradient for Eishöhle */
         .header-gradient-eishoehle {
              background-image: linear-gradient(to right, #3b82f6, #60a5fa); /* Blue gradient */
         }
+        /* Header gradient for Rax Hike */
         .header-gradient-rax {
             background-image: linear-gradient(to right, #10b981, #34d399); /* Green gradient */
+        }
+        /* Header gradient for Bangkok Aquarium */
+        .header-gradient-bangkok {
+            background-image: linear-gradient(to right, #f97316, #fb923c); /* Orange/Amber gradient for Thailand */
         }
     </style>
 </head>
@@ -69,12 +75,15 @@
 
     <div class="container mx-auto p-4 md:p-8 max-w-7xl mt-8">
 
-        <div class="mb-8 flex justify-center space-x-2 sm:space-x-4 bg-white p-3 rounded-xl shadow-md">
+        <div class="mb-8 flex flex-wrap justify-center gap-2 sm:gap-4 bg-white p-3 rounded-xl shadow-md">
             <button id="navEishoehle" class="nav-button active px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('eishoehle')">
                 Eishöhle Adventure
             </button>
             <button id="navRax" class="nav-button px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('rax')">
                 Rax 2-Day Hike
+            </button>
+            <button id="navBangkokaquarium" class="nav-button px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('bangkokaquarium')">
+                Bangkok Aquarium �🇭
             </button>
         </div>
 
@@ -97,8 +106,7 @@
                             Accessing the ice cave is an adventure in itself, typically involving a scenic hike. Our travel planner helps you find the best public transport connections to the starting points of the trails leading to this icy marvel. Prepare for a cool experience, both literally and figuratively!
                         </p>
                     </section>
-
-                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Cave Highlights</h3>
                         <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
                             <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
@@ -119,8 +127,7 @@
                             </li>
                         </ul>
                     </section>
-
-                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear</h3>
                         <ul class="list-disc list-inside space-y-2 text-gray-700">
                             <li>Warm, layered clothing (temperature inside is near freezing)</li>
@@ -132,8 +139,7 @@
                             <li>Camera to capture the icy beauty!</li>
                         </ul>
                     </section>
-
-                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Gallery</h3>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             <img src="https://placehold.co/300x200/81e6d9/ffffff?text=Ice+Formations" alt="Ice formations inside the cave" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
@@ -159,8 +165,7 @@
                             Our planned route takes you through some of the most scenic parts of the Rax, with an overnight stay at a traditional Austrian "Hütte". Wake up to crisp mountain air and unparalleled views before continuing your journey. This trip is designed to be a memorable escape into nature.
                         </p>
                     </section>
-
-                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Rax Hike Highlights</h3>
                         <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
                             <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
@@ -181,8 +186,7 @@
                             </li>
                         </ul>
                     </section>
-
-                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear for 2-Day Hike</h3>
                         <ul class="list-disc list-inside space-y-2 text-gray-700">
                             <li>Backpack (30-40 liters)</li>
@@ -199,13 +203,67 @@
                             <li>Toiletries and personal medication</li>
                         </ul>
                     </section>
-
-                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Gallery</h3>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             <img src="https://placehold.co/300x200/6ee7b7/ffffff?text=Rax+Trail" alt="Hiking trail on the Rax" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
                             <img src="https://placehold.co/300x200/38bdf8/ffffff?text=Mountain+Hut" alt="Typical mountain hut in the Alps" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
                             <img src="https://placehold.co/300x200/fbbf24/ffffff?text=Rax+Viewpoint" alt="Viewpoint on the Rax" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                        </div>
+                    </section>
+                </div>
+
+                <div id="contentBangkokaquarium" class="activity-content">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
+                        <h2 class="text-2xl font-semibold mb-4 text-orange-600 border-b border-orange-200 pb-2">Dive into Bangkok's Ocean World Aquarium! 🇹🇭</h2>
+                        <img
+                            src="https://placehold.co/800x450/f97316/ffffff?text=Bangkok+Ocean+World"
+                            alt="SEA LIFE Bangkok Ocean World main exhibit"
+                            class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
+                            onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
+                        >
+                        <p class="mb-4 text-gray-700 leading-relaxed">
+                            Discover an amazing underwater world right in the heart of Bangkok at SEA LIFE Bangkok Ocean World, one of Southeast Asia's largest aquariums. Located beneath the Siam Paragon mall, it offers an incredible journey through diverse marine habitats.
+                        </p>
+                        <p class="text-gray-700 leading-relaxed">
+                            Prepare to be mesmerized by thousands of aquatic creatures, from majestic sharks and graceful rays to playful penguins and colorful reef fish. It's a perfect one-day escape for families, couples, and marine enthusiasts!
+                        </p>
+                    </section>
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
+                        <h3 class="text-xl font-semibold mb-4 text-orange-600">Aquarium Highlights</h3>
+                        <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
+                            <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1120.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5" /></svg>
+                                <span>Giant Ocean Tunnel Walk</span>
+                            </li>
+                            <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg> <span>Shark Shipwreck Zone</span>
+                            </li>
+                             <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg> <span>Penguin Ice Adventure</span>
+                            </li>
+                            <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
+                                <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" /></svg>
+                                <span>Tropical Rainforest & Otter Zone</span>
+                            </li>
+                        </ul>
+                    </section>
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
+                        <h3 class="text-xl font-semibold mb-4 text-orange-600">Tips for Your Visit</h3>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li>Book tickets online in advance to save time and potentially money.</li>
+                            <li>Allow at least 2-3 hours to explore fully.</li>
+                            <li>Check feeding schedules for special animal encounters.</li>
+                            <li>Easily accessible via BTS Skytrain (Siam Station).</li>
+                            <li>Wear comfortable shoes for walking.</li>
+                        </ul>
+                    </section>
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
+                        <h3 class="text-xl font-semibold mb-4 text-orange-600">Gallery</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <img src="https://placehold.co/300x200/fb923c/ffffff?text=Aquatic+Life+TH" alt="Colorful fish" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                            <img src="https://placehold.co/300x200/f87171/ffffff?text=Shark+Encounter+TH" alt="Shark exhibit" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
+                            <img src="https://placehold.co/300x200/34d399/ffffff?text=Penguins+TH" alt="Penguins at the aquarium" class="rounded-lg shadow-sm gallery-img" onerror="this.onerror=null; this.src='https://placehold.co/300x200/cccccc/ffffff?text=Img';">
                         </div>
                     </section>
                 </div>
@@ -215,21 +273,19 @@
                 <div class="sticky top-8">
                     <h2 id="widgetTitle" class="text-2xl font-semibold mb-4 text-center lg:text-left text-gray-800">Travel Planner</h2>
                     <div id="dianaWidgetContainer">
-                    </div>
+                        </div>
                 </div>
             </div>
-
         </div>
 
         <footer class="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
             <p class="mt-1">Travel planning widget powered by Zuugle Services GmbH.</p>
         </footer>
-
     </div>
 
     <script src="./dist/DianaWidget.bundle.js"></script>
     <script>
-        // DianaWidget Configurations
+        // DianaWidget Configurations for different activities
         const dianaConfigs = {
             eishoehle: {
                 activityName: "Marktschellenberger Eishöhle im Untersberg",
@@ -244,8 +300,8 @@
                 activityLatestStartTime: "14:00:00",
                 activityEarliestEndTime: "10:00:00",
                 activityLatestEndTime: "20:00:00",
-                activityDurationMinutes: "180", // Duration of the cave tour itself, hike is separate
-                multiday: false, // Eishöhle is a single day activity
+                activityDurationMinutes: "180",
+                multiday: false,
                 activityStartTimeLabel: "Beginn Tour",
                 activityEndTimeLabel: "Ende Tour",
                 timezone: "Europe/Berlin",
@@ -262,16 +318,39 @@
                 activityEndLocation: "47.71568304486876, 15.80409680698376",
                 activityEndLocationDisplayName: "Raxseilbahn Talstation",
                 activityEndLocationType: "coordinates",
-                activityEarliestStartTime: "08:00:00", // Earliest start time Day 1
-                activityLatestStartTime: "14:00:00",   // Latest start time Day 1
-                activityEarliestEndTime: "12:00:00",   // Earliest end time Day 2
-                activityLatestEndTime: "20:00:00",     // Latest end time Day 2
+                activityEarliestStartTime: "08:00:00",
+                activityLatestStartTime: "14:00:00",
+                activityEarliestEndTime: "12:00:00",
+                activityLatestEndTime: "20:00:00",
                 multiday: true,
-                activityDurationDaysFixed: 2, // Specify it's a 2-day activity
+                activityDurationDaysFixed: 2,
                 activityStartTimeLabel: "Beginn",
                 activityEndTimeLabel: "Ende",
                 timezone: "Europe/Vienna",
                 language: "DE",
+                // apiBaseUrl: "http://localhost:8000/",
+                // apiToken: "test_token"
+            },
+            bangkokaquarium: { // New configuration for Bangkok Aquarium
+                activityName: "Bangkok Ocean World Aquarium Visit",
+                activityType: "Sightseeing",
+                activityStartLocation: "13.745992033139308, 100.53521240209615",
+                activityStartLocationDisplayName: "SEA LIFE Bangkok Ocean World",
+                activityStartLocationType: "coordinates",
+                activityEndLocation: "13.745992033139308, 100.53521240209615",
+                activityEndLocationDisplayName: "SEA LIFE Bangkok Ocean World",
+                activityEndLocationType: "coordinates",
+                activityEarliestStartTime: "10:00:00",
+                activityLatestStartTime: "19:00:00",
+                activityEarliestEndTime: "12:00:00",
+                activityLatestEndTime: "21:00:00",
+                activityDurationMinutes: "180",
+                multiday: false,
+                activityStartTimeLabel: "Aquarium Entry",
+                activityEndTimeLabel: "Aquarium Exit",
+                timezone: "Asia/Bangkok",
+                language: "EN",
+                apiBaseUrl: "https://thailand.zuugle-services.net", // Specific API base URL for this activity
                 // apiBaseUrl: "http://localhost:8000/",
                 // apiToken: "test_token"
             }
@@ -289,16 +368,31 @@
             document.querySelectorAll('.nav-button').forEach(button => {
                 button.classList.remove('active');
                 button.classList.remove('bg-indigo-600', 'text-white'); // Ensure active styles are removed
-                 button.classList.add('text-gray-700', 'hover:bg-indigo-100');
+                button.classList.add('text-gray-700', 'hover:bg-indigo-100');
             });
 
             // Show selected content
-            document.getElementById('content' + activityKey.charAt(0).toUpperCase() + activityKey.slice(1)).classList.add('active');
+            // Ensure activityKey is used to form IDs consistently (e.g. 'contentEishoehle', 'contentRax', 'contentBangkokaquarium')
+            const contentId = 'content' + activityKey.charAt(0).toUpperCase() + activityKey.slice(1);
+            const contentElement = document.getElementById(contentId);
+            if (contentElement) {
+                contentElement.classList.add('active');
+            } else {
+                console.error('Content element not found for ID:', contentId);
+            }
+
+
             // Activate selected nav button
-            const activeButton = document.getElementById('nav' + activityKey.charAt(0).toUpperCase() + activityKey.slice(1));
-            activeButton.classList.add('active');
-            activeButton.classList.add('bg-indigo-600', 'text-white');
-            activeButton.classList.remove('text-gray-700', 'hover:bg-indigo-100');
+            // Ensure activityKey is used to form IDs consistently
+            const activeButtonId = 'nav' + activityKey.charAt(0).toUpperCase() + activityKey.slice(1);
+            const activeButton = document.getElementById(activeButtonId);
+            if (activeButton) {
+                activeButton.classList.add('active');
+                activeButton.classList.add('bg-indigo-600', 'text-white');
+                activeButton.classList.remove('text-gray-700', 'hover:bg-indigo-100');
+            } else {
+                 console.error('Active button not found for ID:', activeButtonId);
+            }
 
 
             // Update page header based on activity
@@ -307,39 +401,64 @@
             const pageSubtitle = document.getElementById('pageSubtitle');
             const widgetTitleElement = document.getElementById('widgetTitle');
 
+            // Remove all potential gradient classes first
+            pageHeader.classList.remove('header-gradient-eishoehle', 'header-gradient-rax', 'header-gradient-bangkok');
 
             if (activityKey === 'eishoehle') {
-                pageHeader.classList.remove('header-gradient-rax');
                 pageHeader.classList.add('header-gradient-eishoehle');
                 pageTitle.textContent = 'Explore the Marktschellenberger Eishöhle!';
                 pageSubtitle.textContent = 'Plan your journey to the fascinating ice cave in Untersberg.';
                 widgetTitleElement.textContent = 'Eishöhle Travel Planner';
             } else if (activityKey === 'rax') {
-                pageHeader.classList.remove('header-gradient-eishoehle');
                 pageHeader.classList.add('header-gradient-rax');
                 pageTitle.textContent = 'Conquer the Rax: 2-Day Alpine Adventure!';
                 pageSubtitle.textContent = 'Plan your multi-day hike with an overnight hut stay.';
                 widgetTitleElement.textContent = 'Rax Hike Planner';
+            } else if (activityKey === 'bangkokaquarium') { // New case for Bangkok Aquarium
+                pageHeader.classList.add('header-gradient-bangkok');
+                pageTitle.textContent = 'Discover Bangkok Ocean World! 🇹🇭';
+                pageSubtitle.textContent = 'Plan your visit to this amazing underwater attraction in Thailand.';
+                widgetTitleElement.textContent = 'Bangkok Aquarium Planner';
             }
-
 
             // Clear previous widget instance if it exists
             const widgetContainer = document.getElementById('dianaWidgetContainer');
             widgetContainer.innerHTML = ''; // Clear out previous widget
 
             // Initialize new DianaWidget with the selected config
-            if (window.DianaWidget) {
+            if (window.DianaWidget && dianaConfigs[activityKey]) {
                 currentWidgetInstance = new window.DianaWidget(dianaConfigs[activityKey], "dianaWidgetContainer");
-                window.currentWidgetInstance = currentWidgetInstance;
+                window.currentWidgetInstance = currentWidgetInstance; // Optional: make it globally accessible for debugging
             } else {
-                console.error("DianaWidget is not loaded.");
-                widgetContainer.innerHTML = "<p class='p-4 text-red-500'>Error: DianaWidget could not be loaded. Please check the script include.</p>";
+                console.error("DianaWidget is not loaded or config missing for:", activityKey);
+                widgetContainer.innerHTML = "<p class='p-4 text-red-500'>Error: DianaWidget could not be loaded. Please check the script or configuration.</p>";
             }
         }
 
-        // Initialize with the default activity (Eishöhle)
+        // Initialize based on hash or default to 'eishoehle'
         window.onload = function() {
-            showActivity('eishoehle'); // Show Eishöhle by default
+            let initialActivity = 'eishoehle'; // Default activity
+            if (window.location.hash) {
+                // Remove '#' and convert to lowercase for case-insensitive matching with dianaConfigs keys
+                const hashActivity = window.location.hash.substring(1).toLowerCase();
+                if (dianaConfigs[hashActivity]) { // Check if the lowercase hash matches a key in dianaConfigs
+                    initialActivity = hashActivity;
+                }
+            }
+            showActivity(initialActivity);
+
+            // Add event listeners to nav buttons to update hash
+            document.querySelectorAll('.nav-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.id === 'navBangkokaquarium') {
+                         window.location.hash = 'bangkokaquarium';
+                    } else if (this.id === 'navEishoehle') {
+                         window.location.hash = 'eishoehle';
+                    } else if (this.id === 'navRax') {
+                         window.location.hash = 'rax';
+                    }
+                });
+            });
         };
     </script>
 

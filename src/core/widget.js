@@ -1346,6 +1346,7 @@ export default class DianaWidget {
       if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
           const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
           const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : this.state.selectedDate;
+          console.log("activityEndDate:", activityEndDate);
 
           const activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', { zone: this.config.timezone })
                                           .set({ year: activityEndDate.getFullYear(), month: activityEndDate.getMonth() + 1, day: activityEndDate.getDate() });
@@ -1852,12 +1853,14 @@ export default class DianaWidget {
         }
 
         this.elements.dateBtnToday?.addEventListener('click', () => {
-            const today = DateTime.now().setZone(this.config.timezone).startOf('day').toJSDate();
+            const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
+            const today = new Date(Date.UTC(today_object.year, today_object.month - 1, today_object.day));
             this.onDateSelectedByButton(today);
         });
 
         this.elements.dateBtnTomorrow?.addEventListener('click', () => {
-            const tomorrow = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toJSDate();
+            const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toObject();
+            const tomorrow = new Date(Date.UTC(tomorrow_object.year, tomorrow_object.month - 1, tomorrow_object.day));
             this.onDateSelectedByButton(tomorrow);
         });
 
@@ -1926,9 +1929,12 @@ export default class DianaWidget {
         return; // Not applicable for multiday or if elements are missing
     }
 
-    const today = DateTime.now().setZone(this.config.timezone).startOf('day').toJSDate();
-    const tomorrow = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toJSDate();
-    const selected = this.state.selectedDate ? DateTime.fromJSDate(this.state.selectedDate).setZone(this.config.timezone).startOf('day').toJSDate() : null;
+    const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
+    const today = new Date(today_object["year"], today_object["month"]-1, today_object["day"]);
+    const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({ days: 1 }).startOf('day').toObject();
+    const tomorrow = new Date(tomorrow_object["year"], tomorrow_object["month"]-1, tomorrow_object["day"]);
+    const selected_object = this.state.selectedDate ? DateTime.fromJSDate(this.state.selectedDate).setZone(this.config.timezone).startOf('day').toObject() : null;
+    const selected = selected_object ? new Date(selected_object["year"], selected_object["month"]-1, selected_object["day"]) : null;
 
     this.elements.dateBtnToday.classList.remove('active');
     this.elements.dateBtnTomorrow.classList.remove('active');
