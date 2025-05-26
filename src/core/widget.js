@@ -961,8 +961,9 @@ export default class DianaWidget {
 
   async fetchSuggestions(query) {
     try {
+      const fetch_lang = navigator.language.split("-")[0]
       const response = await fetch(
-          `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}`,
+          `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}&lang=${fetch_lang}`,
           { headers: { "Authorization": `Bearer ${this.config.apiToken}` } }
       );
       if (!response.ok) {
