@@ -840,6 +840,55 @@ export default class DianaWidget {
     if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
   }
 
+  handleSuggestionNavigation(e) {
+    if (!this.elements.suggestionsContainer || this.state.suggestions.length === 0) return;
+    e.preventDefault(); // Prevent cursor movement in input
+
+    const items = Array.from(this.elements.suggestionsContainer.querySelectorAll('.suggestion-item'));
+    if (items.length === 0) return;
+
+    let currentIndex = items.findIndex(item => item.classList.contains('active-suggestion'));
+
+    items.forEach(item => item.classList.remove('active-suggestion'));
+
+    if (e.key === 'ArrowDown') {
+      currentIndex = (currentIndex + 1) % items.length;
+    } else if (e.key === 'ArrowUp') {
+      currentIndex = (currentIndex - 1 + items.length) % items.length;
+    }
+
+    if (currentIndex >= 0 && currentIndex < items.length) {
+      items[currentIndex].classList.add('active-suggestion');
+      items[currentIndex].focus(); // Make it focusable for screen readers and further interaction
+      // Scroll into view if necessary
+      items[currentIndex].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      this.elements.originInput.setAttribute('aria-activedescendant', items[currentIndex].id || `suggestion-item-${currentIndex}`); // Assuming items have IDs
+    }
+  }
+
+  handleSuggestionEnter(e) {
+    if (!this.elements.suggestionsContainer || this.state.suggestions.length === 0) return;
+
+    const activeItem = this.elements.suggestionsContainer.querySelector('.suggestion-item.active-suggestion');
+    if (activeItem) {
+      e.preventDefault(); // Prevent form submission if input is in a form
+      this.handleSuggestionSelect(activeItem.dataset.value, activeItem.dataset.lat, activeItem.dataset.lon);
+    } else if (this.state.suggestions.length > 0 && this.elements.originInput.value.trim().length >= 2) {
+      // If no specific item is active but there are suggestions and input has text,
+      // potentially select the first one or trigger search directly.
+      // For now, let's assume if Enter is pressed without an active suggestion,
+      // the user might intend to search with the current text if it's valid.
+      // Or, if the first suggestion is implicitly selected, uncomment the following:
+      // const firstItem = this.elements.suggestionsContainer.querySelector('.suggestion-item');
+      // if (firstItem) {
+      //   this.handleSuggestionSelect(firstItem.dataset.value, firstItem.dataset.lat, firstItem.dataset.lon);
+      // }
+      // If the intention is to proceed with search if enter is hit:
+      // this.handleSearch(); // Be cautious with this, as it might not always be the desired UX.
+    }
+    // If no active item and no clear "next step", the default browser behavior for Enter on an input might occur (e.g., form submission).
+  }
+
   async handleSearch() {
     if (this.loadingTextTimeout1) clearTimeout(this.loadingTextTimeout1); if (this.loadingTextTimeout2) clearTimeout(this.loadingTextTimeout2);
     this.loadingTextTimeout1 = null; this.loadingTextTimeout2 = null; this.clearMessages();
