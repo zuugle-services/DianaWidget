@@ -24,10 +24,11 @@ export function calculateInitialStartDate(timezone, activityLatestEndTime, activ
         });
 
         if (now > thresholdTime) {
-            initialDate = now.plus({ days: 1 }).toJSDate(); // Activity likely not feasible today, suggest tomorrow
+            initialDate = now.plus({ days: 1 }).startOf('day').toObject();
         } else {
-            initialDate = now.toJSDate(); // Activity might be feasible today
+            initialDate = now.startOf('day').toObject();
         }
+        initialDate = new Date(initialDate["year"], initialDate["month"]-1, initialDate["day"]);
     } catch (error) {
         console.error("Error calculating initial start date, defaulting to today:", error);
         initialDate = new Date(); // Fallback to current date
