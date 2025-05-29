@@ -77,7 +77,56 @@ To use the DianaWidget, you need to obtain API credentials which are used to aut
 * **Protect Your Secret**: The `Client Secret` is sensitive. To protect it, you must **not** embed it directly into the widget's JavaScript or any client-side code.
 * **Backend Logic**: Your website's backend (server-side code, e.g., PHP, Node.js, Python) is responsible for using the `Client ID` and `Client Secret` to request an **Access Token** from the Zuugle Services OAuth 2.0 endpoint.
   * This is typically done using the "Client Credentials" grant type.
-  * We provide a sample PHP script (`php_oauth_script.php` or similar) demonstrating how to perform this server-side token request.
+
+Here's an example of how you might fetch the access token using PHP. This assumes you have a file named `oauth2_functions.php` (containing the `getDianaAccessToken` function) and a `client_id_secret.php` file (defining `CLIENT_ID` and `CLIENT_SECRET`).
+
+```php
+<?php
+// Ensure you have error reporting for debugging, remove for production
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
+
+// Include the necessary files
+// oauth2_functions.php should contain the getDianaAccessToken function
+require_once 'oauth2_functions.php';
+// client_id_secret.php should define CLIENT_ID and CLIENT_SECRET constants
+require_once 'client_id_secret.php';
+
+// Define the token URL (can be overridden if necessary)
+$tokenUrl = "https://api.zuugle-services.net/o/token/";
+
+// Call the function to get the token data
+$tokenData = getDianaAccessToken(CLIENT_ID, CLIENT_SECRET, $tokenUrl);
+
+if ($tokenData && isset($tokenData['access_token'])) {
+    $accessToken = $tokenData['access_token'];
+    // Now you have the access token.
+    // You would typically pass this token to your frontend/JavaScript.
+    // For example, if you're rendering an HTML page with PHP:
+    // echo "<script>window.dianaActivityConfig.apiToken = '" . htmlspecialchars($accessToken) . "';</script>";
+    // Or, if serving an HTML file, you might replace a placeholder.
+
+    // For demonstration, let's just print it (DO NOT do this in production directly on a page)
+    // echo "Access Token: " . htmlspecialchars($accessToken);
+
+} else {
+    // Handle the error: token was not obtained
+    error_log("Failed to obtain Diana Access Token.");
+    // Inform the user or take appropriate action
+    // echo "Error: Could not retrieve access token.";
+}
+
+?>
+```
+**Important Security Note:** The `client_id_secret.php` file should define your `CLIENT_ID` and `CLIENT_SECRET` like this and be kept secure on your server:
+```php
+<?php
+// client_id_secret.php
+define("CLIENT_ID", "YOUR_ACTUAL_CLIENT_ID");
+define("CLIENT_SECRET", "YOUR_ACTUAL_CLIENT_SECRET");
+?>
+```
+Ensure this file is not publicly accessible via the web.
 
 ### 3. Configure the Widget with the Access Token
 
@@ -87,7 +136,8 @@ To use the DianaWidget, you need to obtain API credentials which are used to aut
 ```html
 <script>
 // This accessToken is securely fetched by your server and then passed to the client.
-const accessTokenFromServer = "YOUR_SERVER_GENERATED_ACCESS_TOKEN";
+// For example, if using PHP to embed it:
+const accessTokenFromServer = "<?php echo htmlspecialchars($php_generated_access_token); ?>";
 
 window.dianaActivityConfig = {
   activityName: "Skiing in Alps",

@@ -16,11 +16,11 @@
  * @param string $clientId The Client ID provided by Zuugle Services.
  * @param string $clientSecret The Client Secret provided by Zuugle Services.
  * @param string $tokenUrl The full URL to the OAuth token endpoint.
- * (e.g., 'https://api.zuugle-services.net/oauth/token')
+ * (e.g., 'https://api.zuugle-services.net/o/token/')
  * @return array|null An associative array containing the access token response (e.g., ['access_token' => '...', 'token_type' => 'Bearer', 'expires_in' => 3600])
  * or null if an error occurred.
  */
-function getDianaAccessToken(string $clientId, string $clientSecret, string $tokenUrl = "https://api.zuugle-services.net/oauth/token"): ?array
+function getDianaAccessToken(string $clientId, string $clientSecret, string $tokenUrl = "https://api.zuugle-services.net/o/token/"): ?array
 {
     // Check if cURL extension is loaded
     if (!extension_loaded('curl')) {
