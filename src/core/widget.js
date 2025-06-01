@@ -1244,8 +1244,21 @@ export default class DianaWidget {
                               ? this.state.selectedEndDate
                               : activityStartDate;
 
-      const connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
-      const connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
+      let connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
+      let connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
+
+      const durationFirstLegStr = calculateTimeDifference(connection.connection_elements[0].departure_time, connection.connection_elements[0].arrival_time, (key) => this.t(key));
+      const durationFirstLegMinutes = parseDurationToMinutes(durationFirstLegStr, (key) => this.t(key));
+
+      const durationLastLegStr = calculateTimeDifference(connection.connection_elements[connection.connection_elements.length - 1].departure_time, connection.connection_elements[connection.connection_elements.length - 1].arrival_time, (key) => this.t(key));
+      const durationLastLegMinutes = parseDurationToMinutes(durationLastLegStr, (key) => this.t(key));
+
+      if (type === 'from' && durationFirstLegMinutes <= 1 && connection.connection_elements[0].type === "WALK") {
+        connectionStartTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_start_timestamp, durationFirstLegMinutes), this.config.timezone);
+      }
+      if (type === 'to' && durationLastLegMinutes <= 1 && connection.connection_elements[connection.connection_elements.length - 1].type === "WALK") {
+        connectionEndTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_end_timestamp, -durationLastLegMinutes), this.config.timezone);
+      }
 
       let calculatedActivityStartLocal, calculatedActivityEndLocal;
 
@@ -1261,8 +1274,6 @@ export default class DianaWidget {
         this.state.activityTimes.end = calculatedActivityEndLocal;
       }
 
-
-      let dateRangeDisplayHtml = '';
       let durationDisplayHtml = '';
       let warningDuration = false;
 
@@ -1272,11 +1283,6 @@ export default class DianaWidget {
       if (isMultiDayDisplay) {
         const formattedStartDate = formatFullDateForDisplay(activityStartDate, this.config.language);
         const formattedEndDate = formatFullDateForDisplay(activityEndDate, this.config.language);
-        dateRangeDisplayHtml = `
-          <div class="activity-time-row">
-            <span class="activity-time-label"><strong>${this.t('dateRangeLabel')}</strong></span>
-            <span class="activity-time-value">${formattedStartDate} - ${formattedEndDate}</span>
-          </div>`;
 
         const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
 
@@ -1323,7 +1329,6 @@ export default class DianaWidget {
             </a>
           </div>
           <div class="activity-time-meta">
-            ${isMultiDayDisplay ? dateRangeDisplayHtml : ''}
             <div class="activity-time-row">
               <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
               <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${isMultiDayDisplay ? `(${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)})` : ''}</span>
