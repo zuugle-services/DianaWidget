@@ -345,42 +345,49 @@ export class RangeCalendarModal {
         this.onRangeSelectCallback = onRangeSelectCallback;
         this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(activityDurationDaysFixed, 10) : null;
 
-        // Parse fixed dates as UTC
+        const convertToUTCMidnightJSDate = (jsDateInput, fallbackLuxonDtForDay) => {
+            if (jsDateInput && !isNaN(new Date(jsDateInput.valueOf()))) {
+                const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, { zone: this.config.timezone });
+                const isoDate = dtInWidgetZone.toISODate();
+                return DateTime.fromISO(isoDate, { zone: 'utc' }).toJSDate();
+            }
+            return fallbackLuxonDtForDay.startOf('day').toUTC().toJSDate();
+        };
+
         this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, { zone: 'utc' }).startOf('day').toJSDate() : null;
         if (this.fixedStartDate && isNaN(this.fixedStartDate.getTime())) this.fixedStartDate = null;
 
         this.fixedEndDate = overrideEndDateStr ? DateTime.fromISO(overrideEndDateStr, { zone: 'utc' }).startOf('day').toJSDate() : null;
         if (this.fixedEndDate && isNaN(this.fixedEndDate.getTime())) this.fixedEndDate = null;
 
-        const today = DateTime.now().setZone('utc').startOf('day').toJSDate(); // Work with UTC dates
+        const todayInWidgetZone = DateTime.now().setZone(this.config.timezone);
 
-        this.tempStartDate = this.fixedStartDate
-                             ? new Date(this.fixedStartDate.valueOf())
-                             : (initialStartDate && !isNaN(new Date(initialStartDate.valueOf()))
-                                ? DateTime.fromJSDate(initialStartDate).setZone('utc').startOf('day').toJSDate()
-                                : new Date(today.valueOf()));
-
-
-        this.tempEndDate = this.fixedEndDate
-                           ? new Date(this.fixedEndDate.valueOf())
-                           : (initialEndDate && !isNaN(new Date(initialEndDate.valueOf()))
-                              ? DateTime.fromJSDate(initialEndDate).setZone('utc').startOf('day').toJSDate()
-                              : new Date(this.tempStartDate.valueOf()));
-
-
-        if (this.activityDurationDaysFixed && !this.fixedStartDate && !this.fixedEndDate) {
-            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
+        if (this.fixedStartDate) {
+            this.tempStartDate = new Date(this.fixedStartDate.valueOf());
+        } else {
+            this.tempStartDate = convertToUTCMidnightJSDate(initialStartDate, todayInWidgetZone);
         }
 
+        if (this.fixedEndDate) {
+            this.tempEndDate = new Date(this.fixedEndDate.valueOf());
+        } else if (this.activityDurationDaysFixed && this.tempStartDate) {
+            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, { zone: 'utc' })
+                               .plus({ days: this.activityDurationDaysFixed - 1 })
+                               .startOf('day') // Ensure it's start of day
+                               .toJSDate();
+        } else {
+            const fallbackEndDateBase = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, { zone: 'utc' }) : todayInWidgetZone;
+            this.tempEndDate = convertToUTCMidnightJSDate(initialEndDate, fallbackEndDateBase);
+        }
+
+        // Ensure tempEndDate is not before tempStartDate
         if (this.tempEndDate < this.tempStartDate) {
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
         if (this.fixedStartDate && this.fixedEndDate && this.fixedStartDate > this.fixedEndDate) {
-            // This case should ideally be caught by config validation, but handle defensively
-            this.fixedEndDate = null; // Or adjust one of them
+            this.fixedEndDate = null;
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
-
 
         this.currentViewMonth = this.tempStartDate.getUTCMonth();
         this.currentViewYear = this.tempStartDate.getUTCFullYear();
@@ -397,7 +404,6 @@ export class RangeCalendarModal {
         } else {
             this.selectingStartDate = true; // Default: selecting start date first
         }
-
 
         this.modalOverlay = null;
         this.modalElement = null;
@@ -460,31 +466,30 @@ export class RangeCalendarModal {
 
     _generateRangeDaysHTML(daysInMonth, firstDayOfMonthIndex, year, month) {
         let html = "";
-        const today = DateTime.now().setZone('utc').startOf('day').toJSDate(); // UTC today
+        const todayUTC = DateTime.now().setZone('utc').startOf('day').toJSDate();
 
         for (let i = 0; i < firstDayOfMonthIndex; i++) {
             html += "<div class='calendar-day empty'></div>";
         }
 
+        const normTempStartDate = this.tempStartDate;
+        const normTempEndDate = this.tempEndDate;
+        const normFixedStartDate = this.fixedStartDate;
+        const normFixedEndDate = this.fixedEndDate;
+
+
         for (let day = 1; day <= daysInMonth; day++) {
-            const currentDate = new Date(Date.UTC(year, month, day));
+            const currentDate = new Date(Date.UTC(year, month, day)); // This creates a UTC midnight JS Date
             let classes = "calendar-day";
 
-            // Normalize temp and fixed dates to UTC start of day for comparison
-            const normTempStartDate = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
-            const normTempEndDate = this.tempEndDate ? DateTime.fromJSDate(this.tempEndDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
-            const normFixedStartDate = this.fixedStartDate ? DateTime.fromJSDate(this.fixedStartDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
-            const normFixedEndDate = this.fixedEndDate ? DateTime.fromJSDate(this.fixedEndDate, {zone: 'utc'}).startOf('day').toJSDate() : null;
+            if (currentDate.getTime() === todayUTC.getTime()) classes += " today";
 
-
-            if (currentDate.getTime() === today.getTime()) classes += " today";
-
-            let isDisabled = currentDate < today; // Disable past dates by default
+            let isDisabled = currentDate < todayUTC; // Disable past dates by default
 
             // Apply fixed date styling and disabled state
             if (normFixedStartDate && currentDate.getTime() === normFixedStartDate.getTime()) {
                 classes += " fixed-date start-date selected";
-                isDisabled = true; // Fixed dates are not clickable for modification here
+                isDisabled = true;
             } else if (normFixedEndDate && currentDate.getTime() === normFixedEndDate.getTime()) {
                 classes += " fixed-date end-date selected";
                 isDisabled = true;
@@ -496,14 +501,11 @@ export class RangeCalendarModal {
             }
 
             // Additional disabling logic based on fixed dates
-            if (normFixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) { // Only start is fixed
+            if (normFixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
                 if (currentDate < normFixedStartDate) isDisabled = true;
-            } else if (normFixedEndDate && !this.fixedStartDate && !this.activityDurationDaysFixed) { // Only end is fixed
+            } else if (normFixedEndDate && !this.fixedStartDate && !this.activityDurationDaysFixed) {
                 if (currentDate > normFixedEndDate) isDisabled = true;
             }
-            // If activityDurationDaysFixed, and start is selected, disable days that would violate duration with fixed end (if any)
-            // This logic can get complex and might be better handled during click event.
-
 
             if(isDisabled) classes += " disabled";
 
@@ -627,28 +629,33 @@ export class RangeCalendarModal {
     }
 
     show(currentStartDate, currentEndDate) {
-        const today = DateTime.now().setZone('utc').startOf('day').toJSDate();
+        const convertToUTCMidnightJSDate = (jsDateInput, fallbackLuxonDtForDay) => {
+            if (jsDateInput && !isNaN(new Date(jsDateInput.valueOf()))) {
+                const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, { zone: this.config.timezone });
+                const isoDate = dtInWidgetZone.toISODate();
+                return DateTime.fromISO(isoDate, { zone: 'utc' }).toJSDate();
+            }
+            return fallbackLuxonDtForDay.startOf('day').toUTC().toJSDate();
+        };
 
-        // Initialize tempStartDate
+        const todayInWidgetZone = DateTime.now().setZone(this.config.timezone);
+
         if (this.fixedStartDate) {
             this.tempStartDate = new Date(this.fixedStartDate.valueOf());
-        } else if (currentStartDate && !isNaN(new Date(currentStartDate.valueOf()))) {
-            this.tempStartDate = DateTime.fromJSDate(currentStartDate).setZone('utc').startOf('day').toJSDate();
         } else {
-            this.tempStartDate = new Date(today.valueOf());
+            this.tempStartDate = convertToUTCMidnightJSDate(currentStartDate, todayInWidgetZone);
         }
 
-        // Initialize tempEndDate
         if (this.fixedEndDate) {
             this.tempEndDate = new Date(this.fixedEndDate.valueOf());
         } else if (this.activityDurationDaysFixed && this.tempStartDate) {
-             this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}).plus({ days: this.activityDurationDaysFixed - 1 }).toJSDate();
-        } else if (currentEndDate && !isNaN(new Date(currentEndDate.valueOf()))) {
-            this.tempEndDate = DateTime.fromJSDate(currentEndDate).setZone('utc').startOf('day').toJSDate();
-        } else { // Fallback for tempEndDate
-            this.tempEndDate = this.fixedStartDate
-                               ? DateTime.fromJSDate(this.fixedStartDate, {zone: 'utc'}).plus({ days: (this.activityDurationDaysFixed || 1) -1 }).toJSDate()
-                               : new Date(this.tempStartDate.valueOf()); // Default to same as start date
+            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, { zone: 'utc' })
+                               .plus({ days: this.activityDurationDaysFixed - 1 })
+                               .startOf('day')
+                               .toJSDate();
+        } else {
+            const fallbackEndDateBase = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, { zone: 'utc' }) : todayInWidgetZone;
+            this.tempEndDate = convertToUTCMidnightJSDate(currentEndDate, fallbackEndDateBase);
         }
 
         // Ensure tempEndDate is not before tempStartDate
@@ -656,36 +663,37 @@ export class RangeCalendarModal {
             this.tempEndDate = new Date(this.tempStartDate.valueOf());
         }
 
-        // Determine current view and selection mode based on fixed dates and duration
-        if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) { // Start fixed, select end
+        // Determine current view and selection mode (this logic should now be more reliable)
+        if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
             this.selectingStartDate = false;
             this.currentViewMonth = this.tempEndDate.getUTCMonth();
             this.currentViewYear = this.tempEndDate.getUTCFullYear();
-        } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) { // End fixed, select start
+        } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) {
             this.selectingStartDate = true;
             this.currentViewMonth = this.tempStartDate.getUTCMonth();
             this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        } else if (this.fixedStartDate && this.fixedEndDate) { // Both fixed
-            this.selectingStartDate = false; // No selection
+        } else if (this.fixedStartDate && this.fixedEndDate) {
+            this.selectingStartDate = false;
             this.currentViewMonth = this.fixedStartDate.getUTCMonth();
             this.currentViewYear = this.fixedStartDate.getUTCFullYear();
-        } else if (this.activityDurationDaysFixed) { // Duration fixed, select start (unless start is also fixed)
-            this.selectingStartDate = !this.fixedStartDate;
+        } else if (this.activityDurationDaysFixed) {
+            this.selectingStartDate = !this.fixedStartDate; // Only allow start date selection if start isn't fixed
             this.currentViewMonth = this.tempStartDate.getUTCMonth();
             this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        } else { // No fixed aspects, default to selecting start
+        } else {
             this.selectingStartDate = true;
             this.currentViewMonth = this.tempStartDate.getUTCMonth();
             this.currentViewYear = this.tempStartDate.getUTCFullYear();
         }
-
 
         this._renderCalendar();
         this.modalOverlay.style.display = 'flex';
     }
 
     hide() {
-        this.modalOverlay.style.display = 'none';
+        if (this.modalOverlay) {
+            this.modalOverlay.style.display = 'none';
+        }
     }
 }
 
