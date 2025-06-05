@@ -29,7 +29,6 @@ import { UIManager } from '../components/UIManager';
 import { SingleCalendar, RangeCalendarModal } from "../components/Calendar";
 
 import { helpContent } from '../templates/helpContent.js';
-import { contactContent } from '../templates/contactContent.js';
 import { legalContent } from '../templates/legalContent.js';
 
 export default class DianaWidget {
@@ -1685,7 +1684,7 @@ export default class DianaWidget {
     let contentHTML = '';
 
     // Get the current language, fallback to EN if not supported
-    const language = this.config.language && (helpContent[this.config.language] || contactContent[this.config.language] || legalContent[this.config.language]) 
+    const language = this.config.language && (helpContent[this.config.language] || legalContent[this.config.language])
       ? this.config.language 
       : 'EN';
 
@@ -1693,10 +1692,6 @@ export default class DianaWidget {
         case 'help':
             title = this.t('menu.helpAndSupport');
             contentHTML = helpContent[language];
-            break;
-        case 'contact':
-            title = this.t('menu.contact');
-            contentHTML = contactContent[language];
             break;
         case 'legal':
             title = this.t('menu.legal');

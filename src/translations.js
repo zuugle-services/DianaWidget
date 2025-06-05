@@ -43,16 +43,8 @@ export default {
     tomorrow: "Tomorrow",
     otherDate: "Other date",
     menu: {
-      helpAndSupport: "Help and Support",
-      contact: "Contact",
+      helpAndSupport: "Help",
       legal: "Legal"
-    },
-    content: {
-      helpText: "This is the help and support information. Please find relevant articles and FAQs here.",
-      contactText: "For inquiries, please reach out to us via our contact channels listed here.",
-      legalText: "Please find our terms of service, privacy policy, and other legal information here.",
-      defaultTitle: "Information",
-      defaultText: "No content available for this topic yet."
     },
     warnings: {
       earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
@@ -187,16 +179,8 @@ export default {
     tomorrow: "Morgen",
     otherDate: "Anderes Datum",
     menu: {
-      helpAndSupport: "Hilfe und Support",
-      contact: "Kontakt",
+      helpAndSupport: "Hilfe",
       legal: "Rechtliches"
-    },
-    content: {
-      helpText: "Das sind die Hilfe- und Supportinformationen. Hier finden Sie relevante Artikel und FAQs.",
-      contactText: "Für Anfragen erreichen Sie uns über die hier aufgeführten Kontaktkanäle.",
-      legalText: "Hier finden Sie unsere Nutzungsbedingungen, Datenschutzrichtlinien und andere rechtliche Informationen.",
-      defaultTitle: "Information",
-      defaultText: "Für dieses Thema ist noch kein Inhalt verfügbar."
     },
     warnings: {
       earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
@@ -331,16 +315,8 @@ export default {
     tomorrow: "Tomorrow",
     otherDate: "Other date",
     menu: {
-      helpAndSupport: "Help and Support",
-      contact: "Contact",
+      helpAndSupport: "Help",
       legal: "Legal"
-    },
-    content: {
-      helpText: "This is the help and support information. Please find relevant articles and FAQs here.",
-      contactText: "For inquiries, please reach out to us via our contact channels listed here.",
-      legalText: "Please find our terms of service, privacy policy, and other legal information here.",
-      defaultTitle: "Information",
-      defaultText: "No content available for this topic yet."
     },
     warnings: {
       earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",

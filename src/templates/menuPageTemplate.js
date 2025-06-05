@@ -19,7 +19,6 @@ export function getMenuPageTemplateHTML(args) {
         <div class="modal-body menu-body">
           <ul class="menu-list">
             <li class="menu-item" data-content-key="help">${t('menu.helpAndSupport')}</li>
-            <li class="menu-item" data-content-key="contact">${t('menu.contact')}</li>
             <li class="menu-item" data-content-key="legal">${t('menu.legal')}</li>
           </ul>
         </div>
