@@ -12,7 +12,6 @@ import {
     convertLocalTimeToUTCDatetime,
     convertUTCToLocalTime,
     formatDatetime,
-    formatFullDateForDisplay,
     formatLegDateForDisplay,
     getEarlierTime,
     getLaterTime,
@@ -178,6 +177,7 @@ export default class DianaWidget {
                     warning_duration: false,
                 },
                 currentContentKey: null,
+                isCleanView: false,
             };
 
             this.loadingTextTimeout1 = null;
@@ -576,6 +576,7 @@ export default class DianaWidget {
             menuModal: this.dianaWidgetRootContainer.querySelector(".menu-modal"),
             menuModalCloseBtn: this.dianaWidgetRootContainer.querySelector("#menuModalCloseBtn"),
             menuList: this.dianaWidgetRootContainer.querySelector("#menuList"),
+            toggleViewBtn: this.dianaWidgetRootContainer.querySelector("#toggleViewBtn"),
         };
     }
 
@@ -718,6 +719,10 @@ export default class DianaWidget {
                     }
                 }
             });
+        }
+
+        if (this.elements.toggleViewBtn) {
+            this.elements.toggleViewBtn.addEventListener('click', () => this.toggleResultsView());
         }
     }
 
@@ -1730,6 +1735,35 @@ export default class DianaWidget {
         this.state.toConnections = [];
         this.state.fromConnections = [];
         this.state.activityTimes = {start: '', end: '', duration: '', warning_duration: false};
+
+        // Reset clean view when going back to form
+        if (this.state.isCleanView) {
+            this.toggleResultsView();
+        }
+    }
+
+    toggleResultsView() {
+        this.state.isCleanView = !this.state.isCleanView;
+        const resultsPage = this.elements.resultsPage;
+        const toggleBtn = this.elements.toggleViewBtn;
+
+        if (resultsPage) {
+            resultsPage.classList.toggle('clean-view-active', this.state.isCleanView);
+        }
+
+        if (toggleBtn) {
+            const tooltip = this.state.isCleanView ? this.t('toggleDetailedView') : this.t('toggleCompactView');
+            toggleBtn.setAttribute('title', tooltip);
+            toggleBtn.setAttribute('aria-label', tooltip);
+
+            if (this.state.isCleanView) {
+                // Icon for "show details" (e.g., list view)
+                toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            } else {
+                // Icon for "show compact" (e.g., eye view)
+                toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12C3.60014 7.90264 7.33603 5 12 5C16.664 5 20.3999 7.90264 22 12C20.3999 16.0974 16.664 19 12 19C7.33603 19 3.60014 16.0974 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            }
+        }
     }
 
     showMenuModal() {

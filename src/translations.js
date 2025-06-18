@@ -42,6 +42,8 @@ export default {
         today: "Today",
         tomorrow: "Tomorrow",
         otherDate: "Other date",
+        toggleCompactView: "Switch to compact view",
+        toggleDetailedView: "Switch to detailed view",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -181,6 +183,8 @@ export default {
         today: "Heute",
         tomorrow: "Morgen",
         otherDate: "Anderes Datum",
+        toggleCompactView: "Kompaktansicht umschalten",
+        toggleDetailedView: "Detailansicht umschalten",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
@@ -320,6 +324,8 @@ export default {
         today: "Today",
         tomorrow: "Tomorrow",
         otherDate: "Other date",
+        toggleCompactView: "Switch to compact view",
+        toggleDetailedView: "Switch to detailed view",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Find answers & guides.",
