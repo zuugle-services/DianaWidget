@@ -987,6 +987,16 @@
 
 /* --- Results Page Specific Styles --- */
 
+.diana-container .results-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 20px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+
 .diana-container .widget-response-back-button {
     display: flex;
     align-items: center;
@@ -1002,11 +1012,16 @@
     border-radius: 8px;
     transition: background-color 0.2s ease;
     width: fit-content;
-    margin: 8px 20px;
 }
 
 .diana-container .widget-response-back-button:hover {
     background-color: var(--bg-hover);
+}
+
+.diana-container .activity-date-display {
+    color: var(--text-tertiary);
+    font-size: 14px;
+    font-weight: 500;
 }
 
 
@@ -1037,7 +1052,18 @@
     bottom: 24px;
     border-top: 1px solid var(--border-primary);
     border-bottom: none;
+    z-index: 8;
 }
+
+.diana-container .bottom-date-wrapper {
+    padding: 4px 20px;
+    text-align: right;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background-color: var(--bg-primary);
+}
+
 
 .diana-container .slider {
     overflow-x: auto;

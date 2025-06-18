@@ -575,7 +575,8 @@ export default class DianaWidget {
             dateBtnOther: this.dianaWidgetRootContainer.querySelector("#dateBtnOther"),
             otherDateText: this.dianaWidgetRootContainer.querySelector("#otherDateText"), // Span inside dateBtnOther
             dateSelectorButtonsGroup: this.dianaWidgetRootContainer.querySelector(".date-selector-buttons"),
-            // Add back button from form page header if it's different
+            toActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#toActivityDateDisplay"),
+            fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
             formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"), // Hamburger on form page
             resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn"), // Hamburger on results page
             menuPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#menuPageHamburgerBtn"), // Hamburger on menu page
@@ -1134,6 +1135,9 @@ export default class DianaWidget {
         this.elements.responseBox.innerHTML = this.t('selectTimeSlot');
         this.elements.responseBoxBottom.innerHTML = this.t('selectTimeSlot');
         this.elements.activityTimeBox.innerHTML = this.config.activityName;
+        if (this.elements.toActivityDateDisplay) this.elements.toActivityDateDisplay.textContent = '';
+        if (this.elements.fromActivityDateDisplay) this.elements.fromActivityDateDisplay.textContent = '';
+
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
             this.showError(this.t('errors.api.noConnectionsFound'), 'results'); // Show error on results page
@@ -1263,6 +1267,7 @@ export default class DianaWidget {
         );
         if (filtered.length > 0) {
             this.updateActivityTimeBox(filtered[0], type);
+            this.updateDepartureDateDisplay(filtered[0], type); // Update the date display
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
             requestAnimationFrame(() => {
                 const firstElement = targetBox.querySelector('.connection-elements > div:nth-child(1)');
@@ -1272,6 +1277,24 @@ export default class DianaWidget {
             targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
         }
     }
+
+    updateDepartureDateDisplay(connection, type) {
+        if (!connection || !connection.connection_elements || connection.connection_elements.length === 0) {
+            if (type === 'to' && this.elements.toActivityDateDisplay) this.elements.toActivityDateDisplay.textContent = '';
+            if (type === 'from' && this.elements.fromActivityDateDisplay) this.elements.fromActivityDateDisplay.textContent = '';
+            return;
+        }
+
+        const firstLeg = connection.connection_elements[0];
+        const dateStr = formatLegDateForDisplay(firstLeg.departure_time, this.config.timezone, this.config.language);
+
+        if (type === 'to' && this.elements.toActivityDateDisplay) {
+            this.elements.toActivityDateDisplay.textContent = dateStr;
+        } else if (type === 'from' && this.elements.fromActivityDateDisplay) {
+            this.elements.fromActivityDateDisplay.textContent = dateStr;
+        }
+    }
+
 
     updateActivityTimeBox(connection, type) {
         if (!connection) return;
@@ -1442,7 +1465,6 @@ export default class DianaWidget {
             }
 
             let html = `<div class="connection-elements">`;
-            let currentLegDateStr = null;
 
             // Display waiting time after activity ends (for 'from' connections)
             if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
@@ -1486,13 +1508,6 @@ export default class DianaWidget {
 
                 let icon = (element.type !== 'JNY') ? this.getTransportIcon(element.type || 'DEFAULT') : this.getTransportIcon(element.vehicle_type || 'DEFAULT');
 
-                const legDepartureDateStr = formatLegDateForDisplay(element.departure_time, this.config.timezone, this.config.language);
-                let dateDisplayHtml = '';
-                if (legDepartureDateStr && (index === 0 || legDepartureDateStr !== currentLegDateStr)) {
-                    dateDisplayHtml = `<div class="connection-leg-date-display">${legDepartureDateStr}</div>`;
-                    currentLegDateStr = legDepartureDateStr;
-                }
-
                 let fromLocationDisplay = element.from_location;
                 // For the very first leg of a "to activity" journey, use the user's origin input.
                 if (type === "to" && index === 0) {
@@ -1505,8 +1520,7 @@ export default class DianaWidget {
 
 
                 html += `
-          <div class="connection-element" style="${dateDisplayHtml !== "" ? 'padding-right:65px;' : ''}">
-            ${dateDisplayHtml}
+          <div class="connection-element">
             <div class="element-time">
               <span>${departureTime}</span> ${fromLocationDisplay}
             </div>

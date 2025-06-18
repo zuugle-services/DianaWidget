@@ -15,7 +15,10 @@ export function getResultsPageTemplateHTML(args) {
               <div class="widget-header-button"><button class="back-btn">☰</button></div>
               <div class="widget-header-heading">${config.activityName}</div>
             </div>
-            <div id="backBtn" class="widget-response-back-button" role="button" tabindex="0"><div>←</div><div>${t('back')}</div></div>
+            <div class="results-top-bar">
+                <div id="backBtn" class="widget-response-back-button" role="button" tabindex="0"><div>←</div><div>${t('back')}</div></div>
+                <div id="toActivityDateDisplay" class="activity-date-display"></div>
+            </div>
             <div class="slider" id="topSlider" role="group" aria-label="${t('ariaLabels.topSlider')}"></div>
           </div>
           <div class="middle-box" id="responseBox" aria-live="polite">${t('loadingConnectionsI')}</div>
@@ -23,6 +26,7 @@ export function getResultsPageTemplateHTML(args) {
           <div class="middle-box" id="responseBox-bottom" aria-live="polite">${t('loadingConnectionsO')}</div>
           <div class="slider-wrapper slider-wrap-fixed">
             <div class="slider" id="bottomSlider" role="group" aria-label="${t('ariaLabels.bottomSlider')}"></div>
+            <div id="fromActivityDateDisplay" class="bottom-date-wrapper"></div>
           </div>
           <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
         </div>
