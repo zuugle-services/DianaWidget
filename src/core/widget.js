@@ -1222,7 +1222,7 @@ export default class DianaWidget {
             btn.innerHTML = `
         <div style="display: flex; flex-direction: column; align-items: center;">
           <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold;">${startTimeLocal} - ${endTimeLocal}</div>
-          <div style="display: flex; justify-content:space-between; width: 100%; width: -moz-available; width: -webkit-fill-available; width: fill-available; align-items: center; font-size: 12px; color: #666;">
+          <div style="display: flex; justify-content:space-between; width: 100%; /*noinspection CssInvalidPropertyValue*/width: -moz-available; /*noinspection CssInvalidPropertyValue*/width: -webkit-fill-available; /*noinspection CssInvalidPropertyValue*/width: fill-available; align-items: center; font-size: 12px; color: #666;">
             <span>${duration}</span>
             <div style="display: flex; gap:2px; align-items: center;">
               ${anytime ? this.getTransportIcon("WALK_BLACK") : `
