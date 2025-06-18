@@ -7,18 +7,16 @@ export class PageManager {
      * @param {HTMLElement} formPageElement - The DOM element for the form page.
      * @param {HTMLElement} resultsPageElement - The DOM element for the results page.
      * @param {HTMLElement} innerContainerElement - The DOM element for the inner container holding the pages.
-     * @param {HTMLElement} menuPageElement - The DOM element for the menu page.
      * @param {HTMLElement} contentPageElement - The DOM element for the content page.
      */
-    constructor(formPageElement, resultsPageElement, innerContainerElement, menuPageElement, contentPageElement) {
+    constructor(formPageElement, resultsPageElement, innerContainerElement, contentPageElement) {
         this.formPage = formPageElement;
         this.resultsPage = resultsPageElement;
         this.innerContainer = innerContainerElement;
-        this.menuPage = menuPageElement; // Added menu page
         this.contentPage = contentPageElement; // Added content page
         this.activePage = null; // To keep track of the currently active main page (form or results)
 
-        if (!this.formPage || !this.resultsPage || !this.innerContainer || !this.menuPage || !this.contentPage) {
+        if (!this.formPage || !this.resultsPage || !this.innerContainer || !this.contentPage) {
             console.error("PageManager: One or more page elements are missing. Navigation might not work correctly.");
         }
     }
@@ -26,7 +24,6 @@ export class PageManager {
     _hideAllPages() {
         if (this.formPage) this.formPage.classList.remove("active");
         if (this.resultsPage) this.resultsPage.classList.remove("active");
-        if (this.menuPage) this.menuPage.classList.remove("active");
         if (this.contentPage) this.contentPage.classList.remove("active");
     }
 
@@ -54,17 +51,6 @@ export class PageManager {
             // Style for results page (typically secondary background)
             this.innerContainer.style.transform = "unset"; // Reset any transforms
             this.innerContainer.style.backgroundColor = "var(--bg-secondary)";
-        }
-    }
-
-    /**
-     * Navigates to the menu page.
-     */
-    navigateToMenu() {
-        this._hideAllPages();
-        if (this.menuPage) this.menuPage.classList.add("active");
-        if (this.innerContainer) {
-            this.innerContainer.style.backgroundColor = "var(--bg-primary)"; // Or a specific menu background
         }
     }
 

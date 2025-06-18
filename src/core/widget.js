@@ -414,32 +414,30 @@ export default class DianaWidget {
         // Load templates using UIManager
         const formPageHTML = await this.uiManager.loadTemplate('formPageTemplate', templateArgs);
         const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
-        const menuPageHTML = await this.uiManager.loadTemplate('menuPageTemplate', templateArgs);
+        const menuModalHTML = await this.uiManager.loadTemplate('menuPageTemplate', templateArgs);
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
 
         // Set the innerHTML for the main structure including the loaded templates
         this.dianaWidgetRootContainer.innerHTML = `
-      <div id="activityModal" class="modal visible">
-        <div id="innerContainer" class="modal-content">
-          ${formPageHTML}
-          ${resultsPageHTML}
-          ${menuPageHTML}
-          ${contentPageHTML}
-        </div>
-      </div>
-    `;
+          <div id="activityModal" class="modal visible">
+            <div id="innerContainer" class="modal-content">
+              ${formPageHTML}
+              ${resultsPageHTML}
+              ${contentPageHTML}
+            </div>
+          </div>
+          ${menuModalHTML}
+        `;
 
         // Cache DOM elements now that the templates are loaded and injected
         this.cacheDOMElements();
 
         // Initialize PageManager after DOM elements are cached
-        // Pass references to the page elements and the inner container for style manipulation
         this.pageManager = new PageManager(
             this.elements.formPage,
             this.elements.resultsPage,
             this.elements.innerContainer,
-            this.elements.menuPage,
             this.elements.contentPage
         );
         this.pageManager.navigateToForm();
@@ -542,13 +540,11 @@ export default class DianaWidget {
     }
 
     cacheDOMElements() {
-        // Ensure elements are cached from this.dianaWidgetRootContainer
         this.elements = {
             modal: this.dianaWidgetRootContainer.querySelector("#activityModal"),
             innerContainer: this.dianaWidgetRootContainer.querySelector("#innerContainer"),
             formPage: this.dianaWidgetRootContainer.querySelector("#formPage"),
             resultsPage: this.dianaWidgetRootContainer.querySelector("#resultsPage"),
-            menuPage: this.dianaWidgetRootContainer.querySelector("#menuPage"),
             contentPage: this.dianaWidgetRootContainer.querySelector("#contentPage"),
             originInput: this.dianaWidgetRootContainer.querySelector("#originInput"),
             suggestionsContainer: this.dianaWidgetRootContainer.querySelector("#suggestions"),
@@ -579,13 +575,14 @@ export default class DianaWidget {
             fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
             formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"), // Hamburger on form page
             resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn"), // Hamburger on results page
-            menuPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#menuPageHamburgerBtn"), // Hamburger on menu page
-            menuPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#menuPageCloseBtn"), // Close button on menu page
-            menuList: this.dianaWidgetRootContainer.querySelector("#menuPage .menu-list"), // Menu list
             contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"), // Hamburger on content page
             contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"), // Close button on content page
             contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"), // Title on content page
             contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"), // Body of content page
+            menuModalOverlay: this.dianaWidgetRootContainer.querySelector("#menuModalOverlay"),
+            menuModal: this.dianaWidgetRootContainer.querySelector(".menu-modal"),
+            menuModalCloseBtn: this.dianaWidgetRootContainer.querySelector("#menuModalCloseBtn"),
+            menuList: this.dianaWidgetRootContainer.querySelector("#menuList"),
         };
     }
 
@@ -686,35 +683,41 @@ export default class DianaWidget {
 
         // Hamburger icon on Form Page
         if (this.elements.formPageHamburgerBtn) {
-            this.elements.formPageHamburgerBtn.addEventListener('click', () => this.navigateToMenu());
+            this.elements.formPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
         }
         // Hamburger icon on Results Page
         if (this.elements.resultsPageHamburgerBtn) {
-            this.elements.resultsPageHamburgerBtn.addEventListener('click', () => this.navigateToMenu());
+            this.elements.resultsPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
         }
-        // Hamburger icon on Menu Page (might take back to form or do nothing, let's make it go to form)
-        if (this.elements.menuPageHamburgerBtn) {
-            this.elements.menuPageHamburgerBtn.addEventListener('click', () => this.closeMenuOrContentPage());
-        }
-        // Close button on Menu Page
-        if (this.elements.menuPageCloseBtn) {
-            this.elements.menuPageCloseBtn.addEventListener('click', () => this.closeMenuOrContentPage());
-        }
-        // Menu items
-        if (this.elements.menuList) {
-            this.elements.menuList.addEventListener('click', (e) => {
-                if (e.target.classList.contains('menu-item') && e.target.dataset.contentKey) {
-                    this.navigateToContentPage(e.target.dataset.contentKey);
-                }
-            });
-        }
-        // Hamburger icon on Content Page (takes back to Menu)
+        // Hamburger icon on Content Page (now opens the menu modal)
         if (this.elements.contentPageHamburgerBtn) {
-            this.elements.contentPageHamburgerBtn.addEventListener('click', () => this.navigateToMenu());
+            this.elements.contentPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
         }
         // Close button on Content Page
         if (this.elements.contentPageCloseBtn) {
             this.elements.contentPageCloseBtn.addEventListener('click', () => this.closeMenuOrContentPage());
+        }
+
+        // New Menu Modal Listeners
+        if (this.elements.menuModalOverlay) {
+            this.elements.menuModalOverlay.addEventListener('click', (e) => {
+                // Close if click is on the overlay background itself
+                if (e.target === this.elements.menuModalOverlay) {
+                    this.hideMenuModal();
+                }
+            });
+        }
+        if (this.elements.menuModalCloseBtn) {
+            this.elements.menuModalCloseBtn.addEventListener('click', () => this.hideMenuModal());
+        }
+        if (this.elements.menuList) {
+            this.elements.menuList.addEventListener('click', (e) => {
+                const menuItem = e.target.closest('.menu-item');
+                if (menuItem && menuItem.dataset.contentKey) {
+                    this.hideMenuModal();
+                    this.navigateToContentPage(menuItem.dataset.contentKey);
+                }
+            });
         }
     }
 
@@ -1725,10 +1728,15 @@ export default class DianaWidget {
         this.state.activityTimes = {start: '', end: '', duration: '', warning_duration: false};
     }
 
-    navigateToMenu() {
-        this.clearMessages();
-        if (this.pageManager) {
-            this.pageManager.navigateToMenu();
+    showMenuModal() {
+        if (this.elements.menuModalOverlay) {
+            this.elements.menuModalOverlay.style.display = 'flex';
+        }
+    }
+
+    hideMenuModal() {
+        if (this.elements.menuModalOverlay) {
+            this.elements.menuModalOverlay.style.display = 'none';
         }
     }
 

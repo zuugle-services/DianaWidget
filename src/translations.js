@@ -128,6 +128,7 @@ export default {
             previousMonthButton: "Previous month",
             nextMonthButton: "Next month",
             menuButton: "Open menu",
+            menuHeading: "Page menu",
             closeButton: "Close"
         },
         waiting: {
@@ -264,6 +265,7 @@ export default {
             previousMonthButton: "Vorheriger Monat",
             nextMonthButton: "Nächster Monat",
             menuButton: "Menü öffnen",
+            menuHeading: "Seitenmenü",
             closeButton: "Schließen"
         },
         waiting: {
@@ -400,6 +402,7 @@ export default {
             previousMonthButton: "Previous month",
             nextMonthButton: "Next month",
             menuButton: "Open menu",
+            menuHeading: "Page menu",
             closeButton: "Close"
         },
         waiting: {
