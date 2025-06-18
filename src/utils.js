@@ -1,7 +1,7 @@
 /**
  * Utility functions for DianaWidget
  */
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
 
 /**
  * Gets the localized month name.
@@ -10,17 +10,17 @@ import { DateTime } from 'luxon';
  * @returns {string} The localized month name.
  */
 export function getMonthName(monthIndex, tFunction) {
-  // Ensure monthIndex is within a valid range if necessary, or trust tFunction to handle it.
-  // Assuming tFunction can access an array like `months.0`, `months.1` etc., or a nested object
-  // For example, if translations are structured as: { EN: { months: ["Jan", "Feb", ...] } }
-  // and tFunction is bound to the correct language object, then tFunction(`months.${monthIndex}`) might work
-  // if tFunction handles dot notation for array access or if months is an object {0: "Jan", 1: "Feb"}.
-  // A safer bet if `months` is an array in the translation file:
-  const monthsArray = tFunction('months'); // This should return the array ["Jan", "Feb", ...]
-  if (Array.isArray(monthsArray) && monthIndex >= 0 && monthIndex < monthsArray.length) {
-    return monthsArray[monthIndex];
-  }
-  return `months.${monthIndex}`; // Fallback or error indicator
+    // Ensure monthIndex is within a valid range if necessary, or trust tFunction to handle it.
+    // Assuming tFunction can access an array like `months.0`, `months.1` etc., or a nested object
+    // For example, if translations are structured as: { EN: { months: ["Jan", "Feb", ...] } }
+    // and tFunction is bound to the correct language object, then tFunction(`months.${monthIndex}`) might work
+    // if tFunction handles dot notation for array access or if months is an object {0: "Jan", 1: "Feb"}.
+    // A safer bet if `months` is an array in the translation file:
+    const monthsArray = tFunction('months'); // This should return the array ["Jan", "Feb", ...]
+    if (Array.isArray(monthsArray) && monthIndex >= 0 && monthIndex < monthsArray.length) {
+        return monthsArray[monthIndex];
+    }
+    return `months.${monthIndex}`; // Fallback or error indicator
 }
 
 /**
@@ -30,12 +30,12 @@ export function getMonthName(monthIndex, tFunction) {
  * @returns {string} The localized short day name.
  */
 export function getShortDayName(dayIndex, tFunction) {
-  // Similar to getMonthName, assuming tFunction('shortDays') returns the array ["M", "T", ...]
-  const daysArray = tFunction('shortDays');
-  if (Array.isArray(daysArray) && dayIndex >= 0 && dayIndex < daysArray.length) {
-    return daysArray[dayIndex];
-  }
-  return `shortDays.${dayIndex}`; // Fallback
+    // Similar to getMonthName, assuming tFunction('shortDays') returns the array ["M", "T", ...]
+    const daysArray = tFunction('shortDays');
+    if (Array.isArray(daysArray) && dayIndex >= 0 && dayIndex < daysArray.length) {
+        return daysArray[dayIndex];
+    }
+    return `shortDays.${dayIndex}`; // Fallback
 }
 
 
@@ -47,29 +47,29 @@ export function getShortDayName(dayIndex, tFunction) {
  * @returns {string} The formatted date string, or an empty string if date is invalid.
  */
 export function formatDateForDisplay(date, locale, timeZone = "UTC") {
-  if (!date || isNaN(date.getTime())) return '';
-  // Using Luxon for robust date formatting, consistent with the rest of the widget
-  try {
-    // Ensure the input JS Date is correctly interpreted (e.g., if it's UTC or local)
-    // If `date` is a JS Date object from a picker, it might be local midnight.
-    // If it's from internal state, it might be UTC midnight.
-    // For display, we want to show it in the target `timeZone`.
-    // Let's assume `date` represents a specific day, and we want to format that day in `timeZone`.
-    return DateTime.fromJSDate(date, { zone: 'utc' }) // Assume JS Date is UTC midnight for consistency
-                   .setZone(timeZone) // Convert to target timezone for display day
-                   .setLocale(locale)
-                   .toFormat('dd. MMM yyyy');
-  } catch (error) {
-    console.error("Error formatting date for display:", error);
-    // Fallback to native toLocaleDateString if Luxon fails
-    const options = { day: "numeric", month: "short", year: "numeric", timeZone: timeZone };
+    if (!date || isNaN(date.getTime())) return '';
+    // Using Luxon for robust date formatting, consistent with the rest of the widget
     try {
-        return date.toLocaleDateString(locale, options);
-    } catch (nativeError) {
-        console.error("Native toLocaleDateString also failed:", nativeError);
-        return ''; // Ultimate fallback
+        // Ensure the input JS Date is correctly interpreted (e.g., if it's UTC or local)
+        // If `date` is a JS Date object from a picker, it might be local midnight.
+        // If it's from internal state, it might be UTC midnight.
+        // For display, we want to show it in the target `timeZone`.
+        // Let's assume `date` represents a specific day, and we want to format that day in `timeZone`.
+        return DateTime.fromJSDate(date, {zone: 'utc'}) // Assume JS Date is UTC midnight for consistency
+            .setZone(timeZone) // Convert to target timezone for display day
+            .setLocale(locale)
+            .toFormat('dd. MMM yyyy');
+    } catch (error) {
+        console.error("Error formatting date for display:", error);
+        // Fallback to native toLocaleDateString if Luxon fails
+        const options = {day: "numeric", month: "short", year: "numeric", timeZone: timeZone};
+        try {
+            return date.toLocaleDateString(locale, options);
+        } catch (nativeError) {
+            console.error("Native toLocaleDateString also failed:", nativeError);
+            return ''; // Ultimate fallback
+        }
     }
-  }
 }
 
 /**
@@ -80,22 +80,22 @@ export function formatDateForDisplay(date, locale, timeZone = "UTC") {
  * @returns {Function} The throttled function.
  */
 export function throttle(func, delay) { // delay is not used with rAF but kept for signature consistency
-  let isScheduled = false;
-  let lastArgs = null;
-  let lastContext = null;
+    let isScheduled = false;
+    let lastArgs = null;
+    let lastContext = null;
 
-  return function(...args) {
-      lastArgs = args;
-      lastContext = this;
+    return function (...args) {
+        lastArgs = args;
+        lastContext = this;
 
-      if (!isScheduled) {
-          isScheduled = true;
-          requestAnimationFrame(() => {
-              func.apply(lastContext, lastArgs);
-              isScheduled = false;
-          });
-      }
-  };
+        if (!isScheduled) {
+            isScheduled = true;
+            requestAnimationFrame(() => {
+                func.apply(lastContext, lastArgs);
+                isScheduled = false;
+            });
+        }
+    };
 }
 
 /**
@@ -109,7 +109,7 @@ export function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
         const context = this;
-        const later = function() {
+        const later = function () {
             timeout = null;
             func.apply(context, args);
         };

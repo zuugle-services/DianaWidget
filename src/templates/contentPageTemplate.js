@@ -4,7 +4,7 @@
  * @returns {string} HTML string for the content page.
  */
 export function getContentPageTemplateHTML(args) {
-    const { t, state } = args;
+    const {t, state} = args;
     // Determine title based on state.currentContentKey
     let pageTitle = '';
     // Placeholder for content based on state.currentContentKey

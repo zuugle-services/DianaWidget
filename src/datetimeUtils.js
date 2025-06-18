@@ -1,4 +1,4 @@
-import { DateTime } from 'luxon';
+import {DateTime} from 'luxon';
 
 /**
  * Calculates the initial start date for the activity.
@@ -24,11 +24,11 @@ export function calculateInitialStartDate(timezone, activityLatestEndTime, activ
         });
 
         if (now > thresholdTime) {
-            initialDate = now.plus({ days: 1 }).startOf('day').toObject();
+            initialDate = now.plus({days: 1}).startOf('day').toObject();
         } else {
             initialDate = now.startOf('day').toObject();
         }
-        initialDate = new Date(initialDate["year"], initialDate["month"]-1, initialDate["day"]);
+        initialDate = new Date(initialDate["year"], initialDate["month"] - 1, initialDate["day"]);
     } catch (error) {
         console.error("Error calculating initial start date, defaulting to today:", error);
         initialDate = new Date(); // Fallback to current date
@@ -51,15 +51,15 @@ export function convertLocalTimeToUTC(localTime, date, timezone) {
         const jsDate = new Date(date); // Ensure it's a JS Date
 
         const localDt = DateTime.fromObject({
-            year: jsDate.getFullYear(), // Use getFullYear for JS Date
-            month: jsDate.getMonth() + 1, // JS Date months are 0-indexed
-            day: jsDate.getDate(),    // JS Date days are 1-indexed
-            hour: hours,
-            minute: minutes,
-            second: seconds || 0
+                year: jsDate.getFullYear(), // Use getFullYear for JS Date
+                month: jsDate.getMonth() + 1, // JS Date months are 0-indexed
+                day: jsDate.getDate(),    // JS Date days are 1-indexed
+                hour: hours,
+                minute: minutes,
+                second: seconds || 0
             },
             {
-            zone: timezone
+                zone: timezone
             }
         );
 
@@ -67,7 +67,7 @@ export function convertLocalTimeToUTC(localTime, date, timezone) {
             throw new Error(`Invalid local time, date, or timezone: ${localTime}, ${date}, ${timezone}. Reason: ${localDt.invalidReason}`);
         }
         return localDt.toUTC().toFormat('HH:mm:ss');
-    } catch(error) {
+    } catch (error) {
         console.error("Error converting local time to UTC:", error);
         return "00:00:00"; // Fallback
     }
@@ -87,15 +87,15 @@ export function convertLocalTimeToUTCDatetime(localTime, date, timezone) {
         const jsDate = new Date(date);
 
         const localDt = DateTime.fromObject({
-            year: jsDate.getFullYear(),
-            month: jsDate.getMonth() + 1,
-            day: jsDate.getDate(),
-            hour: hours,
-            minute: minutes,
-            second: seconds || 0
+                year: jsDate.getFullYear(),
+                month: jsDate.getMonth() + 1,
+                day: jsDate.getDate(),
+                hour: hours,
+                minute: minutes,
+                second: seconds || 0
             },
             {
-            zone: timezone
+                zone: timezone
             }
         );
 
@@ -103,7 +103,7 @@ export function convertLocalTimeToUTCDatetime(localTime, date, timezone) {
             throw new Error(`Invalid local time, date, or timezone for UTC datetime conversion: ${localTime}, ${date}, ${timezone}. Reason: ${localDt.invalidReason}`);
         }
         return localDt.toUTC().toISO();
-    } catch(error) {
+    } catch (error) {
         console.error("Error converting local time to UTC datetime:", error);
         return "0000-00-00T00:00:00Z"; // Fallback ISO string
     }
@@ -119,28 +119,28 @@ export function convertLocalTimeToUTCDatetime(localTime, date, timezone) {
  * @returns {string} The time string in HH:mm format in the local timezone, or "--:--" on error.
  */
 export function convertConfigTimeToLocalTime(configTime, date, timezone) {
-     try {
+    try {
         const [hours, minutes, seconds] = ([...(configTime.split(':')), '0', '0']).slice(0, 3).map(Number);
         const jsDate = new Date(date);
 
         const localDt = DateTime.fromObject({
-            year: jsDate.getFullYear(),
-            month: jsDate.getMonth() + 1,
-            day: jsDate.getDate(),
-            hour: hours,
-            minute: minutes,
-            second: seconds || 0
+                year: jsDate.getFullYear(),
+                month: jsDate.getMonth() + 1,
+                day: jsDate.getDate(),
+                hour: hours,
+                minute: minutes,
+                second: seconds || 0
             },
             {
-            zone: timezone
+                zone: timezone
             }
         );
 
-         if (!localDt.isValid) {
+        if (!localDt.isValid) {
             throw new Error(`Invalid config time or timezone for local time conversion: ${configTime}, ${timezone}. Reason: ${localDt.invalidReason}`);
         }
         return localDt.toFormat('HH:mm');
-    } catch(error) {
+    } catch (error) {
         console.error("Error converting config time to local time:", error);
         return "--:--";
     }
@@ -155,13 +155,13 @@ export function convertConfigTimeToLocalTime(configTime, date, timezone) {
  * @returns {string} The time string in HH:mm format in the local timezone, or "--:--" on error.
  */
 export function convertUTCToLocalTime(isoString, timezone) {
-     try {
-        const utcDt = DateTime.fromISO(isoString, { zone: 'utc' });
-         if (!utcDt.isValid) {
+    try {
+        const utcDt = DateTime.fromISO(isoString, {zone: 'utc'});
+        if (!utcDt.isValid) {
             throw new Error(`Invalid UTC timestamp for local time conversion: ${isoString}. Reason: ${utcDt.invalidReason}`);
         }
         return utcDt.setZone(timezone).toFormat('HH:mm');
-    } catch(error) {
+    } catch (error) {
         console.error("Error converting UTC to local time:", error);
         return "--:--";
     }
@@ -177,8 +177,8 @@ export function convertUTCToLocalTime(isoString, timezone) {
  */
 export function calculateTimeDifference(startISO, endISO, tFunction) {
     try {
-        const start = DateTime.fromISO(startISO, { zone: 'utc' });
-        const end = DateTime.fromISO(endISO, { zone: 'utc' });
+        const start = DateTime.fromISO(startISO, {zone: 'utc'});
+        const end = DateTime.fromISO(endISO, {zone: 'utc'});
         if (!start.isValid || !end.isValid) {
             throw new Error(`Invalid date format for time difference: ${startISO} or ${endISO}`);
         }
@@ -205,9 +205,9 @@ export function calculateTimeDifference(startISO, endISO, tFunction) {
  * @throws {Error} if the input date format is invalid.
  */
 export function addMinutesToDate(dateISO, minutes) {
-    const dateTime = DateTime.fromISO(dateISO, { zone: 'utc' });
+    const dateTime = DateTime.fromISO(dateISO, {zone: 'utc'});
     if (!dateTime.isValid) throw new Error(`Invalid date format for adding minutes: ${dateISO}`);
-    return dateTime.plus({ minutes }).toISO();
+    return dateTime.plus({minutes}).toISO();
 }
 
 /**
@@ -219,13 +219,13 @@ export function addMinutesToDate(dateISO, minutes) {
  */
 export function getLaterTime(time1, time2, timezone) {
     try {
-        const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: timezone });
-        const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: timezone });
-         if (!t1.isValid || !t2.isValid) {
+        const t1 = DateTime.fromFormat(time1, 'HH:mm', {zone: timezone});
+        const t2 = DateTime.fromFormat(time2, 'HH:mm', {zone: timezone});
+        if (!t1.isValid || !t2.isValid) {
             throw new Error(`Invalid time format for 'getLaterTime' comparison: ${time1} or ${time2}`);
         }
         return t1 > t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
-    } catch(error) {
+    } catch (error) {
         console.error("Error comparing times (getLaterTime):", error);
         return time1 || time2 || "--:--";
     }
@@ -239,14 +239,14 @@ export function getLaterTime(time1, time2, timezone) {
  * @returns {string} The earlier time string in HH:mm format, or a fallback on error.
  */
 export function getEarlierTime(time1, time2, timezone) {
-     try {
-        const t1 = DateTime.fromFormat(time1, 'HH:mm', { zone: timezone });
-        const t2 = DateTime.fromFormat(time2, 'HH:mm', { zone: timezone });
-         if (!t1.isValid || !t2.isValid) {
+    try {
+        const t1 = DateTime.fromFormat(time1, 'HH:mm', {zone: timezone});
+        const t2 = DateTime.fromFormat(time2, 'HH:mm', {zone: timezone});
+        if (!t1.isValid || !t2.isValid) {
             throw new Error(`Invalid time format for 'getEarlierTime' comparison: ${time1} or ${time2}`);
         }
         return t1 < t2 ? t1.toFormat('HH:mm') : t2.toFormat('HH:mm');
-    } catch(error) {
+    } catch (error) {
         console.error("Error comparing times (getEarlierTime):", error);
         return time1 || time2 || "--:--";
     }
@@ -262,11 +262,16 @@ export function getEarlierTime(time1, time2, timezone) {
 export function calculateDurationLocalWithDates(startDateTime, endDateTime, tFunction) {
     try {
         if (!startDateTime.isValid || !endDateTime.isValid) {
-            return { text: "--", hours: 0, minutes: 0, totalMinutes: 0 };
+            return {text: "--", hours: 0, minutes: 0, totalMinutes: 0};
         }
         // Assuming startDateTime and endDateTime are already Luxon objects in the correct zone
         if (endDateTime < startDateTime) {
-             return { text: tFunction('errors.endDateBeforeStart') || "End before start", hours: 0, minutes: 0, totalMinutes: 0 };
+            return {
+                text: tFunction('errors.endDateBeforeStart') || "End before start",
+                hours: 0,
+                minutes: 0,
+                totalMinutes: 0
+            };
         }
         const diff = endDateTime.diff(startDateTime, ['hours', 'minutes']);
         const totalMinutes = Math.round(diff.as('minutes'));
@@ -275,10 +280,10 @@ export function calculateDurationLocalWithDates(startDateTime, endDateTime, tFun
         let durationText = hours > 0
             ? `${hours}:${String(minutes).padStart(2, '0')}${tFunction("durationHoursShort")}`
             : `${minutes} ${tFunction("durationMinutesShort")}`;
-        return { text: durationText, hours: hours, minutes: minutes, totalMinutes: totalMinutes };
+        return {text: durationText, hours: hours, minutes: minutes, totalMinutes: totalMinutes};
     } catch (error) {
         console.error("Error calculating duration with local dates:", error);
-        return { text: "--", hours: 0, minutes: 0, totalMinutes: 0 };
+        return {text: "--", hours: 0, minutes: 0, totalMinutes: 0};
     }
 }
 
@@ -296,7 +301,7 @@ export function getTimeFormatFromMinutes(minutesInput, tFunction) {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     if (hours > 0) {
-      return `${hours}:${String(mins).padStart(2, '0')}${tFunction("durationHoursShort")}`;
+        return `${hours}:${String(mins).padStart(2, '0')}${tFunction("durationHoursShort")}`;
     }
     return `${mins} ${tFunction("durationMinutesShort")}`;
 }
@@ -307,7 +312,7 @@ export function getTimeFormatFromMinutes(minutesInput, tFunction) {
  * @param {string} timezone - The timezone of the date object
  * @returns {string} The formatted date string, or an empty string if date is invalid.
  */
-export function formatDatetime(date, timezone="utc") {
+export function formatDatetime(date, timezone = "utc") {
     if (!date || isNaN(date.getTime())) return '';
     // Use Luxon for consistency, ensuring UTC interpretation for formatting
     try {
@@ -331,21 +336,21 @@ export function formatDatetime(date, timezone="utc") {
 export function parseDurationToMinutes(durationString, tFunction) {
     if (!durationString || typeof durationString !== 'string') return 0;
     try {
-      const hoursShort = tFunction("durationHoursShort");
-      const minutesShort = tFunction("durationMinutesShort");
+        const hoursShort = tFunction("durationHoursShort");
+        const minutesShort = tFunction("durationMinutesShort");
 
-      if (durationString.includes(hoursShort)) {
-          const parts = durationString.replace(hoursShort, "").split(':');
-          const hours = parseInt(parts[0], 10);
-          const minutes = parseInt(parts[1], 10);
-          if (isNaN(hours) || isNaN(minutes)) return 0;
-          return (hours * 60) + minutes;
-      } else if (durationString.includes(minutesShort)) {
-          const minutes = parseInt(durationString.replace(minutesShort, "").trim(), 10);
-          return isNaN(minutes) ? 0 : minutes;
-      }
+        if (durationString.includes(hoursShort)) {
+            const parts = durationString.replace(hoursShort, "").split(':');
+            const hours = parseInt(parts[0], 10);
+            const minutes = parseInt(parts[1], 10);
+            if (isNaN(hours) || isNaN(minutes)) return 0;
+            return (hours * 60) + minutes;
+        } else if (durationString.includes(minutesShort)) {
+            const minutes = parseInt(durationString.replace(minutesShort, "").trim(), 10);
+            return isNaN(minutes) ? 0 : minutes;
+        }
     } catch (e) {
-      console.error("Error parsing duration string to minutes:", durationString, e);
+        console.error("Error parsing duration string to minutes:", durationString, e);
     }
     return 0;
 }
@@ -359,17 +364,17 @@ export function parseDurationToMinutes(durationString, tFunction) {
  */
 export function formatLegDateForDisplay(isoString, timezone, language) {
     try {
-      const localDt = DateTime.fromISO(isoString, { zone: 'utc' }).setZone(timezone);
-      if (!localDt.isValid) {
-          console.warn(`Invalid ISO string for leg date display: ${isoString}`);
-          return "";
-      }
-      const localeMap = { EN: 'en-GB', DE: 'de-DE' }; // Map language to full locale
-      const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`; // Fallback e.g. en-EN
-      return localDt.setLocale(locale).toFormat('dd. MMM');
+        const localDt = DateTime.fromISO(isoString, {zone: 'utc'}).setZone(timezone);
+        if (!localDt.isValid) {
+            console.warn(`Invalid ISO string for leg date display: ${isoString}`);
+            return "";
+        }
+        const localeMap = {EN: 'en-GB', DE: 'de-DE'}; // Map language to full locale
+        const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`; // Fallback e.g. en-EN
+        return localDt.setLocale(locale).toFormat('dd. MMM');
     } catch (error) {
-      console.error("Error formatting leg date for display:", error);
-      return "";
+        console.error("Error formatting leg date for display:", error);
+        return "";
     }
 }
 
@@ -382,13 +387,13 @@ export function formatLegDateForDisplay(isoString, timezone, language) {
 export function formatFullDateForDisplay(date, language) {
     if (!date || isNaN(date.getTime())) return '';
     try {
-      const localeMap = { EN: 'en-GB', DE: 'de-DE' };
-      const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`;
+        const localeMap = {EN: 'en-GB', DE: 'de-DE'};
+        const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`;
 
-      // Format date for display using locale settings, ensuring UTC interpretation
-      return DateTime.fromJSDate(date).setZone('utc').setLocale(locale).toFormat('dd. MMM yyyy');
+        // Format date for display using locale settings, ensuring UTC interpretation
+        return DateTime.fromJSDate(date).setZone('utc').setLocale(locale).toFormat('dd. MMM yyyy');
     } catch (error) {
-      console.error("Error formatting full date for display:", error);
-      return "";
+        console.error("Error formatting full date for display:", error);
+        return "";
     }
 }

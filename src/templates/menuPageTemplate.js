@@ -4,7 +4,7 @@
  * @returns {string} HTML string for the menu page.
  */
 export function getMenuPageTemplateHTML(args) {
-    const { t } = args;
+    const {t} = args;
 
     return `
       <div id="menuPage" class="modal-page">

@@ -1,20 +1,21 @@
 /* latin-ext */
 @font-face {
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(./DMSans-VariableFont_opsz,wght.ttf) format("ttf");
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(./DMSans-VariableFont_opsz,wght.ttf) format("ttf");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
+
 /* latin */
 @font-face {
-  font-family: 'DM Sans';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url(./DMSans-VariableFont_opsz,wght.ttf) format("ttf");
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(./DMSans-VariableFont_opsz,wght.ttf) format("ttf");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
 .diana-container {
@@ -32,7 +33,7 @@
     --bg-hover: #f0f0f0;
     --bg-error: rgba(220, 53, 69, 0.1);
     --bg-info: #dee4f3;
-    --bg-transparent: rgba(128,128,128,0.05);
+    --bg-transparent: rgba(128, 128, 128, 0.05);
     --bg-apply-hover: #357ae8;
     --bg-waiting-block: rgba(255, 149, 0, 0.08);
 
@@ -54,10 +55,10 @@
     --border-info: #b8daff;
 
     /* Shadows */
-    --shadow-verylight: rgba(0,0,0,0.08);
-    --shadow-light: rgba(0,0,0,0.1);
-    --shadow-medium: rgba(0,0,0,0.15);
-    --shadow-dark: rgba(0,0,0,0.2);
+    --shadow-verylight: rgba(0, 0, 0, 0.08);
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --shadow-medium: rgba(0, 0, 0, 0.15);
+    --shadow-dark: rgba(0, 0, 0, 0.2);
     --shadow-gray: rgba(255, 255, 255, 0.3);
 
     font-family: "DM Sans", sans-serif !important;
@@ -124,6 +125,7 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 /* Special case for menu/content pages where title might be empty or different */
 .diana-container #menuPage .widget-header-heading,
 .diana-container #contentPage .widget-header-heading {
@@ -170,8 +172,8 @@
     height: 100%;
     width: 100%;
     margin: 0;
-    font-family: "DM Sans",sans-serif !important;
-    max-height:inherit;
+    font-family: "DM Sans", sans-serif !important;
+    max-height: inherit;
 }
 
 .diana-container .modal.visible {
@@ -201,20 +203,22 @@
 .diana-container .modal-content::-webkit-scrollbar {
     width: 6px;
 }
+
 .diana-container .modal-content::-webkit-scrollbar-thumb {
-  background-color: var(--border-secondary);
-  border-radius: 3px;
+    background-color: var(--border-secondary);
+    border-radius: 3px;
 }
+
 .diana-container .modal-content {
-   scrollbar-width: none;
-   scrollbar-color: var(--border-secondary) var(--bg-primary);
+    scrollbar-width: none;
+    scrollbar-color: var(--border-secondary) var(--bg-primary);
 }
 
 
 /* --- Modal Pages --- */
 .diana-container .modal-page {
     display: none; /* Hide inactive pages */
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     flex-grow: 1;
     flex-shrink: 0; /* Prevent shrinking beyond content size */
     flex-direction: column;
@@ -235,7 +239,7 @@
 .diana-container .content-page-body {
     display: flex;
     flex-direction: column;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     flex-grow: 1;
     padding: 20px;
     overflow-y: auto;
@@ -254,6 +258,7 @@
     margin-bottom: 15px;
     color: var(--text-muted);
 }
+
 .diana-container .form-section p {
     margin-bottom: 5px;
     font-size: 14px;
@@ -273,12 +278,12 @@
 
 .diana-container .input-field {
     width: 100%;
-    padding: 12px 40px!important;
+    padding: 12px 40px !important;
     border-radius: 5px;
     border: 1px solid var(--border-primary);
     box-sizing: border-box;
     font-size: 14px;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
 }
 
 .diana-container .input-field.disabled {
@@ -301,8 +306,13 @@
     pointer-events: none;
 }
 
-.diana-container .input-icon { left: 12px; }
-.diana-container .input-icon-right { right: 12px; }
+.diana-container .input-icon {
+    left: 12px;
+}
+
+.diana-container .input-icon-right {
+    right: 12px;
+}
 
 
 .diana-container .date-section-wrapper {
@@ -315,6 +325,7 @@
     flex: 1;
     min-width: 0;
 }
+
 .diana-container .date-input-column.single {
     flex-basis: 100%;
 }
@@ -324,20 +335,24 @@
     position: relative;
     cursor: pointer;
 }
+
 .diana-container .date-input-container.disabled {
     cursor: not-allowed;
     opacity: 0.7;
 }
+
 .diana-container .date-input-container.disabled .date-input {
     background-color: var(--bg-tertiary);
     pointer-events: none;
 }
+
 .diana-container .date-input-container.disabled .date-input-display {
     color: var(--text-disabled);
 }
+
 .diana-container .date-input {
-    font-family: "DM Sans",sans-serif !important;
-    padding: 12px 40px!important;
+    font-family: "DM Sans", sans-serif !important;
+    padding: 12px 40px !important;
     border-radius: 5px;
     border: 1px solid var(--border-primary);
     width: 100%;
@@ -348,16 +363,19 @@
     align-items: center;
     position: relative;
 }
+
 .diana-container .date-input-display { /* The span showing the date in old style */
     color: var(--text-secondary);
     font-size: 14px;
     pointer-events: none;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     flex-grow: 1;
 }
+
 .diana-container .date-input-display.placeholder {
     color: var(--text-disabled);
 }
+
 .diana-container .date-input-icon { /* Icon in old style date input */
     position: absolute;
     left: 12px;
@@ -366,6 +384,7 @@
     color: var(--icon-input-color);
     pointer-events: none;
 }
+
 .diana-container .date-input-arrow { /* Arrow in old style date input OR in new "Other Date" button */
     position: absolute;
     right: 12px;
@@ -386,7 +405,7 @@
     width: 100%;
     height: 100%;
     cursor: pointer;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     pointer-events: none; /* Important: allow clicks to pass through to button on desktop */
 }
 
@@ -440,6 +459,7 @@
     border-color: var(--primary-color); /* Border matches background */
     font-weight: 500; /* Slightly bolder text */
 }
+
 .diana-container .date-selector-btn.active:hover {
     background-color: var(--bg-apply-hover); /* Darker shade of primary on hover when active */
     border-color: var(--bg-apply-hover);
@@ -489,19 +509,22 @@
     border: 0;
     border-radius: 4px;
     cursor: pointer;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     transition: background-color 0.2s ease;
 }
+
 .diana-container .btn:disabled {
     opacity: 0.7;
     cursor: not-allowed;
 }
+
 .diana-container .apply-btn,
 .diana-container button.calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
     color: var(--bg-primary);
 }
- .diana-container .apply-btn:hover:not(:disabled) {
+
+.diana-container .apply-btn:hover:not(:disabled) {
     background-color: var(--bg-apply-hover);
 }
 
@@ -518,7 +541,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* --- Range Calendar Modal Styles --- */
@@ -540,7 +565,7 @@
 .diana-container .range-calendar-modal {
     background-color: var(--bg-primary);
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     width: auto;
     max-width: 350px;
     min-width: 280px;
@@ -579,6 +604,7 @@
     padding: 0 5px;
     line-height: 1;
 }
+
 .diana-container .range-calendar-close-btn:hover {
     color: var(--text-primary);
 }
@@ -606,6 +632,7 @@
     padding: 5px 0px;
     margin-bottom: 5px;
 }
+
 .diana-container .range-calendar-instance .calendar-nav-btn {
     background: none;
     border: none;
@@ -614,9 +641,11 @@
     color: var(--text-tertiary);
     padding: 5px;
 }
+
 .diana-container .range-calendar-instance .calendar-nav-btn:hover {
     color: var(--text-primary);
 }
+
 .diana-container .range-calendar-instance .calendar-month-year {
     font-size: 14px;
     font-weight: 500;
@@ -656,18 +685,22 @@
     box-sizing: border-box;
     border-radius: 0;
 }
+
 .diana-container .range-calendar-instance .calendar-day.empty {
     background: none !important;
     cursor: default;
     border-radius: 0 !important;
 }
+
 .diana-container .range-calendar-instance .calendar-day:not(.empty):not(.disabled):hover {
     background-color: var(--bg-hover);
     border-radius: 50%;
 }
+
 .diana-container .range-calendar-instance .calendar-day.today {
     font-weight: bold;
 }
+
 .diana-container .range-calendar-instance .calendar-day.today::after {
     content: '';
     display: block;
@@ -686,8 +719,9 @@
 .diana-container .range-calendar-instance .calendar-day.today.end-date::after {
     background-color: var(--bg-primary);
 }
+
 .diana-container .range-calendar-instance .calendar-day.today.in-range::after {
-     background-color: var(--text-info);
+    background-color: var(--text-info);
 }
 
 
@@ -698,6 +732,7 @@
     text-decoration: line-through;
     border-radius: 0 !important;
 }
+
 .diana-container .range-calendar-instance .calendar-day.disabled:hover {
     background: none !important;
 }
@@ -728,8 +763,9 @@
 
 .diana-container .range-calendar-instance .calendar-day.start-date:hover,
 .diana-container .range-calendar-instance .calendar-day.end-date:hover {
-     filter: brightness(90%);
+    filter: brightness(90%);
 }
+
 .diana-container .range-calendar-instance .calendar-day.in-range:hover {
     filter: brightness(95%);
 }
@@ -752,14 +788,17 @@
     background-color: var(--bg-primary);
     color: var(--text-secondary);
 }
+
 .diana-container .range-calendar-footer .calendar-footer-btn:hover {
     background-color: var(--bg-hover);
 }
+
 .diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
     color: var(--bg-primary);
     border-color: var(--primary-color);
 }
+
 .diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn:hover {
     background-color: var(--bg-apply-hover);
 }
@@ -769,6 +808,7 @@
         width: 95%;
         max-width: 95%;
     }
+
     .diana-container .range-calendar-instance {
         min-width: unset;
         width: 100%;
@@ -784,36 +824,165 @@
     background: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow-medium);
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     height: fit-content;
     min-width: 280px; /* Ensure calendar has a decent minimum width */
 }
 
-.diana-container .calendar-container.active { display: block; }
-.diana-container .calendar-header { display: flex; justify-content: center; align-items: center; padding: 5px; }
-.diana-container .calendar-title { font-size: 16px; font-weight: 500; color: var(--text-primary); }
-.diana-container .calendar-body { padding: 10px; margin: 10px; border-radius: 8px; border: 1px solid var(--border-tertiary); }
-.diana-container .calendar-nav { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-bottom: 5px; }
-.diana-container .calendar-month-year { font-size: 14px; font-weight: 500; }
-.diana-container .calendar-nav-btn { background: 0 0; border: 0; cursor: pointer; font-size: 16px; color: var(--text-tertiary); padding: 5px; }
-.diana-container .calendar-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 3px; padding: 5px 0; }
-.diana-container .calendar-day-header { text-align: center; font-size: 12px; font-weight: 500; color: var(--text-disabled); padding: 3px 0; }
-.diana-container .calendar-day { display: flex; justify-content: center; align-items: center; text-align: center; border-radius: 50%; cursor: pointer!important; width: 30px; height: 30px; margin: 0 auto; font-size: 12px; color: var(--text-primary); transition: background-color 0.2s ease, color 0.2s ease; }
-.diana-container .calendar-day.empty { background: none; cursor: default; }
-.diana-container .calendar-day:not(.empty):hover { background-color: var(--bg-hover); }
-.diana-container .calendar-day.today { border: 1px solid var(--primary-color); font-weight: bold; }
-.diana-container .calendar-day.selected { background-color: var(--primary-color); color: var(--bg-primary); font-weight: bold; }
-.diana-container .calendar-day.selected:hover { background-color: var(--bg-apply-hover); }
-.diana-container .calendar-day.disabled { color: var(--secondary-color); cursor: not-allowed; background: none; }
-.diana-container .calendar-footer { display: flex; justify-content: flex-end; padding: 10px; border-top: 1px solid var(--border-tertiary); gap: 10px; }
-.diana-container .calendar-footer-btn { padding: 8px 15px; border: 1px solid var(--border-secondary); border-radius: 4px; cursor: pointer; font-size: 12px; background-color: var(--bg-primary); color: var(--text-secondary); }
-.diana-container .calendar-footer-btn.calendar-apply-btn { background-color: var(--primary-color); color: var(--bg-primary); border-color: var(--primary-color); }
-.diana-container .calendar-footer-btn:hover { background-color: var(--bg-hover); }
-.diana-container .calendar-footer-btn.calendar-apply-btn:hover { background-color: var(--bg-apply-hover); }
+.diana-container .calendar-container.active {
+    display: block;
+}
 
-.diana-container .calendar-day.fixed-date { background-color: #e9ecef !important; color: #6c757d !important; cursor: not-allowed !important; font-weight: bold; border: 1px solid #ced4da; }
-.diana-container .calendar-day.fixed-date.selected, .calendar-day.fixed-date.start-date, .calendar-day.fixed-date.end-date { background-color: #adb5bd !important; color: #ffffff !important; }
-.diana-container .calendar-day.fixed-date:hover { background-color: #e9ecef !important; }
+.diana-container .calendar-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+}
+
+.diana-container .calendar-title {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.diana-container .calendar-body {
+    padding: 10px;
+    margin: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-tertiary);
+}
+
+.diana-container .calendar-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 10px;
+    margin-bottom: 5px;
+}
+
+.diana-container .calendar-month-year {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.diana-container .calendar-nav-btn {
+    background: 0 0;
+    border: 0;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-tertiary);
+    padding: 5px;
+}
+
+.diana-container .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+    padding: 5px 0;
+}
+
+.diana-container .calendar-day-header {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-disabled);
+    padding: 3px 0;
+}
+
+.diana-container .calendar-day {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-radius: 50%;
+    cursor: pointer !important;
+    width: 30px;
+    height: 30px;
+    margin: 0 auto;
+    font-size: 12px;
+    color: var(--text-primary);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.diana-container .calendar-day.empty {
+    background: none;
+    cursor: default;
+}
+
+.diana-container .calendar-day:not(.empty):hover {
+    background-color: var(--bg-hover);
+}
+
+.diana-container .calendar-day.today {
+    border: 1px solid var(--primary-color);
+    font-weight: bold;
+}
+
+.diana-container .calendar-day.selected {
+    background-color: var(--primary-color);
+    color: var(--bg-primary);
+    font-weight: bold;
+}
+
+.diana-container .calendar-day.selected:hover {
+    background-color: var(--bg-apply-hover);
+}
+
+.diana-container .calendar-day.disabled {
+    color: var(--secondary-color);
+    cursor: not-allowed;
+    background: none;
+}
+
+.diana-container .calendar-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+    border-top: 1px solid var(--border-tertiary);
+    gap: 10px;
+}
+
+.diana-container .calendar-footer-btn {
+    padding: 8px 15px;
+    border: 1px solid var(--border-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    background-color: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.diana-container .calendar-footer-btn.calendar-apply-btn {
+    background-color: var(--primary-color);
+    color: var(--bg-primary);
+    border-color: var(--primary-color);
+}
+
+.diana-container .calendar-footer-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.diana-container .calendar-footer-btn.calendar-apply-btn:hover {
+    background-color: var(--bg-apply-hover);
+}
+
+.diana-container .calendar-day.fixed-date {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    cursor: not-allowed !important;
+    font-weight: bold;
+    border: 1px solid #ced4da;
+}
+
+.diana-container .calendar-day.fixed-date.selected, .calendar-day.fixed-date.start-date, .calendar-day.fixed-date.end-date {
+    background-color: #adb5bd !important;
+    color: #ffffff !important;
+}
+
+.diana-container .calendar-day.fixed-date:hover {
+    background-color: #e9ecef !important;
+}
 
 
 /* --- Results Page Specific Styles --- */
@@ -844,6 +1013,7 @@
 .diana-container #responseBox .connection-elements > div:nth-child(1) {
     scroll-margin-top: 0px;
 }
+
 .diana-container #responseBox-bottom .connection-elements > div:nth-child(1) {
     scroll-margin-top: -80px;
 }
@@ -857,10 +1027,12 @@
     padding: 5px 0;
     border-bottom: 1px solid var(--border-primary);
 }
+
 .diana-container .slider-wrapper.etc {
     top: 0;
     padding-top: 0;
 }
+
 .diana-container .slider-wrapper.slider-wrap-fixed {
     bottom: 24px;
     border-top: 1px solid var(--border-primary);
@@ -870,7 +1042,7 @@
 .diana-container .slider {
     overflow-x: auto;
     white-space: nowrap;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
@@ -878,8 +1050,9 @@
     scrollbar-width: thin;
     margin-left: 5px;
 }
+
 .diana-container .slider::-webkit-scrollbar {
-   display: none;
+    display: none;
 }
 
 .diana-container .slider button {
@@ -896,22 +1069,24 @@
     cursor: pointer;
     text-align: center;
     transition: border-color 0.1s ease, background-color 0.1s ease;
-    font-family: "DM Sans",sans-serif !important;
+    font-family: "DM Sans", sans-serif !important;
     line-height: 1.3;
 }
- .diana-container .slider button:hover {
+
+.diana-container .slider button:hover {
     border-color: var(--text-tertiary);
- }
+}
 
 .diana-container .slider button.active-time {
-    background: rgba(130,177,252,.12);
+    background: rgba(130, 177, 252, .12);
     box-shadow: none;
     color: var(--text-primary);
     border-color: var(--primary-color);
     border-width: 1.5px;
 }
+
 .diana-container .slider button.active-time:hover {
-     border-color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 
 .diana-container .middle-box {
@@ -926,10 +1101,12 @@
     box-shadow: 0 1px 2px var(--shadow-light);
     margin: 12px 20px;
 }
+
 .diana-container .middle-box:first-of-type {
     margin-top: 12px;
 }
- .diana-container .middle-box:last-of-type {
+
+.diana-container .middle-box:last-of-type {
     margin-bottom: 12px;
 }
 
@@ -1018,6 +1195,7 @@
     position: relative;
     padding-left: 25px;
 }
+
 .diana-container .middle-box .connection-element:last-child {
     margin-bottom: 0;
 }
@@ -1043,7 +1221,6 @@
 }
 
 
-
 .diana-container .middle-box .element-time span {
     color: var(--text-muted);
 }
@@ -1055,12 +1232,14 @@
     align-items: center;
     justify-content: center;
 }
+
 .diana-container .middle-box .element-icon svg {
     width: 100%;
     height: 100%;
     min-width: 16px;
     min-height: 16px;
 }
+
 .diana-container .middle-box .element-time {
     color: var(--text-primary);
     margin-bottom: 3px;
@@ -1092,9 +1271,9 @@
     z-index: 0
 }
 
- .diana-container .middle-box .waiting-block .element-circle {
+.diana-container .middle-box .waiting-block .element-circle {
     display: none;
- }
+}
 
 
 .diana-container div#eleCont {
@@ -1116,15 +1295,18 @@
     padding: 8px 10px 8px 25px;
     position: relative;
 }
+
 .diana-container .waiting-block .element-time {
     color: var(--text-primary);
     font-weight: 500;
     font-size: 13px;
     margin-bottom: 4px;
 }
+
 .diana-container .waiting-block #eleCont {
     background: transparent;
 }
+
 .diana-container .waiting-block .element-icon {
     top: 8px;
 }
@@ -1176,6 +1358,7 @@
     color: var(--primary-color) !important;
     text-decoration: underline !important;
 }
+
 .diana-container .widget-footer a:hover {
     color: var(--bg-apply-hover) !important;
     text-decoration: none !important;
@@ -1185,11 +1368,13 @@
 .diana-container .menu-body {
     padding-top: 10px;
 }
+
 .diana-container .menu-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
+
 .diana-container .menu-item {
     padding: 15px 20px;
     border-bottom: 1px solid var(--border-tertiary);
@@ -1198,9 +1383,11 @@
     color: var(--text-secondary);
     transition: background-color 0.2s ease;
 }
+
 .diana-container .menu-item:hover {
     background-color: var(--bg-hover);
 }
+
 .diana-container .menu-item:last-child {
     border-bottom: none;
 }
@@ -1211,12 +1398,14 @@
     line-height: 1.6;
     color: var(--text-secondary);
 }
+
 .diana-container .content-page-body h2 {
     font-size: 18px;
     color: var(--text-primary);
     margin-top: 0;
     margin-bottom: 10px;
 }
+
 .diana-container .content-page-body p {
     margin-bottom: 10px;
 }
@@ -1228,55 +1417,56 @@
 
 /* Styles for native date input for MULTIDAY on mobile, if applicable */
 @media (max-width: 768px) {
-  .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Target multiday native inputs */
-    opacity: 1;
-    position: relative;
-    height: auto;
-    padding: 12px 15px !important;
-    border-radius: 5px;
-    border: 1px solid var(--border-primary);
-    background-color: var(--bg-primary);
-    color: var(--text-secondary);
-    font-size: 14px;
-    pointer-events: all;
-    width: 100%;
-    box-sizing: border-box;
-    display: block !important; /* Ensure it's visible */
-  }
+    .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Target multiday native inputs */
+        opacity: 1;
+        position: relative;
+        height: auto;
+        padding: 12px 15px !important;
+        border-radius: 5px;
+        border: 1px solid var(--border-primary);
+        background-color: var(--bg-primary);
+        color: var(--text-secondary);
+        font-size: 14px;
+        pointer-events: all;
+        width: 100%;
+        box-sizing: border-box;
+        display: block !important; /* Ensure it's visible */
+    }
 
-  .diana-container .date-input-column:not(.single) .date-input { /* Hide custom styled div for multiday on mobile */
-    display: none !important;
-  }
+    .diana-container .date-input-column:not(.single) .date-input { /* Hide custom styled div for multiday on mobile */
+        display: none !important;
+    }
 
-  /* For ALL native date pickers on mobile (single and multi) */
-  .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
-    padding: 4px;
-    cursor: pointer;
-    opacity: 0.6;
-  }
+    /* For ALL native date pickers on mobile (single and multi) */
+    .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
+        padding: 4px;
+        cursor: pointer;
+        opacity: 0.6;
+    }
 
-  /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
-  .diana-container input[type="date"].native-date-picker-single {
-      /* While it's styled as display:none !important in HTML,
-         if JS needs to interact with it (e.g. for .showPicker()),
-         it might need to be briefly visible or at least not pointer-events:none.
-         However, the primary interaction is through the buttons.
-         The .showPicker() method works on hidden inputs.
-      */
-  }
+    /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
+    .diana-container input[type="date"].native-date-picker-single {
+        /* While it's styled as display:none !important in HTML,
+           if JS needs to interact with it (e.g. for .showPicker()),
+           it might need to be briefly visible or at least not pointer-events:none.
+           However, the primary interaction is through the buttons.
+           The .showPicker() method works on hidden inputs.
+        */
+    }
 }
 
 @media (min-width: 769px) {
-  .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Hide native multiday input on desktop */
-    display: none !important;
-  }
-   .diana-container .date-input-column:not(.single) .date-input { /* Show custom styled div for multiday on desktop */
-    display: flex !important;
-  }
+    .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Hide native multiday input on desktop */
+        display: none !important;
+    }
 
-  /* On desktop, ensure the single day native picker remains completely non-interactive */
-  .diana-container input[type="date"].native-date-picker-single {
-      pointer-events: none !important; /* Ensure no interaction on desktop */
-      display: none !important; /* Keep it hidden */
-  }
+    .diana-container .date-input-column:not(.single) .date-input { /* Show custom styled div for multiday on desktop */
+        display: flex !important;
+    }
+
+    /* On desktop, ensure the single day native picker remains completely non-interactive */
+    .diana-container input[type="date"].native-date-picker-single {
+        pointer-events: none !important; /* Ensure no interaction on desktop */
+        display: none !important; /* Keep it hidden */
+    }
 }

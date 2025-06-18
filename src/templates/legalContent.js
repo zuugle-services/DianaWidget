@@ -3,7 +3,7 @@
  * Each language key (e.g., EN, DE) contains the HTML string for that language.
  */
 export const legalContent = {
-  EN: `
+    EN: `
     <h2>Legal Information</h2>
     <h3>Terms of Service</h3>
     <p>Please read our <a href="https://www.zuugle-services.com/terms-of-service" target="_blank" rel="noopener noreferrer">Terms of Service</a> carefully before using our widget and services. By accessing or using the service, you agree to be bound by these terms.</p>
@@ -34,7 +34,7 @@ export const legalContent = {
     <h3>License Information for DianaWidget</h3>
     <p>The DianaWidget is proprietary software © Zuugle Services GmbH. For licensing inquiries, please contact <a href="mailto:team@zuugle-services.net">team@zuugle-services.net</a>.</p>
   `,
-  DE: `
+    DE: `
     <h2>Rechtliche Hinweise</h2>
     <h3>Nutzungsbedingungen</h3>
     <p>Bitte lesen Sie unsere <a href="https://www.zuugle-services.com/nutzungsbedingungen" target="_blank" rel="noopener noreferrer">Nutzungsbedingungen</a> sorgfältig durch, bevor Sie unser Widget und unsere Dienste nutzen. Durch den Zugriff auf oder die Nutzung des Dienstes erklären Sie sich mit diesen Bedingungen einverstanden.</p>

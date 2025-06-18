@@ -4,7 +4,7 @@
  * @returns {string} HTML string for the form page.
  */
 export function getFormPageTemplateHTML(args) {
-    const { config, t, state, formatDateForDisplay, formatDatetime } = args;
+    const {config, t, state, formatDateForDisplay, formatDatetime} = args;
 
     const datesFullyDeterminedByFixedDurationAndOverride =
         config.multiday &&
@@ -34,9 +34,9 @@ export function getFormPageTemplateHTML(args) {
                       <input type="date" id="activityDateStart" class="native-date-picker-multiday" aria-hidden="true">
                     </div>
                   </div>`;
-            } else if (config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride){
-                 // Display for overridden or fixed start date in multiday
-                 dateSectionHTML += `
+            } else if (config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride) {
+                // Display for overridden or fixed start date in multiday
+                dateSectionHTML += `
                  <div class="date-input-column">
                    <p id="dateLabelStart">${t('activityStartDateLabel')}</p>
                    <div class="date-input-container disabled" role="button" tabindex="-1">
@@ -52,7 +52,7 @@ export function getFormPageTemplateHTML(args) {
             }
 
             if (showEndDateInput) {
-                 dateSectionHTML += `
+                dateSectionHTML += `
                   <div class="date-input-column">
                     <p id="dateLabelEnd">${t('activityEndDateLabel')}</p>
                     <div class="date-input-container" role="button" aria-labelledby="dateLabelEnd" tabindex="0">
@@ -98,7 +98,7 @@ export function getFormPageTemplateHTML(args) {
                     <input type="date" id="activityDate" class="native-date-picker-single" aria-hidden="true" style="position: absolute; left: -9999px; opacity: 0; pointer-events: none;">
                   </div>`;
             } else if (config.overrideActivityStartDate) { // Overridden single day
-                 dateSectionHTML += `
+                dateSectionHTML += `
                   <div class="date-input-column single">
                     <p id="dateLabel">${t('activityDate')}</p>
                     <div class="date-input-container disabled" role="button" aria-labelledby="dateLabel" tabindex="-1">

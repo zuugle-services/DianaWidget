@@ -3,7 +3,7 @@
  * Each language key (e.g., EN, DE) contains the HTML string for that language.
  */
 export const helpContent = {
-  EN: `
+    EN: `
     <style>
       .help-section h2, .help-section h3, .help-section h4 { margin-bottom: 0.5em; }
       .help-section h3 { margin-top: 1.5em; }
@@ -82,7 +82,7 @@ export const helpContent = {
       <p>For specific inquiries regarding the DianaWidget, including licensing or integration support, you can also email us directly at <a href="mailto:team@zuugle-services.net">team@zuugle-services.net</a>.</p>
     </div>
   `,
-  DE: `
+    DE: `
     <style>
       .help-section h2, .help-section h3, .help-section h4 { margin-bottom: 0.5em; }
       .help-section h3 { margin-top: 1.5em; }

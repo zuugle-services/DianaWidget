@@ -4,7 +4,7 @@
  * @returns {string} HTML string for the results page.
  */
 export function getResultsPageTemplateHTML(args) {
-    const { config, t, state } = args;
+    const {config, t, state} = args;
 
     return `
       <div id="resultsPage" class="modal-page">
