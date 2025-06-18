@@ -26,7 +26,10 @@ export function getResultsPageTemplateHTML(args) {
           <div class="middle-box" id="responseBox-bottom" aria-live="polite">${t('loadingConnectionsO')}</div>
           <div class="slider-wrapper slider-wrap-fixed">
             <div class="slider" id="bottomSlider" role="group" aria-label="${t('ariaLabels.bottomSlider')}"></div>
-            <div id="fromActivityDateDisplay" class="bottom-date-wrapper"></div>
+            <div class="results-bottom-bar">
+                <div></div>
+                <div id="fromActivityDateDisplay" class="activity-date-display"></div>
+            </div>
           </div>
           <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
         </div>
