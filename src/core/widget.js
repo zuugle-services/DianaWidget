@@ -618,8 +618,6 @@ export default class DianaWidget {
 
         if (this.elements.formPageHamburgerBtn) this.elements.formPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
         if (this.elements.resultsPageHamburgerBtn) this.elements.resultsPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
-        if (this.elements.menuPageHamburgerBtn) this.elements.menuPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
-        if (this.elements.menuPageCloseBtn) this.elements.menuPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
         if (this.elements.contentPageHamburgerBtn) this.elements.contentPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
         if (this.elements.contentPageCloseBtn) this.elements.contentPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
     }
@@ -713,9 +711,18 @@ export default class DianaWidget {
         if (this.elements.menuList) {
             this.elements.menuList.addEventListener('click', (e) => {
                 const menuItem = e.target.closest('.menu-item');
-                if (menuItem && menuItem.dataset.contentKey) {
-                    this.hideMenuModal();
-                    this.navigateToContentPage(menuItem.dataset.contentKey);
+                if (menuItem) {
+                    this.handleMenuSelection(menuItem);
+                }
+            });
+
+            this.elements.menuList.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    const menuItem = e.target.closest('.menu-item');
+                    if (menuItem) {
+                        e.preventDefault(); // Prevent space from scrolling
+                        this.handleMenuSelection(menuItem);
+                    }
                 }
             });
         }
@@ -1731,12 +1738,33 @@ export default class DianaWidget {
     showMenuModal() {
         if (this.elements.menuModalOverlay) {
             this.elements.menuModalOverlay.style.display = 'flex';
+            // Use requestAnimationFrame to ensure the display property has been applied before adding the class for transition
+            requestAnimationFrame(() => {
+                this.elements.menuModalOverlay.classList.add('visible');
+            });
         }
     }
 
     hideMenuModal() {
-        if (this.elements.menuModalOverlay) {
-            this.elements.menuModalOverlay.style.display = 'none';
+        const overlay = this.elements.menuModalOverlay;
+        if (overlay) {
+            overlay.classList.remove('visible');
+            // Wait for the transition to finish before setting display to none
+            const handleTransitionEnd = () => {
+                overlay.style.display = 'none';
+                overlay.removeEventListener('transitionend', handleTransitionEnd);
+            };
+            overlay.addEventListener('transitionend', handleTransitionEnd);
+        }
+    }
+
+    handleMenuSelection(menuItem) {
+        if (menuItem && menuItem.dataset.contentKey) {
+            this.hideMenuModal();
+            // Use a timeout to allow the hide transition to start before navigating
+            setTimeout(() => {
+                this.navigateToContentPage(menuItem.dataset.contentKey);
+            }, 50);
         }
     }
 

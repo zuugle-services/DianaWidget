@@ -20,52 +20,52 @@
 
 .diana-container {
     /* Base Colors */
+    --bg-apply-hover: #357ae8;
     --primary-color: #4285f4;
     --secondary-color: #ccc;
-    --warning-color: #ffd38c;
     --success-color: #28a745;
-    --icon-input-color: #656C6E;
+    --warning-color: #ffd38c;
 
     /* Backgrounds */
-    --bg-primary: #fff;
-    --bg-secondary: #fafafa;
-    --bg-tertiary: #f5f5f5;
-    --bg-hover: #f0f0f0;
+    --shadow-dark: rgba(0, 0, 0, 0.2);
+    --text-disabled: #999;
     --bg-error: rgba(220, 53, 69, 0.1);
-    --bg-info: #dee4f3;
-    --bg-transparent: rgba(128, 128, 128, 0.05);
-    --bg-apply-hover: #357ae8;
-    --bg-waiting-block: rgba(255, 149, 0, 0.08);
+    --border-error: rgba(220, 53, 69, 0.2);
+    --text-error: #dc3545;
+    font-family: "DM Sans", sans-serif !important;
+    --shadow-gray: rgba(255, 255, 255, 0.3);
+    height: 100%;
+    --bg-hover: #f0f0f0;
 
     /* Text Colors */
-    --text-primary: #000;
-    --text-secondary: #333;
-    --text-tertiary: #666;
-    --text-muted: #838383;
-    --text-disabled: #999;
-    --text-error: #dc3545;
+    --bg-info: #dee4f3;
+    --border-info: #b8daff;
     --text-info: #004085; /* Used for in-range text */
-    --text-warning: #856404;
+    --icon-input-color: #656C6E;
+    isolation: isolate;
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    max-height: inherit;
+    --shadow-medium: rgba(0, 0, 0, 0.15);
 
     /* Borders */
+    --text-muted: #838383;
+    position: relative;
+    --bg-primary: #fff;
     --border-primary: #e0e0e0;
-    --border-secondary: #d3d3d3;
-    --border-tertiary: #eaeaea;
-    --border-error: rgba(220, 53, 69, 0.2);
-    --border-info: #b8daff;
+    --text-primary: #000;
 
     /* Shadows */
-    --shadow-verylight: rgba(0, 0, 0, 0.08);
-    --shadow-light: rgba(0, 0, 0, 0.1);
-    --shadow-medium: rgba(0, 0, 0, 0.15);
-    --shadow-dark: rgba(0, 0, 0, 0.2);
-    --shadow-gray: rgba(255, 255, 255, 0.3);
+    --bg-secondary: #fafafa;
+    --border-secondary: #d3d3d3;
+    --text-secondary: #333;
+    --bg-tertiary: #f5f5f5;
+    --border-tertiary: #eaeaea;
 
-    font-family: "DM Sans", sans-serif !important;
-    isolation: isolate;
-    height: 100%;
-    position: relative;
-    max-height: inherit;
+    --text-tertiary: #666;
+    --bg-transparent: rgba(128, 128, 128, 0.05);
+    --shadow-verylight: rgba(0, 0, 0, 0.08);
+    --bg-waiting-block: rgba(255, 149, 0, 0.08);
+    --text-warning: #856404;
 }
 
 .diana-container .input-container {
@@ -73,22 +73,22 @@
 }
 
 .diana-container .suggestions-container {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
     background-color: var(--bg-primary);
     border: 1px solid var(--secondary-color);
     border-radius: 5px;
-    z-index: 1000;
+    display: none;
+    left: 0;
     max-height: 150px;
     overflow-y: auto;
-    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 1000;
 }
 
 .diana-container .suggestion-item {
-    padding: 10px;
     cursor: pointer;
+    padding: 10px;
 }
 
 .diana-container .suggestion-item:hover {
@@ -97,31 +97,31 @@
 
 /* --- Widget Header (Common for both pages) --- */
 .diana-container .widget-header {
+    align-items: center;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-primary);
+    box-sizing: border-box;
     display: flex;
     flex-direction: row;
-    align-items: center;
-    padding: 0;
-    border-bottom: 1px solid var(--border-primary);
-    width: 100%;
-    background: var(--bg-primary);
     min-height: 56px; /* Ensure consistent header height */
-    box-sizing: border-box;
+    padding: 0;
+    width: 100%;
 }
 
 .diana-container .widget-header-heading {
-    color: var(--text-primary);
-    font-family: 'DM Sans', sans-serif;
-    font-style: normal;
-    font-weight: 400;
-    font-size: 16px;
-    line-height: 120%;
-    letter-spacing: 0.02em;
-    flex-grow: 1; /* Allow heading to take available space */
-    padding: 18px 9px;
     border-left: 1px solid var(--border-primary);
     border-right: 1px solid var(--border-primary); /* Add right border for consistency */
-    text-align: center;
+    color: var(--text-primary);
+    flex-grow: 1; /* Allow heading to take available space */
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    line-height: 120%;
     overflow: hidden;
+    padding: 18px 9px;
+    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -134,27 +134,27 @@
 
 
 .diana-container .widget-header-button {
+    align-items: center;
+    box-sizing: border-box;
     display: flex;
     flex-direction: row;
-    align-items: center;
-    padding: 7px 24px; /* Consistent padding */
     gap: 10px;
     height: 100%; /* Make button area take full header height */
-    box-sizing: border-box;
+    padding: 7px 24px; /* Consistent padding */
 }
 
 .diana-container .back-btn,
 .diana-container .close-btn {
+    align-items: center;
     background: none;
     border: none;
-    padding: 0;
     color: var(--text-tertiary);
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
     cursor: pointer;
+    display: flex;
+    font-size: 24px;
+    gap: 6px;
     line-height: 1; /* Ensure icon is vertically centered */
+    padding: 0;
 }
 
 .diana-container .close-btn {
@@ -164,16 +164,16 @@
 
 /* --- Modal Structure --- */
 .diana-container .modal {
-    display: none; /* Initially hidden */
-    justify-content: center;
     align-items: center;
     background-color: transparent;
-    position: relative;
-    height: 100%;
-    width: 100%;
-    margin: 0;
+    display: none; /* Initially hidden */
     font-family: "DM Sans", sans-serif !important;
+    height: 100%;
+    justify-content: center;
+    margin: 0;
     max-height: inherit;
+    position: relative;
+    width: 100%;
 }
 
 .diana-container .modal.visible {
@@ -184,20 +184,20 @@
 .diana-container .modal-content {
     background-color: var(--bg-primary);
     border: 0;
-    width: 100%;
-    margin: 0;
-    height: 100%;
-    max-width: 470px;
-    overflow-y: auto;
-    overflow-x: hidden;
-    box-sizing: border-box;
-    transition: all .3s ease-in-out;
     border-radius: 10px;
     box-shadow: 0 4px 8px var(--shadow-dark);
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    position: relative;
+    height: 100%;
+    margin: 0;
     max-height: inherit;
+    max-width: 470px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+    transition: all .3s ease-in-out;
+    width: 100%;
 }
 
 .diana-container .modal-content::-webkit-scrollbar {
@@ -210,22 +210,22 @@
 }
 
 .diana-container .modal-content {
-    scrollbar-width: none;
     scrollbar-color: var(--border-secondary) var(--bg-primary);
+    scrollbar-width: none;
 }
 
 
 /* --- Modal Pages --- */
 .diana-container .modal-page {
+    box-sizing: border-box;
     display: none; /* Hide inactive pages */
-    font-family: "DM Sans", sans-serif !important;
+    flex-direction: column;
     flex-grow: 1;
     flex-shrink: 0; /* Prevent shrinking beyond content size */
-    flex-direction: column;
-    min-height: 0; /* Allow shrinking if content is small */
+    font-family: "DM Sans", sans-serif !important;
     max-height: inherit; /* Ensure it doesn't exceed parent */
+    min-height: 0; /* Allow shrinking if content is small */
     width: 100%; /* Ensure pages take full width */
-    box-sizing: border-box;
 }
 
 .diana-container .modal-page.active {
@@ -238,51 +238,51 @@
 .diana-container .content-page-body {
     display: flex;
     flex-direction: column;
-    font-family: "DM Sans", sans-serif !important;
     flex-grow: 1;
-    padding: 20px;
+    font-family: "DM Sans", sans-serif !important;
     overflow-y: auto;
+    padding: 20px;
 }
 
 .diana-container .modal-body-result {
-    padding: 0;
-    position: relative;
     background-color: var(--bg-secondary);
     overflow-x: hidden;
+    padding: 0;
+    position: relative;
 }
 
 /* --- Form Specific Styles --- */
 .diana-container .form-section {
-    position: relative;
-    margin-bottom: 15px;
     color: var(--text-muted);
+    margin-bottom: 15px;
+    position: relative;
 }
 
 .diana-container .form-section p {
-    margin-bottom: 5px;
     font-size: 14px;
+    margin-bottom: 5px;
 }
 
 .diana-container #clearInputBtn:hover {
     background-color: var(--bg-hover);
-    transition: background-color 0.2s ease;
     border-radius: 8px;
+    transition: background-color 0.2s ease;
 }
 
 .diana-container #currentLocationBtn:hover {
     background-color: var(--bg-hover);
-    transition: background-color 0.2s ease;
     border-radius: 8px;
+    transition: background-color 0.2s ease;
 }
 
 .diana-container .input-field {
-    width: 100%;
-    padding: 12px 40px !important;
-    border-radius: 5px;
     border: 1px solid var(--border-primary);
+    border-radius: 5px;
     box-sizing: border-box;
-    font-size: 14px;
     font-family: "DM Sans", sans-serif !important;
+    font-size: 14px;
+    padding: 12px 40px !important;
+    width: 100%;
 }
 
 .diana-container .input-field.disabled {
@@ -290,19 +290,19 @@
     color: var(--text-tertiary);
     cursor: not-allowed;
     pointer-events: none;
-    user-select: none;
-    --webkit-user-select: none;
     --moz-user-select: none;
     --ms-user-select: none;
+    --webkit-user-select: none;
+    user-select: none;
 }
 
 .diana-container .input-icon,
 .diana-container .input-icon-right {
+    color: var(--icon-input-color);
+    pointer-events: none;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--icon-input-color);
-    pointer-events: none;
 }
 
 .diana-container .input-icon {
@@ -315,9 +315,9 @@
 
 
 .diana-container .date-section-wrapper {
+    align-items: flex-start;
     display: flex;
     gap: 10px;
-    align-items: flex-start;
 }
 
 .diana-container .date-input-column {
@@ -331,8 +331,8 @@
 
 /* Styles for the old date input display (multiday or overridden single day) */
 .diana-container .date-input-container {
-    position: relative;
     cursor: pointer;
+    position: relative;
 }
 
 .diana-container .date-input-container.disabled {
@@ -350,25 +350,25 @@
 }
 
 .diana-container .date-input {
-    font-family: "DM Sans", sans-serif !important;
-    padding: 12px 40px !important;
-    border-radius: 5px;
+    align-items: center;
+    background-color: var(--bg-primary);
     border: 1px solid var(--border-primary);
-    width: 100%;
+    border-radius: 5px;
     box-sizing: border-box;
     cursor: pointer;
-    background-color: var(--bg-primary);
     display: flex;
-    align-items: center;
+    font-family: "DM Sans", sans-serif !important;
+    padding: 12px 40px !important;
     position: relative;
+    width: 100%;
 }
 
 .diana-container .date-input-display { /* The span showing the date in old style */
     color: var(--text-secondary);
+    flex-grow: 1;
+    font-family: "DM Sans", sans-serif !important;
     font-size: 14px;
     pointer-events: none;
-    font-family: "DM Sans", sans-serif !important;
-    flex-grow: 1;
 }
 
 .diana-container .date-input-display.placeholder {
@@ -376,39 +376,37 @@
 }
 
 .diana-container .date-input-icon { /* Icon in old style date input */
-    position: absolute;
+    color: var(--icon-input-color);
     left: 12px;
+    pointer-events: none;
+    position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--icon-input-color);
-    pointer-events: none;
 }
 
-.diana-container .date-input-arrow { /* Arrow in old style date input OR in new "Other Date" button */
+.diana-container .date-input-arrow {
+    color: var(--icon-input-color);
+    pointer-events: none;
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--icon-input-color); /* Default color for arrow in old input */
-    pointer-events: none;
 }
 
-/* Hidden input[type=date] used by both old and new single day logic */
 .diana-container input[type=date].native-date-picker-single {
-    /* Kept hidden via inline style in JS, but good to ensure */
+    cursor: pointer;
     display: none !important;
-    position: absolute;
-    opacity: 0;
+    font-family: "DM Sans", sans-serif !important;
+    height: 100%;
     left: 0;
+    opacity: 0;
+    pointer-events: none; /* Important: allow clicks to pass through to button on desktop */
+    position: absolute;
     top: 0;
     width: 100%;
-    height: 100%;
-    cursor: pointer;
-    font-family: "DM Sans", sans-serif !important;
-    pointer-events: none; /* Important: allow clicks to pass through to button on desktop */
 }
 
-/* New Date Selector Buttons for Single Day (Desktop and Mobile) */
+/* Date Selector Buttons for Single Day (Desktop and Mobile) */
 .diana-container .date-selector-buttons {
     display: flex;
     gap: 8px; /* Space between buttons */
@@ -416,21 +414,21 @@
 }
 
 .diana-container .date-selector-btn {
-    padding: 10px 12px;
-    border: 1px solid var(--border-primary);
-    background-color: transparent; /* Default transparent background */
-    color: var(--text-secondary);
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-family: "DM Sans", sans-serif !important;
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    text-align: center;
-    display: flex; /* For aligning content within the button (icon and text) */
     align-items: center;
+    background-color: transparent; /* Default transparent background */
+    border: 1px solid var(--border-primary);
+    border-radius: 5px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex; /* For aligning content within the button (icon and text) */
+    font-family: "DM Sans", sans-serif !important;
+    font-size: 14px;
     justify-content: center; /* Center text for Today/Tomorrow */
     line-height: 1.2; /* Adjust for better vertical alignment of text */
     min-width: 0; /* Allow buttons to shrink if needed */
+    padding: 10px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 /* Sizing for Today and Tomorrow buttons */
@@ -447,15 +445,15 @@
 }
 
 .diana-container .date-selector-btn:hover {
-    border-color: var(--secondary-color); /* Slightly darker border on hover */
     background-color: var(--bg-hover); /* Light background on hover */
+    border-color: var(--secondary-color); /* Slightly darker border on hover */
 }
 
 /* Active state for all selector buttons */
 .diana-container .date-selector-btn.active {
     background-color: var(--primary-color); /* Solid background when active */
-    color: var(--bg-primary); /* White text when active */
     border-color: var(--primary-color); /* Border matches background */
+    color: var(--bg-primary); /* White text when active */
     font-weight: 500; /* Slightly bolder text */
 }
 
@@ -466,23 +464,23 @@
 
 /* Styling for the text span within "Other Date" button */
 .diana-container #dateBtnOther #otherDateText {
+    flex-grow: 1; /* Allow text to take available space */
+    margin-right: 5px; /* Space between text and arrow */
     overflow: hidden;
+    text-align: left; /* Align text to the left */
     text-overflow: ellipsis;
     white-space: nowrap;
-    flex-grow: 1; /* Allow text to take available space */
-    text-align: left; /* Align text to the left */
-    margin-right: 5px; /* Space between text and arrow */
 }
 
 /* Styling for the arrow icon specifically within the "Other Date" button */
 .diana-container #dateBtnOther .date-input-arrow {
+    color: var(--text-secondary); /* Default arrow color (matches button text) */
+    flex-shrink: 0; /* Prevent arrow from shrinking */
+    height: 16px;
     position: static; /* Override absolute positioning from .date-input-arrow */
+    stroke-width: 2px; /* Thicker arrow */
     transform: none; /* Override transform */
     width: 16px; /* Explicit size for the arrow SVG */
-    height: 16px;
-    stroke-width: 2px; /* Thicker arrow */
-    flex-shrink: 0; /* Prevent arrow from shrinking */
-    color: var(--text-secondary); /* Default arrow color (matches button text) */
 }
 
 /* Arrow color when "Other Date" button is active */
@@ -494,8 +492,8 @@
 
 .diana-container .form-footer {
     display: flex;
-    justify-content: flex-end;
     gap: 10px;
+    justify-content: flex-end;
     margin-top: 20px;
 }
 
@@ -504,17 +502,17 @@
 }
 
 .diana-container .btn {
-    padding: 10px 20px;
     border: 0;
     border-radius: 4px;
     cursor: pointer;
     font-family: "DM Sans", sans-serif !important;
+    padding: 10px 20px;
     transition: background-color 0.2s ease;
 }
 
 .diana-container .btn:disabled {
-    opacity: 0.7;
     cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .diana-container .apply-btn,
@@ -528,15 +526,15 @@
 }
 
 .diana-container .loading-spinner {
-    display: inline-block;
-    width: 1em;
-    height: 1em;
+    animation: spin 1s ease-in-out infinite;
     border: 2px solid var(--shadow-gray);
     border-radius: 50%;
     border-top-color: var(--bg-primary);
-    animation: spin 1s ease-in-out infinite;
+    display: inline-block;
+    height: 1em;
     margin-right: 0.5em;
     vertical-align: middle;
+    width: 1em;
 }
 
 @keyframes spin {
@@ -547,31 +545,31 @@
 
 /* --- Range Calendar Modal Styles --- */
 .diana-container .range-calendar-overlay {
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
     display: none;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    padding: 20px;
     position: absolute;
     top: 0;
-    left: 0;
     width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
     z-index: 2000;
-    padding: 20px;
-    box-sizing: border-box;
 }
 
 .diana-container .range-calendar-modal {
     background-color: var(--bg-primary);
     border-radius: 10px;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: auto;
-    max-width: 350px;
-    min-width: 280px;
-    position: relative;
     display: flex;
     flex-direction: column;
     font-family: "DM Sans", sans-serif !important;
+    max-width: 350px;
+    min-width: 280px;
+    position: relative;
+    width: auto;
 }
 
 .diana-container .range-calendar-modal.single-month-range {
@@ -580,28 +578,28 @@
 
 
 .diana-container .range-calendar-header {
+    align-items: center;
+    border-bottom: 1px solid var(--border-tertiary);
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 10px 15px;
-    border-bottom: 1px solid var(--border-tertiary);
 }
 
 .diana-container .range-calendar-header h3 {
-    margin: 0;
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 500;
-    color: var(--text-primary);
+    margin: 0;
 }
 
 .diana-container .range-calendar-close-btn {
     background: none;
     border: none;
-    font-size: 24px;
     color: var(--text-tertiary);
     cursor: pointer;
-    padding: 0 5px;
+    font-size: 24px;
     line-height: 1;
+    padding: 0 5px;
 }
 
 .diana-container .range-calendar-close-btn:hover {
@@ -610,34 +608,34 @@
 
 .diana-container .range-calendar-body {
     display: flex;
-    padding: 10px;
     justify-content: center;
+    padding: 10px;
 }
 
 .diana-container .range-calendar-instance {
-    flex: 1;
-    min-width: 280px;
-    max-width: 320px;
     border: 1px solid var(--border-tertiary);
     border-radius: 8px;
-    padding: 10px;
     box-sizing: border-box;
+    flex: 1;
+    max-width: 320px;
+    min-width: 280px;
+    padding: 10px;
 }
 
 .diana-container .range-calendar-instance .calendar-nav {
+    align-items: center;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 5px 0;
     margin-bottom: 5px;
+    padding: 5px 0;
 }
 
 .diana-container .range-calendar-instance .calendar-nav-btn {
     background: none;
     border: none;
+    color: var(--text-tertiary);
     cursor: pointer;
     font-size: 16px;
-    color: var(--text-tertiary);
     padding: 5px;
 }
 
@@ -646,49 +644,49 @@
 }
 
 .diana-container .range-calendar-instance .calendar-month-year {
+    flex-grow: 1;
     font-size: 14px;
     font-weight: 500;
     text-align: center;
-    flex-grow: 1;
 }
 
 
 .diana-container .range-calendar-instance .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
     gap: 0;
+    grid-template-columns: repeat(7, 1fr);
     padding: 2px 0;
 }
 
 .diana-container .range-calendar-instance .calendar-day-header {
-    text-align: center;
+    color: var(--text-disabled);
     font-size: 11px;
     font-weight: 500;
-    color: var(--text-disabled);
     padding: 3px 0;
+    text-align: center;
 }
 
 .diana-container .range-calendar-instance .calendar-day {
-    display: flex;
-    justify-content: center;
     align-items: center;
-    text-align: center;
-    cursor: pointer !important;
-    width: 100%;
-    height: 32px;
-    margin: 0;
-    font-size: 12px;
-    color: var(--text-primary);
-    transition: background-color 0.2s ease, color 0.2s ease;
-    position: relative;
-    box-sizing: border-box;
     border-radius: 0;
+    box-sizing: border-box;
+    color: var(--text-primary);
+    cursor: pointer !important;
+    display: flex;
+    font-size: 12px;
+    height: 32px;
+    justify-content: center;
+    margin: 0;
+    position: relative;
+    text-align: center;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    width: 100%;
 }
 
 .diana-container .range-calendar-instance .calendar-day.empty {
     background: none !important;
-    cursor: default;
     border-radius: 0 !important;
+    cursor: default;
 }
 
 .diana-container .range-calendar-instance .calendar-day:not(.empty):not(.disabled):hover {
@@ -701,16 +699,16 @@
 }
 
 .diana-container .range-calendar-instance .calendar-day.today::after {
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    bottom: 4px;
     content: '';
     display: block;
-    width: 4px;
     height: 4px;
-    border-radius: 50%;
-    background-color: var(--primary-color);
-    position: absolute;
-    bottom: 4px;
     left: 50%;
+    position: absolute;
     transform: translateX(-50%);
+    width: 4px;
     z-index: 1;
 }
 
@@ -725,11 +723,11 @@
 
 
 .diana-container .range-calendar-instance .calendar-day.disabled {
+    background: none !important;
+    border-radius: 0 !important;
     color: var(--secondary-color);
     cursor: not-allowed;
-    background: none !important;
     text-decoration: line-through;
-    border-radius: 0 !important;
 }
 
 .diana-container .range-calendar-instance .calendar-day.disabled:hover {
@@ -738,22 +736,22 @@
 
 .diana-container .range-calendar-instance .calendar-day.in-range {
     background-color: var(--bg-info) !important;
-    color: var(--text-info) !important;
     border-radius: 0 !important;
+    color: var(--text-info) !important;
 }
 
 .diana-container .range-calendar-instance .calendar-day.start-date {
     background-color: var(--primary-color) !important;
+    border-radius: 16px 0 0 16px !important;
     color: var(--bg-primary) !important;
     font-weight: bold;
-    border-radius: 16px 0 0 16px !important;
 }
 
 .diana-container .range-calendar-instance .calendar-day.end-date {
     background-color: var(--primary-color) !important;
+    border-radius: 0 16px 16px 0 !important;
     color: var(--bg-primary) !important;
     font-weight: bold;
-    border-radius: 0 16px 16px 0 !important;
 }
 
 .diana-container .range-calendar-instance .calendar-day.start-date.end-date {
@@ -771,21 +769,21 @@
 
 
 .diana-container .range-calendar-footer {
+    border-top: 1px solid var(--border-tertiary);
     display: flex;
+    gap: 10px;
     justify-content: flex-end;
     padding: 10px 15px;
-    border-top: 1px solid var(--border-tertiary);
-    gap: 10px;
 }
 
 .diana-container .range-calendar-footer .calendar-footer-btn {
-    padding: 8px 15px;
+    background-color: var(--bg-primary);
     border: 1px solid var(--border-secondary);
     border-radius: 4px;
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 12px;
-    background-color: var(--bg-primary);
-    color: var(--text-secondary);
+    padding: 8px 15px;
 }
 
 .diana-container .range-calendar-footer .calendar-footer-btn:hover {
@@ -794,8 +792,8 @@
 
 .diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
-    color: var(--bg-primary);
     border-color: var(--primary-color);
+    color: var(--bg-primary);
 }
 
 .diana-container .range-calendar-footer .calendar-footer-btn.calendar-apply-btn:hover {
@@ -804,8 +802,8 @@
 
 @media (max-width: 768px) {
     .diana-container .range-calendar-modal {
-        width: 95%;
         max-width: 95%;
+        width: 95%;
     }
 
     .diana-container .range-calendar-instance {
@@ -817,15 +815,15 @@
 
 /* SingleCalendar pop-up styles */
 .diana-container.calendar-container {
-    display: none;
-    position: absolute;
-    z-index: 1050; /* Ensure it's above most other elements */
     background: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow-medium);
+    display: none;
     font-family: "DM Sans", sans-serif !important;
     height: fit-content;
     min-width: 280px; /* Ensure calendar has a decent minimum width */
+    position: absolute;
+    z-index: 1050; /* Ensure it's above most other elements */
 }
 
 .diana-container .calendar-container.active {
@@ -833,31 +831,31 @@
 }
 
 .diana-container .calendar-header {
+    align-items: center;
     display: flex;
     justify-content: center;
-    align-items: center;
     padding: 5px;
 }
 
 .diana-container .calendar-title {
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 500;
-    color: var(--text-primary);
 }
 
 .diana-container .calendar-body {
-    padding: 10px;
-    margin: 10px;
-    border-radius: 8px;
     border: 1px solid var(--border-tertiary);
+    border-radius: 8px;
+    margin: 10px;
+    padding: 10px;
 }
 
 .diana-container .calendar-nav {
+    align-items: center;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    padding: 5px 10px;
     margin-bottom: 5px;
+    padding: 5px 10px;
 }
 
 .diana-container .calendar-month-year {
@@ -868,40 +866,40 @@
 .diana-container .calendar-nav-btn {
     background: 0 0;
     border: 0;
+    color: var(--text-tertiary);
     cursor: pointer;
     font-size: 16px;
-    color: var(--text-tertiary);
     padding: 5px;
 }
 
 .diana-container .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
     gap: 3px;
+    grid-template-columns: repeat(7, 1fr);
     padding: 5px 0;
 }
 
 .diana-container .calendar-day-header {
-    text-align: center;
+    color: var(--text-disabled);
     font-size: 12px;
     font-weight: 500;
-    color: var(--text-disabled);
     padding: 3px 0;
+    text-align: center;
 }
 
 .diana-container .calendar-day {
-    display: flex;
-    justify-content: center;
     align-items: center;
-    text-align: center;
     border-radius: 50%;
-    cursor: pointer !important;
-    width: 30px;
-    height: 30px;
-    margin: 0 auto;
-    font-size: 12px;
     color: var(--text-primary);
+    cursor: pointer !important;
+    display: flex;
+    font-size: 12px;
+    height: 30px;
+    justify-content: center;
+    margin: 0 auto;
+    text-align: center;
     transition: background-color 0.2s ease, color 0.2s ease;
+    width: 30px;
 }
 
 .diana-container .calendar-day.empty {
@@ -929,33 +927,33 @@
 }
 
 .diana-container .calendar-day.disabled {
+    background: none;
     color: var(--secondary-color);
     cursor: not-allowed;
-    background: none;
 }
 
 .diana-container .calendar-footer {
+    border-top: 1px solid var(--border-tertiary);
     display: flex;
+    gap: 10px;
     justify-content: flex-end;
     padding: 10px;
-    border-top: 1px solid var(--border-tertiary);
-    gap: 10px;
 }
 
 .diana-container .calendar-footer-btn {
-    padding: 8px 15px;
+    background-color: var(--bg-primary);
     border: 1px solid var(--border-secondary);
     border-radius: 4px;
+    color: var(--text-secondary);
     cursor: pointer;
     font-size: 12px;
-    background-color: var(--bg-primary);
-    color: var(--text-secondary);
+    padding: 8px 15px;
 }
 
 .diana-container .calendar-footer-btn.calendar-apply-btn {
     background-color: var(--primary-color);
-    color: var(--bg-primary);
     border-color: var(--primary-color);
+    color: var(--bg-primary);
 }
 
 .diana-container .calendar-footer-btn:hover {
@@ -968,10 +966,10 @@
 
 .diana-container .calendar-day.fixed-date {
     background-color: #e9ecef !important;
+    border: 1px solid #ced4da;
     color: #6c757d !important;
     cursor: not-allowed !important;
     font-weight: bold;
-    border: 1px solid #ced4da;
 }
 
 .diana-container .calendar-day.fixed-date.selected, .calendar-day.fixed-date.start-date, .calendar-day.fixed-date.end-date {
@@ -987,38 +985,38 @@
 /* --- Results Page Specific Styles --- */
 
 .diana-container .results-top-bar {
+    align-items: center;
+    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 8px 20px;
     width: 100%;
-    box-sizing: border-box;
 }
 
 
 .diana-container .results-bottom-bar {
+    align-items: center;
+    box-sizing: border-box;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     padding: 8px 20px;
     width: 100%;
-    box-sizing: border-box;
 }
 
 
 .diana-container .widget-response-back-button {
-    display: flex;
     align-items: center;
-    gap: 6px;
+    border-radius: 8px;
     color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
     font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
     font-style: normal;
     font-weight: 400;
-    font-size: 14px;
+    gap: 6px;
     line-height: 120%;
     padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 8px;
     transition: background-color 0.2s ease;
     width: fit-content;
 }
@@ -1028,14 +1026,14 @@
 }
 
 .diana-container .activity-date-display {
+    background-color: var(--bg-info);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px var(--shadow-light);
+    color: var(--text-info);
     font-size: 14px;
     font-weight: 500;
-    background-color: var(--bg-info);
-    color: var(--text-info);
-    padding: 3px 7px;
-    border-radius: 4px;
     line-height: 1.2;
-    box-shadow: 0 1px 2px var(--shadow-light);
+    padding: 3px 7px;
 }
 
 
@@ -1049,37 +1047,37 @@
 
 
 .diana-container .slider-wrapper {
-    background-color: var(--bg-primary);
     align-items: center;
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-primary);
+    padding: 5px 0;
     position: sticky;
     z-index: 9;
-    padding: 5px 0;
-    border-bottom: 1px solid var(--border-primary);
 }
 
 .diana-container .slider-wrapper.etc {
-    top: 0;
     padding-top: 0;
+    top: 0;
 }
 
 .diana-container .slider-wrapper.slider-wrap-fixed {
-    bottom: 24px;
-    border-top: 1px solid var(--border-primary);
     border-bottom: none;
+    border-top: 1px solid var(--border-primary);
+    bottom: 24px;
     z-index: 8;
 }
 
 
 .diana-container .slider {
-    overflow-x: auto;
-    white-space: nowrap;
     font-family: "DM Sans", sans-serif !important;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
-    scroll-snap-type: x mandatory;
-    padding: 0 10px;
-    scrollbar-width: thin;
     margin-left: 5px;
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    padding: 0 10px;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    white-space: nowrap;
 }
 
 .diana-container .slider::-webkit-scrollbar {
@@ -1087,21 +1085,21 @@
 }
 
 .diana-container .slider button {
-    display: inline-block;
-    margin: 5px 2px;
-    padding: 5px;
     background: var(--bg-primary);
-    box-shadow: none;
     border: 1px solid var(--secondary-color);
     border-radius: 8px;
+    box-shadow: none;
     color: var(--text-primary);
-    scroll-snap-align: start;
-    min-width: 95px;
     cursor: pointer;
-    text-align: center;
-    transition: border-color 0.1s ease, background-color 0.1s ease;
+    display: inline-block;
     font-family: "DM Sans", sans-serif !important;
     line-height: 1.3;
+    margin: 5px 2px;
+    min-width: 95px;
+    padding: 5px;
+    scroll-snap-align: start;
+    text-align: center;
+    transition: border-color 0.1s ease, background-color 0.1s ease;
 }
 
 .diana-container .slider button:hover {
@@ -1110,10 +1108,10 @@
 
 .diana-container .slider button.active-time {
     background: rgba(130, 177, 252, .12);
-    box-shadow: none;
-    color: var(--text-primary);
     border-color: var(--primary-color);
     border-width: 2px;
+    box-shadow: none;
+    color: var(--text-primary);
 }
 
 .diana-container .slider button.active-time:hover {
@@ -1122,15 +1120,15 @@
 
 .diana-container .middle-box {
     background: var(--bg-primary);
-    padding: 12px 15px;
+    border: 1px solid var(--border-primary);
     border-radius: 8px;
+    box-shadow: 0 1px 2px var(--shadow-light);
+    color: var(--text-secondary);
     font-size: 14px;
     line-height: 1.4;
-    color: var(--text-secondary);
-    min-height: max-content;
-    border: 1px solid var(--border-primary);
-    box-shadow: 0 1px 2px var(--shadow-light);
     margin: 12px 20px;
+    min-height: max-content;
+    padding: 12px 15px;
 }
 
 .diana-container .middle-box:first-of-type {
@@ -1143,8 +1141,8 @@
 
 .diana-container #activity-time {
     background: var(--bg-info);
-    padding: 12px 15px;
     margin: 12px 20px;
+    padding: 12px 15px;
     scroll-margin: 270px;
 }
 
@@ -1155,14 +1153,14 @@
 }
 
 .diana-container .activity-time-header {
+    border-bottom: 1px solid var(--shadow-verylight);
+    color: var(--text-primary);
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-weight: 500;
-    line-height: 120%;
     letter-spacing: 0.02em;
-    color: var(--text-primary);
+    line-height: 120%;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--shadow-verylight);
 }
 
 .diana-container .activity-time-header a:hover svg {
@@ -1178,19 +1176,19 @@
 }
 
 .diana-container .activity-time-row {
-    display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    line-height: 120%;
-    letter-spacing: 0.02em;
     color: var(--text-tertiary);
+    display: flex;
+    font-size: 13px;
+    gap: 8px;
+    letter-spacing: 0.02em;
+    line-height: 120%;
 }
 
 .diana-container .activity-time-label {
-    min-width: 70px;
     color: var(--text-tertiary);
     font-weight: 500;
+    min-width: 70px;
 }
 
 .diana-container .activity-time-value {
@@ -1204,27 +1202,27 @@
 
 .diana-container .activity-time-warning-text {
     background: var(--warning-color);
-    padding: 8px 10px;
-    box-shadow: 0 1px 3px var(--shadow-light);
     border-radius: 6px;
-    margin-top: 6px;
-    margin-left: 5px;
-    font-size: 12px;
+    box-shadow: 0 1px 3px var(--shadow-light);
     color: var(--text-warning);
+    font-size: 12px;
+    margin-left: 5px;
+    margin-top: 6px;
+    padding: 8px 10px;
 }
 
 
 .diana-container .middle-box .connection-elements {
     border-left: 3px solid var(--border-tertiary);
-    padding-left: 15px;
     margin-left: 7px;
+    padding-left: 15px;
     position: relative;
 }
 
 .diana-container .middle-box .connection-element {
     margin-bottom: 15px;
-    position: relative;
     padding-left: 25px;
+    position: relative;
 }
 
 .diana-container .middle-box .connection-element:last-child {
@@ -1232,18 +1230,18 @@
 }
 
 .diana-container .connection-leg-date-display {
+    background-color: var(--bg-info);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px var(--shadow-light);
+    color: var(--text-info);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+    padding: 3px 7px;
     position: absolute;
     right: 8px;
     top: 50%;
     transform: translateY(-50%);
-    background-color: var(--bg-info);
-    color: var(--text-info);
-    padding: 3px 7px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: 500;
-    line-height: 1.2;
-    box-shadow: 0 1px 2px var(--shadow-light);
     white-space: nowrap;
     z-index: 1;
 }
@@ -1257,32 +1255,32 @@
 }
 
 .diana-container .element-icon {
-    width: 16px;
-    height: 16px;
-    display: flex;
     align-items: center;
+    display: flex;
+    height: 16px;
     justify-content: center;
+    width: 16px;
 }
 
 .diana-container .middle-box .element-icon svg {
-    width: 100%;
     height: 100%;
-    min-width: 16px;
     min-height: 16px;
+    min-width: 16px;
+    width: 100%;
 }
 
 .diana-container .middle-box .element-time {
     color: var(--text-primary);
+    font-size: 14px;
     margin-bottom: 3px;
-    font-size: 14px
 }
 
 .diana-container .middle-box .element-duration {
+    color: var(--text-primary);
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
-    line-height: 120%;
     letter-spacing: 0.02em;
-    color: var(--text-primary);
+    line-height: 120%;
     padding: 4px;
 }
 
@@ -1292,13 +1290,13 @@
 }
 
 .diana-container .middle-box .element-circle {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
     background-color: var(--primary-color);
+    border-radius: 50%;
+    height: 5px;
+    left: -19px;
     position: absolute;
     top: 5px;
-    left: -19px;
+    width: 5px;
     z-index: 0
 }
 
@@ -1308,15 +1306,15 @@
 
 
 .diana-container div#eleCont {
-    gap: 4px;
-    background-color: var(--bg-tertiary);
-    width: fit-content;
-    min-height: 30px;
     align-items: center;
+    background-color: var(--bg-tertiary);
     border-radius: 8px;
     display: flex;
     flex-direction: row;
+    gap: 4px;
+    min-height: 30px;
     padding: 4px 8px;
+    width: fit-content;
 }
 
 .diana-container .waiting-block {
@@ -1329,8 +1327,8 @@
 
 .diana-container .waiting-block .element-time {
     color: var(--text-primary);
-    font-weight: 500;
     font-size: 13px;
+    font-weight: 500;
     margin-bottom: 4px;
 }
 
@@ -1344,45 +1342,45 @@
 
 
 .diana-container .error-message {
-    color: var(--text-error);
     background-color: var(--bg-error);
     border: 1px solid var(--border-error);
-    text-align: center;
-    padding: 10px 15px;
-    margin: 10px 20px;
     border-radius: 6px;
+    color: var(--text-error);
     font-size: 14px;
+    margin: 10px 20px;
+    padding: 10px 15px;
+    text-align: center;
 }
 
 .diana-container .info-message {
-    color: var(--text-info);
     background-color: var(--bg-info);
     border: 1px solid var(--border-info);
-    text-align: center;
-    padding: 10px 15px;
-    margin: 10px 20px;
     border-radius: 6px;
+    color: var(--text-info);
     font-size: 14px;
     line-height: 1.4;
+    margin: 10px 20px;
+    padding: 10px 15px;
+    text-align: center;
 }
 
 
 .diana-container .widget-footer {
+    align-items: center;
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border-primary);
+    bottom: 0;
     box-sizing: border-box;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 4px 0;
-    gap: 10px;
-    width: 100%;
-    height: 24px;
-    border-top: 1px solid var(--border-primary);
     font-size: 11px;
-    position: sticky;
-    bottom: 0;
-    background-color: var(--bg-primary);
-    z-index: 9;
+    gap: 10px;
+    height: 24px;
+    justify-content: center;
     max-height: inherit;
+    padding: 4px 0;
+    position: sticky;
+    width: 100%;
+    z-index: 9;
 }
 
 .diana-container .widget-footer a {
@@ -1395,37 +1393,53 @@
     text-decoration: none !important;
 }
 
+/* --- Menu Modal Styles --- */
 .diana-container .menu-modal-overlay {
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
     display: none;
+    height: 100%;
+    justify-content: center;
+    left: 0;
+    opacity: 0;
+    padding: 20px;
     position: absolute;
     top: 0;
-    left: 0;
+    transition: opacity 0.3s ease-in-out;
     width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
     z-index: 2000;
-    padding: 20px;
-    box-sizing: border-box;
+}
+
+.diana-container .menu-modal-overlay.visible {
+    opacity: 1;
 }
 
 .diana-container .menu-modal {
     background-color: var(--bg-primary);
     border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    max-width: 350px;
-    min-width: 280px;
-    position: relative;
+    box-shadow: 0 5px 15px var(--shadow-medium);
     display: flex;
     flex-direction: column;
     font-family: "DM Sans", sans-serif !important;
+    max-width: 380px;
+    min-width: 300px;
+    opacity: 0;
     overflow: hidden;
+    position: relative;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    width: 100%;
+}
+
+.diana-container .menu-modal-overlay.visible .menu-modal {
+    opacity: 1;
+    transform: translateY(0);
 }
 
 .diana-container .menu-modal .range-calendar-header {
-    border-bottom: 1px solid var(--border-tertiary);
+    box-shadow: 0 2px 4px var(--shadow-light);
+    z-index: 1;
 }
 
 .diana-container .menu-modal-body {
@@ -1434,34 +1448,75 @@
 
 .diana-container .menu-modal .menu-list {
     list-style: none;
-    padding: 0;
     margin: 0;
+    padding: 0;
 }
 
 .diana-container .menu-modal .menu-item {
-    padding: 15px 20px;
+    align-items: center;
+    border-bottom: 1px solid var(--border-tertiary);
     cursor: pointer;
-    font-size: 16px;
-    color: var(--text-secondary);
+    display: flex;
+    gap: 16px;
+    padding: 16px 20px;
     transition: background-color 0.2s ease;
+}
+
+.diana-container .menu-modal .menu-item:last-child {
+    border-bottom: none;
 }
 
 .diana-container .menu-modal .menu-item:hover {
     background-color: var(--bg-hover);
 }
 
+.diana-container .menu-item-icon {
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+}
+
+.diana-container .menu-item-icon svg {
+    display: block;
+    height: 24px;
+    width: 24px;
+}
+
+.diana-container .menu-item-text {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 2px;
+}
+
+.diana-container .menu-item-title {
+    color: var(--text-secondary);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.diana-container .menu-item-subtitle {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+.diana-container .menu-item-chevron {
+    color: var(--text-disabled);
+    flex-shrink: 0;
+}
+
+
 /* --- Content Page Specific Styles --- */
 .diana-container .content-page-body {
+    color: var(--text-secondary);
     font-size: 14px;
     line-height: 1.6;
-    color: var(--text-secondary);
 }
 
 .diana-container .content-page-body h2 {
-    font-size: 18px;
     color: var(--text-primary);
-    margin-top: 0;
+    font-size: 18px;
     margin-bottom: 10px;
+    margin-top: 0;
 }
 
 .diana-container .content-page-body p {
@@ -1476,19 +1531,19 @@
 /* Styles for native date input for MULTIDAY on mobile, if applicable */
 @media (max-width: 768px) {
     .diana-container .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Target multiday native inputs */
-        opacity: 1;
-        position: relative;
-        height: auto;
-        padding: 12px 15px !important;
-        border-radius: 5px;
-        border: 1px solid var(--border-primary);
         background-color: var(--bg-primary);
-        color: var(--text-secondary);
-        font-size: 14px;
-        pointer-events: all;
-        width: 100%;
+        border: 1px solid var(--border-primary);
+        border-radius: 5px;
         box-sizing: border-box;
+        color: var(--text-secondary);
         display: block !important; /* Ensure it's visible */
+        font-size: 14px;
+        height: auto;
+        opacity: 1;
+        padding: 12px 15px !important;
+        pointer-events: all;
+        position: relative;
+        width: 100%;
     }
 
     .diana-container .date-input-column:not(.single) .date-input { /* Hide custom styled div for multiday on mobile */
@@ -1497,9 +1552,9 @@
 
     /* For ALL native date pickers on mobile (single and multi) */
     .diana-container input[type="date"]::-webkit-calendar-picker-indicator {
-        padding: 4px;
         cursor: pointer;
         opacity: 0.6;
+        padding: 4px;
     }
 
     /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
@@ -1524,7 +1579,7 @@
 
     /* On desktop, ensure the single day native picker remains completely non-interactive */
     .diana-container input[type="date"].native-date-picker-single {
-        pointer-events: none !important; /* Ensure no interaction on desktop */
         display: none !important; /* Keep it hidden */
+        pointer-events: none !important; /* Ensure no interaction on desktop */
     }
 }

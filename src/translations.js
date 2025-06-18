@@ -43,8 +43,10 @@ export default {
         tomorrow: "Tomorrow",
         otherDate: "Other date",
         menu: {
-            helpAndSupport: "Help",
-            legal: "Legal"
+            helpAndSupport: "Hilfe",
+            helpAndSupportSubtitle: "Find answers & guides.",
+            legal: "Rechtliches",
+            legalSubtitle: "Terms and privacy information."
         },
         warnings: {
             earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
@@ -181,7 +183,9 @@ export default {
         otherDate: "Anderes Datum",
         menu: {
             helpAndSupport: "Hilfe",
-            legal: "Rechtliches"
+            helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
+            legal: "Rechtliches",
+            legalSubtitle: "Rechtliche Informationen."
         },
         warnings: {
             earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
@@ -317,8 +321,10 @@ export default {
         tomorrow: "Tomorrow",
         otherDate: "Other date",
         menu: {
-            helpAndSupport: "Help",
-            legal: "Legal"
+            helpAndSupport: "Hilfe",
+            helpAndSupportSubtitle: "Find answers & guides.",
+            legal: "Rechtliches",
+            legalSubtitle: "Terms and privacy information."
         },
         warnings: {
             earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
