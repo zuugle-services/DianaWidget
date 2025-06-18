@@ -629,7 +629,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 5px 0px;
+    padding: 5px 0;
     margin-bottom: 5px;
 }
 
@@ -1041,7 +1041,7 @@
 
 
 .diana-container #responseBox .connection-elements > div:nth-child(1) {
-    scroll-margin-top: 0px;
+    scroll-margin-top: 0;
 }
 
 .diana-container #responseBox-bottom .connection-elements > div:nth-child(1) {
@@ -1114,7 +1114,7 @@
     box-shadow: none;
     color: var(--text-primary);
     border-color: var(--primary-color);
-    border-width: 1.5px;
+    border-width: 2px;
 }
 
 .diana-container .slider button.active-time:hover {
@@ -1373,7 +1373,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 4px 0px;
+    padding: 4px 0;
     gap: 10px;
     width: 100%;
     height: 24px;

@@ -397,3 +397,23 @@ export function formatFullDateForDisplay(date, language) {
         return "";
     }
 }
+
+
+/**
+ * Converts a JavaScript Date object to a UTC midnight Date object.
+ *
+ * This function takes a provided JavaScript Date object and converts it to a Date object set to midnight in UTC.
+ * If the input is invalid, it falls back to the provided luxon DateTime object's day start in UTC.
+ *
+ * @param {Date} jsDateInput - A valid JavaScript Date object to be converted. If invalid, the fallback is used.
+ * @param {Object} fallbackLuxonDtForDay - A luxon DateTime object used as a fallback when the input date is invalid.
+ * @return {Date} A JavaScript Date object representing midnight in UTC.
+ */
+export function convertToUTCMidnightJSDate(jsDateInput, fallbackLuxonDtForDay) {
+    if (jsDateInput && !isNaN(new Date(jsDateInput.valueOf()))) {
+        const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, {zone: this.config.timezone});
+        const isoDate = dtInWidgetZone.toISODate();
+        return DateTime.fromISO(isoDate, {zone: 'utc'}).toJSDate();
+    }
+    return fallbackLuxonDtForDay.startOf('day').toUTC().toJSDate();
+}

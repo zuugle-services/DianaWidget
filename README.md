@@ -300,40 +300,42 @@ The widget uses CSS custom properties (variables) for easy theming. You can over
 Define these in a CSS rule targeting `.diana-container` (which is injected inside your `#dianaWidgetContainer`):
 
 ```css
-/* Base Colors */
---primary-color: #4285f4;   /* Main interactive elements, highlights */
---secondary-color: #ccc;    /* Borders, disabled states */
---warning-color: #ffd38c;   /* Warning backgrounds (e.g., duration warning) */
---error-color: #dc3545;     /* Error messages */
---success-color: #28a745;   /* Success indicators (if needed) */
+.diana-container {
+    /* Base Colors */
+    --primary-color: #4285f4;   /* Main interactive elements, highlights */
+    --secondary-color: #ccc;    /* Borders, disabled states */
+    --warning-color: #ffd38c;   /* Warning backgrounds (e.g., duration warning) */
+    --error-color: #dc3545;     /* Error messages */
+    --success-color: #28a745;   /* Success indicators (if needed) */
 
-/* Icon Colors */
---icon-input-color: #656C6E; /* Icons inside input fields */
+    /* Icon Colors */
+    --icon-input-color: #656C6E; /* Icons inside input fields */
 
-/* Backgrounds */
---bg-primary: #fff;         /* Main background (form page, sliders) */
---bg-secondary: #fafafa;    /* Secondary background (results page) */
---bg-tertiary: #f5f5f5;     /* Disabled input background */
---bg-hover: #f0f0f0;        /* Hover states for suggestions, buttons */
---bg-info: #dee4f3;         /* Background for the activity time box */
---bg-transparent: rgba(128,128,128,0.05); /* Transparent background utility */
+    /* Backgrounds */
+    --bg-primary: #fff;         /* Main background (form page, sliders) */
+    --bg-secondary: #fafafa;    /* Secondary background (results page) */
+    --bg-tertiary: #f5f5f5;     /* Disabled input background */
+    --bg-hover: #f0f0f0;        /* Hover states for suggestions, buttons */
+    --bg-info: #dee4f3;         /* Background for the activity time box */
+    --bg-transparent: rgba(128,128,128,0.05); /* Transparent background utility */
 
-/* Text Colors */
---text-primary: #000;       /* Primary text, headings */
---text-secondary: #333;     /* Secondary text, input values */
---text-tertiary: #666;      /* Tertiary text, labels, back button */
---text-muted: #838383;      /* Muted text (e.g., time spans in details) */
---text-disabled: #999;      /* Disabled text, placeholders, footer */
+    /* Text Colors */
+    --text-primary: #000;       /* Primary text, headings */
+    --text-secondary: #333;     /* Secondary text, input values */
+    --text-tertiary: #666;      /* Tertiary text, labels, back button */
+    --text-muted: #838383;      /* Muted text (e.g., time spans in details) */
+    --text-disabled: #999;      /* Disabled text, placeholders, footer */
 
-/* Borders */
---border-primary: #e0e0e0;   /* Main borders (inputs, headers, footer) */
---border-secondary: #d3d3d3; /* Secondary borders */
---border-tertiary: #eaeaea;  /* Tertiary borders (calendar body, hr) */
+    /* Borders */
+    --border-primary: #e0e0e0;   /* Main borders (inputs, headers, footer) */
+    --border-secondary: #d3d3d3; /* Secondary borders */
+    --border-tertiary: #eaeaea;  /* Tertiary borders (calendar body, hr) */
 
-/* Shadows */
---shadow-light: rgba(0,0,0,0.1);   /* Light box shadows */
---shadow-medium: rgba(0,0,0,0.15); /* Medium box shadows (calendar) */
---shadow-dark: rgba(0,0,0,0.2);    /* Dark box shadows (modal container) */
+    /* Shadows */
+    --shadow-light: rgba(0,0,0,0.1);   /* Light box shadows */
+    --shadow-medium: rgba(0,0,0,0.15); /* Medium box shadows (calendar) */
+    --shadow-dark: rgba(0,0,0,0.2);    /* Dark box shadows (modal container) */
+}
 ```
 
 Example Override:

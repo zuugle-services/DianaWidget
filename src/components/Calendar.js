@@ -1,6 +1,6 @@
 import {DateTime} from 'luxon';
 import {formatDateForDisplay, getMonthName, getShortDayName, throttle} from "../utils";
-import {formatDatetime} from "../datetimeUtils";
+import {convertToUTCMidnightJSDate, formatDatetime} from "../datetimeUtils";
 
 export class SingleCalendar {
     constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerElement, anchorElement) {
@@ -346,15 +346,6 @@ export class RangeCalendarModal {
         this.onRangeSelectCallback = onRangeSelectCallback;
         this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(activityDurationDaysFixed, 10) : null;
 
-        const convertToUTCMidnightJSDate = (jsDateInput, fallbackLuxonDtForDay) => {
-            if (jsDateInput && !isNaN(new Date(jsDateInput.valueOf()))) {
-                const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, {zone: this.config.timezone});
-                const isoDate = dtInWidgetZone.toISODate();
-                return DateTime.fromISO(isoDate, {zone: 'utc'}).toJSDate();
-            }
-            return fallbackLuxonDtForDay.startOf('day').toUTC().toJSDate();
-        };
-
         this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, {zone: 'utc'}).startOf('day').toJSDate() : null;
         if (this.fixedStartDate && isNaN(this.fixedStartDate.getTime())) this.fixedStartDate = null;
 
@@ -635,15 +626,6 @@ export class RangeCalendarModal {
     }
 
     show(currentStartDate, currentEndDate) {
-        const convertToUTCMidnightJSDate = (jsDateInput, fallbackLuxonDtForDay) => {
-            if (jsDateInput && !isNaN(new Date(jsDateInput.valueOf()))) {
-                const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, {zone: this.config.timezone});
-                const isoDate = dtInWidgetZone.toISODate();
-                return DateTime.fromISO(isoDate, {zone: 'utc'}).toJSDate();
-            }
-            return fallbackLuxonDtForDay.startOf('day').toUTC().toJSDate();
-        };
-
         const todayInWidgetZone = DateTime.now().setZone(this.config.timezone);
 
         if (this.fixedStartDate) {
