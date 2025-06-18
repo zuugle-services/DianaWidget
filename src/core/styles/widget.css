@@ -999,7 +999,7 @@
     box-sizing: border-box;
     display: flex;
     justify-content: space-between;
-    padding: 8px 20px;
+    padding: 2px 20px;
     width: 100%;
 }
 
