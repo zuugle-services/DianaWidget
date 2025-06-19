@@ -1,5 +1,6 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 import {DateTime} from 'luxon';
+import {Base64} from 'js-base64';
 import translations from '../translations';
 import {debounce, formatDateForDisplay, getApiErrorTranslationKey} from '../utils';
 import {
@@ -1848,7 +1849,7 @@ export default class DianaWidget {
             };
 
             const jsonString = JSON.stringify(dataToShare);
-            const encodedData = encodeURIComponent(btoa(jsonString));
+            const encodedData = Base64.encode(encodeURIComponent(jsonString), true);
             const url = `${this.config.shareURLPrefix}?dianaConnection=${encodedData}`;
 
             if (navigator.share) {
@@ -1922,7 +1923,7 @@ export default class DianaWidget {
 
     _loadFromUrlParams(encodedData) {
         try {
-            const jsonString = atob(decodeURIComponent(encodedData));
+            const jsonString = Base64.decode(decodeURIComponent(encodedData));
             const data = JSON.parse(jsonString);
 
             // Populate state from URL data

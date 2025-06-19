@@ -17,6 +17,7 @@
     "dependencies": {
         "css-loader": "^7.1.2",
         "cssnano": "^7.0.6",
+        "js-base64": "^3.7.7",
         "luxon": "^3.6.1",
         "mini-css-extract-plugin": "^2.9.2",
         "postcss": "^8.5.3",
