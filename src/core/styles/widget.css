@@ -234,7 +234,6 @@
 
 /* --- Modal Body Areas --- */
 .diana-container .modal-body,
-.diana-container .modal-body-result,
 .diana-container .content-page-body {
     display: flex;
     flex-direction: column;
@@ -246,10 +245,19 @@
 
 .diana-container .modal-body-result {
     background-color: var(--bg-secondary);
-    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden; /* Prevent double scrollbars */
     padding: 0;
     position: relative;
 }
+
+.diana-container .results-content-area {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
 
 /* --- Form Specific Styles --- */
 .diana-container .form-section {
@@ -1025,27 +1033,6 @@
     background-color: var(--bg-hover);
 }
 
-.diana-container .widget-view-toggle-button {
-    background: none;
-    border: none;
-    border-radius: 8px;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    display: flex;
-    padding: 8px;
-    transition: background-color 0.2s ease;
-}
-
-.diana-container .widget-view-toggle-button:hover {
-    background-color: var(--bg-hover);
-}
-
-.diana-container .widget-view-toggle-button svg {
-    height: 20px;
-    width: 20px;
-}
-
-
 .diana-container .activity-date-display {
     background-color: var(--bg-info);
     border-radius: 4px;
@@ -1073,10 +1060,19 @@
     border-bottom: 1px solid var(--border-primary);
     padding: 5px 0;
     position: sticky;
+    top: 0;
     z-index: 9;
 }
 
+.diana-container .slider-wrapper.top-slider-wrapper {
+    border-bottom: 1px solid var(--border-primary);
+    padding: 5px 0;
+}
+
+
 .diana-container .slider-wrapper.etc {
+    border-bottom: none;
+    padding-bottom: 0;
     padding-top: 0;
     top: 0;
 }
@@ -1605,21 +1601,78 @@
     }
 }
 
+/* --- View Toggle Switch Styles --- */
+.diana-container .view-toggle-switch {
+    display: inline-block;
+    height: 28px;
+    position: relative;
+    width: 52px;
+}
+
+.diana-container .view-toggle-switch input {
+    height: 0;
+    opacity: 0;
+    width: 0;
+}
+
+.diana-container .toggle-slider {
+    align-items: center;
+    background-color: #ccc;
+    border-radius: 28px;
+    bottom: 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    left: 0;
+    padding: 0 4px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+}
+
+.diana-container .toggle-slider:before {
+    background-color: white;
+    border-radius: 50%;
+    bottom: 3px;
+    content: "";
+    height: 22px;
+    left: 3px;
+    position: absolute;
+    transition: .4s;
+    width: 22px;
+    z-index: 1;
+}
+
+.diana-container .view-toggle-switch input:checked + .toggle-slider {
+    background-color: var(--primary-color);
+}
+
+.diana-container .view-toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(24px);
+}
+
+.diana-container .toggle-icon-clean,
+.diana-container .toggle-icon-details {
+    color: white;
+    height: 18px;
+    width: 18px;
+    z-index: 0;
+}
+
 /* --- Clean View Mode Styles --- */
-.diana-container #resultsPage.clean-view-active .slider {
+.diana-container #resultsPage.clean-view-active .detailed-view-content {
     display: none;
 }
 
-.diana-container #resultsPage.clean-view-active .middle-box {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--border-primary);
-    border-radius: 0;
-    box-shadow: none;
-    margin: 0;
-    padding: 15px 20px;
+.diana-container #resultsPage.clean-view-active .top-slider-wrapper {
+    display: none;
 }
 
-.diana-container #resultsPage.clean-view-active #activity-time {
-    scroll-margin: 60px;
+.diana-container #resultsPage.clean-view-active .clean-view-container {
+    display: block;
+}
+
+.diana-container .clean-view-container {
+    display: none;
 }

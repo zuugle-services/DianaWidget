@@ -100,10 +100,10 @@ export default class DianaWidget {
 
             let style = document.createElement('style');
             style.innerHTML = `
-          #${containerId} {
-            max-height: 790px;
-          }
-      `;
+              #${containerId} {
+                max-height: 790px;
+              }
+            `;
             document.body.appendChild(style);
 
             let initialSelectedStartDate;
@@ -191,11 +191,8 @@ export default class DianaWidget {
             this.injectBaseStyles();
             this.initDOM().then(() => {
                 // Post-DOM initialization steps that might depend on async initDOM
-                // For example, if any method needs to be called specifically after full DOM setup
-                // and it's not already covered by initDOM's flow.
             }).catch(error => {
                 console.error("Error during async DOM initialization:", error);
-                // Handle initialization error, maybe display a message in the container
                 const fallbackContainer = document.getElementById(containerId);
                 if (fallbackContainer) {
                     fallbackContainer.innerHTML = `<p>Error initializing widget: ${error.message}</p>`;
@@ -380,38 +377,27 @@ export default class DianaWidget {
     }
 
     async initDOM() {
-        // Initialize UIManager
         this.uiManager = new UIManager();
-
-        // Create and set up the main diana-container within the user-provided container
         let dianaWidgetRootContainer = document.createElement('div');
         dianaWidgetRootContainer.className = 'diana-container';
-
-        // this.container is the user-provided DOM element (e.g., document.getElementById(containerId))
-        this.container.innerHTML = ''; // Clear the user-provided container
+        this.container.innerHTML = '';
         this.container.appendChild(dianaWidgetRootContainer);
-        // From now on, this.dianaWidgetRootContainer will be the root for all widget elements
         this.dianaWidgetRootContainer = dianaWidgetRootContainer;
 
-
-        // Prepare arguments for template functions
         const templateArgs = {
             config: this.config,
             t: (key) => this.t(key),
             state: this.state,
-            formatDateForDisplay: formatDateForDisplay, // Pass the imported function
-            formatDatetime: formatDatetime, // Pass the imported function
+            formatDateForDisplay,
+            formatDatetime,
             getTransportIcon: (type) => this.getTransportIcon(type)
         };
 
-        // Load templates using UIManager
         const formPageHTML = await this.uiManager.loadTemplate('formPageTemplate', templateArgs);
         const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
         const menuModalHTML = await this.uiManager.loadTemplate('menuPageTemplate', templateArgs);
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
-
-        // Set the innerHTML for the main structure including the loaded templates
         this.dianaWidgetRootContainer.innerHTML = `
           <div id="activityModal" class="modal visible">
             <div id="innerContainer" class="modal-content">
@@ -423,10 +409,7 @@ export default class DianaWidget {
           ${menuModalHTML}
         `;
 
-        // Cache DOM elements now that the templates are loaded and injected
         this.cacheDOMElements();
-
-        // Initialize PageManager after DOM elements are cached
         this.pageManager = new PageManager(
             this.elements.formPage,
             this.elements.resultsPage,
@@ -434,10 +417,7 @@ export default class DianaWidget {
             this.elements.contentPage
         );
         this.pageManager.navigateToForm();
-
         this.setupAccessibility();
-
-        // Initialize date inputs based on config and state
         if (this.config.multiday) {
             if (this.elements.activityDateStart && this.state.selectedDate) {
                 this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
@@ -452,8 +432,6 @@ export default class DianaWidget {
                 this.elements.activityDate.value = formatDatetime(this.state.selectedDate, this.config.timezone);
             }
         }
-
-        // Call other setup methods that depend on the DOM being ready
         this.setupEventListeners();
         this._initCustomCalendar();
         this._initializeOriginInputWithOverridesAndCache();
@@ -557,26 +535,28 @@ export default class DianaWidget {
             dateDisplayStart: this.dianaWidgetRootContainer.querySelector("#dateDisplayStart"),
             activityDateEnd: this.dianaWidgetRootContainer.querySelector("#activityDateEnd"),
             dateDisplayEnd: this.dianaWidgetRootContainer.querySelector("#dateDisplayEnd"),
-            activityDate: this.dianaWidgetRootContainer.querySelector("#activityDate"), // Hidden input for single day
-            dateDisplay: this.dianaWidgetRootContainer.querySelector("#dateDisplay"), // Display for overridden single day
+            activityDate: this.dianaWidgetRootContainer.querySelector("#activityDate"),
+            dateDisplay: this.dianaWidgetRootContainer.querySelector("#dateDisplay"),
             dateBtnToday: this.dianaWidgetRootContainer.querySelector("#dateBtnToday"),
             dateBtnTomorrow: this.dianaWidgetRootContainer.querySelector("#dateBtnTomorrow"),
             dateBtnOther: this.dianaWidgetRootContainer.querySelector("#dateBtnOther"),
-            otherDateText: this.dianaWidgetRootContainer.querySelector("#otherDateText"), // Span inside dateBtnOther
+            otherDateText: this.dianaWidgetRootContainer.querySelector("#otherDateText"),
             dateSelectorButtonsGroup: this.dianaWidgetRootContainer.querySelector(".date-selector-buttons"),
             toActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#toActivityDateDisplay"),
             fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
-            formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"), // Hamburger on form page
-            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn"), // Hamburger on results page
-            contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"), // Hamburger on content page
-            contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"), // Close button on content page
-            contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"), // Title on content page
-            contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"), // Body of content page
+            formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
+            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn"),
+            contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"),
+            contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"),
+            contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"),
+            contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"),
             menuModalOverlay: this.dianaWidgetRootContainer.querySelector("#menuModalOverlay"),
             menuModal: this.dianaWidgetRootContainer.querySelector(".menu-modal"),
             menuModalCloseBtn: this.dianaWidgetRootContainer.querySelector("#menuModalCloseBtn"),
             menuList: this.dianaWidgetRootContainer.querySelector("#menuList"),
-            toggleViewBtn: this.dianaWidgetRootContainer.querySelector("#toggleViewBtn"),
+            toggleViewCheckbox: this.dianaWidgetRootContainer.querySelector("#toggleViewCheckbox"),
+            detailedViewContainer: this.dianaWidgetRootContainer.querySelector("#detailedViewContainer"),
+            cleanViewContainer: this.dianaWidgetRootContainer.querySelector("#cleanViewContainer"),
         };
     }
 
@@ -617,7 +597,7 @@ export default class DianaWidget {
     }
 
     setupEventListeners() {
-        if (!this.elements) return; // Guard
+        if (!this.elements) return;
 
         if (!this.config.overrideUserStartLocation && this.elements.originInput) {
             this.elements.originInput.addEventListener('input', (e) => {
@@ -669,31 +649,23 @@ export default class DianaWidget {
             this.handleSearch();
         });
 
-        // This is the specific back button on the results page (labeled "← Back")
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
 
-
-        // Hamburger icon on Form Page
         if (this.elements.formPageHamburgerBtn) {
             this.elements.formPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
         }
-        // Hamburger icon on Results Page
         if (this.elements.resultsPageHamburgerBtn) {
             this.elements.resultsPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
         }
-        // Hamburger icon on Content Page (now opens the menu modal)
         if (this.elements.contentPageHamburgerBtn) {
             this.elements.contentPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
         }
-        // Close button on Content Page
         if (this.elements.contentPageCloseBtn) {
             this.elements.contentPageCloseBtn.addEventListener('click', () => this.closeMenuOrContentPage());
         }
 
-        // New Menu Modal Listeners
         if (this.elements.menuModalOverlay) {
             this.elements.menuModalOverlay.addEventListener('click', (e) => {
-                // Close if click is on the overlay background itself
                 if (e.target === this.elements.menuModalOverlay) {
                     this.hideMenuModal();
                 }
@@ -714,15 +686,15 @@ export default class DianaWidget {
                 if (e.key === 'Enter' || e.key === ' ') {
                     const menuItem = e.target.closest('.menu-item');
                     if (menuItem) {
-                        e.preventDefault(); // Prevent space from scrolling
+                        e.preventDefault();
                         this.handleMenuSelection(menuItem);
                     }
                 }
             });
         }
 
-        if (this.elements.toggleViewBtn) {
-            this.elements.toggleViewBtn.addEventListener('click', () => this.toggleResultsView());
+        if (this.elements.toggleViewCheckbox) {
+            this.elements.toggleViewCheckbox.addEventListener('change', () => this.toggleResultsView());
         }
     }
 
@@ -1282,8 +1254,12 @@ export default class DianaWidget {
         );
         if (filtered.length > 0) {
             this.updateActivityTimeBox(filtered[0], type);
-            this.updateDepartureDateDisplay(filtered[0], type); // Update the date display
+            this.updateDepartureDateDisplay(filtered[0], type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+            // Re-render clean view with new selection
+            if (this.state.isCleanView) {
+                this.renderCleanView();
+            }
             requestAnimationFrame(() => {
                 const firstElement = targetBox.querySelector('.connection-elements > div:nth-child(1)');
                 if (firstElement) firstElement.scrollIntoView({behavior: 'smooth', block: 'center'});
@@ -1643,6 +1619,7 @@ export default class DianaWidget {
             31: `<svg width="16" height="16" viewBox="0 0 24 24" fill="#000000"  xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M7.97,2.242l-5,20A1,1,0,0,1,2,23a1.025,1.025,0,0,1-.244-.03,1,1,0,0,1-.727-1.212l5-20a1,1,0,1,1,1.94.484Zm10-.484a1,1,0,1,0-1.94.484l5,20A1,1,0,0,0,22,23a1.017,1.017,0,0,0,.243-.03,1,1,0,0,0,.728-1.212ZM12,1a1,1,0,0,0-1,1V6a1,1,0,0,0,2,0V2A1,1,0,0,0,12,1Zm0,7.912a1,1,0,0,0-1,1v4.176a1,1,0,1,0,2,0V9.912A1,1,0,0,0,12,8.912ZM12,17a1,1,0,0,0-1,1v4a1,1,0,0,0,2,0V18A1,1,0,0,0,12,17Z"></path></g></svg>`,
             32: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>`,
             33: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M9 5.25C7.03323 5.25 5.25 7.15209 5.25 9.75C5.25 12.0121 6.60204 13.7467 8.25001 14.1573V10.9014L6.33398 9.62405L7.16603 8.37597L8.792 9.45995L9.87597 7.83398L11.124 8.66603L9.75001 10.7271V14.1573C11.398 13.7467 12.75 12.0121 12.75 9.75C12.75 7.15209 10.9668 5.25 9 5.25ZM3.75 9.75C3.75 12.6785 5.62993 15.2704 8.25001 15.6906V19.5H3V21H21V19.5H18.75V18L18 17.25H12L11.25 18V19.5H9.75001V15.6906C12.3701 15.2704 14.25 12.6785 14.25 9.75C14.25 6.54892 12.0038 3.75 9 3.75C5.99621 3.75 3.75 6.54892 3.75 9.75ZM12.75 19.5H17.25V18.75H12.75V19.5Z" fill="#000"></path> </g></svg>`,
+            ACTIVITY: `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 4.00195H8C5.79086 4.00195 4 5.79281 4 8.00195V16.002C4 18.2111 5.79086 20.002 8 20.002H16C18.2091 20.002 20 18.2111 20 16.002V8.00195C20 5.79281 18.2091 4.00195 16 4.00195Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12.002L14.4 10.802M12 12.002V15.002M12 12.002L9.6 10.802M12 12.002L14.4 13.202M12 12.002L9.6 13.202" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
             WALK: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.50003 5C9.8956 5 10.2823 4.8827 10.6112 4.66294C10.9401 4.44318 11.1964 4.13082 11.3478 3.76537C11.4992 3.39992 11.5388 2.99778 11.4616 2.60982C11.3844 2.22186 11.194 1.86549 10.9142 1.58579C10.6345 1.30608 10.2782 1.1156 9.89021 1.03843C9.50225 0.96126 9.10012 1.00087 8.73467 1.15224C8.36921 1.30362 8.05686 1.55996 7.83709 1.88886C7.61733 2.21776 7.50003 2.60444 7.50003 3C7.50003 3.53043 7.71075 4.03914 8.08582 4.41422C8.46089 4.78929 8.9696 5 9.50003 5ZM9.50003 2C9.69781 2 9.89115 2.05865 10.0556 2.16853C10.2201 2.27841 10.3482 2.43459 10.4239 2.61732C10.4996 2.80004 10.5194 3.00111 10.4808 3.19509C10.4422 3.38907 10.347 3.56726 10.2071 3.70711C10.0673 3.84696 9.8891 3.9422 9.69512 3.98079C9.50114 4.01937 9.30007 3.99957 9.11735 3.92388C8.93462 3.84819 8.77844 3.72002 8.66856 3.55557C8.55868 3.39112 8.50003 3.19778 8.50003 3C8.50003 2.73478 8.60539 2.48043 8.79293 2.29289C8.98046 2.10536 9.23482 2 9.50003 2ZM13.5 9C13.5 9.13261 13.4474 9.25979 13.3536 9.35356C13.2598 9.44732 13.1326 9.5 13 9.5C10.7932 9.5 9.69066 8.38688 8.80503 7.4925C8.63378 7.31938 8.47003 7.155 8.30503 7.0025L7.46566 8.9325L9.79066 10.5931C9.85542 10.6394 9.9082 10.7004 9.94462 10.7712C9.98104 10.842 10 10.9204 10 11V14.5C10 14.6326 9.94735 14.7598 9.85359 14.8536C9.75982 14.9473 9.63264 15 9.50003 15C9.36742 15 9.24025 14.9473 9.14648 14.8536C9.05271 14.7598 9.00003 14.6326 9.00003 14.5V11.2575L7.05816 9.87L4.95878 14.6994C4.91993 14.7887 4.85581 14.8648 4.77431 14.9182C4.69281 14.9716 4.59747 15 4.50003 15C4.43137 15.0002 4.36345 14.9859 4.30066 14.9581C4.17911 14.9053 4.08351 14.8064 4.03488 14.6831C3.98624 14.5598 3.98855 14.4222 4.04128 14.3006L7.42128 6.5275C6.83941 6.42438 6.11378 6.6025 5.25253 7.06375C4.56566 7.44263 3.92458 7.89917 3.34191 8.42438C3.24465 8.51149 3.11717 8.55711 2.98673 8.55148C2.85628 8.54584 2.73321 8.48941 2.64383 8.39423C2.55444 8.29905 2.50584 8.17268 2.5084 8.04213C2.51096 7.91159 2.56448 7.78723 2.65753 7.69563C2.81378 7.54875 6.51316 4.11875 8.82753 6.12813C9.06691 6.33563 9.29503 6.56563 9.51503 6.78875C10.3869 7.66875 11.21 8.5 13 8.5C13.1326 8.5 13.2598 8.55268 13.3536 8.64645C13.4474 8.74022 13.5 8.86739 13.5 9Z" fill="#FF9500"/></svg>`,
             WALK_BLACK: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9.50003 5C9.8956 5 10.2823 4.8827 10.6112 4.66294C10.9401 4.44318 11.1964 4.13082 11.3478 3.76537C11.4992 3.39992 11.5388 2.99778 11.4616 2.60982C11.3844 2.22186 11.194 1.86549 10.9142 1.58579C10.6345 1.30608 10.2782 1.1156 9.89021 1.03843C9.50225 0.96126 9.10012 1.00087 8.73467 1.15224C8.36921 1.30362 8.05686 1.55996 7.83709 1.88886C7.61733 2.21776 7.50003 2.60444 7.50003 3C7.50003 3.53043 7.71075 4.03914 8.08582 4.41422C8.46089 4.78929 8.9696 5 9.50003 5ZM9.50003 2C9.69781 2 9.89115 2.05865 10.0556 2.16853C10.2201 2.27841 10.3482 2.43459 10.4239 2.61732C10.4996 2.80004 10.5194 3.00111 10.4808 3.19509C10.4422 3.38907 10.347 3.56726 10.2071 3.70711C10.0673 3.84696 9.8891 3.9422 9.69512 3.98079C9.50114 4.01937 9.30007 3.99957 9.11735 3.92388C8.93462 3.84819 8.77844 3.72002 8.66856 3.55557C8.55868 3.39112 8.50003 3.19778 8.50003 3C8.50003 2.73478 8.60539 2.48043 8.79293 2.29289C8.98046 2.10536 9.23482 2 9.50003 2ZM13.5 9C13.5 9.13261 13.4474 9.25979 13.3536 9.35356C13.2598 9.44732 13.1326 9.5 13 9.5C10.7932 9.5 9.69066 8.38688 8.80503 7.4925C8.63378 7.31938 8.47003 7.155 8.30503 7.0025L7.46566 8.9325L9.79066 10.5931C9.85542 10.6394 9.9082 10.7004 9.94462 10.7712C9.98104 10.842 10 10.9204 10 11V14.5C10 14.6326 9.94735 14.7598 9.85359 14.8536C9.75982 14.9473 9.63264 15 9.50003 15C9.36742 15 9.24025 14.9473 9.14648 14.8536C9.05271 14.7598 9.00003 14.6326 9.00003 14.5V11.2575L7.05816 9.87L4.95878 14.6994C4.91993 14.7887 4.85581 14.8648 4.77431 14.9182C4.69281 14.9716 4.59747 15 4.50003 15C4.43137 15.0002 4.36345 14.9859 4.30066 14.9581C4.17911 14.9053 4.08351 14.8064 4.03488 14.6831C3.98624 14.5598 3.98855 14.4222 4.04128 14.3006L7.42128 6.5275C6.83941 6.42438 6.11378 6.6025 5.25253 7.06375C4.56566 7.44263 3.92458 7.89917 3.34191 8.42438C3.24465 8.51149 3.11717 8.55711 2.98673 8.55148C2.85628 8.54584 2.73321 8.48941 2.64383 8.39423C2.55444 8.29905 2.50584 8.17268 2.5084 8.04213C2.51096 7.91159 2.56448 7.78723 2.65753 7.69563C2.81378 7.54875 6.51316 4.11875 8.82753 6.12813C9.06691 6.33563 9.29503 6.56563 9.51503 6.78875C10.3869 7.66875 11.21 8.5 13 8.5C13.1326 8.5 13.2598 8.55268 13.3536 8.64645C13.4474 8.74022 13.5 8.86739 13.5 9Z" fill="#000"/></svg>`,
             TRSF: `<svg width="16" height="16" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/></svg>`,
@@ -1736,35 +1713,37 @@ export default class DianaWidget {
         this.state.fromConnections = [];
         this.state.activityTimes = {start: '', end: '', duration: '', warning_duration: false};
 
-        // Reset clean view when going back to form
         if (this.state.isCleanView) {
+            if (this.elements.toggleViewCheckbox) this.elements.toggleViewCheckbox.checked = false;
             this.toggleResultsView();
         }
     }
 
     toggleResultsView() {
-        this.state.isCleanView = !this.state.isCleanView;
+        this.state.isCleanView = this.elements.toggleViewCheckbox.checked;
         const resultsPage = this.elements.resultsPage;
-        const toggleBtn = this.elements.toggleViewBtn;
 
         if (resultsPage) {
             resultsPage.classList.toggle('clean-view-active', this.state.isCleanView);
-        }
-
-        if (toggleBtn) {
-            const tooltip = this.state.isCleanView ? this.t('toggleDetailedView') : this.t('toggleCompactView');
-            toggleBtn.setAttribute('title', tooltip);
-            toggleBtn.setAttribute('aria-label', tooltip);
-
-            if (this.state.isCleanView) {
-                // Icon for "show details" (e.g., list view)
-                toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-            } else {
-                // Icon for "show compact" (e.g., eye view)
-                toggleBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 12C15 13.6569 13.6569 15 12 15C10.3431 15 9 13.6569 9 12C9 10.3431 10.3431 9 12 9C13.6569 9 15 10.3431 15 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M2 12C3.60014 7.90264 7.33603 5 12 5C16.664 5 20.3999 7.90264 22 12C20.3999 16.0974 16.664 19 12 19C7.33603 19 3.60014 16.0974 2 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            // Only render the clean view if it's being activated and doesn't have content yet
+            if (this.state.isCleanView && this.elements.cleanViewContainer.innerHTML.trim() === '') {
+                this.renderCleanView();
             }
         }
     }
+
+    renderCleanView() {
+        const container = this.elements.cleanViewContainer;
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        // placeholder for now: copy detailled html to clean view
+
+        container.innerHTML = this.elements.detailedViewContainer.innerHTML;
+
+    }
+
 
     showMenuModal() {
         if (this.elements.menuModalOverlay) {
