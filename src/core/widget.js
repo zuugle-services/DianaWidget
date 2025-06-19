@@ -1835,8 +1835,10 @@ export default class DianaWidget {
                 fromJourney: this.state.selectedFromConnection,
                 activity: {
                     name: this.config.activityName,
-                    startLocation: this.config.activityStartLocationDisplayName || this.config.activityStartLocation,
-                    endLocation: this.config.activityEndLocationDisplayName || this.config.activityEndLocation,
+                    startLocation: this.config.activityStartLocation,
+                    startLocationDisplayName: this.config.activityStartLocationDisplayName,
+                    endLocation: this.config.activityEndLocation,
+                    endLocationDisplayName: this.config.activityEndLocationDisplayName,
                     times: this.state.activityTimes,
                     startDate: this.state.selectedDate ? formatDatetime(this.state.selectedDate) : null,
                     endDate: (this.config.multiday && this.state.selectedEndDate) ? formatDatetime(this.state.selectedEndDate) : null,
@@ -1928,6 +1930,22 @@ export default class DianaWidget {
             this.state.toConnections = data.toJourney ? [data.toJourney] : [];
             this.state.fromConnections = data.fromJourney ? [data.fromJourney] : [];
             this.state.activityTimes = data.activity.times;
+
+            if (data.activity.activityName) {
+                this.config.activityName = data.activity.activityName;
+            }
+            if (data.activity.startLocation) {
+                this.config.activityStartLocation = data.activity.startLocation;
+            }
+            if (data.activity.startLocationDisplayName) {
+                this.config.activityStartLocationDisplayName = data.activity.startLocationDisplayName;
+            }
+            if (data.activity.endLocation) {
+                this.config.activityEndLocation = data.activity.endLocation;
+            }
+            if (data.activity.endLocationDisplayName) {
+                this.config.activityEndLocationDisplayName = data.activity.endLocationDisplayName;
+            }
 
             if (data.activity.startDate) {
                 this.state.selectedDate = DateTime.fromISO(data.activity.startDate, {zone: 'utc'}).toJSDate();
