@@ -1932,7 +1932,7 @@ export default class DianaWidget {
             this.state.activityTimes = data.activity.times;
 
             if (data.activity.activityName) {
-                this.config.activityName = data.activity.activityName;
+                this.config.activityName = data.activity.name;
             }
             if (data.activity.startLocation) {
                 this.config.activityStartLocation = data.activity.startLocation;
