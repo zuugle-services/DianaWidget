@@ -225,9 +225,9 @@ export default class DianaWidget {
                     // Re-render the activity box with the loaded data.
                     this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
 
-                    if (this.elements.originInput) {
+                    /*if (this.elements.originInput) {
                         this.elements.originInput.value = this.config.temp_data_origin;
-                    }
+                    }*/
 
                     // Set view to clean and read-only
                     this.state.isCleanView = true;
@@ -1870,7 +1870,11 @@ export default class DianaWidget {
                     times: this.state.activityTimes,
                     startDate: this.state.selectedDate ? formatDatetime(this.state.selectedDate) : null,
                     endDate: (this.config.multiday && this.state.selectedEndDate) ? formatDatetime(this.state.selectedEndDate) : null,
-                    durationMinutes: this.config.activityDurationMinutes
+                    durationMinutes: this.config.activityDurationMinutes,
+                    earliestStartTime: this.config.activityEarliestStartTime,
+                    latestStartTime: this.config.activityLatestStartTime,
+                    earliestEndTime: this.config.activityEarliestEndTime,
+                    latestEndTime: this.config.activityLatestEndTime,
                 },
                 origin: this.elements.originInput.value
             };
@@ -1977,6 +1981,18 @@ export default class DianaWidget {
             }
             if (data.activity.endLocationDisplayName) {
                 this.config.activityEndLocationDisplayName = data.activity.endLocationDisplayName;
+            }
+            if (data.activity.earliestStartTime) {
+                this.config.activityEarliestStartTime = data.activity.earliestStartTime;
+            }
+            if (data.activity.latestStartTime) {
+                this.config.activityLatestStartTime = data.activity.latestStartTime;
+            }
+            if (data.activity.earliestEndTime) {
+                this.config.activityEarliestEndTime = data.activity.earliestEndTime;
+            }
+            if (data.activity.latestEndTime) {
+                this.config.activityLatestEndTime = data.activity.latestEndTime;
             }
 
             if (data.activity.startDate) {
