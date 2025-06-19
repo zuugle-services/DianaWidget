@@ -7,9 +7,10 @@ import {DateTime} from 'luxon';
  * @param {string} timezone - The timezone string (e.g., "Europe/Vienna").
  * @param {string} activityLatestEndTime - The latest end time for the activity (HH:MM or HH:MM:SS).
  * @param {string|number} activityDurationMinutes - The duration of the activity in minutes.
+ * @param {boolean} isReadOnly - Whether the activity is read-only.
  * @returns {Date} The calculated initial start date as a JavaScript Date object.
  */
-export function calculateInitialStartDate(timezone, activityLatestEndTime, activityDurationMinutes) {
+export function calculateInitialStartDate(timezone, activityLatestEndTime, activityDurationMinutes, isReadOnly) {
     let initialDate;
     try {
         const now = DateTime.now().setZone(timezone);
@@ -30,7 +31,9 @@ export function calculateInitialStartDate(timezone, activityLatestEndTime, activ
         }
         initialDate = new Date(initialDate["year"], initialDate["month"] - 1, initialDate["day"]);
     } catch (error) {
-        console.error("Error calculating initial start date, defaulting to today:", error);
+        if (!isReadOnly) {
+            console.error("Error calculating initial start date, defaulting to today:", error);
+        }
         initialDate = new Date(); // Fallback to current date
     }
     return initialDate;

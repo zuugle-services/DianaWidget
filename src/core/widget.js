@@ -146,10 +146,10 @@ export default class DianaWidget {
                     try {
                         initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate();
                     } catch (e) {
-                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes, isReadOnly);
                     }
                 } else {
-                    initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                    initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes, isReadOnly);
                 }
             }
 
