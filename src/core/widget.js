@@ -225,6 +225,10 @@ export default class DianaWidget {
                     // Re-render the activity box with the loaded data.
                     this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
 
+                    if (this.elements.originInput) {
+                        this.elements.originInput.value = this.config.temp_data_origin;
+                    }
+
                     // Set view to clean and read-only
                     this.state.isCleanView = true;
                     if (this.elements.toggleViewCheckbox) {
@@ -1982,8 +1986,8 @@ export default class DianaWidget {
                 this.state.selectedEndDate = DateTime.fromISO(data.activity.endDate, {zone: 'utc'}).toJSDate();
             }
 
-            if (this.elements.originInput && data.origin) {
-                this.elements.originInput.value = data.origin;
+            if (data.origin) {
+                this.config.temp_data_origin = data.origin
             }
         } catch (error) {
             console.error("Failed to load data from URL parameter:", error);
