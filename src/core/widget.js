@@ -212,6 +212,17 @@ export default class DianaWidget {
 
             this.initDOM().then(() => {
                 if (this.config.readOnly && dianaConnectionData) {
+                    if (this.elements.originInput) {
+                        this.elements.originInput.value = this.config.temp_data_origin;
+                    }
+
+                    // Set view to clean and read-only
+                    this.state.isCleanView = true;
+                    if (this.elements.toggleViewCheckbox) {
+                        this.elements.toggleViewCheckbox.checked = true;
+                        this.elements.toggleViewCheckbox.disabled = true;
+                    }
+
                     this.navigateToResults(); // Navigate to the results page
                     this.toggleResultsView(); // Apply clean-view-active and read-only-active classes
 
@@ -224,17 +235,6 @@ export default class DianaWidget {
                     }
                     // Re-render the activity box with the loaded data.
                     this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
-
-                    /*if (this.elements.originInput) {
-                        this.elements.originInput.value = this.config.temp_data_origin;
-                    }*/
-
-                    // Set view to clean and read-only
-                    this.state.isCleanView = true;
-                    if (this.elements.toggleViewCheckbox) {
-                        this.elements.toggleViewCheckbox.checked = true;
-                        this.elements.toggleViewCheckbox.disabled = true;
-                    }
                 }
             }).catch(error => {
                 console.error("Error during async DOM initialization:", error);
