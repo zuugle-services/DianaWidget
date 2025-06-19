@@ -296,17 +296,23 @@ export default class DianaWidget {
             config.timezone = 'Europe/Vienna';
         }
 
-        const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
-        if (!validLocationTypes.includes(config.activityStartLocationType)) {
-            throw new Error(`Invalid activityStartLocationType '${config.activityStartLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
+        if (config.activityStartLocationType) {
+            const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
+            if (!validLocationTypes.includes(config.activityStartLocationType)) {
+                throw new Error(`Invalid activityStartLocationType '${config.activityStartLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
+            }
         }
-        if (!validLocationTypes.includes(config.activityEndLocationType)) {
-            throw new Error(`Invalid activityEndLocationType '${config.activityEndLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
+        if (config.activityEndLocationType) {
+            if (!validLocationTypes.includes(config.activityEndLocationType)) {
+                throw new Error(`Invalid activityEndLocationType '${config.activityEndLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
+            }
         }
 
-        const duration = parseInt(config.activityDurationMinutes, 10);
-        if (isNaN(duration) || duration <= 0) {
-            throw new Error(`Invalid activityDurationMinutes '${config.activityDurationMinutes}'. Must be a positive integer.`);
+        if (config.activityDurationMinutes) {
+            const duration = parseInt(config.activityDurationMinutes, 10);
+            if (isNaN(duration) || duration <= 0) {
+                throw new Error(`Invalid activityDurationMinutes '${config.activityDurationMinutes}'. Must be a positive integer.`);
+            }
         }
 
         const timeRegex = /^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?$/;
@@ -315,8 +321,10 @@ export default class DianaWidget {
             'activityEarliestEndTime', 'activityLatestEndTime'
         ];
         timeFields.forEach(field => {
-            if (!timeRegex.test(config[field])) {
-                throw new Error(`Invalid time format for '${field}': '${config[field]}'. Expected HH:MM or HH:MM:SS`);
+            if (config[field]) {
+                if (!timeRegex.test(config[field])) {
+                    throw new Error(`Invalid time format for '${field}': '${config[field]}'. Expected HH:MM or HH:MM:SS`);
+                }
             }
         });
 
