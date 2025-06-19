@@ -296,8 +296,8 @@ export default class DianaWidget {
             config.timezone = 'Europe/Vienna';
         }
 
+        const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
         if (config.activityStartLocationType) {
-            const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
             if (!validLocationTypes.includes(config.activityStartLocationType)) {
                 throw new Error(`Invalid activityStartLocationType '${config.activityStartLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
             }
@@ -1842,6 +1842,7 @@ export default class DianaWidget {
                     times: this.state.activityTimes,
                     startDate: this.state.selectedDate ? formatDatetime(this.state.selectedDate) : null,
                     endDate: (this.config.multiday && this.state.selectedEndDate) ? formatDatetime(this.state.selectedEndDate) : null,
+                    durationMinutes: this.config.activityDurationMinutes
                 },
                 origin: this.elements.originInput.value
             };
@@ -1931,8 +1932,11 @@ export default class DianaWidget {
             this.state.fromConnections = data.fromJourney ? [data.fromJourney] : [];
             this.state.activityTimes = data.activity.times;
 
-            if (data.activity.activityName) {
+            if (data.activity.name) {
                 this.config.activityName = data.activity.name;
+            }
+            if (data.activity.durationMinutes) {
+                this.config.activityDurationMinutes = data.activity.durationMinutes;
             }
             if (data.activity.startLocation) {
                 this.config.activityStartLocation = data.activity.startLocation;
