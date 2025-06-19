@@ -1923,7 +1923,7 @@ export default class DianaWidget {
 
     _loadFromUrlParams(encodedData) {
         try {
-            const jsonString = Base64.decode(decodeURIComponent(encodedData));
+            const jsonString = decodeURIComponent(Base64.decode(encodedData));
             const data = JSON.parse(jsonString);
 
             // Populate state from URL data
