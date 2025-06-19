@@ -557,6 +557,7 @@ export default class DianaWidget {
             toggleViewCheckbox: this.dianaWidgetRootContainer.querySelector("#toggleViewCheckbox"),
             detailedViewContainer: this.dianaWidgetRootContainer.querySelector("#detailedViewContainer"),
             cleanViewContainer: this.dianaWidgetRootContainer.querySelector("#cleanViewContainer"),
+            shareBtn: this.dianaWidgetRootContainer.querySelector("#shareBtn"),
         };
     }
 
@@ -594,6 +595,7 @@ export default class DianaWidget {
         if (this.elements.resultsPageHamburgerBtn) this.elements.resultsPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
         if (this.elements.contentPageHamburgerBtn) this.elements.contentPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
         if (this.elements.contentPageCloseBtn) this.elements.contentPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
+        if (this.elements.shareBtn) this.elements.shareBtn.setAttribute('aria-label', this.t('ariaLabels.shareButton'));
     }
 
     setupEventListeners() {
@@ -695,6 +697,10 @@ export default class DianaWidget {
 
         if (this.elements.toggleViewCheckbox) {
             this.elements.toggleViewCheckbox.addEventListener('change', () => this.toggleResultsView());
+        }
+
+        if (this.elements.shareBtn) {
+            this.elements.shareBtn.addEventListener('click', () => this.handleShare());
         }
     }
 
@@ -1246,7 +1252,9 @@ export default class DianaWidget {
         const slider = this.elements[sliderId];
         slider.querySelectorAll('button').forEach(btn => {
             btn.classList.remove('active-time');
-            if (btn.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) btn.classList.add('active-time');
+            if (btn.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
+                btn.classList.add('active-time');
+            }
         });
         const filtered = connections.filter(conn =>
             convertUTCToLocalTime(conn.connection_start_timestamp, this.config.timezone) === startTimeLocal &&
@@ -1256,6 +1264,14 @@ export default class DianaWidget {
             this.updateActivityTimeBox(filtered[0], type);
             this.updateDepartureDateDisplay(filtered[0], type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+
+            // Store the selected connection for the share functionality
+            if (type === 'to') {
+                this.state.selectedToConnection = filtered[0];
+            } else {
+                this.state.selectedFromConnection = filtered[0];
+            }
+
             // Re-render clean view with new selection
             if (this.state.isCleanView) {
                 this.renderCleanView();
@@ -1725,9 +1741,79 @@ export default class DianaWidget {
 
         if (resultsPage) {
             resultsPage.classList.toggle('clean-view-active', this.state.isCleanView);
+            // The share button's visibility is controlled via CSS using the .clean-view-active class
+
             // Only render the clean view if it's being activated and doesn't have content yet
             if (this.state.isCleanView && this.elements.cleanViewContainer.innerHTML.trim() === '') {
                 this.renderCleanView();
+            }
+        }
+    }
+
+    async handleShare() {
+        this.clearMessages();
+        try {
+            const dataToShare = {
+                // It's better to select specific fields rather than entire objects to keep URL short
+                toJourney: this.state.selectedToConnection ? {
+                    start: this.state.selectedToConnection.connection_start_timestamp,
+                    end: this.state.selectedToConnection.connection_end_timestamp,
+                    legs: this.state.selectedToConnection.connection_elements.map(leg => ({ type: leg.type, from: leg.from_location, to: leg.to_location, departure: leg.departure_time, arrival: leg.arrival_time }))
+                } : null,
+                fromJourney: this.state.selectedFromConnection ? {
+                    start: this.state.selectedFromConnection.connection_start_timestamp,
+                    end: this.state.selectedFromConnection.connection_end_timestamp,
+                    legs: this.state.selectedFromConnection.connection_elements.map(leg => ({ type: leg.type, from: leg.from_location, to: leg.to_location, departure: leg.departure_time, arrival: leg.arrival_time }))
+                } : null,
+                activity: {
+                    name: this.config.activityName,
+                    startLocation: this.config.activityStartLocationDisplayName || this.config.activityStartLocation,
+                    endLocation: this.config.activityEndLocationDisplayName || this.config.activityEndLocation,
+                    times: this.state.activityTimes
+                },
+                origin: this.elements.originInput.value
+            };
+
+            const jsonString = JSON.stringify(dataToShare);
+            const encodedData = encodeURIComponent(btoa(jsonString)); // btoa to make it more compact
+            const url = `${window.location.origin}${window.location.pathname}?journey=${encodedData}`;
+
+            // Use Web Share API if available (preferred on mobile)
+            if (navigator.share) {
+                await navigator.share({
+                    title: this.config.activityName,
+                    url: url,
+                });
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                // Use modern clipboard API for desktops
+                await navigator.clipboard.writeText(url);
+                this.showInfo(this.t('shareUrlCopied'));
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea");
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '-9999px';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        this.showInfo(this.t('shareUrlCopied'));
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        } catch (error) {
+            console.error("Share failed:", error);
+            // Avoid showing an error if the user cancels the share sheet
+            if (error.name !== 'AbortError') {
+                this.showError(this.t('shareUrlCopyFailed'), 'results');
             }
         }
     }

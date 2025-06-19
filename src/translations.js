@@ -44,6 +44,9 @@ export default {
         otherDate: "Other date",
         toggleCompactView: "Switch to compact view",
         toggleDetailedView: "Switch to detailed view",
+        share: "Share",
+        shareUrlCopied: "Share URL copied to clipboard!",
+        shareUrlCopyFailed: "Could not copy URL.",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -133,7 +136,8 @@ export default {
             nextMonthButton: "Next month",
             menuButton: "Open menu",
             menuHeading: "Page menu",
-            closeButton: "Close"
+            closeButton: "Close",
+            shareButton: "Share Journey"
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",
@@ -185,6 +189,9 @@ export default {
         otherDate: "Anderes Datum",
         toggleCompactView: "Kompaktansicht umschalten",
         toggleDetailedView: "Detailansicht umschalten",
+        share: "Teilen",
+        shareUrlCopied: "Share-URL wurde in die Zwischenablage kopiert!",
+        shareUrlCopyFailed: "URL konnte nicht kopiert werden.",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
@@ -274,7 +281,8 @@ export default {
             nextMonthButton: "Nächster Monat",
             menuButton: "Menü öffnen",
             menuHeading: "Seitenmenü",
-            closeButton: "Schließen"
+            closeButton: "Schließen",
+            shareButton: "Reise teilen"
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
@@ -326,6 +334,9 @@ export default {
         otherDate: "Other date",
         toggleCompactView: "Switch to compact view",
         toggleDetailedView: "Switch to detailed view",
+        share: "Share",
+        shareUrlCopied: "Share URL copied to clipboard!",
+        shareUrlCopyFailed: "Could not copy URL.",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -415,7 +426,8 @@ export default {
             nextMonthButton: "Next month",
             menuButton: "Open menu",
             menuHeading: "Page menu",
-            closeButton: "Close"
+            closeButton: "Close",
+            shareButton: "Share Journey"
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",

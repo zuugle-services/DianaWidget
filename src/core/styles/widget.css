@@ -1011,6 +1011,24 @@
     width: 100%;
 }
 
+.diana-container .bottom-bar-left {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
+.diana-container .share-btn {
+    background: none;
+    border: none;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: none; /* Hidden by default */
+    padding: 4px;
+}
+
+.diana-container .share-btn:hover {
+    color: var(--text-primary);
+}
 
 .diana-container .widget-response-back-button {
     align-items: center;
@@ -1675,4 +1693,8 @@
 
 .diana-container .clean-view-container {
     display: none;
+}
+
+.diana-container #resultsPage.clean-view-active .share-btn {
+    display: block;
 }
