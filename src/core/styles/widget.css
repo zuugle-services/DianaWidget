@@ -999,6 +999,7 @@
     justify-content: space-between;
     padding: 8px 20px;
     width: 100%;
+    border-bottom: 1px solid var(--border-primary);
 }
 
 
@@ -1697,4 +1698,25 @@
 
 .diana-container #resultsPage.clean-view-active .share-btn {
     display: block;
+}
+
+/* --- Read-Only Mode --- */
+.diana-container #resultsPage.read-only-active .widget-response-back-button,
+.diana-container #resultsPage.read-only-active .top-slider-wrapper,
+.diana-container #resultsPage.read-only-active .slider-wrap-fixed .slider,
+.diana-container #resultsPage.read-only-active .widget-header-button .back-btn {
+    display: none !important;
+}
+
+.diana-container #resultsPage.read-only-active .view-toggle-switch {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.diana-container #resultsPage.read-only-active .results-top-bar {
+    justify-content: flex-end;
+}
+
+.diana-container #resultsPage.read-only-active .widget-header-button {
+    padding: 0;
 }

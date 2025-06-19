@@ -59,11 +59,18 @@ export default class DianaWidget {
         multiday: false,
         overrideActivityStartDate: null,
         overrideActivityEndDate: null,
-        activityDurationDaysFixed: null
+        activityDurationDaysFixed: null,
+        readOnly: false,
+        shareURLPrefix: `${window.location.origin}${window.location.pathname}`
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
         try {
+            // Check for readOnly in the initial config first
+            const isReadOnly = config.readOnly === true;
+            const urlParams = new URLSearchParams(window.location.search);
+            const dianaConnectionData = urlParams.get('dianaConnection');
+
             this.config = this.validateConfig(config);
             this.container = document.getElementById(containerId); // This is the user-provided container
 
@@ -162,6 +169,8 @@ export default class DianaWidget {
             this.state = {
                 fromConnections: [],
                 toConnections: [],
+                selectedToConnection: null,
+                selectedFromConnection: null,
                 selectedDate: initialSelectedStartDate,
                 selectedEndDate: initialSelectedEndDate,
                 loading: false,
@@ -190,7 +199,9 @@ export default class DianaWidget {
 
             this.injectBaseStyles();
             this.initDOM().then(() => {
-                // Post-DOM initialization steps that might depend on async initDOM
+                if (this.config.readOnly && dianaConnectionData) {
+                    this._loadFromUrlParams(dianaConnectionData);
+                }
             }).catch(error => {
                 console.error("Error during async DOM initialization:", error);
                 const fallbackContainer = document.getElementById(containerId);
@@ -222,12 +233,24 @@ export default class DianaWidget {
     validateConfig(userConfig) {
         const config = {...this.defaultConfig, ...userConfig};
 
+        if (typeof config.readOnly !== 'boolean') {
+            config.readOnly = this.defaultConfig.readOnly;
+        }
+
+        // If in read-only mode, apiToken is not required.
+        if (config.readOnly) {
+            const index = config.requiredFields.indexOf('apiToken');
+            if (index > -1) {
+                config.requiredFields.splice(index, 1);
+            }
+        }
+
         if (!translations[config.language]) {
             console.warn(`Unsupported language '${config.language}', falling back to EN`);
             config.language = 'EN';
         }
 
-        const missingFields = this.defaultConfig.requiredFields.filter(
+        const missingFields = config.requiredFields.filter(
             field => !config[field]
         );
 
@@ -346,6 +369,7 @@ export default class DianaWidget {
                 oE = DateTime.fromISO(config.overrideActivityEndDate);
             if (oS.isValid && oE.isValid && oE < oS) config.overrideActivityEndDate = config.overrideActivityStartDate;
         }
+
         return config;
     }
 
@@ -416,7 +440,13 @@ export default class DianaWidget {
             this.elements.innerContainer,
             this.elements.contentPage
         );
-        this.pageManager.navigateToForm();
+
+        if (this.config.readOnly) {
+            this.pageManager.navigateToResults();
+        } else {
+            this.pageManager.navigateToForm();
+        }
+
         this.setupAccessibility();
         if (this.config.multiday) {
             if (this.elements.activityDateStart && this.state.selectedDate) {
@@ -1307,16 +1337,12 @@ export default class DianaWidget {
         if (!connection) return;
         try {
             const activityStartDate = this.state.selectedDate;
-            const activityEndDate = this.config.multiday && this.state.selectedEndDate
-                ? this.state.selectedEndDate
-                : activityStartDate;
+            const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
 
             let connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
             let connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
-
             const durationFirstLegStr = calculateTimeDifference(connection.connection_elements[0].departure_time, connection.connection_elements[0].arrival_time, (key) => this.t(key));
             const durationFirstLegMinutes = parseDurationToMinutes(durationFirstLegStr, (key) => this.t(key));
-
             const durationLastLegStr = calculateTimeDifference(connection.connection_elements[connection.connection_elements.length - 1].departure_time, connection.connection_elements[connection.connection_elements.length - 1].arrival_time, (key) => this.t(key));
             const durationLastLegMinutes = parseDurationToMinutes(durationLastLegStr, (key) => this.t(key));
 
@@ -1327,36 +1353,61 @@ export default class DianaWidget {
                 connectionEndTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_end_timestamp, -durationLastLegMinutes), this.config.timezone);
             }
 
-            let calculatedActivityStartLocal, calculatedActivityEndLocal;
-
             if (type === 'to') {
                 const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
-                calculatedActivityStartLocal = getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal, this.config.timezone);
-                // calculatedActivityEndLocal = this.state.activityTimes.end || null;
-                this.state.activityTimes.start = calculatedActivityStartLocal;
+                this.state.activityTimes.start = getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal, this.config.timezone);
             } else { // type === 'from'
                 const latestConfigEndLocal = convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate, this.config.timezone);
-                calculatedActivityEndLocal = getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal, this.config.timezone);
-                // calculatedActivityStartLocal = this.state.activityTimes.start || null;
-                this.state.activityTimes.end = calculatedActivityEndLocal;
+                this.state.activityTimes.end = getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal, this.config.timezone);
             }
 
+            if (!this.config.multiday && this.state.activityTimes.start && this.state.activityTimes.end) {
+                const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
+                    .set({
+                        year: activityStartDate.getFullYear(),
+                        month: activityStartDate.getMonth() + 1,
+                        day: activityStartDate.getDate()
+                    });
+                const endDateForDuration = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {zone: this.config.timezone})
+                    .set({
+                        year: activityStartDate.getFullYear(),
+                        month: activityStartDate.getMonth() + 1,
+                        day: activityStartDate.getDate()
+                    });
+                const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
+                this.state.activityTimes.warning_duration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
+            } else {
+                this.state.activityTimes.warning_duration = false;
+            }
+
+            this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+
+        } catch (error) {
+            console.error("Error updating activity time box:", error);
+            this.elements.activityTimeBox.innerHTML = `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
+        }
+    }
+
+    getActivityTimeBoxHTML() {
+        try {
+            const activityStartDate = this.state.selectedDate;
+            const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
+
             let durationDisplayHtml;
-            let warningDuration = false;
+            let warningDuration = this.state.activityTimes.warning_duration;
 
             const isMultiDayDisplay = this.config.multiday && activityStartDate && activityEndDate &&
-                activityStartDate.getTime() !== activityEndDate.getTime();
+                DateTime.fromJSDate(activityEndDate).startOf('day') > DateTime.fromJSDate(activityStartDate).startOf('day');
 
             if (isMultiDayDisplay) {
                 const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
-
                 durationDisplayHtml = `
-          <div class="activity-time-row">
-              <span class="activity-time-label">${this.t('activityDuration')}</span>
-              <span class="activity-time-value">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>
-          </div>`;
-                warningDuration = false; // Duration warning logic might differ for multi-day activities or be based on total hours.
-            } else { // Single day activity
+                    <div class="activity-time-row">
+                        <span class="activity-time-label">${this.t('activityDuration')}</span>
+                        <span class="activity-time-value">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>
+                    </div>`;
+                warningDuration = false;
+            } else {
                 if (this.state.activityTimes.start && this.state.activityTimes.end) {
                     const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
                         .set({
@@ -1364,70 +1415,55 @@ export default class DianaWidget {
                             month: activityStartDate.getMonth() + 1,
                             day: activityStartDate.getDate()
                         });
-                    // For end date, ensure it's on the correct day if activity spans midnight (though less common for single-day definitions)
-                    // Assuming activity ends on the same day as it starts for this calculation.
                     const endDateForDuration = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {zone: this.config.timezone})
                         .set({
                             year: activityStartDate.getFullYear(),
                             month: activityStartDate.getMonth() + 1,
                             day: activityStartDate.getDate()
                         });
-
-
                     const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
                     durationDisplayHtml = `
-              <div class="activity-time-row">
-                  <span class="activity-time-label">${this.t('activityDuration')}</span>
-                  <span class="activity-time-value">${durationResult.text}</span>
-              </div>`;
+                      <div class="activity-time-row">
+                          <span class="activity-time-label">${this.t('activityDuration')}</span>
+                          <span class="activity-time-value">${durationResult.text}</span>
+                      </div>`;
+                    this.state.activityTimes.duration = durationResult.text; // Store for sharing
                     warningDuration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
                 } else {
                     durationDisplayHtml = `
-              <div class="activity-time-row">
-                  <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
-                  <span class="activity-time-value">--</span>
-              </div>`;
+                      <div class="activity-time-row">
+                          <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
+                          <span class="activity-time-value">--</span>
+                      </div>`;
                 }
             }
-            this.state.activityTimes.warning_duration = warningDuration;
 
+            const startDisplayDate = isMultiDayDisplay && activityStartDate ? `(${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)})` : '';
+            const endDisplayDate = isMultiDayDisplay && activityEndDate ? `(${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, this.config.language)})` : '';
 
-            this.elements.activityTimeBox.innerHTML = `
-        <div class="activity-time-card">
-          <div class="activity-time-header">
-            <!-- <a style="display: inline-flex;" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/dir/?api=1&destination=${this.config.activityStartLocation}"> -->
-              ${this.config.activityName}
-            <!--  <svg style="margin: 0 0 5px 4px;" width="12px" height="12px" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" mirror-in-rtl="true" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill="var(--bg-apply-hover)" d="M12.1.6a.944.944 0 0 0 .2 1.04l1.352 1.353L10.28 6.37a.956.956 0 0 0 1.35 1.35l3.382-3.38 1.352 1.352a.944.944 0 0 0 1.04.2.958.958 0 0 0 .596-.875V.96a.964.964 0 0 0-.96-.96h-4.057a.958.958 0 0 0-.883.6z"></path> <path fill="var(--bg-apply-hover)" d="M14 11v5a2.006 2.006 0 0 1-2 2H2a2.006 2.006 0 0 1-2-2V6a2.006 2.006 0 0 1 2-2h5a1 1 0 0 1 0 2H2v10h10v-5a1 1 0 0 1 2 0z"></path> </g></svg>
-            </a> -->
-          </div>
-          <div class="activity-time-meta">
-            <div class="activity-time-row">
-              <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${isMultiDayDisplay ? `(${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)})` : ''}</span>
-              <span class="activity-time-divider">•</span>
-              <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
-            </div>
-
-            ${durationDisplayHtml}
-            ${this.state.activityTimes.warning_duration ? `
-              <div class="activity-time-row">
-                  <span class="activity-time-label"></span> <div class="activity-time-warning-text">
-                      ${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})
-                  </div>
-              </div>
-            ` : ''}
-
-            <div class="activity-time-row">
-              <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
-              <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${isMultiDayDisplay ? `(${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, this.config.language)})` : ''}</span>
-              <span class="activity-time-divider">•</span>
-              <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
-            </div>
-          </div>
-        </div>`;
+            return `
+                <div class="activity-time-card">
+                    <div class="activity-time-header">${this.config.activityName}</div>
+                    <div class="activity-time-meta">
+                        <div class="activity-time-row">
+                            <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
+                            <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${startDisplayDate}</span>
+                            <span class="activity-time-divider">•</span>
+                            <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
+                        </div>
+                        ${durationDisplayHtml}
+                        ${warningDuration ? `<div class="activity-time-row"><span class="activity-time-label"></span> <div class="activity-time-warning-text">${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})</div></div>` : ''}
+                        <div class="activity-time-row">
+                            <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
+                            <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${endDisplayDate}</span>
+                            <span class="activity-time-divider">•</span>
+                            <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
+                        </div>
+                    </div>
+                </div>`;
         } catch (error) {
-            console.error("Error updating activity time box:", error);
-            this.elements.activityTimeBox.innerHTML = `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
+            console.error("Error getting activity time box HTML:", error);
+            return `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
         }
     }
 
@@ -1473,33 +1509,38 @@ export default class DianaWidget {
             // Display waiting time after activity ends (for 'from' connections)
             if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
                 const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
-                const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : this.state.selectedDate;
+                const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {zone: 'utc'}).setZone(this.config.timezone);
 
-                const activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {zone: this.config.timezone})
+                // Construct activity end time, assuming it's on the same day as the return journey starts
+                let activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {zone: this.config.timezone})
                     .set({
-                        year: activityEndDate.getFullYear(),
-                        month: activityEndDate.getMonth() + 1,
-                        day: activityEndDate.getDate()
+                        year: firstLegDepartureDateTime.year,
+                        month: firstLegDepartureDateTime.month,
+                        day: firstLegDepartureDateTime.day
                     });
 
-                const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {zone: 'utc'}).setZone(this.config.timezone);
+                // ** FIX **: If the calculated activity end time is *after* the journey's departure time,
+                // it must have actually ended on the previous day.
+                if (activityEndDateTime > firstLegDepartureDateTime) {
+                    activityEndDateTime = activityEndDateTime.minus({days: 1});
+                }
 
                 if (activityEndDateTime.isValid && firstLegDepartureDateTime.isValid && firstLegDepartureDateTime > activityEndDateTime) {
                     const waitDuration = calculateDurationLocalWithDates(activityEndDateTime, firstLegDepartureDateTime, (key) => this.t(key));
                     if (waitDuration.totalMinutes > 0) {
                         html += `
-                  <div class="connection-element waiting-block">
-                      <div class="element-time">
-                      <span>${this.state.activityTimes.end}</span>
-                      ${this.t('waiting.afterActivity')}
-                      </div>
-                      <div id="eleCont">
-                      <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
-                      <span class="element-duration">
-                          ${waitDuration.text}
-                      </span>
-                      </div>
-                  </div>`;
+                          <div class="connection-element waiting-block">
+                              <div class="element-time">
+                              <span>${this.state.activityTimes.end}</span>
+                              ${this.t('waiting.afterActivity')}
+                              </div>
+                              <div id="eleCont">
+                              <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                              <span class="element-duration">
+                                  ${waitDuration.text}
+                              </span>
+                              </div>
+                          </div>`;
                     }
                 }
             }
@@ -1524,17 +1565,17 @@ export default class DianaWidget {
 
 
                 html += `
-          <div class="connection-element">
-            <div class="element-time">
-              <span>${departureTime}</span> ${fromLocationDisplay}
-            </div>
-            <div id="eleCont">
-              <div class="element-circle"></div>
-              <span class="element-icon">${icon}</span>
-              <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
-            </div>
-          </div>
-        `;
+                  <div class="connection-element">
+                    <div class="element-time">
+                      <span>${departureTime}</span> ${fromLocationDisplay}
+                    </div>
+                    <div id="eleCont">
+                      <div class="element-circle"></div>
+                      <span class="element-icon">${icon}</span>
+                      <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
+                    </div>
+                  </div>
+                `;
 
                 // After the last leg, display the final arrival.
                 if (index === filteredElements.length - 1) {
@@ -1552,13 +1593,13 @@ export default class DianaWidget {
 
 
                     html += `
-            <div class="connection-element">
-              <div class="element-time">
-                <span>${finalArrivalTime}</span> ${toLocationDisplay}
-              </div>
-              <div class="element-circle"></div>
-            </div>
-          `;
+                    <div class="connection-element">
+                      <div class="element-time">
+                        <span>${finalArrivalTime}</span> ${toLocationDisplay}
+                      </div>
+                      <div class="element-circle"></div>
+                    </div>
+                  `;
                 }
             });
 
@@ -1569,29 +1610,33 @@ export default class DianaWidget {
                 if (lastLegArrivalTimeISO) { // Ensure lastLegArrivalTimeISO is valid
                     const connectionEndDateTime = DateTime.fromISO(lastLegArrivalTimeISO, {zone: 'utc'}).setZone(this.config.timezone);
                     // Ensure activityActualStartDateTime is on the same day as connectionEndDateTime for correct diff
-                    const activityActualStartDateTime = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
+                    let activityActualStartDateTime = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
                         .set({
                             year: connectionEndDateTime.year,
                             month: connectionEndDateTime.month,
                             day: connectionEndDateTime.day
                         });
 
+                    if (activityActualStartDateTime < connectionEndDateTime) {
+                        activityActualStartDateTime = activityActualStartDateTime.plus({days: 1});
+                    }
+
                     if (connectionEndDateTime.isValid && activityActualStartDateTime.isValid && activityActualStartDateTime > connectionEndDateTime) {
                         const waitDuration = calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime, (key) => this.t(key));
                         if (waitDuration.totalMinutes > 0) { // Only show if there's actual waiting time
                             html += `
-                      <div class="connection-element waiting-block">
-                          <div class="element-time">
-                          <span>${convertUTCToLocalTime(lastLegArrivalTimeISO, this.config.timezone)}</span>
-                          ${this.t('waiting.beforeActivity')}
-                          </div>
-                          <div id="eleCont">
-                          <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
-                          <span class="element-duration">
-                              ${waitDuration.text}
-                          </span>
-                          </div>
-                      </div>`;
+                              <div class="connection-element waiting-block">
+                                  <div class="element-time">
+                                  <span>${convertUTCToLocalTime(lastLegArrivalTimeISO, this.config.timezone)}</span>
+                                  ${this.t('waiting.beforeActivity')}
+                                  </div>
+                                  <div id="eleCont">
+                                  <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                                  <span class="element-duration">
+                                      ${waitDuration.text}
+                                  </span>
+                                  </div>
+                              </div>`;
                         }
                     }
                 }
@@ -1696,6 +1741,9 @@ export default class DianaWidget {
         if (this.pageManager) {
             this.pageManager.navigateToResults();
         }
+        if (this.config.readOnly) {
+            this.elements.resultsPage.classList.add('read-only-active');
+        }
     }
 
     slideToRecommendedConnections() {
@@ -1741,10 +1789,10 @@ export default class DianaWidget {
 
         if (resultsPage) {
             resultsPage.classList.toggle('clean-view-active', this.state.isCleanView);
-            // The share button's visibility is controlled via CSS using the .clean-view-active class
-
-            // Only render the clean view if it's being activated and doesn't have content yet
-            if (this.state.isCleanView && this.elements.cleanViewContainer.innerHTML.trim() === '') {
+            if (this.config.readOnly) {
+                resultsPage.classList.add('read-only-active');
+            }
+            if (this.state.isCleanView) {
                 this.renderCleanView();
             }
         }
@@ -1754,47 +1802,36 @@ export default class DianaWidget {
         this.clearMessages();
         try {
             const dataToShare = {
-                // It's better to select specific fields rather than entire objects to keep URL short
-                toJourney: this.state.selectedToConnection ? {
-                    start: this.state.selectedToConnection.connection_start_timestamp,
-                    end: this.state.selectedToConnection.connection_end_timestamp,
-                    legs: this.state.selectedToConnection.connection_elements.map(leg => ({ type: leg.type, from: leg.from_location, to: leg.to_location, departure: leg.departure_time, arrival: leg.arrival_time }))
-                } : null,
-                fromJourney: this.state.selectedFromConnection ? {
-                    start: this.state.selectedFromConnection.connection_start_timestamp,
-                    end: this.state.selectedFromConnection.connection_end_timestamp,
-                    legs: this.state.selectedFromConnection.connection_elements.map(leg => ({ type: leg.type, from: leg.from_location, to: leg.to_location, departure: leg.departure_time, arrival: leg.arrival_time }))
-                } : null,
+                toJourney: this.state.selectedToConnection,
+                fromJourney: this.state.selectedFromConnection,
                 activity: {
                     name: this.config.activityName,
                     startLocation: this.config.activityStartLocationDisplayName || this.config.activityStartLocation,
                     endLocation: this.config.activityEndLocationDisplayName || this.config.activityEndLocation,
-                    times: this.state.activityTimes
+                    times: this.state.activityTimes,
+                    startDate: this.state.selectedDate ? formatDatetime(this.state.selectedDate) : null,
+                    endDate: (this.config.multiday && this.state.selectedEndDate) ? formatDatetime(this.state.selectedEndDate) : null,
                 },
                 origin: this.elements.originInput.value
             };
 
             const jsonString = JSON.stringify(dataToShare);
-            const encodedData = encodeURIComponent(btoa(jsonString)); // btoa to make it more compact
-            const url = `${window.location.origin}${window.location.pathname}?journey=${encodedData}`;
+            const encodedData = encodeURIComponent(btoa(jsonString));
+            const url = `${this.config.shareURLPrefix}?dianaConnection=${encodedData}`;
 
-            // Use Web Share API if available (preferred on mobile)
             if (navigator.share) {
                 await navigator.share({
                     title: this.config.activityName,
                     url: url,
                 });
             } else if (navigator.clipboard && navigator.clipboard.writeText) {
-                // Use modern clipboard API for desktops
                 await navigator.clipboard.writeText(url);
                 this.showInfo(this.t('shareUrlCopied'));
             } else {
-                // Fallback for older browsers
                 const textArea = document.createElement("textarea");
                 textArea.value = url;
                 textArea.style.position = 'fixed';
                 textArea.style.top = '-9999px';
-                textArea.style.left = '-9999px';
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
@@ -1811,7 +1848,6 @@ export default class DianaWidget {
             }
         } catch (error) {
             console.error("Share failed:", error);
-            // Avoid showing an error if the user cancels the share sheet
             if (error.name !== 'AbortError') {
                 this.showError(this.t('shareUrlCopyFailed'), 'results');
             }
@@ -1822,12 +1858,84 @@ export default class DianaWidget {
         const container = this.elements.cleanViewContainer;
         if (!container) return;
 
-        container.innerHTML = '';
+        const hasData = this.state.toConnections.length > 0 || this.state.fromConnections.length > 0;
 
-        // placeholder for now: copy detailled html to clean view
+        if (this.config.readOnly) {
+            if (!hasData) {
+                container.innerHTML = `<div class="info-message">${this.t('noConnectionDetails')}</div>`;
+                return;
+            }
 
-        container.innerHTML = this.elements.detailedViewContainer.innerHTML;
+            let toJourneyHtml = '';
+            if (this.state.toConnections && this.state.toConnections.length > 0) {
+                toJourneyHtml = `<div class="middle-box">${this.renderConnectionDetails(this.state.toConnections, 'to')}</div>`;
+            }
 
+            let fromJourneyHtml = '';
+            if (this.state.fromConnections && this.state.fromConnections.length > 0) {
+                fromJourneyHtml = `<div class="middle-box">${this.renderConnectionDetails(this.state.fromConnections, 'from')}</div>`;
+            }
+
+            const activityBoxHtml = `<div class="middle-box" id="activity-time">${this.getActivityTimeBoxHTML()}</div>`;
+
+            container.innerHTML = `
+                ${toJourneyHtml}
+                ${activityBoxHtml}
+                ${fromJourneyHtml}
+            `;
+        } else {
+            container.innerHTML = this.elements.detailedViewContainer.innerHTML;
+        }
+    }
+
+    _loadFromUrlParams(encodedData) {
+        try {
+            const jsonString = atob(decodeURIComponent(encodedData));
+            const data = JSON.parse(jsonString);
+
+            // Populate state from URL data
+            this.state.selectedToConnection = data.toJourney;
+            this.state.selectedFromConnection = data.fromJourney;
+            this.state.toConnections = data.toJourney ? [data.toJourney] : [];
+            this.state.fromConnections = data.fromJourney ? [data.fromJourney] : [];
+            this.state.activityTimes = data.activity.times;
+
+            if (data.activity.startDate) {
+                this.state.selectedDate = DateTime.fromISO(data.activity.startDate, {zone: 'utc'}).toJSDate();
+            }
+            if (data.activity.endDate) {
+                this.state.selectedEndDate = DateTime.fromISO(data.activity.endDate, {zone: 'utc'}).toJSDate();
+            }
+
+            if (this.elements.originInput && data.origin) {
+                this.elements.originInput.value = data.origin;
+            }
+
+            // Set view to clean and read-only
+            this.state.isCleanView = true;
+            if (this.elements.toggleViewCheckbox) {
+                this.elements.toggleViewCheckbox.checked = true;
+                this.elements.toggleViewCheckbox.disabled = true;
+            }
+
+            this.navigateToResults(); // Navigate to the results page
+            this.toggleResultsView(); // Apply clean-view-active and read-only-active classes
+
+            // Manually trigger updates for display elements that are normally populated during API calls
+            if (this.state.toConnections.length > 0) {
+                this.updateDepartureDateDisplay(this.state.toConnections[0], 'to');
+            }
+            if (this.state.fromConnections.length > 0) {
+                this.updateDepartureDateDisplay(this.state.fromConnections[0], 'from');
+            }
+            // Re-render the activity box with the loaded data.
+            this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+
+        } catch (error) {
+            console.error("Failed to load data from URL parameter:", error);
+            this.showError("Could not load the shared journey. The link might be corrupted.", 'form');
+            this.pageManager.navigateToForm(); // Fallback to form on error
+        }
     }
 
 
