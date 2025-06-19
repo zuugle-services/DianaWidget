@@ -224,6 +224,17 @@ export default class DianaWidget {
                     }
                     // Re-render the activity box with the loaded data.
                     this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+
+                    if (this.elements.originInput && data.origin) {
+                        this.elements.originInput.value = data.origin;
+                    }
+
+                    // Set view to clean and read-only
+                    this.state.isCleanView = true;
+                    if (this.elements.toggleViewCheckbox) {
+                        this.elements.toggleViewCheckbox.checked = true;
+                        this.elements.toggleViewCheckbox.disabled = true;
+                    }
                 }
             }).catch(error => {
                 console.error("Error during async DOM initialization:", error);
@@ -1973,17 +1984,6 @@ export default class DianaWidget {
             }
             if (data.activity.endDate) {
                 this.state.selectedEndDate = DateTime.fromISO(data.activity.endDate, {zone: 'utc'}).toJSDate();
-            }
-
-            if (this.elements.originInput && data.origin) {
-                this.elements.originInput.value = data.origin;
-            }
-
-            // Set view to clean and read-only
-            this.state.isCleanView = true;
-            if (this.elements.toggleViewCheckbox) {
-                this.elements.toggleViewCheckbox.checked = true;
-                this.elements.toggleViewCheckbox.disabled = true;
             }
         } catch (error) {
             console.error("Failed to load data from URL parameter:", error);
