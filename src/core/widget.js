@@ -61,7 +61,7 @@ export default class DianaWidget {
         overrideActivityEndDate: null,
         activityDurationDaysFixed: null,
         readOnly: false,
-        shareURLPrefix: `${window.location.origin}${window.location.pathname}`
+        shareURLPrefix: "https://zuugle-services.com/share/"
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
