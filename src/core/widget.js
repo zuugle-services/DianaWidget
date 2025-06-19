@@ -70,6 +70,12 @@ export default class DianaWidget {
             const isReadOnly = config.readOnly === true;
             const urlParams = new URLSearchParams(window.location.search);
             const dianaConnectionData = urlParams.get('dianaConnection');
+            if (isReadOnly && !dianaConnectionData) {
+                throw new Error(`Invalid configuration: 'readOnly' is set to true but no 'dianaConnection' parameter is provided in the URL. Please provide a 'dianaConnection' parameter in the URL to enable read-only mode.`);
+            }
+            if (!isReadOnly && dianaConnectionData) {
+                console.warn(`Invalid configuration: 'readOnly' is set to false but a 'dianaConnection' parameter is provided in the URL. This parameter will be ignored.`);
+            }
 
             this.config = this.validateConfig(config);
             this.container = document.getElementById(containerId); // This is the user-provided container
@@ -237,11 +243,26 @@ export default class DianaWidget {
             config.readOnly = this.defaultConfig.readOnly;
         }
 
-        // If in read-only mode, apiToken is not required.
+        // If in read-only mode, some required fields are not required anymore
         if (config.readOnly) {
-            const index = config.requiredFields.indexOf('apiToken');
-            if (index > -1) {
-                config.requiredFields.splice(index, 1);
+            let notRequired = [
+                'activityStartLocation',
+                'activityStartLocationType',
+                'activityEndLocation',
+                'activityEndLocationType',
+                'activityEarliestStartTime',
+                'activityLatestStartTime',
+                'activityEarliestEndTime',
+                'activityLatestEndTime',
+                'activityDurationMinutes',
+                'apiToken'
+            ]
+
+            for (let field of notRequired) {
+                const index = config.requiredFields.indexOf(field);
+                if (index > -1) {
+                    config.requiredFields.splice(index, 1);
+                }
             }
         }
 
