@@ -205,9 +205,25 @@ export default class DianaWidget {
             this.debouncedHandleAddressInput = debounce((query) => this.handleAddressInput(query), 700);
 
             this.injectBaseStyles();
+
+            if (this.config.readOnly && dianaConnectionData) {
+                this._loadFromUrlParams(dianaConnectionData);
+            }
+
             this.initDOM().then(() => {
                 if (this.config.readOnly && dianaConnectionData) {
-                    this._loadFromUrlParams(dianaConnectionData);
+                    this.navigateToResults(); // Navigate to the results page
+                    this.toggleResultsView(); // Apply clean-view-active and read-only-active classes
+
+                    // Manually trigger updates for display elements that are normally populated during API calls
+                    if (this.state.toConnections.length > 0) {
+                        this.updateDepartureDateDisplay(this.state.toConnections[0], 'to');
+                    }
+                    if (this.state.fromConnections.length > 0) {
+                        this.updateDepartureDateDisplay(this.state.fromConnections[0], 'from');
+                    }
+                    // Re-render the activity box with the loaded data.
+                    this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
                 }
             }).catch(error => {
                 console.error("Error during async DOM initialization:", error);
@@ -1969,24 +1985,9 @@ export default class DianaWidget {
                 this.elements.toggleViewCheckbox.checked = true;
                 this.elements.toggleViewCheckbox.disabled = true;
             }
-
-            this.navigateToResults(); // Navigate to the results page
-            this.toggleResultsView(); // Apply clean-view-active and read-only-active classes
-
-            // Manually trigger updates for display elements that are normally populated during API calls
-            if (this.state.toConnections.length > 0) {
-                this.updateDepartureDateDisplay(this.state.toConnections[0], 'to');
-            }
-            if (this.state.fromConnections.length > 0) {
-                this.updateDepartureDateDisplay(this.state.fromConnections[0], 'from');
-            }
-            // Re-render the activity box with the loaded data.
-            this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
-
         } catch (error) {
             console.error("Failed to load data from URL parameter:", error);
             this.showError("Could not load the shared journey. The link might be corrupted.", 'form');
-            this.pageManager.navigateToForm(); // Fallback to form on error
         }
     }
 
