@@ -123,14 +123,14 @@
 }
 
 .diana-container .share-error-reload-link {
+    background-color: var(--primary-color);
+    border-radius: 5px;
+    color: var(--bg-primary) !important;
     display: inline-block;
+    font-weight: 500;
     margin-top: 15px;
     padding: 8px 16px;
-    background-color: var(--primary-color);
-    color: var(--bg-primary) !important;
     text-decoration: none !important;
-    border-radius: 5px;
-    font-weight: 500;
     transition: background-color 0.2s ease;
 }
 
@@ -261,6 +261,51 @@
 
 .diana-container .close-btn {
     font-size: 20px; /* Slightly smaller X */
+}
+
+/* --- Results Page Header Overrides --- */
+.diana-container #resultsPage .widget-header {
+    justify-content: space-between;
+    padding: 0 8px;
+}
+
+.diana-container #resultsPage .widget-header-heading {
+    border-left: none;
+    border-right: none;
+}
+
+.diana-container #resultsPage .widget-header-button {
+    flex: 0 0 48px; /* Give a fixed width to ensure title is centered */
+    justify-content: center;
+    padding: 0;
+}
+
+.diana-container #resultsPage .widget-header-button:first-child {
+    justify-content: flex-start;
+}
+
+.diana-container #resultsPage .widget-header-button:last-child {
+    justify-content: flex-end;
+}
+
+/* --- New Button Styles --- */
+.diana-container .back-btn-arrow,
+.diana-container .menu-btn-dots {
+    align-items: center;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    padding: 8px;
+    transition: background-color 0.2s ease;
+}
+
+.diana-container .back-btn-arrow:hover,
+.diana-container .menu-btn-dots:hover {
+    background-color: var(--bg-hover);
 }
 
 
@@ -1099,7 +1144,7 @@
     border-bottom: 1px solid var(--border-primary);
     box-sizing: border-box;
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     padding: 8px 20px;
     width: 100%;
 }
@@ -1131,27 +1176,6 @@
 
 .diana-container .share-btn:hover {
     color: var(--text-primary);
-}
-
-.diana-container .widget-response-back-button {
-    align-items: center;
-    border-radius: 8px;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    display: flex;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 14px;
-    font-style: normal;
-    font-weight: 400;
-    gap: 6px;
-    line-height: 120%;
-    padding: 8px 12px;
-    transition: background-color 0.2s ease;
-    width: fit-content;
-}
-
-.diana-container .widget-response-back-button:hover {
-    background-color: var(--bg-hover);
 }
 
 .diana-container .activity-date-display {

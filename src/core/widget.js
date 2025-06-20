@@ -585,7 +585,7 @@ export default class DianaWidget {
             toActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#toActivityDateDisplay"),
             fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
             formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
-            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .widget-header-button .back-btn"),
+            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"),
             contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"),
             contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"),
             contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"),
@@ -1227,7 +1227,7 @@ export default class DianaWidget {
         this.addSwipeBehavior('bottomSlider');
 
         if (this.state.preselectTimes) {
-            const { to_start, to_end, from_start, from_end } = this.state.preselectTimes;
+            const {to_start, to_end, from_start, from_end} = this.state.preselectTimes;
 
             if (to_start && to_end && this.state.toConnections.length > 0) {
                 const toConn = this.state.toConnections.find(c =>
@@ -1885,7 +1885,7 @@ export default class DianaWidget {
 
         try {
             const response = await fetch(`${this.config.apiBaseUrl}/share/${shareId}/`, {
-                headers: { "Authorization": `Bearer ${this.config.apiToken}` }
+                headers: {"Authorization": `Bearer ${this.config.apiToken}`}
             });
 
             if (!response.ok) {
