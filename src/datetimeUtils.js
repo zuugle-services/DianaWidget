@@ -10,7 +10,7 @@ import {DateTime} from 'luxon';
  * @param {boolean} isReadOnly - Whether the activity is read-only.
  * @returns {Date} The calculated initial start date as a JavaScript Date object.
  */
-export function calculateInitialStartDate(timezone, activityLatestEndTime, activityDurationMinutes, isReadOnly) {
+export function calculateInitialStartDate(timezone, activityLatestEndTime, activityDurationMinutes) {
     let initialDate;
     try {
         const now = DateTime.now().setZone(timezone);
@@ -31,9 +31,7 @@ export function calculateInitialStartDate(timezone, activityLatestEndTime, activ
         }
         initialDate = new Date(initialDate["year"], initialDate["month"] - 1, initialDate["day"]);
     } catch (error) {
-        if (!isReadOnly) {
-            console.error("Error calculating initial start date, defaulting to today:", error);
-        }
+        console.error("Error calculating initial start date, defaulting to today:", error);
         initialDate = new Date(); // Fallback to current date
     }
     return initialDate;

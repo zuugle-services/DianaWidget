@@ -122,15 +122,45 @@
     color: #1a4a8d;
 }
 
+.diana-container .share-error-reload-link {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 16px;
+    background-color: var(--primary-color);
+    color: var(--bg-primary) !important;
+    text-decoration: none !important;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: background-color 0.2s ease;
+}
+
+.diana-container .share-error-reload-link:hover {
+    background-color: var(--bg-apply-hover);
+}
+
+.diana-container .fatal-info-box .share-error-reload-link {
+    background-color: var(--text-info);
+    color: var(--bg-primary) !important;
+}
+
+.diana-container .fatal-info-box .share-error-reload-link:hover {
+    filter: brightness(90%);
+}
+
 .diana-container .full-screen-loader {
     align-items: center;
+    background-color: rgba(255, 255, 255, 0.8);
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
     gap: 15px;
     height: 100%;
     justify-content: center;
+    left: 0;
+    position: absolute;
+    top: 0;
     width: 100%;
+    z-index: 9999;
 }
 
 .diana-container .full-screen-loader .loading-spinner {
@@ -1095,7 +1125,7 @@
     border: none;
     color: var(--text-tertiary);
     cursor: pointer;
-    display: none; /* Hidden by default */
+    display: block; /* Always visible */
     padding: 4px;
 }
 
@@ -1668,7 +1698,7 @@
     /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
     .diana-container input[type="date"].native-date-picker-single {
         /* While it's styled as display:none !important in HTML,
-           if JS needs to interact with it (e.g. for .showPicker()),
+           if JS needs to interact with it (e.g., for .showPicker()),
            it might need to be briefly visible or at least not pointer-events:none.
            However, the primary interaction is through the buttons.
            The .showPicker() method works on hidden inputs.
@@ -1690,105 +1720,4 @@
         display: none !important; /* Keep it hidden */
         pointer-events: none !important; /* Ensure no interaction on desktop */
     }
-}
-
-/* --- View Toggle Switch Styles --- */
-.diana-container .view-toggle-switch {
-    display: inline-block;
-    height: 28px;
-    position: relative;
-    width: 52px;
-}
-
-.diana-container .view-toggle-switch input {
-    height: 0;
-    opacity: 0;
-    width: 0;
-}
-
-.diana-container .toggle-slider {
-    align-items: center;
-    background-color: #ccc;
-    border-radius: 28px;
-    bottom: 0;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    left: 0;
-    padding: 0 4px;
-    position: absolute;
-    right: 0;
-    top: 0;
-    transition: .4s;
-}
-
-.diana-container .toggle-slider:before {
-    background-color: white;
-    border-radius: 50%;
-    bottom: 3px;
-    content: "";
-    height: 22px;
-    left: 3px;
-    position: absolute;
-    transition: .4s;
-    width: 22px;
-    z-index: 1;
-}
-
-.diana-container .view-toggle-switch input:checked + .toggle-slider {
-    background-color: var(--primary-color);
-}
-
-.diana-container .view-toggle-switch input:checked + .toggle-slider:before {
-    transform: translateX(24px);
-}
-
-.diana-container .toggle-icon-clean,
-.diana-container .toggle-icon-details {
-    color: white;
-    height: 18px;
-    width: 18px;
-    z-index: 0;
-}
-
-/* --- Clean View Mode Styles --- */
-.diana-container #resultsPage.clean-view-active .detailed-view-content {
-    display: none;
-}
-
-.diana-container #resultsPage.clean-view-active .top-slider-wrapper {
-    display: none;
-}
-
-.diana-container #resultsPage.clean-view-active .clean-view-container {
-    display: block;
-}
-
-.diana-container .clean-view-container {
-    display: none;
-}
-
-.diana-container #resultsPage.clean-view-active .share-btn {
-    display: block;
-}
-
-/* --- Read-Only Mode --- */
-.diana-container #resultsPage.read-only-active .widget-response-back-button,
-.diana-container #resultsPage.read-only-active .top-slider-wrapper,
-.diana-container #resultsPage.read-only-active .slider-wrap-fixed .slider,
-.diana-container #resultsPage.read-only-active .widget-header-button .back-btn {
-    display: none !important;
-}
-
-.diana-container #resultsPage.read-only-active .view-toggle-switch {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-.diana-container #resultsPage.read-only-active .results-top-bar {
-    justify-content: flex-end;
-}
-
-.diana-container #resultsPage.read-only-active .widget-header-button {
-    padding: 0;
 }

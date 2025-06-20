@@ -12,6 +12,7 @@ export default {
         apply: "Apply",
         cancel: "Cancel",
         back: "Back",
+        reloadPage: "Reload page",
         loadingConnectionsI: "Incoming connections are loading...",
         loadingConnectionsO: "Outgoing connections are loading...",
         loadingStateSearching: "Searching...",
@@ -48,9 +49,9 @@ export default {
         shareUrlCopied: "Share URL copied to clipboard!",
         shareUrlCopyFailed: "Could not copy URL.",
         menu: {
-            helpAndSupport: "Hilfe",
+            helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
-            legal: "Rechtliches",
+            legal: "Legal",
             legalSubtitle: "Terms and privacy information."
         },
         warnings: {
@@ -64,7 +65,9 @@ export default {
             endDateRequired: "Please select an end date.",
             fetchingLocation: "Fetching your location...",
             fetchingAddress: "Looking up address...",
-            endDateAfterStartDate: "End date must be on or after the start date."
+            endDateAfterStartDate: "End date must be on or after the start date.",
+            sharedDateInPast: "This shared journey is for a date in the past. Please select a new date to find current connections.",
+            shareLinkInvalid: "This shared link is invalid or has expired."
         },
         errors: {
             connectionError: "Failed to load connections. Please try again.",
@@ -79,6 +82,7 @@ export default {
             shareLinkInvalidExpired: "Share link is invalid or expired.",
             shareLinkCreateFailed: "Failed to create share link.",
             shareLinkErrorTitle: "Couldn't Load This Journey.",
+            widgetLoadErrorTitle: "Widget could not be loaded.",
             api: {
                 queryParamMissing: "Query parameter 'q' is missing",
                 invalidLimitParam: "Invalid limit parameter",
@@ -160,6 +164,7 @@ export default {
         apply: "Übernehmen",
         cancel: "Abbrechen",
         back: "Zurück",
+        reloadPage: "Seite neu laden",
         loadingConnectionsI: "Hinfahrten werden geladen...",
         loadingConnectionsO: "Rückfahrten werden geladen...",
         loadingStateSearching: "Suche...",
@@ -212,7 +217,9 @@ export default {
             endDateRequired: "Bitte wählen Sie ein Enddatum.",
             fetchingLocation: "Standort wird abgerufen...",
             fetchingAddress: "Adresse wird gesucht...",
-            endDateAfterStartDate: "Das Enddatum muss am oder nach dem Startdatum liegen."
+            endDateAfterStartDate: "Das Enddatum muss am oder nach dem Startdatum liegen.",
+            sharedDateInPast: "Diese geteilte Reise bezieht sich auf ein vergangenes Datum. Bitte wählen Sie ein neues Datum, um aktuelle Verbindungen zu finden.",
+            shareLinkInvalid: "Dieser geteilte Link ist ungültig oder abgelaufen."
         },
         errors: {
             connectionError: "Verbindungsdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -227,6 +234,7 @@ export default {
             shareLinkInvalidExpired: "Der geteilte Link ist ungültig oder abgelaufen.",
             shareLinkCreateFailed: "Der Teilen-Link konnte nicht erstellt werden.",
             shareLinkErrorTitle: "Laden der Daten fehlgeschlagen",
+            widgetLoadErrorTitle: "Das Widget konnte nicht geladen werden.",
             api: {
                 queryParamMissing: "Suchparameter 'q' fehlt",
                 invalidLimitParam: "Ungültiger Limit-Parameter",
@@ -308,6 +316,7 @@ export default {
         apply: "Apply",
         cancel: "Cancel",
         back: "Back",
+        reloadPage: "Reload page",
         loadingConnectionsI: "Incoming connections are loading...",
         loadingConnectionsO: "Outgoing connections are loading...",
         loadingStateSearching: "Searching...",
@@ -344,9 +353,9 @@ export default {
         shareUrlCopied: "Share URL copied to clipboard!",
         shareUrlCopyFailed: "Could not copy URL.",
         menu: {
-            helpAndSupport: "Hilfe",
+            helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
-            legal: "Rechtliches",
+            legal: "Legal",
             legalSubtitle: "Terms and privacy information."
         },
         warnings: {
@@ -360,7 +369,9 @@ export default {
             endDateRequired: "Please select an end date.",
             fetchingLocation: "Fetching your location...",
             fetchingAddress: "Looking up address...",
-            endDateAfterStartDate: "End date must be on or after the start date."
+            endDateAfterStartDate: "End date must be on or after the start date.",
+            sharedDateInPast: "This shared journey is for a date in the past. Please select a new date to find current connections.",
+            shareLinkInvalid: "This shared link is invalid or has expired."
         },
         errors: {
             connectionError: "Failed to load connections. Please try again.",
@@ -375,6 +386,7 @@ export default {
             shareLinkInvalidExpired: "The shared link is invalid or expired.",
             shareLinkCreateFailed: "Failed to create share link.",
             shareLinkErrorTitle: "Couldn't Load This Journey.",
+            widgetLoadErrorTitle: "Widget could not be loaded.",
             api: {
                 queryParamMissing: "Query parameter 'q' is missing",
                 invalidLimitParam: "Invalid limit parameter",
