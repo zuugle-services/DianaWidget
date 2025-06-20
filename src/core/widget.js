@@ -435,7 +435,6 @@ export default class DianaWidget {
 
         const formPageHTML = await this.uiManager.loadTemplate('formPageTemplate', templateArgs);
         const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
-        const menuModalHTML = await this.uiManager.loadTemplate('menuPageTemplate', templateArgs);
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
         this.dianaWidgetRootContainer.innerHTML = `
@@ -446,7 +445,6 @@ export default class DianaWidget {
               ${contentPageHTML}
             </div>
           </div>
-          ${menuModalHTML}
         `;
 
         this.cacheDOMElements();
@@ -584,17 +582,20 @@ export default class DianaWidget {
             dateSelectorButtonsGroup: this.dianaWidgetRootContainer.querySelector(".date-selector-buttons"),
             toActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#toActivityDateDisplay"),
             fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
-            formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
-            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"),
-            contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"),
+
+            // Menu elements
+            menuButton: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"),
+            menuDropdown: this.dianaWidgetRootContainer.querySelector("#menuDropdown"),
+
+            // Page-specific elements
             contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"),
             contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"),
             contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"),
-            menuModalOverlay: this.dianaWidgetRootContainer.querySelector("#menuModalOverlay"),
-            menuModal: this.dianaWidgetRootContainer.querySelector(".menu-modal"),
-            menuModalCloseBtn: this.dianaWidgetRootContainer.querySelector("#menuModalCloseBtn"),
-            menuList: this.dianaWidgetRootContainer.querySelector("#menuList"),
-            shareBtn: this.dianaWidgetRootContainer.querySelector("#shareBtn"),
+
+            // Hamburger buttons on other pages that now act as menu toggles
+            formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
+            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"), // This is the main one
+            contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"),
         };
     }
 
@@ -632,7 +633,6 @@ export default class DianaWidget {
         if (this.elements.resultsPageHamburgerBtn) this.elements.resultsPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
         if (this.elements.contentPageHamburgerBtn) this.elements.contentPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
         if (this.elements.contentPageCloseBtn) this.elements.contentPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
-        if (this.elements.shareBtn) this.elements.shareBtn.setAttribute('aria-label', this.t('ariaLabels.shareButton'));
     }
 
     setupEventListeners() {
@@ -665,6 +665,10 @@ export default class DianaWidget {
                     this.state.suggestions = [];
                     this.renderSuggestions();
                 }
+                // Close menu dropdown if click is outside
+                if (this.elements.menuDropdown && this.elements.menuDropdown.style.display === 'block' && !this.elements.menuButton.contains(e.target) && !this.elements.menuDropdown.contains(e.target)) {
+                    this.toggleMenuDropdown(false);
+                }
             });
             this.elements.originInput.addEventListener('keydown', (e) => {
                 if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
@@ -690,50 +694,46 @@ export default class DianaWidget {
 
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
 
-        if (this.elements.formPageHamburgerBtn) {
-            this.elements.formPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
-        }
-        if (this.elements.resultsPageHamburgerBtn) {
-            this.elements.resultsPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
-        }
-        if (this.elements.contentPageHamburgerBtn) {
-            this.elements.contentPageHamburgerBtn.addEventListener('click', () => this.showMenuModal());
-        }
-        if (this.elements.contentPageCloseBtn) {
-            this.elements.contentPageCloseBtn.addEventListener('click', () => this.closeMenuOrContentPage());
-        }
-
-        if (this.elements.menuModalOverlay) {
-            this.elements.menuModalOverlay.addEventListener('click', (e) => {
-                if (e.target === this.elements.menuModalOverlay) {
-                    this.hideMenuModal();
-                }
+        // New listener for the menu button to toggle the dropdown
+        if (this.elements.menuButton) {
+            this.elements.menuButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent the document click listener from firing immediately
+                this.toggleMenuDropdown();
             });
         }
-        if (this.elements.menuModalCloseBtn) {
-            this.elements.menuModalCloseBtn.addEventListener('click', () => this.hideMenuModal());
-        }
-        if (this.elements.menuList) {
-            this.elements.menuList.addEventListener('click', (e) => {
-                const menuItem = e.target.closest('.menu-item');
+
+        // New listener for menu item clicks (delegated to the dropdown)
+        if (this.elements.menuDropdown) {
+            this.elements.menuDropdown.addEventListener('click', (e) => {
+                const menuItem = e.target.closest('.menu-dropdown-item');
                 if (menuItem) {
-                    this.handleMenuSelection(menuItem);
-                }
-            });
-
-            this.elements.menuList.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    const menuItem = e.target.closest('.menu-item');
-                    if (menuItem) {
-                        e.preventDefault();
-                        this.handleMenuSelection(menuItem);
+                    e.preventDefault();
+                    if (menuItem.id === 'shareMenuItem') {
+                        this.handleShare();
+                    } else if (menuItem.dataset.contentKey) {
+                        this.navigateToContentPage(menuItem.dataset.contentKey);
                     }
+                    this.toggleMenuDropdown(false); // Close menu after action
                 }
             });
         }
+    }
 
-        if (this.elements.shareBtn) {
-            this.elements.shareBtn.addEventListener('click', () => this.handleShare());
+    /**
+     * Toggles the visibility of the menu dropdown.
+     * @param {boolean|null} forceShow - true to show, false to hide, null to toggle.
+     */
+    toggleMenuDropdown(forceShow = null) {
+        if (!this.elements.menuDropdown) return;
+
+        const isVisible = this.elements.menuDropdown.style.display === 'block';
+
+        if (forceShow === true) {
+            this.elements.menuDropdown.style.display = 'block';
+        } else if (forceShow === false) {
+            this.elements.menuDropdown.style.display = 'none';
+        } else {
+            this.elements.menuDropdown.style.display = isVisible ? 'none' : 'block';
         }
     }
 
@@ -1983,6 +1983,7 @@ export default class DianaWidget {
     navigateToContentPage(contentKey) {
         this.clearMessages();
         this.state.currentContentKey = contentKey;
+        this.toggleMenuDropdown(false); // Close dropdown before navigating
         if (this.pageManager) {
             this.pageManager.navigateToContentPage();
         }

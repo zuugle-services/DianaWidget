@@ -243,6 +243,7 @@
     gap: 10px;
     height: 100%; /* Make button area take full header height */
     padding: 7px 24px; /* Consistent padding */
+    position: relative;
 }
 
 .diana-container .back-btn,
@@ -1138,15 +1139,6 @@
 
 
 /* --- Results Page Specific Styles --- */
-.diana-container .results-bottom-bar {
-    align-items: center;
-    box-sizing: border-box;
-    display: flex;
-    justify-content: flex-start;
-    padding: 2px 20px;
-    width: 100%;
-}
-
 .diana-container .bottom-bar-left {
     align-items: center;
     display: flex;
@@ -1464,8 +1456,8 @@
     gap: 4px;
     min-height: 30px;
     padding: 4px 8px;
-    width: fit-content;
     position: relative;
+    width: fit-content;
 }
 
 .diana-container .waiting-block {
@@ -1544,115 +1536,51 @@
     text-decoration: none !important;
 }
 
-/* --- Menu Modal Styles --- */
-.diana-container .menu-modal-overlay {
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.5);
-    box-sizing: border-box;
-    display: none;
-    height: 100%;
-    justify-content: center;
-    left: 0;
-    opacity: 0;
-    padding: 20px;
-    position: absolute;
-    top: 0;
-    transition: opacity 0.3s ease-in-out;
-    width: 100%;
-    z-index: 2000;
-}
-
-.diana-container .menu-modal-overlay.visible {
-    opacity: 1;
-}
-
-.diana-container .menu-modal {
+/* --- New Menu Dropdown Styles --- */
+.diana-container .menu-dropdown {
     background-color: var(--bg-primary);
-    border-radius: 10px;
-    box-shadow: 0 5px 15px var(--shadow-medium);
-    display: flex;
-    flex-direction: column;
-    font-family: "DM Sans", sans-serif !important;
-    max-width: 380px;
-    min-width: 300px;
-    opacity: 0;
-    overflow: hidden;
-    position: relative;
-    transform: translateY(-20px);
-    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
-    width: 100%;
+    border: 1px solid var(--border-tertiary);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-medium);
+    display: none; /* Toggled by JS */
+    min-width: 180px;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 5px); /* Position below the button */
+    z-index: 2100;
 }
 
-.diana-container .menu-modal-overlay.visible .menu-modal {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.diana-container .menu-modal .range-calendar-header {
-    box-shadow: 0 2px 4px var(--shadow-light);
-    z-index: 1;
-}
-
-.diana-container .menu-modal-body {
-    padding: 8px 0;
-}
-
-.diana-container .menu-modal .menu-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.diana-container .menu-modal .menu-item {
+.diana-container .menu-dropdown-item {
     align-items: center;
-    border-bottom: 1px solid var(--border-tertiary);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
-    gap: 16px;
-    padding: 16px 20px;
+    font-size: 14px;
+    gap: 12px;
+    padding: 10px 15px;
+    text-decoration: none;
     transition: background-color 0.2s ease;
 }
 
-.diana-container .menu-modal .menu-item:last-child {
-    border-bottom: none;
-}
-
-.diana-container .menu-modal .menu-item:hover {
+.diana-container .menu-dropdown-item:hover {
     background-color: var(--bg-hover);
 }
 
-.diana-container .menu-item-icon {
+.diana-container .menu-dropdown-item svg {
     color: var(--text-tertiary);
     flex-shrink: 0;
+    height: 20px;
+    width: 20px;
 }
 
-.diana-container .menu-item-icon svg {
-    display: block;
-    height: 24px;
-    width: 24px;
+.diana-container .menu-dropdown-item:first-child {
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 }
 
-.diana-container .menu-item-text {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1;
-    gap: 2px;
-}
-
-.diana-container .menu-item-title {
-    color: var(--text-secondary);
-    font-size: 16px;
-    font-weight: 500;
-}
-
-.diana-container .menu-item-subtitle {
-    color: var(--text-muted);
-    font-size: 13px;
-}
-
-.diana-container .menu-item-chevron {
-    color: var(--text-disabled);
-    flex-shrink: 0;
+.diana-container .menu-dropdown-item:last-child {
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
 }
 
 
