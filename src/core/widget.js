@@ -1834,7 +1834,7 @@ export default class DianaWidget {
                 origin: this.elements.originInput.value,
                 origin_lat: this.elements.originInput.dataset.lat || null,
                 origin_lon: this.elements.originInput.dataset.lon || null,
-                date: formatDatetime(this.state.selectedDate, this.config.timezone), // YYYY-MM-DD
+                date: formatDatetime(this.state.selectedDate, this.config.timezone), // yyyy-MM-dd
                 to_connection_start_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_start_timestamp : null,
                 to_connection_end_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_end_timestamp : null,
                 from_connection_start_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_start_timestamp : null,
@@ -1897,7 +1897,7 @@ export default class DianaWidget {
         } catch (error) {
             console.error("Share failed:", error);
             if (error.name !== 'AbortError') {
-                this.showError(this.t('shareUrlCopyFailed'), 'results');
+                this.showError(this.t('shareUrlCopyFailed'), 'results', true); // Pass true to preserve content
             }
         }
     }
@@ -2159,7 +2159,7 @@ export default class DianaWidget {
         }
     }
 
-    showError(message, page = 'form') {
+    showError(message, page = 'form', preserveContent = false) {
         this.state.error = message;
         const errorContainer = page === 'form' ? this.elements.formErrorContainer : this.elements.resultsErrorContainer;
 
@@ -2171,7 +2171,8 @@ export default class DianaWidget {
 
         if (message) {
             console.error(`Widget Error: ${message}`);
-            if (page === 'results' && this.elements.resultsPage?.classList.contains('active')) {
+            // Only clear content if the flag is not set
+            if (page === 'results' && !preserveContent && this.elements.resultsPage?.classList.contains('active')) {
                 if (this.elements.responseBox) this.elements.responseBox.innerHTML = '';
                 if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.innerHTML = '';
                 if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = '';
