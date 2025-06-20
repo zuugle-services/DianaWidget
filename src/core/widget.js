@@ -1161,8 +1161,6 @@ export default class DianaWidget {
         this.elements.responseBox.innerHTML = this.t('selectTimeSlot');
         this.elements.responseBoxBottom.innerHTML = this.t('selectTimeSlot');
         this.elements.activityTimeBox.innerHTML = this.config.activityName;
-        if (this.elements.toActivityDateDisplay) this.elements.toActivityDateDisplay.textContent = '';
-        if (this.elements.fromActivityDateDisplay) this.elements.fromActivityDateDisplay.textContent = '';
 
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
@@ -1324,7 +1322,6 @@ export default class DianaWidget {
         );
         if (filtered.length > 0) {
             this.updateActivityTimeBox(filtered[0], type);
-            this.updateDepartureDateDisplay(filtered[0], type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
 
             // Store the selected connection for the share functionality
@@ -1340,23 +1337,6 @@ export default class DianaWidget {
             });
         } else {
             targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
-        }
-    }
-
-    updateDepartureDateDisplay(connection, type) {
-        if (!connection || !connection.connection_elements || connection.connection_elements.length === 0) {
-            if (type === 'to' && this.elements.toActivityDateDisplay) this.elements.toActivityDateDisplay.textContent = '';
-            if (type === 'from' && this.elements.fromActivityDateDisplay) this.elements.fromActivityDateDisplay.textContent = '';
-            return;
-        }
-
-        const firstLeg = connection.connection_elements[0];
-        const dateStr = formatLegDateForDisplay(firstLeg.departure_time, this.config.timezone, this.config.language);
-
-        if (type === 'to' && this.elements.toActivityDateDisplay) {
-            this.elements.toActivityDateDisplay.textContent = dateStr;
-        } else if (type === 'from' && this.elements.fromActivityDateDisplay) {
-            this.elements.fromActivityDateDisplay.textContent = dateStr;
         }
     }
 
@@ -1581,6 +1561,29 @@ export default class DianaWidget {
 
                 let icon = (element.type !== 'JNY') ? this.getTransportIcon(element.type || 'DEFAULT') : this.getTransportIcon(element.vehicle_type || 'DEFAULT');
 
+                // Date display logic
+                let dateDisplay = '';
+                const departureDate = DateTime.fromISO(element.departure_time, { zone: this.config.timezone }).startOf('day');
+                const arrivalDate = DateTime.fromISO(element.arrival_time, { zone: this.config.timezone }).startOf('day');
+
+                let datesToShow = [];
+                // Show departure date for the first leg
+                if (index === 0) {
+                    datesToShow.push(formatLegDateForDisplay(element.departure_time, this.config.timezone, this.config.language));
+                }
+                // Show arrival date if it's on a new day
+                if (arrivalDate > departureDate) {
+                    const arrivalDateStr = formatLegDateForDisplay(element.arrival_time, this.config.timezone, this.config.language);
+                    // Prevent showing the same date twice
+                    if (!datesToShow.includes(arrivalDateStr)) {
+                        datesToShow.push(arrivalDateStr);
+                    }
+                }
+
+                if(datesToShow.length > 0) {
+                    dateDisplay = `<span class="connection-leg-date-display">${datesToShow.join('<br>')}</span>`;
+                }
+
                 let fromLocationDisplay = element.from_location;
                 // For the very first leg of a "to activity" journey, use the user's origin input.
                 if (type === "to" && index === 0) {
@@ -1597,11 +1600,12 @@ export default class DianaWidget {
                     <div class="element-time">
                       <span>${departureTime}</span> ${fromLocationDisplay}
                     </div>
-                    <div id="eleCont">
+                    <div id="eleCont" ${dateDisplay !== ""  ? 'style="margin-right: 70px;"' : ''}>
                       <div class="element-circle"></div>
                       <span class="element-icon">${icon}</span>
                       <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
                     </div>
+                    ${dateDisplay}
                   </div>
                 `;
 
@@ -2406,22 +2410,6 @@ export default class DianaWidget {
             if (this.elements.activityDate) {
                 this.elements.activityDate.value = '';
             }
-        }
-    }
-
-
-    updateDateDisplay(date, displayElementId) {
-        const displayElement = this.elements[displayElementId];
-        if (!displayElement) return;
-
-        const localeMap = {EN: 'en-GB', DE: 'de-DE'}; // Simple map for common cases
-        const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
-        if (date && !isNaN(date.getTime())) {
-            displayElement.textContent = formatDateForDisplay(date, locale, this.config.timezone);
-            displayElement.classList.remove("placeholder");
-        } else {
-            displayElement.textContent = this.t('selectDate'); // Fallback or placeholder text
-            displayElement.classList.add("placeholder");
         }
     }
 }

@@ -32,9 +32,6 @@ export function getResultsPageTemplateHTML(args) {
                         </button>
                     </div>
                 </div>
-                <div class="results-top-bar">
-                    <div id="toActivityDateDisplay" class="activity-date-display"></div>
-                </div>
                 <div class="top-slider-wrapper">
                     <div class="slider" id="topSlider" role="group" aria-label="${t('ariaLabels.topSlider')}"></div>
                 </div>
@@ -62,7 +59,6 @@ export function getResultsPageTemplateHTML(args) {
                             </svg>
                         </button>
                     </div>
-                    <div id="fromActivityDateDisplay" class="activity-date-display"></div>
                 </div>
             </div>
             <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>

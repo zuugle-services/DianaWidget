@@ -1138,23 +1138,11 @@
 
 
 /* --- Results Page Specific Styles --- */
-
-.diana-container .results-top-bar {
-    align-items: center;
-    border-bottom: 1px solid var(--border-primary);
-    box-sizing: border-box;
-    display: flex;
-    justify-content: center;
-    padding: 8px 20px;
-    width: 100%;
-}
-
-
 .diana-container .results-bottom-bar {
     align-items: center;
     box-sizing: border-box;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     padding: 2px 20px;
     width: 100%;
 }
@@ -1383,7 +1371,6 @@
 
 .diana-container .middle-box .connection-element {
     margin-bottom: 15px;
-    padding-left: 25px;
     position: relative;
 }
 
@@ -1398,10 +1385,11 @@
     color: var(--text-info);
     font-size: 11px;
     font-weight: 500;
-    line-height: 1.2;
+    line-height: 1.3;
     padding: 3px 7px;
     position: absolute;
     right: 8px;
+    text-align: right;
     top: 50%;
     transform: translateY(-50%);
     white-space: nowrap;
@@ -1477,6 +1465,7 @@
     min-height: 30px;
     padding: 4px 8px;
     width: fit-content;
+    position: relative;
 }
 
 .diana-container .waiting-block {
