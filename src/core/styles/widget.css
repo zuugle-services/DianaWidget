@@ -197,7 +197,7 @@
     background-color: var(--bg-hover);
 }
 
-/* --- Widget Header (Common for both pages) --- */
+/* --- Widget Header (Common for all pages) --- */
 .diana-container .widget-header {
     align-items: center;
     background: var(--bg-primary);
@@ -205,16 +205,17 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: row;
-    min-height: 56px; /* Ensure consistent header height */
-    padding: 0;
+    justify-content: space-between;
+    min-height: 56px;
+    padding: 0 8px;
     width: 100%;
 }
 
 .diana-container .widget-header-heading {
-    border-left: 1px solid var(--border-primary);
-    border-right: 1px solid var(--border-primary); /* Add right border for consistency */
+    border-left: none;
+    border-right: none;
     color: var(--text-primary);
-    flex-grow: 1; /* Allow heading to take available space */
+    flex-grow: 1;
     font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-style: normal;
@@ -228,68 +229,28 @@
     white-space: nowrap;
 }
 
-/* Special case for menu/content pages where title might be empty or different */
-.diana-container #menuPage .widget-header-heading,
-.diana-container #contentPage .widget-header-heading {
-    border-left: none; /* No left border if hamburger is the first element */
-}
-
-
 .diana-container .widget-header-button {
     align-items: center;
     box-sizing: border-box;
     display: flex;
-    flex-direction: row;
+    flex: 0 0 48px;
     gap: 10px;
-    height: 100%; /* Make button area take full header height */
-    padding: 7px 24px; /* Consistent padding */
+    height: 100%;
+    justify-content: center;
+    padding: 0;
     position: relative;
 }
 
-.diana-container .back-btn,
-.diana-container .close-btn {
-    align-items: center;
-    background: none;
-    border: none;
-    color: var(--text-tertiary);
-    cursor: pointer;
-    display: flex;
-    font-size: 24px;
-    gap: 6px;
-    line-height: 1; /* Ensure icon is vertically centered */
-    padding: 0;
-}
-
-.diana-container .close-btn {
-    font-size: 20px; /* Slightly smaller X */
-}
-
-/* --- Results Page Header Overrides --- */
-.diana-container #resultsPage .widget-header {
-    justify-content: space-between;
-    padding: 0 8px;
-}
-
-.diana-container #resultsPage .widget-header-heading {
-    border-left: none;
-    border-right: none;
-}
-
-.diana-container #resultsPage .widget-header-button {
-    flex: 0 0 48px; /* Give a fixed width to ensure title is centered */
-    justify-content: center;
-    padding: 0;
-}
-
-.diana-container #resultsPage .widget-header-button:first-child {
+.diana-container .widget-header-button:first-child {
     justify-content: flex-start;
 }
 
-.diana-container #resultsPage .widget-header-button:last-child {
+.diana-container .widget-header-button:last-child {
     justify-content: flex-end;
 }
 
-/* --- New Button Styles --- */
+
+/* --- Header Buttons --- */
 .diana-container .back-btn-arrow,
 .diana-container .menu-btn-dots {
     align-items: center;

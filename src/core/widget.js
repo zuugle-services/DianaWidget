@@ -584,18 +584,17 @@ export default class DianaWidget {
             fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
 
             // Menu elements
-            menuButton: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"),
-            menuDropdown: this.dianaWidgetRootContainer.querySelector("#menuDropdown"),
+            formPageMenuButton: this.dianaWidgetRootContainer.querySelector("#formPage .menu-btn-dots"),
+            resultsPageMenuButton: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"),
+            contentPageMenuButton: this.dianaWidgetRootContainer.querySelector("#contentPage .menu-btn-dots"),
+            formMenuDropdown: this.dianaWidgetRootContainer.querySelector("#formMenuDropdown"),
+            resultsMenuDropdown: this.dianaWidgetRootContainer.querySelector("#resultsMenuDropdown"),
+            contentMenuDropdown: this.dianaWidgetRootContainer.querySelector("#contentMenuDropdown"),
 
             // Page-specific elements
-            contentPageCloseBtn: this.dianaWidgetRootContainer.querySelector("#contentPageCloseBtn"),
+            contentPageBackBtn: this.dianaWidgetRootContainer.querySelector("#contentPageBackBtn"),
             contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"),
             contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"),
-
-            // Hamburger buttons on other pages that now act as menu toggles
-            formPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#formPage .widget-header-button .back-btn"),
-            resultsPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"), // This is the main one
-            contentPageHamburgerBtn: this.dianaWidgetRootContainer.querySelector("#contentPageHamburgerBtn"),
         };
     }
 
@@ -617,8 +616,8 @@ export default class DianaWidget {
         }
 
         if (this.elements.searchBtn) this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
-        // The general back button for results page to form page navigation
         if (this.elements.backBtn) this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
+        if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
 
         if (this.elements.currentLocationBtn) {
             this.elements.currentLocationBtn.setAttribute('aria-label', this.t('useCurrentLocation'));
@@ -629,10 +628,9 @@ export default class DianaWidget {
         if (this.elements.responseBox) this.elements.responseBox.setAttribute('aria-busy', 'false');
         if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.setAttribute('aria-busy', 'false');
 
-        if (this.elements.formPageHamburgerBtn) this.elements.formPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
-        if (this.elements.resultsPageHamburgerBtn) this.elements.resultsPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
-        if (this.elements.contentPageHamburgerBtn) this.elements.contentPageHamburgerBtn.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
-        if (this.elements.contentPageCloseBtn) this.elements.contentPageCloseBtn.setAttribute('aria-label', this.t('ariaLabels.closeButton'));
+        if (this.elements.formPageMenuButton) this.elements.formPageMenuButton.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
+        if (this.elements.resultsPageMenuButton) this.elements.resultsPageMenuButton.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
+        if (this.elements.contentPageMenuButton) this.elements.contentPageMenuButton.setAttribute('aria-label', this.t('ariaLabels.menuButton'));
     }
 
     setupEventListeners() {
@@ -660,16 +658,7 @@ export default class DianaWidget {
                     if (e.target.classList.contains('suggestion-item')) this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
                 });
             }
-            document.addEventListener("click", (e) => {
-                if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(e.target) && this.elements.originInput && !this.elements.originInput.contains(e.target)) {
-                    this.state.suggestions = [];
-                    this.renderSuggestions();
-                }
-                // Close menu dropdown if click is outside
-                if (this.elements.menuDropdown && this.elements.menuDropdown.style.display === 'block' && !this.elements.menuButton.contains(e.target) && !this.elements.menuDropdown.contains(e.target)) {
-                    this.toggleMenuDropdown(false);
-                }
-            });
+
             this.elements.originInput.addEventListener('keydown', (e) => {
                 if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
                 else if (e.key === 'Enter') this.handleSuggestionEnter(e);
@@ -693,30 +682,60 @@ export default class DianaWidget {
         });
 
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
+        if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.addEventListener('click', () => this.closeMenuOrContentPage());
 
-        // New listener for the menu button to toggle the dropdown
-        if (this.elements.menuButton) {
-            this.elements.menuButton.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent the document click listener from firing immediately
-                this.toggleMenuDropdown();
-            });
-        }
 
-        // New listener for menu item clicks (delegated to the dropdown)
-        if (this.elements.menuDropdown) {
-            this.elements.menuDropdown.addEventListener('click', (e) => {
-                const menuItem = e.target.closest('.menu-dropdown-item');
-                if (menuItem) {
-                    e.preventDefault();
-                    if (menuItem.id === 'shareMenuItem') {
-                        this.handleShare();
-                    } else if (menuItem.dataset.contentKey) {
-                        this.navigateToContentPage(menuItem.dataset.contentKey);
+        // --- Generic Menu Handling ---
+        const menuButtons = [this.elements.formPageMenuButton, this.elements.resultsPageMenuButton, this.elements.contentPageMenuButton];
+        const menuDropdowns = [this.elements.formMenuDropdown, this.elements.resultsMenuDropdown, this.elements.contentMenuDropdown];
+
+        menuButtons.forEach((button, index) => {
+            if (button) {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const dropdown = menuDropdowns[index];
+                    if (!dropdown) return;
+
+                    const isVisible = dropdown.style.display === 'block';
+                    // Close all dropdowns first
+                    menuDropdowns.forEach(d => { if (d) d.style.display = 'none'; });
+                    // Toggle the clicked one
+                    if (!isVisible) {
+                        dropdown.style.display = 'block';
                     }
-                    this.toggleMenuDropdown(false); // Close menu after action
-                }
-            });
-        }
+                });
+            }
+        });
+
+        menuDropdowns.forEach(dropdown => {
+            if (dropdown) {
+                dropdown.addEventListener('click', (e) => {
+                    const menuItem = e.target.closest('.menu-dropdown-item');
+                    if (menuItem) {
+                        e.preventDefault();
+                        if (menuItem.id === 'shareMenuItem') {
+                            this.handleShare();
+                        } else if (menuItem.dataset.contentKey) {
+                            this.navigateToContentPage(menuItem.dataset.contentKey);
+                        }
+                        // Close all dropdowns
+                        menuDropdowns.forEach(d => { if (d) d.style.display = 'none'; });
+                    }
+                });
+            }
+        });
+
+        document.addEventListener("click", (e) => {
+            if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(e.target) && this.elements.originInput && !this.elements.originInput.contains(e.target)) {
+                this.state.suggestions = [];
+                this.renderSuggestions();
+            }
+            // Close menu dropdowns if click is outside
+            const clickedInsideMenu = menuButtons.some(b => b && b.contains(e.target)) || menuDropdowns.some(d => d && d.style.display === 'block' && d.contains(e.target));
+            if (!clickedInsideMenu) {
+                menuDropdowns.forEach(d => { if (d) d.style.display = 'none'; });
+            }
+        });
     }
 
     /**
@@ -1983,7 +2002,11 @@ export default class DianaWidget {
     navigateToContentPage(contentKey) {
         this.clearMessages();
         this.state.currentContentKey = contentKey;
-        this.toggleMenuDropdown(false); // Close dropdown before navigating
+        // Close all dropdowns before navigating
+        [this.elements.formMenuDropdown, this.elements.resultsMenuDropdown, this.elements.contentMenuDropdown].forEach(d => {
+            if (d) d.style.display = 'none';
+        });
+
         if (this.pageManager) {
             this.pageManager.navigateToContentPage();
         }

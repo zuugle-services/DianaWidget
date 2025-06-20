@@ -30,8 +30,8 @@ export function getResultsPageTemplateHTML(args) {
                                 <path d="M12 19.25C12.6904 19.25 13.25 18.6904 13.25 18C13.25 17.3096 12.6904 16.75 12 16.75C11.3096 16.75 10.75 17.3096 10.75 18C10.75 18.6904 11.3096 19.25 12 19.25Z" fill="currentColor"/>
                             </svg>
                         </button>
-                        <div class="menu-dropdown" id="menuDropdown" style="display: none;">
-                            <a href="" class="menu-dropdown-item" id="shareMenuItem">
+                        <div class="menu-dropdown" id="resultsMenuDropdown" style="display: none;">
+                            <a href="#" class="menu-dropdown-item" id="shareMenuItem">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M18 8C19.6569 8 21 6.65685 21 5C21 3.34315 19.6569 2 18 2C16.3431 2 15 3.34315 15 5C15 6.65685 16.3431 8 18 8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                     <path d="M6 15C7.65685 15 9 13.6569 9 12C9 10.3431 7.65685 9 6 9C4.34315 9 3 10.3431 3 12C3 13.6569 4.34315 15 6 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
