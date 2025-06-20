@@ -1,6 +1,5 @@
 import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
 import {DateTime} from 'luxon';
-import {Base64} from 'js-base64';
 import translations from '../translations';
 import {debounce, formatDateForDisplay, getApiErrorTranslationKey} from '../utils';
 import {
@@ -62,24 +61,31 @@ export default class DianaWidget {
         overrideActivityEndDate: null,
         activityDurationDaysFixed: null,
         readOnly: false,
+        dynamicReadOnly: false,
         shareURLPrefix: "https://zuugle-services.com/share/"
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
         try {
-            // Check for readOnly in the initial config first
-            const isReadOnly = config.readOnly === true;
             const urlParams = new URLSearchParams(window.location.search);
-            const dianaConnectionData = urlParams.get('dianaConnection');
-            if (isReadOnly && !dianaConnectionData) {
-                throw new Error(`Invalid configuration: 'readOnly' is set to true but no 'dianaConnection' parameter is provided in the URL. Please provide a 'dianaConnection' parameter in the URL to enable read-only mode.`);
-            }
-            if (!isReadOnly && dianaConnectionData) {
-                console.warn(`Invalid configuration: 'readOnly' is set to false but a 'dianaConnection' parameter is provided in the URL. This parameter will be ignored.`);
+            const shareId = urlParams.get('dianaShareID');
+            let dynamicReadOnly = config.dynamicReadOnly;
+            let isReadOnly = config.readOnly;
+            if (dynamicReadOnly) {
+                isReadOnly = shareId ? true : (config.readOnly === true);
             }
 
-            this.config = this.validateConfig(config);
-            this.container = document.getElementById(containerId); // This is the user-provided container
+            if (isReadOnly) {
+                config.shareId = shareId;
+            }
+
+            this.config = this.validateConfig({...config, readOnly: isReadOnly});
+            this.container = document.getElementById(containerId);
+
+            if (!this.container) {
+                console.error(`Container with ID "${containerId}" not found.`);
+                return;
+            }
 
             if (this.config.displayStartDate || this.config.displayEndDate) {
                 const now = DateTime.now().startOf('day');
@@ -179,7 +185,7 @@ export default class DianaWidget {
                 selectedToConnection: null,
                 selectedFromConnection: null,
                 selectedDate: initialSelectedStartDate,
-                selectedEndDate: initialSelectedEndDate,
+                selectedEndDate: null, // Will be set later for multiday
                 loading: false,
                 error: null,
                 info: null,
@@ -206,43 +212,17 @@ export default class DianaWidget {
 
             this.injectBaseStyles();
 
-            if (this.config.readOnly && dianaConnectionData) {
-                this._loadFromUrlParams(dianaConnectionData);
+            // The main initialization logic is now split.
+            if (shareId) {
+                // If a share ID exists, load data from the backend first.
+                this._loadFromShareID(shareId);
+            } else {
+                // Otherwise, initialize the DOM for the interactive mode.
+                this.initDOM().catch(error => {
+                    console.error("Error during async DOM initialization:", error);
+                    this._showFatalError(this.t('errors.widgetLoadErrorTitle'), error.message);
+                });
             }
-
-            this.initDOM().then(() => {
-                if (this.config.readOnly && dianaConnectionData) {
-                    if (this.elements.originInput) {
-                        this.elements.originInput.value = this.config.temp_data_origin;
-                    }
-
-                    // Set view to clean and read-only
-                    this.state.isCleanView = true;
-                    if (this.elements.toggleViewCheckbox) {
-                        this.elements.toggleViewCheckbox.checked = true;
-                        this.elements.toggleViewCheckbox.disabled = true;
-                    }
-
-                    this.navigateToResults(); // Navigate to the results page
-                    this.toggleResultsView(); // Apply clean-view-active and read-only-active classes
-
-                    // Manually trigger updates for display elements that are normally populated during API calls
-                    if (this.state.toConnections.length > 0) {
-                        this.updateDepartureDateDisplay(this.state.toConnections[0], 'to');
-                    }
-                    if (this.state.fromConnections.length > 0) {
-                        this.updateDepartureDateDisplay(this.state.fromConnections[0], 'from');
-                    }
-                    // Re-render the activity box with the loaded data.
-                    this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
-                }
-            }).catch(error => {
-                console.error("Error during async DOM initialization:", error);
-                const fallbackContainer = document.getElementById(containerId);
-                if (fallbackContainer) {
-                    fallbackContainer.innerHTML = `<p>Error initializing widget: ${error.message}</p>`;
-                }
-            });
         } catch (error) {
             console.error("Failed to initialize Diana Widget:", error);
             const fallbackContainer = document.getElementById(containerId);
@@ -1857,6 +1837,42 @@ export default class DianaWidget {
 
     async handleShare() {
         this.clearMessages();
+
+        const currentShareId = this.config.shareId;
+        if (currentShareId && this.config.readOnly) {
+            let url = new URL(this.config.shareURLPrefix);
+            url.searchParams.append('dianaShareID', currentShareId);
+
+            if (navigator.share) {
+                await navigator.share({
+                    title: this.config.activityName,
+                    url: url,
+                });
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(url);
+                this.showInfo(this.t('shareUrlCopied'));
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement("textarea");
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.top = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        this.showInfo(this.t('shareUrlCopied'));
+                    } else {
+                        throw new Error('execCommand failed');
+                    }
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        }
+
         try {
             const dataToShare = {
                 toJourney: this.state.selectedToConnection,
@@ -1879,9 +1895,29 @@ export default class DianaWidget {
                 origin: this.elements.originInput.value
             };
 
-            const jsonString = JSON.stringify(dataToShare);
-            const encodedData = Base64.encode(encodeURIComponent(jsonString), true);
-            const url = `${this.config.shareURLPrefix}?dianaConnection=${encodedData}`;
+            const response = await fetch(`${this.config.apiBaseUrl}/share/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.config.apiToken}`
+                },
+                body: JSON.stringify(dataToShare)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => null);
+                console.error("API Error creating share link:", errorData);
+                throw new Error(this.t('errors.shareLinkCreateFailed'));
+            }
+
+            const result = await response.json();
+            const shareId = result.shareId;
+            if (!shareId) {
+                throw new Error(this.t('errors.shareLinkCreateFailed'));
+            }
+
+            let url = new URL(this.config.shareURLPrefix);
+            url.searchParams.append('dianaShareID', shareId);
 
             if (navigator.share) {
                 await navigator.share({
@@ -1892,6 +1928,7 @@ export default class DianaWidget {
                 await navigator.clipboard.writeText(url);
                 this.showInfo(this.t('shareUrlCopied'));
             } else {
+                // Fallback for older browsers
                 const textArea = document.createElement("textarea");
                 textArea.value = url;
                 textArea.style.position = 'fixed';
@@ -1952,62 +1989,83 @@ export default class DianaWidget {
         }
     }
 
-    _loadFromUrlParams(encodedData) {
-        try {
-            const jsonString = decodeURIComponent(Base64.decode(encodedData));
-            const data = JSON.parse(jsonString);
+    async _loadFromShareID(shareId) {
+        // Initialize a minimal DOM to show loading/error states.
+        this.container.innerHTML = `<div class="diana-container"></div>`;
+        this.dianaWidgetRootContainer = this.container.querySelector('.diana-container');
 
-            // Populate state from URL data
+        this.setLoadingState(true, true); // Pass true for full-screen loading
+
+        try {
+            const response = await fetch(`${this.config.apiBaseUrl}/share/${shareId}/`, {
+                headers: {"Authorization": `Bearer ${this.config.apiToken}`}
+            });
+
+            if (!response.ok) {
+                let errorMsg = this.t('errors.shareLinkInvalidExpired');
+                if (response.status === 404) {
+                    try {
+                        const errorData = await response.json();
+                        errorMsg = this.t('errors.shareLinkInvalidExpired');
+                    } catch (e) {
+                        // Keep default message if parsing fails
+                    }
+                }
+                throw new Error(errorMsg);
+            }
+
+            // If fetch is successful, now initialize the full DOM
+            await this.initDOM();
+
+            const data = await response.json();
+
+            // Populate state and config from the fetched data
             this.state.selectedToConnection = data.toJourney;
             this.state.selectedFromConnection = data.fromJourney;
             this.state.toConnections = data.toJourney ? [data.toJourney] : [];
             this.state.fromConnections = data.fromJourney ? [data.fromJourney] : [];
             this.state.activityTimes = data.activity.times;
 
-            if (data.activity.name) {
-                this.config.activityName = data.activity.name;
-            }
-            if (data.activity.durationMinutes) {
-                this.config.activityDurationMinutes = data.activity.durationMinutes;
-            }
-            if (data.activity.startLocation) {
-                this.config.activityStartLocation = data.activity.startLocation;
-            }
-            if (data.activity.startLocationDisplayName) {
-                this.config.activityStartLocationDisplayName = data.activity.startLocationDisplayName;
-            }
-            if (data.activity.endLocation) {
-                this.config.activityEndLocation = data.activity.endLocation;
-            }
-            if (data.activity.endLocationDisplayName) {
-                this.config.activityEndLocationDisplayName = data.activity.endLocationDisplayName;
-            }
-            if (data.activity.earliestStartTime) {
-                this.config.activityEarliestStartTime = data.activity.earliestStartTime;
-            }
-            if (data.activity.latestStartTime) {
-                this.config.activityLatestStartTime = data.activity.latestStartTime;
-            }
-            if (data.activity.earliestEndTime) {
-                this.config.activityEarliestEndTime = data.activity.earliestEndTime;
-            }
-            if (data.activity.latestEndTime) {
-                this.config.activityLatestEndTime = data.activity.latestEndTime;
+            if (data.activity.name) this.config.activityName = data.activity.name;
+            if (data.activity.durationMinutes) this.config.activityDurationMinutes = data.activity.durationMinutes;
+            if (data.activity.startLocation) this.config.activityStartLocation = data.activity.startLocation;
+            if (data.activity.startLocationDisplayName) this.config.activityStartLocationDisplayName = data.activity.startLocationDisplayName;
+            if (data.activity.endLocation) this.config.activityEndLocation = data.activity.endLocation;
+            if (data.activity.endLocationDisplayName) this.config.activityEndLocationDisplayName = data.activity.endLocationDisplayName;
+            if (data.activity.earliestStartTime) this.config.activityEarliestStartTime = data.activity.earliestStartTime;
+            if (data.activity.latestStartTime) this.config.activityLatestStartTime = data.activity.latestStartTime;
+            if (data.activity.earliestEndTime) this.config.activityEarliestEndTime = data.activity.earliestEndTime;
+            if (data.activity.latestEndTime) this.config.activityLatestEndTime = data.activity.latestEndTime;
+            if (data.activity.startDate) this.state.selectedDate = DateTime.fromISO(data.activity.startDate, {zone: 'utc'}).toJSDate();
+            if (data.activity.endDate) this.state.selectedEndDate = DateTime.fromISO(data.activity.endDate, {zone: 'utc'}).toJSDate();
+
+            if (data.origin && this.elements.originInput) {
+                this.elements.originInput.value = data.origin;
             }
 
-            if (data.activity.startDate) {
-                this.state.selectedDate = DateTime.fromISO(data.activity.startDate, {zone: 'utc'}).toJSDate();
-            }
-            if (data.activity.endDate) {
-                this.state.selectedEndDate = DateTime.fromISO(data.activity.endDate, {zone: 'utc'}).toJSDate();
+            // Set up the read-only view
+            this.state.isCleanView = true;
+            if (this.elements.toggleViewCheckbox) {
+                this.elements.toggleViewCheckbox.checked = true;
+                this.elements.toggleViewCheckbox.disabled = true;
             }
 
-            if (data.origin) {
-                this.config.temp_data_origin = data.origin
-            }
+            this.navigateToResults();
+            this.toggleResultsView(); // Apply styles
+
+            // Manually render the display elements
+            if (this.state.toConnections.length > 0) this.updateDepartureDateDisplay(this.state.toConnections[0], 'to');
+            if (this.state.fromConnections.length > 0) this.updateDepartureDateDisplay(this.state.fromConnections[0], 'from');
+
+            this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+            this.renderCleanView(); // Render the final view
+
         } catch (error) {
-            console.error("Failed to load data from URL parameter:", error);
-            this.showError("Could not load the shared journey. The link might be corrupted.", 'form');
+            console.error("Failed to load data from shareID:", error);
+            // Show the fatal info-style error message
+            this._showFatalError(this.t('errors.shareLinkErrorTitle'), error.message, 'info');
+        } finally {
+            this.setLoadingState(false, true);
         }
     }
 
@@ -2092,7 +2150,27 @@ export default class DianaWidget {
     }
 
 
-    setLoadingState(isLoading) {
+    setLoadingState(isLoading, isFullScreen = false) {
+
+        this.state.loading = isLoading;
+        if (isFullScreen) {
+            if (isLoading) {
+                const loadingHTML = `
+                    <div class="full-screen-loader">
+                        <div class="loading-spinner"></div>
+                        <span>${this.t("loadingStateSearching")}</span>
+                    </div>
+                `;
+                if (this.dianaWidgetRootContainer) {
+                    this.dianaWidgetRootContainer.innerHTML = loadingHTML;
+                }
+            } else {
+                // Loading is finished, the calling function will handle replacing the content.
+                // No need to clear here.
+            }
+            return;
+        }
+
         this.state.loading = isLoading;
         if (this.elements.searchBtn) {
             this.elements.searchBtn.disabled = isLoading;
@@ -2128,6 +2206,31 @@ export default class DianaWidget {
         } else {
             if (this.elements.searchBtn) this.elements.searchBtn.innerHTML = this.t('search');
         }
+    }
+
+    /**
+     * Displays a full-widget message, used for fatal errors or states
+     * where the main UI cannot be rendered.
+     * @param {string} title The title of the message.
+     * @param {string} message The main body text of the message.
+     * @param {string} type 'error' or 'info' for styling.
+     */
+    _showFatalError(title, message, type = 'error') {
+        if (!this.dianaWidgetRootContainer) {
+            this.container.innerHTML = `<div class="diana-container"></div>`;
+            this.dianaWidgetRootContainer = this.container.querySelector('.diana-container');
+        }
+
+        const boxClass = type === 'info' ? 'fatal-info-box' : 'fatal-error-box';
+        const titleClass = type === 'info' ? 'title-info' : 'title-error';
+
+        const fallbackHTML = `
+          <div class="${boxClass}">
+            <h3 class="${titleClass}">${title}</h3>
+            <p>${message}</p>
+          </div>
+        `;
+        this.dianaWidgetRootContainer.innerHTML = fallbackHTML;
     }
 
     showError(message, page = 'form') {

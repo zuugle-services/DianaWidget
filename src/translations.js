@@ -76,6 +76,9 @@ export default {
             geolocationPositionUnavailable: "Location information is unavailable.",
             geolocationTimeout: "The request to get user location timed out.",
             reverseGeocodeNoResults: "Could not find an address for your location.",
+            shareLinkInvalidExpired: "Share link is invalid or expired.",
+            shareLinkCreateFailed: "Failed to create share link.",
+            shareLinkErrorTitle: "Couldn't Load This Journey.",
             api: {
                 queryParamMissing: "Query parameter 'q' is missing",
                 invalidLimitParam: "Invalid limit parameter",
@@ -221,6 +224,9 @@ export default {
             geolocationPermissionDenied: "Zugriff auf den Standort wurde verweigert.",
             geolocationPositionUnavailable: "Standortinformationen sind nicht verfügbar.",
             geolocationTimeout: "Die Anfrage zur Standortbestimmung ist abgelaufen.",
+            shareLinkInvalidExpired: "Der geteilte Link ist ungültig oder abgelaufen.",
+            shareLinkCreateFailed: "Der Teilen-Link konnte nicht erstellt werden.",
+            shareLinkErrorTitle: "Laden der Daten fehlgeschlagen",
             api: {
                 queryParamMissing: "Suchparameter 'q' fehlt",
                 invalidLimitParam: "Ungültiger Limit-Parameter",
@@ -366,6 +372,9 @@ export default {
             geolocationPositionUnavailable: "Location information is unavailable.",
             geolocationTimeout: "The request to get user location timed out.",
             reverseGeocodeNoResults: "Could not find an address for your location.",
+            shareLinkInvalidExpired: "The shared link is invalid or expired.",
+            shareLinkCreateFailed: "Failed to create share link.",
+            shareLinkErrorTitle: "Couldn't Load This Journey.",
             api: {
                 queryParamMissing: "Query parameter 'q' is missing",
                 invalidLimitParam: "Invalid limit parameter",
