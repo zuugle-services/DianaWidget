@@ -20,16 +20,9 @@ module.exports = {
       {
         test: /\.css$/,
         use: [
-          'style-loader', // Injects styles into the DOM
-          {
-            loader: 'css-loader', // Translates CSS into CommonJS
-            options: {
-              modules: {
-                localIdentName: 'diana-[local]__[hash:base64:5]' // Configures CSS Modules
-              }
-            }
-          },
-          'postcss-loader' // Processes CSS with PostCSS
+          'to-string-loader', // Exports the CSS as a string, which is needed for Shadow DOM.
+          'css-loader',     // Translates CSS into CommonJS.
+          'postcss-loader'  // Processes CSS with PostCSS.
         ]
       },
       {

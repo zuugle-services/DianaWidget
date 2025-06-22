@@ -1,4 +1,4 @@
-import styles from '!!css-loader?{"sourceMap":false,"exportType":"string"}!./styles/widget.css'
+import styles from './styles/widget.css';
 import {DateTime} from 'luxon';
 import translations from '../translations';
 import {debounce, formatDateForDisplay, getApiErrorTranslationKey} from '../utils';
@@ -87,6 +87,8 @@ export default class DianaWidget {
             }
 
             this.container = document.getElementById(containerId);
+            this.shadowRoot = this.container.attachShadow({ mode: 'open' });
+
 
             if (!this.container) {
                 console.error(`Container with ID "${containerId}" not found.`);
@@ -215,8 +217,6 @@ export default class DianaWidget {
             this.uiManager = null;
 
             this.debouncedHandleAddressInput = debounce((query) => this.handleAddressInput(query), 700);
-
-            this.injectBaseStyles();
 
             // The main initialization logic is now split.
             if (shareId && this.config.allowShareView) {
@@ -420,9 +420,10 @@ export default class DianaWidget {
         this.uiManager = new UIManager();
         let dianaWidgetRootContainer = document.createElement('div');
         dianaWidgetRootContainer.className = 'diana-container';
-        this.container.innerHTML = '';
-        this.container.appendChild(dianaWidgetRootContainer);
+        this.shadowRoot.innerHTML = '';
+        this.shadowRoot.appendChild(dianaWidgetRootContainer);
         this.dianaWidgetRootContainer = dianaWidgetRootContainer;
+
 
         const templateArgs = {
             config: this.config,
@@ -438,6 +439,7 @@ export default class DianaWidget {
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
         this.dianaWidgetRootContainer.innerHTML = `
+          <style>${styles}</style>
           <div id="activityModal" class="modal visible">
             <div id="innerContainer" class="modal-content">
               ${formPageHTML}
@@ -551,51 +553,51 @@ export default class DianaWidget {
 
     cacheDOMElements() {
         this.elements = {
-            modal: this.dianaWidgetRootContainer.querySelector("#activityModal"),
-            innerContainer: this.dianaWidgetRootContainer.querySelector("#innerContainer"),
-            formPage: this.dianaWidgetRootContainer.querySelector("#formPage"),
-            resultsPage: this.dianaWidgetRootContainer.querySelector("#resultsPage"),
-            contentPage: this.dianaWidgetRootContainer.querySelector("#contentPage"),
-            originInput: this.dianaWidgetRootContainer.querySelector("#originInput"),
-            suggestionsContainer: this.dianaWidgetRootContainer.querySelector("#suggestions"),
-            searchBtn: this.dianaWidgetRootContainer.querySelector("#searchBtn"),
-            backBtn: this.dianaWidgetRootContainer.querySelector("#backBtn"),
-            formErrorContainer: this.dianaWidgetRootContainer.querySelector("#formErrorContainer"),
-            resultsErrorContainer: this.dianaWidgetRootContainer.querySelector("#resultsErrorContainer"),
-            infoContainer: this.dianaWidgetRootContainer.querySelector("#infoContainer"),
-            responseBox: this.dianaWidgetRootContainer.querySelector("#responseBox"),
-            responseBoxBottom: this.dianaWidgetRootContainer.querySelector("#responseBox-bottom"),
-            topSlider: this.dianaWidgetRootContainer.querySelector("#topSlider"),
-            bottomSlider: this.dianaWidgetRootContainer.querySelector("#bottomSlider"),
-            activityTimeBox: this.dianaWidgetRootContainer.querySelector("#activity-time"),
-            currentLocationBtn: this.dianaWidgetRootContainer.querySelector("#currentLocationBtn"),
-            clearInputBtn: this.dianaWidgetRootContainer.querySelector("#clearInputBtn"),
-            activityDateStart: this.dianaWidgetRootContainer.querySelector("#activityDateStart"),
-            dateDisplayStart: this.dianaWidgetRootContainer.querySelector("#dateDisplayStart"),
-            activityDateEnd: this.dianaWidgetRootContainer.querySelector("#activityDateEnd"),
-            dateDisplayEnd: this.dianaWidgetRootContainer.querySelector("#dateDisplayEnd"),
-            activityDate: this.dianaWidgetRootContainer.querySelector("#activityDate"),
-            dateDisplay: this.dianaWidgetRootContainer.querySelector("#dateDisplay"),
-            dateBtnToday: this.dianaWidgetRootContainer.querySelector("#dateBtnToday"),
-            dateBtnTomorrow: this.dianaWidgetRootContainer.querySelector("#dateBtnTomorrow"),
-            dateBtnOther: this.dianaWidgetRootContainer.querySelector("#dateBtnOther"),
-            otherDateText: this.dianaWidgetRootContainer.querySelector("#otherDateText"),
-            dateSelectorButtonsGroup: this.dianaWidgetRootContainer.querySelector(".date-selector-buttons"),
-            toActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#toActivityDateDisplay"),
-            fromActivityDateDisplay: this.dianaWidgetRootContainer.querySelector("#fromActivityDateDisplay"),
+            modal: this.shadowRoot.querySelector("#activityModal"),
+            innerContainer: this.shadowRoot.querySelector("#innerContainer"),
+            formPage: this.shadowRoot.querySelector("#formPage"),
+            resultsPage: this.shadowRoot.querySelector("#resultsPage"),
+            contentPage: this.shadowRoot.querySelector("#contentPage"),
+            originInput: this.shadowRoot.querySelector("#originInput"),
+            suggestionsContainer: this.shadowRoot.querySelector("#suggestions"),
+            searchBtn: this.shadowRoot.querySelector("#searchBtn"),
+            backBtn: this.shadowRoot.querySelector("#backBtn"),
+            formErrorContainer: this.shadowRoot.querySelector("#formErrorContainer"),
+            resultsErrorContainer: this.shadowRoot.querySelector("#resultsErrorContainer"),
+            infoContainer: this.shadowRoot.querySelector("#infoContainer"),
+            responseBox: this.shadowRoot.querySelector("#responseBox"),
+            responseBoxBottom: this.shadowRoot.querySelector("#responseBox-bottom"),
+            topSlider: this.shadowRoot.querySelector("#topSlider"),
+            bottomSlider: this.shadowRoot.querySelector("#bottomSlider"),
+            activityTimeBox: this.shadowRoot.querySelector("#activity-time"),
+            currentLocationBtn: this.shadowRoot.querySelector("#currentLocationBtn"),
+            clearInputBtn: this.shadowRoot.querySelector("#clearInputBtn"),
+            activityDateStart: this.shadowRoot.querySelector("#activityDateStart"),
+            dateDisplayStart: this.shadowRoot.querySelector("#dateDisplayStart"),
+            activityDateEnd: this.shadowRoot.querySelector("#activityDateEnd"),
+            dateDisplayEnd: this.shadowRoot.querySelector("#dateDisplayEnd"),
+            activityDate: this.shadowRoot.querySelector("#activityDate"),
+            dateDisplay: this.shadowRoot.querySelector("#dateDisplay"),
+            dateBtnToday: this.shadowRoot.querySelector("#dateBtnToday"),
+            dateBtnTomorrow: this.shadowRoot.querySelector("#dateBtnTomorrow"),
+            dateBtnOther: this.shadowRoot.querySelector("#dateBtnOther"),
+            otherDateText: this.shadowRoot.querySelector("#otherDateText"),
+            dateSelectorButtonsGroup: this.shadowRoot.querySelector(".date-selector-buttons"),
+            toActivityDateDisplay: this.shadowRoot.querySelector("#toActivityDateDisplay"),
+            fromActivityDateDisplay: this.shadowRoot.querySelector("#fromActivityDateDisplay"),
 
             // Menu elements
-            formPageMenuButton: this.dianaWidgetRootContainer.querySelector("#formPage .menu-btn-dots"),
-            resultsPageMenuButton: this.dianaWidgetRootContainer.querySelector("#resultsPage .menu-btn-dots"),
-            contentPageMenuButton: this.dianaWidgetRootContainer.querySelector("#contentPage .menu-btn-dots"),
-            formMenuDropdown: this.dianaWidgetRootContainer.querySelector("#formMenuDropdown"),
-            resultsMenuDropdown: this.dianaWidgetRootContainer.querySelector("#resultsMenuDropdown"),
-            contentMenuDropdown: this.dianaWidgetRootContainer.querySelector("#contentMenuDropdown"),
+            formPageMenuButton: this.shadowRoot.querySelector("#formPage .menu-btn-dots"),
+            resultsPageMenuButton: this.shadowRoot.querySelector("#resultsPage .menu-btn-dots"),
+            contentPageMenuButton: this.shadowRoot.querySelector("#contentPage .menu-btn-dots"),
+            formMenuDropdown: this.shadowRoot.querySelector("#formMenuDropdown"),
+            resultsMenuDropdown: this.shadowRoot.querySelector("#resultsMenuDropdown"),
+            contentMenuDropdown: this.shadowRoot.querySelector("#contentMenuDropdown"),
 
             // Page-specific elements
-            contentPageBackBtn: this.dianaWidgetRootContainer.querySelector("#contentPageBackBtn"),
-            contentPageTitle: this.dianaWidgetRootContainer.querySelector("#contentPageTitle"),
-            contentPageBody: this.dianaWidgetRootContainer.querySelector("#contentPageBody"),
+            contentPageBackBtn: this.shadowRoot.querySelector("#contentPageBackBtn"),
+            contentPageTitle: this.shadowRoot.querySelector("#contentPageTitle"),
+            contentPageBody: this.shadowRoot.querySelector("#contentPageBody"),
         };
     }
 
