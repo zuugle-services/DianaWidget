@@ -1439,7 +1439,7 @@ export default class DianaWidget {
                 <span>•</span>
                 <span>${transfers} ${this.t('transfers')}</span>
             </div>
-            <div class="summary-icons">${iconsHTML}</div>
+            <!-- <div class="summary-icons">${iconsHTML}</div> -->
         `;
     }
 
@@ -1470,9 +1470,8 @@ export default class DianaWidget {
             if(summaryWrapper && container) {
                 summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection);
                 container.classList.add('has-summary');
-                if (!container.classList.contains('expanded')) {
-                    container.classList.add('expanded');
-                }
+                // Always collapse when a new time is selected to show the summary first.
+                container.classList.remove('expanded');
             }
 
             if (type === 'to') {
@@ -1480,16 +1479,11 @@ export default class DianaWidget {
             } else {
                 this.state.selectedFromConnection = selectedConnection;
             }
-
-            requestAnimationFrame(() => {
-                const firstElement = targetBox.querySelector('.connection-elements > div:nth-child(1)');
-                if (firstElement) firstElement.scrollIntoView({behavior: 'smooth', block: 'center'});
-            });
         } else {
             targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
             if(summaryWrapper && container) {
                 summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('noConnectionDetails')}</span>`;
-                container.classList.remove('has-summary');
+                container.classList.remove('has-summary', 'expanded');
             }
         }
     }

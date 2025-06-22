@@ -1150,12 +1150,12 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 .accordion-icon {
     position: absolute;
-    bottom: 12px;
+    bottom: 18px;
     right: 15px;
     transition: opacity 0.3s ease;
     color: var(--text-tertiary);
-    opacity: 0;
     pointer-events: none;
+    // transform: rotate(180deg);
 }
 
 /* Expanded state */
@@ -1166,7 +1166,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     display: block;
 }
 .collapsible-container.expanded .accordion-icon {
-    opacity: 1;
+    transform: rotate(180deg);
 }
 
 .summary-content-wrapper {
