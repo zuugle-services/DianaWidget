@@ -1133,6 +1133,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     align-items: center;
     gap: 10px;
     padding: 15px;
+    position: relative;
 }
 
 .collapsible-content {
@@ -1150,31 +1151,28 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 .accordion-icon {
     position: absolute;
-    bottom: 18px;
+    top: 67%;
     right: 15px;
-    transition: opacity 0.3s ease;
+    transition: transform 0.3s ease;
     color: var(--text-tertiary);
     pointer-events: none;
-    // transform: rotate(180deg);
+    transform: translateY(-50%) rotate(0deg);
 }
 
 /* Expanded state */
-.collapsible-container.expanded .collapsible-header {
-    display: none;
-}
 .collapsible-container.expanded .collapsible-content {
     display: block;
 }
 .collapsible-container.expanded .accordion-icon {
-    transform: rotate(180deg);
+    transform: translateY(-50%) rotate(180deg);
 }
 
 .summary-content-wrapper {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: flex-start;
     width: 100%;
-    gap: 15px;
+    gap: 10px;
     font-size: 13px;
     min-height: 24px; /* Ensure consistent height even when empty */
 }
@@ -1186,14 +1184,30 @@ button.calendar-footer-btn.calendar-apply-btn {
     text-align: left;
 }
 
+.summary-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
 .summary-details {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-grow: 1;
+    flex-wrap: wrap;
     gap: 8px;
     color: var(--text-tertiary);
     white-space: nowrap;
+    justify-content: flex-start;
+}
+
+.summary-time {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.summary-divider {
+    color: var(--text-muted);
 }
 
 .summary-icons {

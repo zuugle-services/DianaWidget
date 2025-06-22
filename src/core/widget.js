@@ -1428,21 +1428,20 @@ export default class DianaWidget {
             }
         }
 
-        const iconsHTML = mainTransportTypes.slice(0, 3).map(t => this.getTransportIcon(t)).join('');
+        const iconsHTML = mainTransportTypes.slice(0, 4).map(t => this.getTransportIcon(t)).join('');
 
         return `
-            <span class="summary-date">${dateDisplay}</span>
-            <div class="summary-details">
-                <span>${startTimeLocal} → ${endTimeLocal}</span>
-                <span>•</span>
-                <span>${duration}</span>
-                <span>•</span>
-                <span>${transfers} ${this.t('transfers')}</span>
+            <div class="summary-top-row">
+                <span class="summary-date">${dateDisplay}</span>
+                <div class="summary-icons">${iconsHTML}</div>
             </div>
-            <svg class="accordion-icon" width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="m16.354 5.075-7.855 7.854L.646 5.075l.707-.707 7.145 7.146 7.148-7.147z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            <!-- <div class="summary-icons">${iconsHTML}</div> -->
+            <div class="summary-details">
+                <span class="summary-time">${startTimeLocal} → ${endTimeLocal}</span>
+                <span class="summary-divider">•</span>
+                <span class="summary-duration">${duration}</span>
+                <span class="summary-divider">•</span>
+                <span class="summary-transfers">${transfers} ${this.t('transfers')}</span>
+            </div>
         `;
     }
 
