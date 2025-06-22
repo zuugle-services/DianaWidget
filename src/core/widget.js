@@ -726,8 +726,8 @@ export default class DianaWidget {
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
         if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.addEventListener('click', () => this.closeMenuOrContentPage());
 
-        this.elements.collapsibleToActivity?.querySelector('.collapsible-header').addEventListener('click', () => this.toggleCollapsible('to'));
-        this.elements.collapsibleFromActivity?.querySelector('.collapsible-header').addEventListener('click', () => this.toggleCollapsible('from'));
+        this.elements.collapsibleToActivity?.addEventListener('click', () => this.toggleCollapsible('to'));
+        this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
 
 
         // --- Generic Menu Handling ---
@@ -798,7 +798,6 @@ export default class DianaWidget {
             ? this.elements.collapsibleToActivity
             : this.elements.collapsibleFromActivity;
 
-        // Only allow toggling if a connection has been selected and a summary rendered
         if (container && container.classList.contains('has-summary')) {
             container.classList.toggle('expanded');
         }
@@ -1248,7 +1247,6 @@ export default class DianaWidget {
         this.elements.topSlider.innerHTML = '';
         this.elements.bottomSlider.innerHTML = '';
 
-        // Set placeholder text in summary headers
         if(this.elements.collapsibleToActivity) {
             this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
             this.elements.collapsibleToActivity.classList.remove('has-summary', 'expanded');
@@ -1262,19 +1260,21 @@ export default class DianaWidget {
 
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
-            this.showError(this.t('errors.api.noConnectionsFound'), 'results'); // Show error on results page
-            this.navigateToForm(); // Optionally navigate back or handle UI differently
-            this.showError(this.t('errors.api.noConnectionsFound'), 'form'); // Also show on form page
+            this.showError(this.t('errors.api.noConnectionsFound'), 'results');
+            this.navigateToForm();
+            this.showError(this.t('errors.api.noConnectionsFound'), 'form');
             return;
         }
         if (this.state.toConnections.length === 0) {
             this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
+            this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('errors.api.noToConnectionsFound')}</span>`;
         } else {
             this.calculateAnytimeConnections(this.state.toConnections, "to");
             this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
         }
         if (this.state.fromConnections.length === 0) {
             this.elements.responseBoxBottom.innerHTML = this.t('errors.api.noFromConnectionsFound');
+            this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('errors.api.noFromConnectionsFound')}</span>`;
         } else {
             this.calculateAnytimeConnections(this.state.fromConnections, "from");
             this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
@@ -1406,34 +1406,32 @@ export default class DianaWidget {
     /**
      * Renders a compact summary of a connection for the collapsible header.
      * @param {object} connection - The connection object.
-     * @param {string} type - 'to' or 'from'.
      * @returns {string} HTML string for the summary.
      */
-    _renderConnectionSummary(connection, type) {
+    _renderConnectionSummary(connection) {
         if (!connection) return '';
 
-        const title = type === 'to' ? this.t('journeyToActivity') : this.t('journeyFromActivity');
         const startTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
         const endTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
         const duration = calculateTimeDifference(connection.connection_start_timestamp, connection.connection_end_timestamp, (key) => this.t(key));
         const transfers = connection.connection_transfers;
+        const dateDisplay = formatLegDateForDisplay(connection.connection_start_timestamp, this.config.timezone, this.config.language);
 
         const mainTransportTypes = [...new Set(connection.connection_elements
             .filter(el => el.type === 'JNY')
             .map(el => el.vehicle_type)
         )];
 
-        // If it's anytime (walk) or only consists of walk legs, show the walk icon
         if (connection.connection_anytime || (connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.type === 'WALK'))) {
             if (!mainTransportTypes.includes('WALK')) {
                 mainTransportTypes.unshift('WALK');
             }
         }
 
-        const iconsHTML = mainTransportTypes.slice(0, 3).map(t => this.getTransportIcon(t)).join(''); // Limit to 3 icons
+        const iconsHTML = mainTransportTypes.slice(0, 3).map(t => this.getTransportIcon(t)).join('');
 
         return `
-            <span class="summary-title">${title}</span>
+            <span class="summary-date">${dateDisplay}</span>
             <div class="summary-details">
                 <span>${startTimeLocal} → ${endTimeLocal}</span>
                 <span>•</span>
@@ -1469,17 +1467,14 @@ export default class DianaWidget {
             this.updateActivityTimeBox(selectedConnection, type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
 
-            // Update summary and mark as having content
             if(summaryWrapper && container) {
-                summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
+                summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection);
                 container.classList.add('has-summary');
-                // Expand the box to show the details
                 if (!container.classList.contains('expanded')) {
                     container.classList.add('expanded');
                 }
             }
 
-            // Store the selected connection for the share functionality
             if (type === 'to') {
                 this.state.selectedToConnection = selectedConnection;
             } else {

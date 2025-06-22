@@ -1112,64 +1112,61 @@ button.calendar-footer-btn.calendar-apply-btn {
 /* --- Collapsible Box Styles --- */
 .collapsible-container {
     margin: 12px 20px;
-}
-
-.collapsible-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    padding: 12px 15px;
     background-color: var(--bg-primary);
     border: 1px solid var(--border-primary);
     border-radius: 8px;
     box-shadow: 0 1px 2px var(--shadow-light);
-    transition: background-color 0.2s ease, border-radius 0.1s linear;
+    position: relative;
+    transition: background-color 0.2s ease;
 }
 
-.collapsible-header:not(.has-summary) {
-    cursor: default;
+.collapsible-container.has-summary {
+    cursor: pointer;
 }
 
-.collapsible-header:hover {
-    background-color: var(--bg-hover);
+.collapsible-container.has-summary:hover {
+    background-color: color-mix(in srgb, var(--bg-hover), white 50%);
 }
 
-.accordion-icon {
-    transition: transform 0.3s ease;
-    color: var(--text-tertiary);
-    flex-shrink: 0;
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
 }
 
 .collapsible-content {
-    max-height: 0;
+    display: none;
+    padding: 12px 15px;
     overflow: hidden;
-    transition: max-height 0.3s ease-out;
 }
 
 .middle-box-content {
-    padding: 12px 15px;
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-top: none;
-    border-radius: 0 0 8px 8px;
-    margin-top: -1px; /* Overlap with header border */
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    margin: 0;
+}
+
+.accordion-icon {
+    position: absolute;
+    bottom: 12px;
+    right: 15px;
+    transition: opacity 0.3s ease;
+    color: var(--text-tertiary);
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* Expanded state */
 .collapsible-container.expanded .collapsible-header {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    box-shadow: none;
+    display: none;
 }
-
 .collapsible-container.expanded .collapsible-content {
-    max-height: 1500px; /* A large value to accommodate content */
+    display: block;
 }
-
 .collapsible-container.expanded .accordion-icon {
-    transform: rotate(180deg);
+    opacity: 1;
 }
 
 .summary-content-wrapper {
@@ -1187,12 +1184,6 @@ button.calendar-footer-btn.calendar-apply-btn {
     font-style: italic;
     width: 100%;
     text-align: left;
-}
-
-.summary-title {
-    font-weight: 500;
-    color: var(--text-primary);
-    flex-shrink: 0;
 }
 
 .summary-details {
@@ -1215,6 +1206,18 @@ button.calendar-footer-btn.calendar-apply-btn {
 .summary-icons svg {
     width: 18px;
     height: 18px;
+}
+
+.summary-date {
+    background-color: var(--bg-info);
+    border-radius: 4px;
+    box-shadow: 0 1px 2px var(--shadow-light);
+    color: var(--text-info);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.3;
+    padding: 3px 7px;
+    white-space: nowrap;
 }
 
 
@@ -1340,7 +1343,7 @@ button.calendar-footer-btn.calendar-apply-btn {
 }
 
 .middle-box {
-    background: var(--bg-primary);
+    background: var(--bg-info);
     border: 1px solid var(--border-primary);
     border-radius: 8px;
     box-shadow: 0 1px 2px var(--shadow-light);
