@@ -600,8 +600,13 @@ export default class DianaWidget {
             formErrorContainer: this.shadowRoot.querySelector("#formErrorContainer"),
             resultsErrorContainer: this.shadowRoot.querySelector("#resultsErrorContainer"),
             infoContainer: this.shadowRoot.querySelector("#infoContainer"),
+
+            // New elements for collapsible sections
+            collapsibleToActivity: this.shadowRoot.querySelector("#collapsibleToActivity"),
+            collapsibleFromActivity: this.shadowRoot.querySelector("#collapsibleFromActivity"),
             responseBox: this.shadowRoot.querySelector("#responseBox"),
             responseBoxBottom: this.shadowRoot.querySelector("#responseBox-bottom"),
+
             topSlider: this.shadowRoot.querySelector("#topSlider"),
             bottomSlider: this.shadowRoot.querySelector("#bottomSlider"),
             activityTimeBox: this.shadowRoot.querySelector("#activity-time"),
@@ -722,6 +727,10 @@ export default class DianaWidget {
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
         if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.addEventListener('click', () => this.closeMenuOrContentPage());
 
+        // Add event listeners for new collapsible boxes
+        this.elements.collapsibleToActivity?.querySelector('.collapsible-header').addEventListener('click', () => this.toggleCollapsible('to'));
+        this.elements.collapsibleFromActivity?.querySelector('.collapsible-header').addEventListener('click', () => this.toggleCollapsible('from'));
+
 
         // --- Generic Menu Handling ---
         const menuButtons = [this.elements.formPageMenuButton, this.elements.resultsPageMenuButton, this.elements.contentPageMenuButton];
@@ -780,6 +789,19 @@ export default class DianaWidget {
                 });
             }
         });
+    }
+
+    /**
+     * Toggles the collapsible state of a journey box.
+     * @param {string} type - 'to' or 'from'.
+     */
+    toggleCollapsible(type) {
+        const container = type === 'to'
+            ? this.elements.collapsibleToActivity
+            : this.elements.collapsibleFromActivity;
+        if (container) {
+            container.classList.toggle('expanded');
+        }
     }
 
     /**
@@ -997,6 +1019,10 @@ export default class DianaWidget {
         this.loadingTextTimeout1 = null;
         this.loadingTextTimeout2 = null;
         this.clearMessages();
+
+        // Ensure boxes are collapsed before a new search
+        this.elements.collapsibleToActivity?.classList.remove('expanded');
+        this.elements.collapsibleFromActivity?.classList.remove('expanded');
 
         if (!this.config.overrideUserStartLocation && this.elements.originInput && !this.elements.originInput.value) {
             this.showInfo(this.t('infos.originRequired'));
@@ -1386,6 +1412,12 @@ export default class DianaWidget {
         if (filtered.length > 0) {
             this.updateActivityTimeBox(filtered[0], type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+
+            // Expand the corresponding box to show the details
+            const container = type === 'to' ? this.elements.collapsibleToActivity : this.elements.collapsibleFromActivity;
+            if (container && !container.classList.contains('expanded')) {
+                container.classList.add('expanded');
+            }
 
             // Store the selected connection for the share functionality
             if (type === 'to') {
@@ -1868,6 +1900,10 @@ export default class DianaWidget {
         this.state.toConnections = [];
         this.state.fromConnections = [];
         this.state.activityTimes = {start: '', end: '', duration: '', warning_duration: false};
+
+        // Reset collapsible states when going back to form
+        if (this.elements.collapsibleToActivity) this.elements.collapsibleToActivity.classList.remove('expanded');
+        if (this.elements.collapsibleFromActivity) this.elements.collapsibleFromActivity.classList.remove('expanded');
     }
 
     async handleShare() {

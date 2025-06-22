@@ -1108,6 +1108,72 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 
 /* --- Results Page Specific Styles --- */
+
+/* --- Collapsible Box Styles --- */
+.collapsible-container {
+    margin: 12px 20px;
+}
+
+.collapsible-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 12px 15px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px var(--shadow-light);
+    transition: background-color 0.2s ease, border-radius 0.1s linear;
+
+    h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+}
+
+.collapsible-header:hover {
+    background-color: var(--bg-hover);
+}
+
+.accordion-icon {
+    transition: transform 0.3s ease;
+    color: var(--text-tertiary);
+}
+
+.collapsible-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.middle-box-content {
+    padding: 12px 15px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    margin-top: -1px; /* Overlap with header border */
+}
+
+/* Expanded state */
+.collapsible-container.expanded .collapsible-header {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    box-shadow: none;
+}
+
+.collapsible-container.expanded .collapsible-content {
+    max-height: 1500px; /* A large value to accommodate content */
+}
+
+.collapsible-container.expanded .accordion-icon {
+    transform: rotate(180deg);
+}
+
+
 .bottom-bar-left {
     align-items: center;
     display: flex;
@@ -1323,19 +1389,19 @@ button.calendar-footer-btn.calendar-apply-btn {
 }
 
 
-.middle-box .connection-elements {
+.middle-box-content .connection-elements {
     border-left: 3px solid var(--border-tertiary);
     margin-left: 7px;
     padding-left: 15px;
     position: relative;
 }
 
-.middle-box .connection-element {
+.middle-box-content .connection-element {
     margin-bottom: 15px;
     position: relative;
 }
 
-.middle-box .connection-element:last-child {
+.middle-box-content .connection-element:last-child {
     margin-bottom: 0;
 }
 
@@ -1357,11 +1423,11 @@ button.calendar-footer-btn.calendar-apply-btn {
     z-index: 1;
 }
 
-.middle-box .element-time {
+.middle-box-content .element-time {
 }
 
 
-.middle-box .element-time span {
+.middle-box-content .element-time span {
     color: var(--text-muted);
 }
 
@@ -1373,20 +1439,20 @@ button.calendar-footer-btn.calendar-apply-btn {
     width: 16px;
 }
 
-.middle-box .element-icon svg {
+.middle-box-content .element-icon svg {
     height: 100%;
     min-height: 16px;
     min-width: 16px;
     width: 100%;
 }
 
-.middle-box .element-time {
+.middle-box-content .element-time {
     color: var(--text-primary);
     font-size: 14px;
     margin-bottom: 3px;
 }
 
-.middle-box .element-duration {
+.middle-box-content .element-duration {
     color: var(--text-primary);
     font-family: 'DM Sans', sans-serif;
     font-size: 12px;
@@ -1395,12 +1461,12 @@ button.calendar-footer-btn.calendar-apply-btn {
     padding: 4px;
 }
 
-.middle-box .element-vehicle {
+.middle-box-content .element-vehicle {
     color: var(--primary-color);
     font-size: 13px
 }
 
-.middle-box .element-circle {
+.middle-box-content .element-circle {
     background-color: var(--primary-color);
     border-radius: 50%;
     height: 5px;
@@ -1411,7 +1477,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     z-index: 0
 }
 
-.middle-box .waiting-block .element-circle {
+.middle-box-content .waiting-block .element-circle {
     display: none;
 }
 

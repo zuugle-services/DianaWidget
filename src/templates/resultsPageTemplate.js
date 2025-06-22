@@ -63,9 +63,31 @@ export function getResultsPageTemplateHTML(args) {
 
             <!-- Container for Toggled Content -->
             <div class="results-content-area">
-                <div class="middle-box" id="responseBox" aria-live="polite">${t('loadingConnectionsI')}</div>
+                <div class="collapsible-container" id="collapsibleToActivity">
+                    <div class="collapsible-header">
+                        <h3>${t('journeyToActivity')}</h3>
+                        <svg class="accordion-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4.5 6.5L8 10.5L11.5 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="middle-box-content" id="responseBox" aria-live="polite">${t('loadingConnectionsI')}</div>
+                    </div>
+                </div>
+
                 <div id="activity-time" class="middle-box">${config.activityName}</div>
-                <div class="middle-box" id="responseBox-bottom" aria-live="polite">${t('loadingConnectionsO')}</div>
+
+                <div class="collapsible-container" id="collapsibleFromActivity">
+                    <div class="collapsible-header">
+                        <h3>${t('journeyFromActivity')}</h3>
+                        <svg class="accordion-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                             <path d="M4.5 6.5L8 10.5L11.5 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="collapsible-content">
+                        <div class="middle-box-content" id="responseBox-bottom" aria-live="polite">${t('loadingConnectionsO')}</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Persistent Footer -->
