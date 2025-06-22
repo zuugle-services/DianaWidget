@@ -38,6 +38,32 @@ export class SingleCalendar {
         this._attachEventListeners();
         this._updateInputElement();
         this._updateDisplayElement();
+        this._applyTheming();
+    }
+
+    _applyTheming() {
+        const themableProperties = [
+            '--primary-color', '--secondary-color', '--success-color', '--warning-color', '--error-color',
+            '--wait-color', '--text-primary', '--text-secondary', '--text-tertiary', '--text-muted',
+            '--text-disabled', '--text-error', '--text-info', '--text-warning', '--icon-input-color',
+            '--bg-primary', '--bg-secondary', '--bg-tertiary', '--bg-hover', '--bg-error', '--bg-info',
+            '--bg-transparent', '--bg-waiting-block', '--border-primary', '--border-secondary',
+            '--border-tertiary', '--border-error', '--border-info', '--shadow-verylight', '--shadow-light',
+            '--shadow-medium', '--shadow-dark', '--shadow-gray'
+        ];
+
+        if (!this.widget.container || !this.calendarContentWrapper) {
+            return;
+        }
+
+        const hostStyles = getComputedStyle(this.widget.container);
+
+        themableProperties.forEach(prop => {
+            const value = hostStyles.getPropertyValue(prop).trim();
+            if (value) {
+                this.calendarContentWrapper.style.setProperty(prop, value);
+            }
+        });
     }
 
     _createCalendarContainer() {
