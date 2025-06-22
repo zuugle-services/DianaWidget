@@ -447,6 +447,11 @@ export default class DianaWidget {
         let dianaWidgetRootContainer = document.createElement('div');
         dianaWidgetRootContainer.className = 'diana-container';
         this.shadowRoot.innerHTML = '';
+
+        const styleTag = document.createElement('style');
+        styleTag.textContent = styles;
+        this.shadowRoot.appendChild(styleTag);
+
         this.shadowRoot.appendChild(dianaWidgetRootContainer);
         this.dianaWidgetRootContainer = dianaWidgetRootContainer;
 
@@ -466,7 +471,6 @@ export default class DianaWidget {
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
         this.dianaWidgetRootContainer.innerHTML = `
-          <style>${styles}</style>
           <div id="activityModal" class="modal visible">
             <div id="innerContainer" class="modal-content">
               ${formPageHTML}
@@ -2395,7 +2399,8 @@ export default class DianaWidget {
                             this.clearMessages();
                         },
                         otherDateButtonElement,
-                        dateButtonsGroupElement
+                        dateButtonsGroupElement,
+                        styles
                     );
                 }
 

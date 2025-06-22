@@ -947,16 +947,12 @@ button.calendar-footer-btn.calendar-apply-btn {
     background: var(--bg-primary);
     border-radius: 8px;
     box-shadow: 0 4px 12px var(--shadow-medium);
-    display: none;
+    display: block;
     font-family: "DM Sans", sans-serif !important;
     height: fit-content;
     min-width: 280px; /* Ensure calendar has a decent minimum width */
     position: absolute;
     z-index: 1050; /* Ensure it's above most other elements */
-}
-
-.calendar-container.active {
-    display: block;
 }
 
 .calendar-header {
