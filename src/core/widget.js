@@ -87,7 +87,7 @@ export default class DianaWidget {
             }
 
             this.container = document.getElementById(containerId);
-            this.shadowRoot = this.container.attachShadow({ mode: 'open' });
+            this.shadowRoot = this.container.attachShadow({mode: 'open'});
 
 
             if (!this.container) {
@@ -248,6 +248,32 @@ export default class DianaWidget {
                 fallbackContainer.appendChild(fallback);
             }
         }
+    }
+
+    _applyExternalStyles() {
+        // List of CSS custom properties that can be themed from the outside.
+        const themableProperties = [
+            '--primary-color', '--secondary-color', '--success-color', '--warning-color', '--error-color',
+            '--wait-color', '--text-primary', '--text-secondary', '--text-tertiary', '--text-muted',
+            '--text-disabled', '--text-error', '--text-info', '--text-warning', '--icon-input-color',
+            '--bg-primary', '--bg-secondary', '--bg-tertiary', '--bg-hover', '--bg-error', '--bg-info',
+            '--bg-transparent', '--bg-waiting-block', '--border-primary', '--border-secondary',
+            '--border-tertiary', '--border-error', '--border-info', '--shadow-verylight', '--shadow-light',
+            '--shadow-medium', '--shadow-dark', '--shadow-gray'
+        ];
+
+        if (!this.container || !this.dianaWidgetRootContainer) {
+            return;
+        }
+
+        const hostStyles = getComputedStyle(this.container);
+
+        themableProperties.forEach(prop => {
+            const value = hostStyles.getPropertyValue(prop).trim();
+            if (value) {
+                this.dianaWidgetRootContainer.style.setProperty(prop, value);
+            }
+        });
     }
 
     validateConfig(userConfig) {
@@ -424,6 +450,7 @@ export default class DianaWidget {
         this.shadowRoot.appendChild(dianaWidgetRootContainer);
         this.dianaWidgetRootContainer = dianaWidgetRootContainer;
 
+        this._applyExternalStyles();
 
         const templateArgs = {
             config: this.config,
@@ -701,7 +728,9 @@ export default class DianaWidget {
 
                     const isVisible = dropdown.style.display === 'block';
                     // Close all dropdowns first
-                    menuDropdowns.forEach(d => { if (d) d.style.display = 'none'; });
+                    menuDropdowns.forEach(d => {
+                        if (d) d.style.display = 'none';
+                    });
                     // Toggle the clicked one
                     if (!isVisible) {
                         dropdown.style.display = 'block';
@@ -722,7 +751,9 @@ export default class DianaWidget {
                             this.navigateToContentPage(menuItem.dataset.contentKey);
                         }
                         // Close all dropdowns
-                        menuDropdowns.forEach(d => { if (d) d.style.display = 'none'; });
+                        menuDropdowns.forEach(d => {
+                            if (d) d.style.display = 'none';
+                        });
                     }
                 });
             }
@@ -736,7 +767,9 @@ export default class DianaWidget {
             // Close menu dropdowns if click is outside
             const clickedInsideMenu = menuButtons.some(b => b && b.contains(e.target)) || menuDropdowns.some(d => d && d.style.display === 'block' && d.contains(e.target));
             if (!clickedInsideMenu) {
-                menuDropdowns.forEach(d => { if (d) d.style.display = 'none'; });
+                menuDropdowns.forEach(d => {
+                    if (d) d.style.display = 'none';
+                });
             }
         });
     }
@@ -1585,8 +1618,8 @@ export default class DianaWidget {
 
                 // Date display logic
                 let dateDisplay = '';
-                const departureDate = DateTime.fromISO(element.departure_time, { zone: this.config.timezone }).startOf('day');
-                const arrivalDate = DateTime.fromISO(element.arrival_time, { zone: this.config.timezone }).startOf('day');
+                const departureDate = DateTime.fromISO(element.departure_time, {zone: this.config.timezone}).startOf('day');
+                const arrivalDate = DateTime.fromISO(element.arrival_time, {zone: this.config.timezone}).startOf('day');
 
                 let datesToShow = [];
                 // Show departure date for the first leg
@@ -1602,7 +1635,7 @@ export default class DianaWidget {
                     }
                 }
 
-                if(datesToShow.length > 0) {
+                if (datesToShow.length > 0) {
                     dateDisplay = `<span class="connection-leg-date-display">${datesToShow.join('<br>')}</span>`;
                 }
 
@@ -1622,7 +1655,7 @@ export default class DianaWidget {
                     <div class="element-time">
                       <span>${departureTime}</span> ${fromLocationDisplay}
                     </div>
-                    <div id="eleCont" ${dateDisplay !== ""  ? 'style="margin-right: 70px;"' : ''}>
+                    <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
                       <div class="element-circle"></div>
                       <span class="element-icon">${icon}</span>
                       <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
@@ -1964,8 +1997,8 @@ export default class DianaWidget {
                 }
 
                 // Check if activityDurationDaysFixed is set and if dates are valid
-                if (this.config.activityDurationDaysFixed && sharedDateEnd && sharedDateEnd.diff(sharedDate, 'days').days !== this.config.activityDurationDaysFixed-1) {
-                    console.log(sharedDateEnd.diff(sharedDate, 'days'), this.config.activityDurationDaysFixed-1);
+                if (this.config.activityDurationDaysFixed && sharedDateEnd && sharedDateEnd.diff(sharedDate, 'days').days !== this.config.activityDurationDaysFixed - 1) {
+                    console.log(sharedDateEnd.diff(sharedDate, 'days'), this.config.activityDurationDaysFixed - 1);
                     this.setLoadingState(false, true);
                     this.showInfo(this.t('infos.sharedDateDurationMismatch'));
                     currentUrl.searchParams.delete('diana-share');
