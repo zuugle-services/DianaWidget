@@ -1133,7 +1133,6 @@ button.calendar-footer-btn.calendar-apply-btn {
     align-items: center;
     gap: 10px;
     padding: 15px;
-    position: relative;
 }
 
 .collapsible-content {
@@ -1151,20 +1150,25 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 .accordion-icon {
     position: absolute;
-    top: 67%;
+    top: 60%;
     right: 15px;
     transition: transform 0.3s ease;
     color: var(--text-tertiary);
     pointer-events: none;
-    transform: translateY(-50%) rotate(0deg);
 }
 
 /* Expanded state */
+.collapsible-container.expanded .collapsible-header {
+    display: none;
+}
+
 .collapsible-container.expanded .collapsible-content {
     display: block;
 }
 .collapsible-container.expanded .accordion-icon {
-    transform: translateY(-50%) rotate(180deg);
+    transform: rotate(180deg);
+    top: unset;
+    bottom: 20px;
 }
 
 .summary-content-wrapper {
