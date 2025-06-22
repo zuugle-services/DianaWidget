@@ -1,4 +1,4 @@
-import styles from './styles/widget.css';
+import styles from './styles/widget.scss';
 import {DateTime} from 'luxon';
 import translations from '../translations';
 import {debounce, formatDateForDisplay, getApiErrorTranslationKey} from '../utils';

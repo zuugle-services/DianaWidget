@@ -32,14 +32,17 @@
     /* Typography */
     font-family: "DM Sans", sans-serif !important;
 
-    /* CSS Variables */
-
-    /* Base Colors */
+    /* --- THEME VARIABLES --- */
+    /* Base Colors (These are the values you can override from your own CSS) */
     --primary-color: #4285f4;
     --secondary-color: #ccc;
     --success-color: #28a745;
     --warning-color: #ffd38c;
-    --bg-apply-hover: #357ae8;
+    --error-color: #dc3545;
+    --wait-color: #ff9500;
+
+    /* Derived Colors (These update dynamically based on the base colors above) */
+    --bg-apply-hover: color-mix(in srgb, var(--primary-color), black 10%);
 
     /* Text Colors */
     --text-primary: #000;
@@ -47,9 +50,9 @@
     --text-tertiary: #666;
     --text-muted: #838383;
     --text-disabled: #999;
-    --text-error: #dc3545;
-    --text-info: #004085; /* Used for in-range text */
-    --text-warning: #856404;
+    --text-error: var(--error-color);
+    --text-info: color-mix(in srgb, var(--primary-color), black 30%);
+    --text-warning: color-mix(in srgb, var(--warning-color), black 40%);
     --icon-input-color: #656C6E;
 
     /* Background Colors */
@@ -57,17 +60,17 @@
     --bg-secondary: #fafafa;
     --bg-tertiary: #f5f5f5;
     --bg-hover: #f0f0f0;
-    --bg-error: rgba(220, 53, 69, 0.1);
-    --bg-info: #dee4f3;
+    --bg-error: color-mix(in srgb, var(--error-color) 10%, transparent);
+    --bg-info: color-mix(in srgb, var(--primary-color), white 80%);
     --bg-transparent: rgba(128, 128, 128, 0.05);
-    --bg-waiting-block: rgba(255, 149, 0, 0.08);
+    --bg-waiting-block: color-mix(in srgb, var(--wait-color) 8%, transparent);
 
     /* Border Colors */
     --border-primary: #e0e0e0;
     --border-secondary: #d3d3d3;
     --border-tertiary: #eaeaea;
-    --border-error: rgba(220, 53, 69, 0.2);
-    --border-info: #b8daff;
+    --border-error: color-mix(in srgb, var(--error-color) 20%, transparent);
+    --border-info: color-mix(in srgb, var(--primary-color), white 60%);
 
     /* Shadows */
     --shadow-verylight: rgba(0, 0, 0, 0.08);
@@ -1219,7 +1222,7 @@ button.calendar-footer-btn.calendar-apply-btn {
 }
 
 .slider button.active-time {
-    background: rgba(130, 177, 252, .12);
+    background: color-mix(in srgb, var(--primary-color), white 88%);
     border-color: var(--primary-color);
     border-width: 2px;
     box-shadow: none;

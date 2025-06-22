@@ -2,6 +2,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
+const sass = require('sass');
 
 module.exports = {
   entry: './src/index.js',
@@ -18,11 +19,18 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.css$/,
+        test: /\.(s[ac]|c)ss$/i, // Updated to include .scss, .sass, and .css
         use: [
           'to-string-loader', // Exports the CSS as a string, which is needed for Shadow DOM.
           'css-loader',     // Translates CSS into CommonJS.
-          'postcss-loader'  // Processes CSS with PostCSS.
+          'postcss-loader', // Processes CSS with PostCSS.
+          {
+            loader: 'sass-loader',
+            options: {
+              implementation: sass, // Explicitly use the dart-sass implementation.
+              api: 'modern',        // Force the modern JS API to avoid deprecation warnings.
+            },
+          }
         ]
       },
       {
