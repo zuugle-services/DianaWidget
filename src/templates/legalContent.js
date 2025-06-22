@@ -31,8 +31,8 @@ export const legalContent = {
       <strong>European Commission PIC:</strong> 880412838<br><br>
       Information on online dispute resolution: The European Commission provides a platform for online dispute resolution (OS). This platform can be found at <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">https://ec.europa.eu/consumers/odr/</a>. We are not obliged and not willing to participate in a dispute settlement procedure before a consumer arbitration board.
     </p>
-    <h3>License Information for DianaWidget</h3>
-    <p>The DianaWidget is proprietary software © Zuugle Services GmbH. For licensing inquiries, please contact <a href="mailto:team@zuugle-services.net">team@zuugle-services.net</a>.</p>
+    <h3>License Information for Diana GreenConnection</h3>
+    <p></p>
   `,
     DE: `
     <h2>Rechtliche Hinweise</h2>
@@ -62,7 +62,7 @@ export const legalContent = {
       <strong>European Commission PIC:</strong> 880412838<br><br>
       Informationen zur Online-Streitbeilegung: Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit. Diese Plattform finden Sie unter <a href="https://ec.europa.eu/consumers/odr/" target="_blank" rel="noopener noreferrer">https://ec.europa.eu/consumers/odr/</a>. Wir sind nicht verpflichtet und nicht bereit, an einem Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.
     </p>
-    <h3>Lizenzinformationen für DianaWidget</h3>
-    <p>Das DianaWidget ist proprietäre Software © Zuugle Services GmbH. Für Lizenzanfragen kontaktieren Sie bitte <a href="mailto:team@zuugle-services.net">team@zuugle-services.net</a>.</p>
+    <h3>Lizenzinformationen für Diana GreenConnect</h3>
+    <p></p>
   `
 };

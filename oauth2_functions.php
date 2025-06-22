@@ -1,12 +1,12 @@
 <?php
 
 /**
- * Functions to interact with the Diana OAuth 2.0 API
+ * Functions to interact with the Diana API OAuth 2.0 Endpoint
  * for obtaining access tokens using the Client Credentials Grant.
  */
 
 /**
- * Fetches an access token from the Diana OAuth 2.0 token endpoint.
+ * Fetches an access token from the Diana API OAuth 2.0 token endpoint.
  *
  * This function sends a POST request to the specified token endpoint
  * with the client ID and client secret to obtain an access token.

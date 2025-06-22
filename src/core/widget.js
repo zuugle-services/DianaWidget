@@ -234,7 +234,7 @@ export default class DianaWidget {
                 });
             }
         } catch (error) {
-            console.error("Failed to initialize Diana Widget:", error);
+            console.error("Failed to initialize Diana GreenConnect Widget:", error);
             const fallbackContainer = document.getElementById(containerId);
             if (fallbackContainer) {
                 const fallback = document.createElement('div');
@@ -244,8 +244,8 @@ export default class DianaWidget {
                 fallback.style.borderRadius = '4px';
                 fallback.style.margin = '10px';
                 fallback.innerHTML = `
-          <h3 style="color: #c62828; margin-top: 0;">Diana Widget Failed to Load</h3>
-          <p>We're unable to load the diana widget transit planner at this time. Please try again later.</p>
+          <h3 style="color: #c62828; margin-top: 0;">Diana GreenConnect Widget Failed to Load</h3>
+          <p>We're unable to load the Diana GreenConnect widget at this time. Please try again later.</p>
           <p><small>${error.message}</small></p>
         `;
                 fallbackContainer.innerHTML = "";

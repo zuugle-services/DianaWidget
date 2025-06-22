@@ -1,4 +1,4 @@
-# DianaWidget - Activity Transit Planner Widget
+# Diana GreenConnect - Activity Transit Planner Widget
 
 ![Widget Preview](img/preview.png)
 
@@ -62,7 +62,7 @@ npm ci
 
 ## Apply for Access & Security Process
 
-To use the DianaWidget, you need to obtain API credentials which are used to authorize requests to the backend Zuugle Services API. This process ensures secure communication.
+To use the Diana GreenConnect, you need to obtain API credentials which are used to authorize requests to the backend Zuugle Services API. This process ensures secure communication.
 
 ### 1. Sign Up and Obtain Credentials
 
@@ -174,7 +174,7 @@ npm run analyze # Analyze bundle size
 
 ### Key Development Patterns
 
-1.  **Widget Initialization**
+1.  **Diana GreenConnect Widget Initialization**
     Configure through `window.dianaActivityConfig` in host page:
 
    ```html

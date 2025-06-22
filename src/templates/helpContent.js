@@ -79,7 +79,7 @@ export const helpContent = {
       <h3>Need More Help? <span class="icon-inline">💬</span></h3>
       <p>If these tips don't resolve your issue, or if you have other questions, please don't hesitate to get in touch. You can find our contact details on the "Contact" page within this widget, or visit our main company website for more information about Zuugle Services:</p>
       <p><a href="https://www.zuugle-services.com" target="_blank" rel="noopener noreferrer">www.zuugle-services.com</a></p>
-      <p>For specific inquiries regarding the DianaWidget, including licensing or integration support, you can also email us directly at <a href="mailto:team@zuugle-services.net">team@zuugle-services.net</a>.</p>
+      <p>For specific inquiries regarding the DianaWidget, including licensing or integration support, you can also email us directly at <a href="mailto:office@zuugle-services.com">office@zuugle-services.com</a>.</p>
     </div>
   `,
     DE: `
@@ -158,7 +158,7 @@ export const helpContent = {
       <h3>Benötigen Sie weitere Hilfe? <span class="icon-inline">💬</span></h3>
       <p>Wenn diese Tipps Ihr Problem nicht lösen oder wenn Sie andere Fragen haben, zögern Sie bitte nicht, uns zu kontaktieren. Unsere Kontaktdaten finden Sie auf der Seite "Kontakt" in diesem Widget, oder besuchen Sie unsere Firmenwebseite für weitere Informationen über Zuugle Services:</p>
       <p><a href="https://www.zuugle-services.com" target="_blank" rel="noopener noreferrer">www.zuugle-services.com</a></p>
-      <p>Für spezifische Anfragen zum DianaWidget, einschließlich Lizenzierung oder Integrationsunterstützung, können Sie uns auch direkt eine E-Mail an <a href="mailto:team@zuugle-services.net">team@zuugle-services.net</a> senden.</p>
+      <p>Für spezifische Anfragen zum DianaWidget, einschließlich Lizenzierung oder Integrationsunterstützung, können Sie uns auch direkt eine E-Mail an <a href="mailto:office@zuugle-service.com">office@zuugle-service.com</a> senden.</p>
     </div>
   `
 };
