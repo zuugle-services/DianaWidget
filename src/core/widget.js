@@ -1439,6 +1439,9 @@ export default class DianaWidget {
                 <span>•</span>
                 <span>${transfers} ${this.t('transfers')}</span>
             </div>
+            <svg class="accordion-icon" width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="m16.354 5.075-7.855 7.854L.646 5.075l.707-.707 7.145 7.146 7.148-7.147z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
             <!-- <div class="summary-icons">${iconsHTML}</div> -->
         `;
     }
@@ -1470,8 +1473,14 @@ export default class DianaWidget {
             if(summaryWrapper && container) {
                 summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection);
                 container.classList.add('has-summary');
-                // Always collapse when a new time is selected to show the summary first.
-                container.classList.remove('expanded');
+            }
+
+            // Collapse BOTH containers to show their summaries on any new selection.
+            if (this.elements.collapsibleToActivity) {
+                this.elements.collapsibleToActivity.classList.remove('expanded');
+            }
+            if (this.elements.collapsibleFromActivity) {
+                this.elements.collapsibleFromActivity.classList.remove('expanded');
             }
 
             if (type === 'to') {
