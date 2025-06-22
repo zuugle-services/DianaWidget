@@ -357,7 +357,7 @@ export class RangeCalendarModal {
         if (this.fixedStartDate) {
             this.tempStartDate = new Date(this.fixedStartDate.valueOf());
         } else {
-            this.tempStartDate = convertToUTCMidnightJSDate(initialStartDate, todayInWidgetZone);
+            this.tempStartDate = convertToUTCMidnightJSDate(initialStartDate, todayInWidgetZone, this.config.timezone);
         }
 
         if (this.fixedEndDate) {
@@ -369,7 +369,7 @@ export class RangeCalendarModal {
                 .toJSDate();
         } else {
             const fallbackEndDateBase = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}) : todayInWidgetZone;
-            this.tempEndDate = convertToUTCMidnightJSDate(initialEndDate, fallbackEndDateBase);
+            this.tempEndDate = convertToUTCMidnightJSDate(initialEndDate, fallbackEndDateBase, this.config.timezone);
         }
 
         // Ensure tempEndDate is not before tempStartDate
@@ -631,7 +631,7 @@ export class RangeCalendarModal {
         if (this.fixedStartDate) {
             this.tempStartDate = new Date(this.fixedStartDate.valueOf());
         } else {
-            this.tempStartDate = convertToUTCMidnightJSDate(currentStartDate, todayInWidgetZone);
+            this.tempStartDate = convertToUTCMidnightJSDate(currentStartDate, todayInWidgetZone, this.config.timezone);
         }
 
         if (this.fixedEndDate) {
@@ -643,7 +643,7 @@ export class RangeCalendarModal {
                 .toJSDate();
         } else {
             const fallbackEndDateBase = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}) : todayInWidgetZone;
-            this.tempEndDate = convertToUTCMidnightJSDate(currentEndDate, fallbackEndDateBase);
+            this.tempEndDate = convertToUTCMidnightJSDate(currentEndDate, fallbackEndDateBase, this.config.timezone);
         }
 
         // Ensure tempEndDate is not before tempStartDate

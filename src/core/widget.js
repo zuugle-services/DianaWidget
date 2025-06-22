@@ -191,7 +191,7 @@ export default class DianaWidget {
                 selectedToConnection: null,
                 selectedFromConnection: null,
                 selectedDate: initialSelectedStartDate,
-                selectedEndDate: null, // Will be set later for multiday
+                selectedEndDate: initialSelectedEndDate,
                 loading: false,
                 error: null,
                 info: null,
@@ -458,11 +458,12 @@ export default class DianaWidget {
         this.setupAccessibility();
         if (this.config.multiday) {
             if (this.elements.activityDateStart && this.state.selectedDate) {
-                this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
+                this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate, this.config.timezone);
             }
             if (this.elements.activityDateEnd && this.state.selectedEndDate) {
-                this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
+                this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate, this.config.timezone);
             }
+
             this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
             this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
         } else {
@@ -1835,6 +1836,7 @@ export default class DianaWidget {
                 origin_lat: this.elements.originInput.dataset.lat || null,
                 origin_lon: this.elements.originInput.dataset.lon || null,
                 date: formatDatetime(this.state.selectedDate, this.config.timezone), // yyyy-MM-dd
+                dateEnd: this.config.multiday ? formatDatetime(this.state.selectedEndDate, this.config.timezone) : null,
                 to_connection_start_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_start_timestamp : null,
                 to_connection_end_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_end_timestamp : null,
                 from_connection_start_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_start_timestamp : null,
@@ -1905,6 +1907,7 @@ export default class DianaWidget {
     async _loadFromShareID(shareId) {
         await this.initDOM();
         this.setLoadingState(true, true);
+        const currentUrl = new URL(window.location.href);
 
         try {
             const response = await fetch(`${this.config.apiBaseUrl}/share/${shareId}/`, {
@@ -1912,9 +1915,11 @@ export default class DianaWidget {
             });
 
             if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const errorMsg = errorData.error || this.t('errors.shareLinkInvalidExpired');
-                throw new Error(errorMsg);
+                this.setLoadingState(false, true);
+                this.showInfo(this.t('errors.shareLinkInvalidExpired'));
+                currentUrl.searchParams.delete('diana-share');
+                window.history.replaceState(null, '', currentUrl.toString());
+                return;
             }
 
             const data = await response.json();
@@ -1934,19 +1939,55 @@ export default class DianaWidget {
                 }
             }
 
-            // Validate date
+            // Validate dates
             const sharedDate = DateTime.fromISO(data.date).startOf('day');
+            const sharedDateEnd = data.dateEnd ? DateTime.fromISO(data.dateEnd).startOf('day') : null;
             const today = DateTime.now().setZone(this.config.timezone).startOf('day');
 
             if (!sharedDate.isValid || sharedDate < today) {
                 this.setLoadingState(false, true);
                 this.showInfo(this.t('infos.sharedDateInPast'));
+                currentUrl.searchParams.delete('diana-share');
+                window.history.replaceState(null, '', currentUrl.toString());
                 return;
             }
 
-            // Date is valid, proceed with auto-search
-            this.state.selectedDate = sharedDate.toJSDate();
-            this._updateSingleDayDateButtonStates();
+            if (this.config.multiday) {
+                if (sharedDateEnd && (!sharedDateEnd.isValid || sharedDateEnd < today)) {
+                    this.setLoadingState(false, true);
+                    this.showInfo(this.t('infos.sharedDateInPast'));
+                    currentUrl.searchParams.delete('diana-share');
+                    window.history.replaceState(null, '', currentUrl.toString());
+                    return;
+                }
+
+                // Check if activityDurationDaysFixed is set and if dates are valid
+                if (this.config.activityDurationDaysFixed && sharedDateEnd && sharedDateEnd.diff(sharedDate, 'days').days !== this.config.activityDurationDaysFixed-1) {
+                    console.log(sharedDateEnd.diff(sharedDate, 'days'), this.config.activityDurationDaysFixed-1);
+                    this.setLoadingState(false, true);
+                    this.showInfo(this.t('infos.sharedDateDurationMismatch'));
+                    currentUrl.searchParams.delete('diana-share');
+                    window.history.replaceState(null, '', currentUrl.toString());
+                    return;
+                }
+
+                this.state.selectedDate = sharedDate.toJSDate();
+                this.state.selectedEndDate = sharedDateEnd ? sharedDateEnd.toJSDate() : null;
+
+                if (this.elements.activityDateStart && this.state.selectedDate) {
+                    this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate, this.config.timezone);
+                }
+                if (this.elements.activityDateEnd && this.state.selectedEndDate) {
+                    this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate, this.config.timezone);
+                }
+
+                this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+                this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+            } else {
+                // Date is valid, proceed with auto-search
+                this.state.selectedDate = sharedDate.toJSDate();
+                this._updateSingleDayDateButtonStates();
+            }
 
             this.state.preselectTimes = {
                 to_start: data.to_connection_start_time,
@@ -2378,6 +2419,21 @@ export default class DianaWidget {
                 // If date is overridden, just display it.
                 this.updateDateDisplay(this.state.selectedDate, 'dateDisplay');
             }
+        }
+    }
+
+    updateDateDisplay(date, displayElementId) {
+        const displayElement = this.elements[displayElementId];
+        if (!displayElement) return;
+
+        const localeMap = {EN: 'en-GB', DE: 'de-DE'}; // Simple map for common cases
+        const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
+        if (date && !isNaN(date.getTime())) {
+            displayElement.textContent = formatDateForDisplay(date, locale, this.config.timezone);
+            displayElement.classList.remove("placeholder");
+        } else {
+            displayElement.textContent = this.t('selectDate'); // Fallback or placeholder text
+            displayElement.classList.add("placeholder");
         }
     }
 

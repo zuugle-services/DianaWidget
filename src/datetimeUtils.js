@@ -410,9 +410,9 @@ export function formatFullDateForDisplay(date, language) {
  * @param {Object} fallbackLuxonDtForDay - A luxon DateTime object used as a fallback when the input date is invalid.
  * @return {Date} A JavaScript Date object representing midnight in UTC.
  */
-export function convertToUTCMidnightJSDate(jsDateInput, fallbackLuxonDtForDay) {
+export function convertToUTCMidnightJSDate(jsDateInput, fallbackLuxonDtForDay, timezone) {
     if (jsDateInput && !isNaN(new Date(jsDateInput.valueOf()))) {
-        const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, {zone: this.config.timezone});
+        const dtInWidgetZone = DateTime.fromJSDate(jsDateInput, {zone: timezone});
         const isoDate = dtInWidgetZone.toISODate();
         return DateTime.fromISO(isoDate, {zone: 'utc'}).toJSDate();
     }

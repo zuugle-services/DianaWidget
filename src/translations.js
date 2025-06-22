@@ -65,6 +65,7 @@ export default {
             fetchingAddress: "Looking up address...",
             endDateAfterStartDate: "End date must be on or after the start date.",
             sharedDateInPast: "This shared journey is for a date in the past. Please select a new date to find current connections.",
+            sharedDateDurationMismatch: "The dates of this shared journey do not match. Please select new dates to find current connections.",
             shareLinkInvalid: "This shared link is invalid or has expired."
         },
         errors: {
@@ -79,7 +80,7 @@ export default {
             reverseGeocodeNoResults: "Could not find an address for your location.",
             shareLinkInvalidExpired: "Share link is invalid or expired.",
             shareLinkCreateFailed: "Failed to create share link.",
-            shareLinkErrorTitle: "Couldn't Load This Journey.",
+            shareLinkErrorTitle: "Couldn't Load This Shared Journey.",
             widgetLoadErrorTitle: "Widget could not be loaded.",
             api: {
                 queryParamMissing: "Query parameter 'q' is missing",
@@ -215,6 +216,7 @@ export default {
             fetchingAddress: "Adresse wird gesucht...",
             endDateAfterStartDate: "Das Enddatum muss am oder nach dem Startdatum liegen.",
             sharedDateInPast: "Diese geteilte Reise bezieht sich auf ein vergangenes Datum. Bitte wählen Sie ein neues Datum, um aktuelle Verbindungen zu finden.",
+            sharedDateDurationMismatch: "Die Daten dieser geteilten Reise passen nicht zusammen. Bitte wählen Sie ein neues Start- und Enddatum aus, um aktuelle Verbindungen zu finden.",
             shareLinkInvalid: "Dieser geteilte Link ist ungültig oder abgelaufen."
         },
         errors: {
@@ -229,7 +231,7 @@ export default {
             geolocationTimeout: "Die Anfrage zur Standortbestimmung ist abgelaufen.",
             shareLinkInvalidExpired: "Der geteilte Link ist ungültig oder abgelaufen.",
             shareLinkCreateFailed: "Der Teilen-Link konnte nicht erstellt werden.",
-            shareLinkErrorTitle: "Laden der Daten fehlgeschlagen",
+            shareLinkErrorTitle: "Laden der geteilten Daten fehlgeschlagen",
             widgetLoadErrorTitle: "Das Widget konnte nicht geladen werden.",
             api: {
                 queryParamMissing: "Suchparameter 'q' fehlt",
@@ -365,6 +367,7 @@ export default {
             fetchingAddress: "Looking up address...",
             endDateAfterStartDate: "End date must be on or after the start date.",
             sharedDateInPast: "This shared journey is for a date in the past. Please select a new date to find current connections.",
+            sharedDateDurationMismatch: "The dates of this shared journey do not match. Please select new dates to find current connections.",
             shareLinkInvalid: "This shared link is invalid or has expired."
         },
         errors: {
@@ -379,7 +382,7 @@ export default {
             reverseGeocodeNoResults: "Could not find an address for your location.",
             shareLinkInvalidExpired: "The shared link is invalid or expired.",
             shareLinkCreateFailed: "Failed to create share link.",
-            shareLinkErrorTitle: "Couldn't Load This Journey.",
+            shareLinkErrorTitle: "Couldn't Load This Shared Journey.",
             widgetLoadErrorTitle: "Widget could not be loaded.",
             api: {
                 queryParamMissing: "Query parameter 'q' is missing",
