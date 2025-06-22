@@ -65,7 +65,9 @@ export function getResultsPageTemplateHTML(args) {
             <div class="results-content-area">
                 <div class="collapsible-container" id="collapsibleToActivity">
                     <div class="collapsible-header">
-                        <h3>${t('journeyToActivity')}</h3>
+                        <div class="summary-content-wrapper">
+                            <!-- Populated by JS -->
+                        </div>
                         <svg class="accordion-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M4.5 6.5L8 10.5L11.5 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -79,7 +81,9 @@ export function getResultsPageTemplateHTML(args) {
 
                 <div class="collapsible-container" id="collapsibleFromActivity">
                     <div class="collapsible-header">
-                        <h3>${t('journeyFromActivity')}</h3>
+                        <div class="summary-content-wrapper">
+                            <!-- Populated by JS -->
+                        </div>
                         <svg class="accordion-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                              <path d="M4.5 6.5L8 10.5L11.5 6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>

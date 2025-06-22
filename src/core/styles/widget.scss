@@ -1118,6 +1118,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     cursor: pointer;
     padding: 12px 15px;
     background-color: var(--bg-primary);
@@ -1125,13 +1126,10 @@ button.calendar-footer-btn.calendar-apply-btn {
     border-radius: 8px;
     box-shadow: 0 1px 2px var(--shadow-light);
     transition: background-color 0.2s ease, border-radius 0.1s linear;
+}
 
-    h3 {
-        margin: 0;
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-primary);
-    }
+.collapsible-header:not(.has-summary) {
+    cursor: default;
 }
 
 .collapsible-header:hover {
@@ -1141,6 +1139,7 @@ button.calendar-footer-btn.calendar-apply-btn {
 .accordion-icon {
     transition: transform 0.3s ease;
     color: var(--text-tertiary);
+    flex-shrink: 0;
 }
 
 .collapsible-content {
@@ -1171,6 +1170,51 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 .collapsible-container.expanded .accordion-icon {
     transform: rotate(180deg);
+}
+
+.summary-content-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 15px;
+    font-size: 13px;
+    min-height: 24px; /* Ensure consistent height even when empty */
+}
+
+.summary-placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    width: 100%;
+    text-align: left;
+}
+
+.summary-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    flex-shrink: 0;
+}
+
+.summary-details {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    gap: 8px;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+}
+
+.summary-icons {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.summary-icons svg {
+    width: 18px;
+    height: 18px;
 }
 
 

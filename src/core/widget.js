@@ -601,7 +601,6 @@ export default class DianaWidget {
             resultsErrorContainer: this.shadowRoot.querySelector("#resultsErrorContainer"),
             infoContainer: this.shadowRoot.querySelector("#infoContainer"),
 
-            // New elements for collapsible sections
             collapsibleToActivity: this.shadowRoot.querySelector("#collapsibleToActivity"),
             collapsibleFromActivity: this.shadowRoot.querySelector("#collapsibleFromActivity"),
             responseBox: this.shadowRoot.querySelector("#responseBox"),
@@ -727,7 +726,6 @@ export default class DianaWidget {
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
         if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.addEventListener('click', () => this.closeMenuOrContentPage());
 
-        // Add event listeners for new collapsible boxes
         this.elements.collapsibleToActivity?.querySelector('.collapsible-header').addEventListener('click', () => this.toggleCollapsible('to'));
         this.elements.collapsibleFromActivity?.querySelector('.collapsible-header').addEventListener('click', () => this.toggleCollapsible('from'));
 
@@ -792,14 +790,16 @@ export default class DianaWidget {
     }
 
     /**
-     * Toggles the collapsible state of a journey box.
+     * Toggles the collapsible state of a journey box, if it has content.
      * @param {string} type - 'to' or 'from'.
      */
     toggleCollapsible(type) {
         const container = type === 'to'
             ? this.elements.collapsibleToActivity
             : this.elements.collapsibleFromActivity;
-        if (container) {
+
+        // Only allow toggling if a connection has been selected and a summary rendered
+        if (container && container.classList.contains('has-summary')) {
             container.classList.toggle('expanded');
         }
     }
@@ -1247,8 +1247,17 @@ export default class DianaWidget {
         this.showError(null, 'results');
         this.elements.topSlider.innerHTML = '';
         this.elements.bottomSlider.innerHTML = '';
-        this.elements.responseBox.innerHTML = this.t('selectTimeSlot');
-        this.elements.responseBoxBottom.innerHTML = this.t('selectTimeSlot');
+
+        // Set placeholder text in summary headers
+        if(this.elements.collapsibleToActivity) {
+            this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+            this.elements.collapsibleToActivity.classList.remove('has-summary', 'expanded');
+        }
+        if(this.elements.collapsibleFromActivity) {
+            this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+            this.elements.collapsibleFromActivity.classList.remove('has-summary', 'expanded');
+        }
+
         this.elements.activityTimeBox.innerHTML = this.config.activityName;
 
 
@@ -1394,10 +1403,55 @@ export default class DianaWidget {
         });
     }
 
+    /**
+     * Renders a compact summary of a connection for the collapsible header.
+     * @param {object} connection - The connection object.
+     * @param {string} type - 'to' or 'from'.
+     * @returns {string} HTML string for the summary.
+     */
+    _renderConnectionSummary(connection, type) {
+        if (!connection) return '';
+
+        const title = type === 'to' ? this.t('journeyToActivity') : this.t('journeyFromActivity');
+        const startTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
+        const endTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
+        const duration = calculateTimeDifference(connection.connection_start_timestamp, connection.connection_end_timestamp, (key) => this.t(key));
+        const transfers = connection.connection_transfers;
+
+        const mainTransportTypes = [...new Set(connection.connection_elements
+            .filter(el => el.type === 'JNY')
+            .map(el => el.vehicle_type)
+        )];
+
+        // If it's anytime (walk) or only consists of walk legs, show the walk icon
+        if (connection.connection_anytime || (connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.type === 'WALK'))) {
+            if (!mainTransportTypes.includes('WALK')) {
+                mainTransportTypes.unshift('WALK');
+            }
+        }
+
+        const iconsHTML = mainTransportTypes.slice(0, 3).map(t => this.getTransportIcon(t)).join(''); // Limit to 3 icons
+
+        return `
+            <span class="summary-title">${title}</span>
+            <div class="summary-details">
+                <span>${startTimeLocal} → ${endTimeLocal}</span>
+                <span>•</span>
+                <span>${duration}</span>
+                <span>•</span>
+                <span>${transfers} ${this.t('transfers')}</span>
+            </div>
+            <div class="summary-icons">${iconsHTML}</div>
+        `;
+    }
+
     filterConnectionsByTime(type, startTimeLocal, endTimeLocal) {
         const connections = type === 'from' ? this.state.fromConnections : this.state.toConnections;
         const sliderId = type === 'from' ? 'bottomSlider' : 'topSlider';
         const targetBox = type === 'from' ? this.elements.responseBoxBottom : this.elements.responseBox;
+        const container = type === 'to' ? this.elements.collapsibleToActivity : this.elements.collapsibleFromActivity;
+        const summaryWrapper = container?.querySelector('.summary-content-wrapper');
+
         const slider = this.elements[sliderId];
         slider.querySelectorAll('button').forEach(btn => {
             btn.classList.remove('active-time');
@@ -1409,21 +1463,27 @@ export default class DianaWidget {
             convertUTCToLocalTime(conn.connection_start_timestamp, this.config.timezone) === startTimeLocal &&
             convertUTCToLocalTime(conn.connection_end_timestamp, this.config.timezone) === endTimeLocal
         );
+
         if (filtered.length > 0) {
-            this.updateActivityTimeBox(filtered[0], type);
+            const selectedConnection = filtered[0];
+            this.updateActivityTimeBox(selectedConnection, type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
 
-            // Expand the corresponding box to show the details
-            const container = type === 'to' ? this.elements.collapsibleToActivity : this.elements.collapsibleFromActivity;
-            if (container && !container.classList.contains('expanded')) {
-                container.classList.add('expanded');
+            // Update summary and mark as having content
+            if(summaryWrapper && container) {
+                summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
+                container.classList.add('has-summary');
+                // Expand the box to show the details
+                if (!container.classList.contains('expanded')) {
+                    container.classList.add('expanded');
+                }
             }
 
             // Store the selected connection for the share functionality
             if (type === 'to') {
-                this.state.selectedToConnection = filtered[0];
+                this.state.selectedToConnection = selectedConnection;
             } else {
-                this.state.selectedFromConnection = filtered[0];
+                this.state.selectedFromConnection = selectedConnection;
             }
 
             requestAnimationFrame(() => {
@@ -1432,6 +1492,10 @@ export default class DianaWidget {
             });
         } else {
             targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
+            if(summaryWrapper && container) {
+                summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('noConnectionDetails')}</span>`;
+                container.classList.remove('has-summary');
+            }
         }
     }
 
