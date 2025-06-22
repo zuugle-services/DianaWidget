@@ -87,7 +87,11 @@ export default class DianaWidget {
             }
 
             this.container = document.getElementById(containerId);
-            this.shadowRoot = this.container.attachShadow({mode: 'open'});
+            if (this.container.shadowRoot) {
+                this.shadowRoot = this.container.shadowRoot;
+            } else {
+                this.shadowRoot = this.container.attachShadow({mode: 'open'});
+            }
 
 
             if (!this.container) {

@@ -41,7 +41,7 @@ export class SingleCalendar {
     }
 
     _createCalendarContainer() {
-        const calendarContainerId = `calendarContainer_${this.inputElement.id || 'uid'}_${Date.now()}`;
+        const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container.id}`;
 
         let existingContainer = document.getElementById(calendarContainerId);
         if (existingContainer) existingContainer.remove();
