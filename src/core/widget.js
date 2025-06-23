@@ -1442,13 +1442,13 @@ export default class DianaWidget {
         return `
             <div class="summary-line-1">
                 <strong>${startTimeLocal} - ${endTimeLocal}</strong>
+                <div class="summary-icons">${iconsHTML}</div>
             </div>
             <div class="summary-line-2">
                 ${fromLocation} - ${toLocation}
             </div>
             <div class="summary-line-3">
                 <span>${duration} &bull; ${transfers} ${this.t('transfers')}</span>
-                <div class="summary-icons">${iconsHTML}</div>
             </div>
         `;
     }

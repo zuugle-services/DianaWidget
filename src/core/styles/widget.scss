@@ -1159,7 +1159,7 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 .accordion-icon {
     position: absolute;
-    top: 50%;
+    top: 75%;
     right: 15px;
     transform: translateY(-50%);
     transition: transform 0.3s ease, top 0.3s ease;
@@ -1200,7 +1200,23 @@ button.calendar-footer-btn.calendar-apply-btn {
     text-align: left;
 }
 
-.summary-line-1, .summary-line-2 {
+.summary-line-1 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+}
+
+.summary-line-1 strong {
+    color: var(--text-primary);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.summary-line-2 {
     color: var(--text-secondary);
     font-size: 14px;
     white-space: nowrap;
@@ -1209,15 +1225,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     width: 92%;
 }
 
-.summary-line-1 strong {
-    color: var(--text-primary);
-}
-
 .summary-line-3 {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
     color: var(--text-tertiary);
 }
 
@@ -1226,7 +1234,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     gap: 5px;
     align-items: center;
     justify-content: flex-end;
-    margin-right: 35px;
+    flex-shrink: 0;
 }
 
 .summary-icons svg {
