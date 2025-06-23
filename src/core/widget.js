@@ -1574,11 +1574,9 @@ export default class DianaWidget {
             if (isMultiDayDisplay) {
                 const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
                 durationDisplayHtml = `
-                    <div class="activity-time-row">
-                        <span class="activity-time-label">${this.t('activityDuration')}</span>
-                        <span class="activity-time-value">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>
-                    </div>`;
-                warningDuration = false;
+                    <div class="activity-box-duration">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</div>
+                `;
+                warningDuration = false; // Duration warning is not shown for multi-day display
             } else {
                 if (this.state.activityTimes.start && this.state.activityTimes.end) {
                     const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
@@ -1594,42 +1592,56 @@ export default class DianaWidget {
                             day: activityStartDate.getDate()
                         });
                     const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
-                    durationDisplayHtml = `
-                      <div class="activity-time-row">
-                          <span class="activity-time-label">${this.t('activityDuration')}</span>
-                          <span class="activity-time-value">${durationResult.text}</span>
-                      </div>`;
+                    durationDisplayHtml = `<div class="activity-box-duration">${this.t('activityDuration')}: ${durationResult.text}</div>`;
                     this.state.activityTimes.duration = durationResult.text; // Store for sharing
                     warningDuration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
                 } else {
-                    durationDisplayHtml = `
-                      <div class="activity-time-row">
-                          <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
-                          <span class="activity-time-value">--</span>
-                      </div>`;
+                    durationDisplayHtml = `<div class="activity-box-duration">${this.t('activityDuration')}: --</div>`;
                 }
             }
 
-            const startDisplayDate = isMultiDayDisplay && activityStartDate ? `(${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)})` : '';
-            const endDisplayDate = isMultiDayDisplay && activityEndDate ? `(${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, this.config.language)})` : '';
+            const startDisplayDate = isMultiDayDisplay && activityStartDate ? `${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)}` : '';
+            const endDisplayDate = isMultiDayDisplay && activityEndDate ? `${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, this.config.language)}` : '';
 
             return `
-                <div class="activity-time-card">
-                    <div class="activity-time-header">${this.config.activityName}</div>
-                    <div class="activity-time-meta">
-                        <div class="activity-time-row">
-                            <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
-                            <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${startDisplayDate}</span>
-                            <span class="activity-time-divider">•</span>
-                            <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
+                <div class="activity-box">
+                    <div class="activity-box-header">${this.config.activityName}</div>
+
+                    <div class="activity-box-main">
+                        <div class="activity-box-time">
+                            <span class="time-value">${this.state.activityTimes.start || '--:--'}</span>
+                            <svg class="time-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span class="time-value">${this.state.activityTimes.end || '--:--'}</span>
                         </div>
-                        ${durationDisplayHtml}
-                        ${warningDuration ? `<div class="activity-time-row"><span class="activity-time-label"></span> <div class="activity-time-warning-text">${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})</div></div>` : ''}
-                        <div class="activity-time-row">
-                            <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
-                            <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${endDisplayDate}</span>
-                            <span class="activity-time-divider">•</span>
-                            <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
+                        <div class="activity-box-duration-container">
+                            ${durationDisplayHtml}
+                        </div>
+                         ${warningDuration ? `<div class="activity-box-warning">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 22H22L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 16V12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 20V19.9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            <span>${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})</span>
+                         </div>` : ''}
+                    </div>
+
+                    <div class="activity-box-locations">
+                         <div class="location-connector"></div>
+                        <div class="location-point">
+                            <div class="location-icon-wrapper start">
+                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2"></path></svg>
+                            </div>
+                            <div class="location-text">
+                                <div class="location-label">${this.config.activityStartTimeLabel || this.t("activityStart")} at <strong>${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</strong></div>
+                                ${startDisplayDate ? `<div class="location-date">${startDisplayDate}</div>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="location-point">
+                            <div class="location-icon-wrapper end">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21C12 16.5817 15.3137 12 20 12C20 7.58172 12 2 12 2C12 2 4 7.58172 4 12C4 16.4183 7.58172 21 12 21Z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div class="location-text">
+                                <div class="location-label">${this.config.activityEndTimeLabel || this.t("activityEnd")} at <strong>${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</strong></div>
+                                ${endDisplayDate ? `<div class="location-date">${endDisplayDate}</div>` : ''}
+                            </div>
                         </div>
                     </div>
                 </div>`;

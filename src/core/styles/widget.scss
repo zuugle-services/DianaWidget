@@ -37,7 +37,7 @@
     --primary-color: #4285f4;
     --secondary-color: #ccc;
     --success-color: #28a745;
-    --warning-color: #ffd38c;
+    --warning-color: #ff9500;
     --error-color: #dc3545;
     --wait-color: #ff9500;
 
@@ -1384,78 +1384,150 @@ button.calendar-footer-btn.calendar-apply-btn {
     margin-bottom: 12px;
 }
 
+/* --- Activity Box Redesign --- */
 #activity-time {
-    background: var(--bg-info);
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
     margin: 12px 20px;
-    padding: 12px 15px;
-    scroll-margin: 270px;
+    padding: 0;
+    scroll-margin-top: 270px;
 }
 
-.activity-time-card {
+.activity-box {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 8px;
+    box-shadow: 0 1px 2px var(--shadow-light);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
+    padding: 15px;
 }
 
-.activity-time-header {
-    border-bottom: 1px solid var(--shadow-verylight);
+.activity-box-header {
     color: var(--text-primary);
-    font-family: 'DM Sans', sans-serif;
     font-size: 16px;
     font-weight: 500;
-    letter-spacing: 0.02em;
-    line-height: 120%;
-    padding-bottom: 8px;
+    text-align: center;
+    width: 100%;
 }
 
-.activity-time-header a:hover svg {
-    cursor: pointer;
-    filter: brightness(20%);
-    transition: filter 0.2s ease;
-}
-
-.activity-time-meta {
+.activity-box-main {
+    align-items: center;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
 }
 
-.activity-time-row {
+.activity-box-time {
     align-items: center;
-    color: var(--text-tertiary);
     display: flex;
-    font-size: 13px;
     gap: 8px;
-    letter-spacing: 0.02em;
-    line-height: 120%;
 }
 
-.activity-time-label {
-    color: var(--text-tertiary);
+.activity-box-time .time-value {
+    color: var(--text-primary);
+    font-size: 20px;
     font-weight: 500;
-    min-width: 70px;
 }
 
-.activity-time-value {
-    color: var(--text-secondary);
+.activity-box-time .time-arrow {
+    color: var(--text-tertiary);
+    height: 18px;
+    width: 18px;
 }
 
-.activity-time-divider {
-    color: var(--text-muted);
-    padding: 0 2px;
+.activity-box-duration-container {
+    color: var(--text-tertiary);
+    font-size: 13px;
+    text-align: center;
 }
 
-.activity-time-warning-text {
-    background: var(--warning-color);
-    border-radius: 6px;
-    box-shadow: 0 1px 3px var(--shadow-light);
-    color: var(--text-warning);
+.activity-box-duration {
+    padding: 4px 0;
+}
+
+.activity-box-warning {
+    align-items: center;
+    background-color: color-mix(in srgb, var(--warning-color) 15%, transparent);
+    border-radius: 12px;
+    color: color-mix(in srgb, var(--warning-color), black 40%);
+    display: inline-flex;
     font-size: 12px;
-    margin-left: 5px;
-    margin-top: 6px;
-    padding: 8px 10px;
+    font-weight: 500;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 4px 10px;
 }
 
+.activity-box-warning svg {
+    height: 14px;
+    width: 14px;
+    flex-shrink: 0;
+}
+
+.activity-box-locations {
+    border-top: 1px solid var(--border-tertiary);
+    margin-top: 4px;
+    padding-top: 12px;
+    position: relative;
+}
+
+.location-point {
+    align-items: flex-start;
+    display: flex;
+    gap: 12px;
+}
+
+.location-point:not(:last-child) {
+    margin-bottom: 12px;
+}
+
+.location-icon-wrapper {
+    align-items: center;
+    background-color: var(--bg-tertiary);
+    border-radius: 50%;
+    display: flex;
+    flex-shrink: 0;
+    height: 24px;
+    justify-content: center;
+    margin-top: 2px;
+    width: 24px;
+}
+
+.location-icon-wrapper svg {
+    color: var(--text-tertiary);
+}
+
+.location-connector {
+    background-color: var(--border-secondary);
+    height: calc(100% - 48px);
+    left: 11.5px;
+    position: absolute;
+    top: 36px;
+    width: 1px;
+}
+
+.location-text {
+    font-size: 13px;
+}
+
+.location-label {
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.location-label strong {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.location-date {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 2px;
+}
 
 .middle-box-content .connection-elements {
     border-left: 3px solid var(--border-tertiary);
