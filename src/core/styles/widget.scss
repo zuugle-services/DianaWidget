@@ -1395,7 +1395,7 @@ button.calendar-footer-btn.calendar-apply-btn {
 }
 
 .activity-box {
-    background-color: var(--bg-primary);
+    background: var(--bg-info);
     border: 1px solid var(--border-primary);
     border-radius: 8px;
     box-shadow: 0 1px 2px var(--shadow-light);
@@ -1450,9 +1450,9 @@ button.calendar-footer-btn.calendar-apply-btn {
 
 .activity-box-warning {
     align-items: center;
-    background-color: color-mix(in srgb, var(--warning-color) 15%, transparent);
+    background-color: color-mix(in srgb, var(--warning-color) 80%, transparent);
     border-radius: 12px;
-    color: color-mix(in srgb, var(--warning-color), black 40%);
+    color: color-mix(in srgb, var(--warning-color), #fff 90%);
     display: inline-flex;
     font-size: 12px;
     font-weight: 500;
@@ -1468,7 +1468,7 @@ button.calendar-footer-btn.calendar-apply-btn {
 }
 
 .activity-box-locations {
-    border-top: 1px solid var(--border-tertiary);
+    border-top: 1px solid var(--border-info);
     margin-top: 4px;
     padding-top: 12px;
     position: relative;
