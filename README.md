@@ -363,12 +363,13 @@ Here is a list of the available variables you can override:
 **Sizing options**
 
 By setting a `max-height` on the `dianaWidgetContainer` you can also set boundaries for the sizing of the widget.
+The recommended minimum `max-height` value is 620px to ensure proper functionality and display of all widget elements.
 Setting `max-width` on the container is not recommended, but theoretically possible. The reason is, that the widget starts to look very squished.
 
 Example:
 
 ```html
-<div id="dianaWidgetContainer" style="max-height: 600px;">
+<div id="dianaWidgetContainer" style="max-height: 620px;">
 ```
 
 You can even set more complex styles to the outermost container, e.g.:

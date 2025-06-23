@@ -377,6 +377,7 @@
 .results-content-area {
     flex-grow: 1;
     overflow-y: auto;
+    height: 45vh;
 }
 
 
@@ -1118,6 +1119,13 @@ button.calendar-footer-btn.calendar-apply-btn {
     box-shadow: 0 1px 2px var(--shadow-light);
     position: relative;
     transition: background-color 0.2s ease;
+    height: 100%;
+    max-height: 100px;
+}
+
+.collapsible-container.expanded {
+    height: fit-content;
+    max-height: fit-content;
 }
 
 .collapsible-container.has-summary {
@@ -1178,7 +1186,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     width: 100%;
     gap: 10px;
     font-size: 13px;
-    min-height: 24px; /* Ensure consistent height even when empty */
+    min-height: 24px;
 }
 
 .summary-placeholder {
