@@ -1441,7 +1441,7 @@ export default class DianaWidget {
 
         return `
             <div class="summary-line-1">
-                <strong>${type === "to" ? this.t("journeyToActivity") + ": " : this.t("journeyFromActivity") + ": "}${startTimeLocal} - ${endTimeLocal}</strong>
+                <strong>${type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal} - ${endTimeLocal}</strong>
                 <div class="summary-icons">${iconsHTML}</div>
             </div>
             <div class="summary-line-2">
