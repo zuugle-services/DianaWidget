@@ -760,6 +760,9 @@ export default class DianaWidget {
                     const menuItem = e.target.closest('.menu-dropdown-item');
                     if (menuItem) {
                         e.preventDefault();
+                        if (menuItem.classList.contains('disabled')) {
+                            return; // Do nothing if disabled
+                        }
                         if (menuItem.id === 'shareMenuItem') {
                             this.handleShare();
                         } else if (menuItem.dataset.contentKey) {

@@ -1689,6 +1689,16 @@ div#eleCont {
     border-bottom-right-radius: 8px;
 }
 
+.menu-dropdown-item.disabled {
+    color: var(--text-disabled);
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.menu-dropdown-item.disabled svg {
+    color: var(--text-disabled);
+}
+
 
 /* --- Content Page Specific Styles --- */
 .content-page-body {
