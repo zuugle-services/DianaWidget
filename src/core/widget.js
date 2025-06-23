@@ -1406,16 +1406,25 @@ export default class DianaWidget {
     /**
      * Renders a compact summary of a connection for the collapsible header.
      * @param {object} connection - The connection object.
+     * @param {string} type - 'to' or 'from'.
      * @returns {string} HTML string for the summary.
      */
-    _renderConnectionSummary(connection) {
+    _renderConnectionSummary(connection, type) {
         if (!connection) return '';
 
         const startTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
         const endTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
         const duration = calculateTimeDifference(connection.connection_start_timestamp, connection.connection_end_timestamp, (key) => this.t(key));
         const transfers = connection.connection_transfers;
-        const dateDisplay = formatLegDateForDisplay(connection.connection_start_timestamp, this.config.timezone, this.config.language);
+
+        let fromLocation, toLocation;
+        if (type === 'to') {
+            fromLocation = this.elements.originInput.value;
+            toLocation = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+        } else { // 'from'
+            fromLocation = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
+            toLocation = this.elements.originInput.value;
+        }
 
         const mainTransportTypes = [...new Set(connection.connection_elements
             .filter(el => el.type === 'JNY')
@@ -1431,16 +1440,15 @@ export default class DianaWidget {
         const iconsHTML = mainTransportTypes.slice(0, 4).map(t => this.getTransportIcon(t)).join('');
 
         return `
-            <div class="summary-top-row">
-                <span class="summary-date">${dateDisplay}</span>
+            <div class="summary-line-1">
+                <strong>${type === "to" ? this.t("journeyToActivity") + ": " : this.t("journeyFromActivity") + ": "}${startTimeLocal} - ${endTimeLocal}</strong>
                 <div class="summary-icons">${iconsHTML}</div>
             </div>
-            <div class="summary-details">
-                <span class="summary-time">${startTimeLocal} → ${endTimeLocal}</span>
-                <span class="summary-divider">•</span>
-                <span class="summary-duration">${duration}</span>
-                <span class="summary-divider">•</span>
-                <span class="summary-transfers">${transfers} ${this.t('transfers')}</span>
+            <div class="summary-line-2">
+                ${fromLocation} - ${toLocation}
+            </div>
+            <div class="summary-line-3">
+                <span>${duration} &bull; ${transfers} ${this.t('transfers')}</span>
             </div>
         `;
     }
@@ -1470,7 +1478,7 @@ export default class DianaWidget {
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
 
             if(summaryWrapper && container) {
-                summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection);
+                summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
                 container.classList.add('has-summary');
             }
 
