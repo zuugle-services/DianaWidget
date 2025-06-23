@@ -2,8 +2,9 @@
 
 ![Widget Preview](img/preview.png)
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/zuugle-services/DianaWidget/CI)
-![Github Release](https://img.shields.io/github/v/release/zuugle-services/DianaWidget)
+<div style="text-align: center;">
+<img src="https://img.shields.io/github/v/release/zuugle-services/DianaWidget" alt="Current Release Version"/>
+</div>
 
 ## Table of Contents
 
