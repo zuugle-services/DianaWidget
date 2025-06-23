@@ -1187,7 +1187,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     align-items: flex-start;
     justify-content: center;
     width: 100%;
-    gap: 6px;
+    gap: 4px;
     font-size: 13px;
     line-height: 1.4;
     min-height: 24px;
@@ -1200,7 +1200,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     text-align: left;
 }
 
-.summary-line-1 {
+.summary-line-1, .summary-line-2 {
     color: var(--text-secondary);
     font-size: 14px;
     white-space: nowrap;
@@ -1213,7 +1213,7 @@ button.calendar-footer-btn.calendar-apply-btn {
     color: var(--text-primary);
 }
 
-.summary-line-2 {
+.summary-line-3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
