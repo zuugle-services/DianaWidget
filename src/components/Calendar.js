@@ -1,6 +1,8 @@
 import {DateTime} from 'luxon';
 import {formatDateForDisplay, getMonthName, getShortDayName, throttle} from "../utils";
 import {convertToUTCMidnightJSDate, formatDatetime} from "../datetimeUtils";
+import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate.js';
+import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate.js';
 
 export class SingleCalendar {
     constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerElement, anchorElement, styles) {
@@ -12,10 +14,8 @@ export class SingleCalendar {
         this.onDateSelectCallback = onDateSelectCallback;
         this.styles = styles;
 
-        // `triggerElement` is the specific element that opens the calendar (e.g., "Other Date" button).
         this.triggerElement = triggerElement;
-        // `anchorElement` is the element the calendar is positioned relative to (e.g., the button group).
-        this.anchorElement = anchorElement || triggerElement; // Fallback to triggerElement if no separate anchor
+        this.anchorElement = anchorElement || triggerElement;
 
         this.selectedDate = initialDate ? new Date(initialDate.valueOf()) : new Date();
         if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
@@ -98,24 +98,14 @@ export class SingleCalendar {
         const daysInMonth = new Date(this.currentViewYear, this.currentViewMonth + 1, 0).getDate();
         let firstDayOfMonthIndex = new Date(this.currentViewYear, this.currentViewMonth, 1).getDay();
         firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1;
+        const daysHTML = this._generateDaysHTML(daysInMonth, firstDayOfMonthIndex);
 
-        this.calendarContentWrapper.innerHTML = `
-            <div class="calendar-header"><p class="calendar-title">${this.t("datePickerTitle")}</p></div>
-            <div class="calendar-body">
-                <div class="calendar-nav">
-                    <button type="button" class="calendar-nav-btn prev-month" aria-label="${this.t('ariaLabels.previousMonthButton')}">&#9664;</button>
-                    <div class="calendar-month-year">${getMonthName(this.currentViewMonth, this.t)} ${this.currentViewYear}</div>
-                    <button type="button" class="calendar-nav-btn next-month" aria-label="${this.t('ariaLabels.nextMonthButton')}">&#9654;</button>
-                </div>
-                <div class="calendar-grid">
-                    ${[0, 1, 2, 3, 4, 5, 6].map(day => `<div class="calendar-day-header">${getShortDayName(day, this.t)}</div>`).join('')}
-                    ${this._generateDaysHTML(daysInMonth, firstDayOfMonthIndex)}
-                </div>
-            </div>
-            <div class="calendar-footer">
-                <button type="button" class="calendar-footer-btn calendar-cancel-btn">${this.t("cancel")}</button>
-                <button type="button" class="calendar-footer-btn calendar-apply-btn">${this.t("apply")}</button>
-            </div>`;
+        this.calendarContentWrapper.innerHTML = getSingleCalendarHTML({
+            t: this.t,
+            currentViewMonth: this.currentViewMonth,
+            currentViewYear: this.currentViewYear,
+            daysHTML
+        });
 
         this._addCalendarInternalEventListeners();
     }
@@ -274,7 +264,7 @@ export class SingleCalendar {
 
         // Adjust if it goes off-screen
         const calendarHeight = this.calendarContainer.offsetHeight;
-        const calendarWidth = this.calendarContainer.offsetWidth; // Use actual width after setting it
+        const calendarWidth = this.calendarContainer.offsetWidth;
 
         if (finalTop + calendarHeight > window.innerHeight + scrollTop) { // Off bottom
             finalTop = anchorRect.top + scrollTop - calendarHeight - gap; // Position above
@@ -402,19 +392,7 @@ export class RangeCalendarModal {
 
         this.modalElement = document.createElement('div');
         this.modalElement.className = 'range-calendar-modal';
-        this.modalElement.innerHTML = `
-            <div class="range-calendar-header">
-                <h3>${this.t('selectDateRange')}</h3>
-                <button type="button" class="range-calendar-close-btn" aria-label="${this.t('cancel')}">&times;</button>
-            </div>
-            <div class="range-calendar-body">
-                <div class="range-calendar-instance" id="rangeCalendarInstance_${Date.now()}"></div>
-            </div>
-            <div class="range-calendar-footer">
-                <button type="button" class="calendar-footer-btn range-calendar-cancel-btn">${this.t("cancel")}</button>
-                <button type="button" class="calendar-footer-btn calendar-apply-btn range-calendar-apply-btn">${this.t("apply")}</button>
-            </div>
-        `;
+        this.modalElement.innerHTML = getRangeCalendarModalHTML({ t: this.t });
 
         this.modalOverlay.appendChild(this.modalElement);
         this.widget.dianaWidgetRootContainer.appendChild(this.modalOverlay);
