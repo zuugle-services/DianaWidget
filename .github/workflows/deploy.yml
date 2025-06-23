@@ -60,13 +60,24 @@ jobs:
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 📤 Deploy index.html demo page to Server
+    - name: 📤 Deploy index-demo.html demo page to Server
       uses: wlixcc/SFTP-Deploy-Action@v1.2.6
       with:
         username: ${{ secrets.FTP_USERNAME }}
         server: ${{ secrets.FTP_SERVER }}
         port: ${{ secrets.FTP_PORT }}
-        local_path: './index.html'
+        local_path: './index-demo.html'
+        remote_path: './'
+        sftp_only: true
+        password: ${{ secrets.FTP_PASSWORD }}
+
+    - name: 📤 Deploy index.php demo page to Server
+      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      with:
+        username: ${{ secrets.FTP_USERNAME }}
+        server: ${{ secrets.FTP_SERVER }}
+        port: ${{ secrets.FTP_PORT }}
+        local_path: './index.php'
         remote_path: './'
         sftp_only: true
         password: ${{ secrets.FTP_PASSWORD }}

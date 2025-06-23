@@ -39,7 +39,8 @@ export default class DianaWidget {
             'activityLatestStartTime',
             'activityEarliestEndTime',
             'activityLatestEndTime',
-            'activityDurationMinutes'
+            'activityDurationMinutes',
+            'apiToken'
         ],
         activityStartLocationDisplayName: null,
         activityEndLocationDisplayName: null,
@@ -47,7 +48,6 @@ export default class DianaWidget {
         activityStartTimeLabel: null,
         activityEndTimeLabel: null,
         apiBaseUrl: "https://api.zuugle-services.net",
-        apiToken: "development-token",
         language: 'EN',
         cacheUserStartLocation: true,
         userStartLocationCacheTTLMinutes: 15,

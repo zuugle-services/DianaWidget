@@ -20,7 +20,7 @@
  * @return array|null An associative array containing the access token response (e.g., ['access_token' => '...', 'token_type' => 'Bearer', 'expires_in' => 3600])
  * or null if an error occurred.
  */
-function getDianaAccessToken(string $clientId, string $clientSecret, string $tokenUrl = "https://api.zuugle-services.net/o/token/"): ?array
+function getDianaAccessToken(string $clientId, string $clientSecret, string $tokenUrl = "https://api.zuugle-services.net/o/token/", bool $dev_mode = false): ?array
 {
     // Check if cURL extension is loaded
     if (!extension_loaded('curl')) {
@@ -37,6 +37,11 @@ function getDianaAccessToken(string $clientId, string $clientSecret, string $tok
 
     // Initialize cURL session
     $ch = curl_init();
+
+    if ($dev_mode) {
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+    }
 
     if ($ch === false) {
         error_log('Failed to initialize cURL session.');
