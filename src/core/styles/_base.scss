@@ -1,0 +1,370 @@
+.diana-container {
+  /* Layout & Box Model */
+  position: relative;
+  height: 100%;
+  max-height: inherit;
+  isolation: isolate;
+
+  /* Typography */
+  font-family: "DM Sans", sans-serif !important;
+}
+
+.fatal-error-box,
+.fatal-info-box {
+  border-radius: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  justify-content: center;
+  padding: 30px;
+  text-align: center;
+  width: 100%;
+}
+
+.fatal-error-box {
+  background-color: var(--bg-error);
+  border: 1px solid var(--border-error);
+}
+
+.fatal-info-box {
+  background-color: var(--bg-info);
+  border: 1px solid var(--border-info);
+}
+
+.fatal-error-box h3,
+.fatal-info-box h3 {
+  font-size: 18px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.fatal-error-box p,
+.fatal-info-box p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.fatal-error-box h3.title-error {
+  color: var(--text-error);
+}
+
+.fatal-error-box p {
+  color: #58151c;
+}
+
+.fatal-info-box h3.title-info {
+  color: var(--text-info);
+}
+
+.fatal-info-box p {
+  color: #1a4a8d;
+}
+
+.share-error-reload-link {
+  background-color: var(--primary-color);
+  border-radius: 5px;
+  color: var(--bg-primary) !important;
+  display: inline-block;
+  font-weight: 500;
+  margin-top: 15px;
+  padding: 8px 16px;
+  text-decoration: none !important;
+  transition: background-color 0.2s ease;
+}
+
+.share-error-reload-link:hover {
+  background-color: var(--bg-apply-hover);
+}
+
+.fatal-info-box .share-error-reload-link {
+  background-color: var(--text-info);
+  color: var(--bg-primary) !important;
+}
+
+.fatal-info-box .share-error-reload-link:hover {
+  filter: brightness(90%);
+}
+
+.full-screen-loader {
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 100%;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 9999;
+}
+
+.full-screen-loader .loading-spinner {
+  border: 4px solid var(--shadow-light);
+  border-top-color: var(--primary-color);
+  height: 40px;
+  width: 40px;
+}
+
+/* --- Widget Header (Common for all pages) --- */
+.widget-header {
+  align-items: center;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-primary);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 0 8px;
+  width: 100%;
+}
+
+.widget-header-heading {
+  border-left: none;
+  border-right: none;
+  color: var(--text-primary);
+  flex-grow: 1;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 120%;
+  overflow: hidden;
+  padding: 18px 9px;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.widget-header-button {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  flex: 0 0 48px;
+  gap: 10px;
+  height: 100%;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+}
+
+.widget-header-button:first-child {
+  justify-content: flex-start;
+}
+
+.widget-header-button:last-child {
+  justify-content: flex-end;
+}
+
+
+/* --- Header Buttons --- */
+.back-btn-arrow,
+.menu-btn-dots {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.back-btn-arrow:hover,
+.menu-btn-dots:hover {
+  background-color: var(--bg-hover);
+}
+
+
+/* --- Modal Structure --- */
+.modal {
+  align-items: center;
+  background-color: transparent;
+  display: none; /* Initially hidden */
+  font-family: "DM Sans", sans-serif !important;
+  height: 100%;
+  justify-content: center;
+  margin: 0;
+  max-height: inherit;
+  position: relative;
+  width: 100%;
+}
+
+.modal.visible {
+  display: flex !important; /* Show when active */
+}
+
+/* --- The main scrolling container --- */
+.modal-content {
+  background-color: var(--bg-primary);
+  border: 0;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px var(--shadow-dark);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  margin: 0;
+  max-height: inherit;
+  max-width: 470px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+  transition: all .3s ease-in-out;
+  width: 100%;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background-color: var(--border-secondary);
+  border-radius: 3px;
+}
+
+.modal-content {
+  scrollbar-color: var(--border-secondary) var(--bg-primary);
+  scrollbar-width: none;
+}
+
+
+/* --- Modal Pages --- */
+.modal-page {
+  box-sizing: border-box;
+  display: none; /* Hide inactive pages */
+  flex-direction: column;
+  flex-grow: 1;
+  flex-shrink: 0; /* Prevent shrinking beyond content size */
+  font-family: "DM Sans", sans-serif !important;
+  max-height: inherit; /* Ensure it doesn't exceed parent */
+  min-height: 0; /* Allow shrinking if content is small */
+  width: 100%; /* Ensure pages take full width */
+}
+
+.modal-page.active {
+  display: flex !important; /* Show active page */
+}
+
+/* --- Modal Body Areas --- */
+.modal-body,
+.content-page-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  font-family: "DM Sans", sans-serif !important;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.widget-footer {
+  align-items: center;
+  background-color: var(--bg-primary);
+  border-top: 1px solid var(--border-primary);
+  bottom: 0;
+  box-sizing: border-box;
+  display: flex;
+  font-size: 11px;
+  gap: 10px;
+  height: 24px;
+  justify-content: center;
+  max-height: inherit;
+  padding: 4px 0;
+  position: sticky;
+  width: 100%;
+  z-index: 9;
+}
+
+.widget-footer a {
+  color: var(--primary-color) !important;
+  text-decoration: underline !important;
+}
+
+.widget-footer a:hover {
+  color: var(--bg-apply-hover) !important;
+  text-decoration: none !important;
+}
+
+/* --- New Menu Dropdown Styles --- */
+.menu-dropdown {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-tertiary);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  display: none; /* Toggled by JS */
+  min-width: 180px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 5px); /* Position below the button */
+  z-index: 2100;
+}
+
+.menu-dropdown-item {
+  align-items: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  font-size: 14px;
+  gap: 12px;
+  padding: 10px 15px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.menu-dropdown-item:hover {
+  background-color: var(--bg-hover);
+}
+
+.menu-dropdown-item svg {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  height: 20px;
+  width: 20px;
+}
+
+.menu-dropdown-item:first-child {
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.menu-dropdown-item:last-child {
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+}
+
+.menu-dropdown-item.disabled {
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.menu-dropdown-item.disabled svg {
+  color: var(--text-disabled);
+}
+
+/* --- Content Page Specific Styles --- */
+.content-page-body {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.content-page-body h2 {
+  color: var(--text-primary);
+  font-size: 18px;
+  margin-bottom: 10px;
+  margin-top: 0;
+}
+
+.content-page-body p {
+  margin-bottom: 10px;
+}

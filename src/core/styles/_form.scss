@@ -1,0 +1,378 @@
+/* --- Form Specific Styles --- */
+.form-section {
+  color: var(--text-muted);
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.form-section p {
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.input-container {
+  position: relative;
+}
+
+.suggestions-container {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--secondary-color);
+  border-radius: 5px;
+  display: none;
+  left: 0;
+  max-height: 150px;
+  overflow-y: auto;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1000;
+}
+
+.suggestion-item {
+  cursor: pointer;
+  padding: 10px;
+}
+
+.suggestion-item:hover {
+  background-color: var(--bg-hover);
+}
+
+#clearInputBtn:hover {
+  background-color: var(--bg-hover);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+#currentLocationBtn:hover {
+  background-color: var(--bg-hover);
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.input-field {
+  border: 1px solid var(--border-primary);
+  border-radius: 5px;
+  box-sizing: border-box;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 14px;
+  padding: 12px 40px !important;
+  width: 100%;
+}
+
+.input-field.disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  cursor: not-allowed;
+  pointer-events: none;
+  --moz-user-select: none;
+  --ms-user-select: none;
+  --webkit-user-select: none;
+  user-select: none;
+}
+
+.input-icon,
+.input-icon-right {
+  color: var(--icon-input-color);
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.input-icon {
+  left: 12px;
+}
+
+.input-icon-right {
+  right: 12px;
+}
+
+
+.date-section-wrapper {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+}
+
+.date-input-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.date-input-column.single {
+  flex-basis: 100%;
+}
+
+/* Styles for the old date input display (multiday or overridden single day) */
+.date-input-container {
+  cursor: pointer;
+  position: relative;
+}
+
+.date-input-container.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.date-input-container.disabled .date-input {
+  background-color: var(--bg-tertiary);
+  pointer-events: none;
+}
+
+.date-input-container.disabled .date-input-display {
+  color: var(--text-disabled);
+}
+
+.date-input {
+  align-items: center;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 5px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  font-family: "DM Sans", sans-serif !important;
+  padding: 12px 40px !important;
+  position: relative;
+  width: 100%;
+}
+
+.date-input-display { /* The span showing the date in old style */
+  color: var(--text-secondary);
+  flex-grow: 1;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.date-input-display.placeholder {
+  color: var(--text-disabled);
+}
+
+.date-input-icon { /* Icon in old style date input */
+  color: var(--icon-input-color);
+  left: 12px;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.date-input-arrow {
+  color: var(--icon-input-color);
+  pointer-events: none;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+input[type=date].native-date-picker-single {
+  cursor: pointer;
+  display: none !important;
+  font-family: "DM Sans", sans-serif !important;
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  pointer-events: none; /* Important: allow clicks to pass through to button on desktop */
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+/* Date Selector Buttons for Single Day (Desktop and Mobile) */
+.date-selector-buttons {
+  display: flex;
+  gap: 8px; /* Space between buttons */
+  margin-bottom: 5px; /* Space below the button group */
+}
+
+.date-selector-btn {
+  align-items: center;
+  background-color: transparent; /* Default transparent background */
+  border: 1px solid var(--border-primary);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex; /* For aligning content within the button (icon and text) */
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 14px;
+  justify-content: center; /* Center text for Today/Tomorrow */
+  line-height: 1.2; /* Adjust for better vertical alignment of text */
+  min-width: 0; /* Allow buttons to shrink if needed */
+  padding: 10px 12px;
+  text-align: center;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+/* Sizing for Today and Tomorrow buttons */
+.date-selector-btn#dateBtnToday,
+.date-selector-btn#dateBtnTomorrow {
+  flex: 2; /* Smaller proportion */
+}
+
+/* Sizing for Other Date button */
+.date-selector-btn#dateBtnOther {
+  flex: 3; /* Larger proportion */
+  justify-content: space-between; /* Align text to left, arrow to right */
+  position: relative; /* For potential absolute positioning of arrow if needed, though flex is better */
+}
+
+.date-selector-btn:hover {
+  background-color: var(--bg-hover); /* Light background on hover */
+  border-color: var(--secondary-color); /* Slightly darker border on hover */
+}
+
+/* Active state for all selector buttons */
+.date-selector-btn.active {
+  background-color: var(--primary-color); /* Solid background when active */
+  border-color: var(--primary-color); /* Border matches background */
+  color: var(--bg-primary); /* White text when active */
+  font-weight: 500; /* Slightly bolder text */
+}
+
+.date-selector-btn.active:hover {
+  background-color: var(--bg-apply-hover); /* Darker shade of primary on hover when active */
+  border-color: var(--bg-apply-hover);
+}
+
+/* Styling for the text span within "Other Date" button */
+#dateBtnOther #otherDateText {
+  flex-grow: 1; /* Allow text to take available space */
+  margin-right: 5px; /* Space between text and arrow */
+  overflow: hidden;
+  text-align: left; /* Align text to the left */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Styling for the arrow icon specifically within the "Other Date" button */
+#dateBtnOther .date-input-arrow {
+  color: var(--text-secondary); /* Default arrow color (matches button text) */
+  flex-shrink: 0; /* Prevent arrow from shrinking */
+  height: 16px;
+  position: static; /* Override absolute positioning from .date-input-arrow */
+  stroke-width: 2px; /* Thicker arrow */
+  transform: none; /* Override transform */
+  width: 16px; /* Explicit size for the arrow SVG */
+}
+
+/* Arrow color when "Other Date" button is active */
+.date-selector-btn.active #dateBtnOther .date-input-arrow {
+  color: var(--bg-primary); /* White arrow to match text color */
+  stroke: var(--bg-primary); /* Ensure SVG stroke also changes if it's an inline SVG */
+}
+
+
+.form-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.form-footer button {
+  width: 100%;
+}
+
+.btn {
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: "DM Sans", sans-serif !important;
+  padding: 10px 20px;
+  transition: background-color 0.2s ease;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.apply-btn,
+button.calendar-footer-btn.calendar-apply-btn {
+  background-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+.apply-btn:hover:not(:disabled) {
+  background-color: var(--bg-apply-hover);
+}
+
+.loading-spinner {
+  animation: spin 1s ease-in-out infinite;
+  border: 2px solid var(--shadow-gray);
+  border-radius: 50%;
+  border-top-color: var(--bg-primary);
+  display: inline-block;
+  height: 1em;
+  margin-right: 0.5em;
+  vertical-align: middle;
+  width: 1em;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Mobile Date Input Handling --- */
+/* The .date-selector-buttons are now always flex by default for single day */
+/* The input[type=date]#activityDate for single day is always hidden via inline style in JS */
+
+/* Styles for native date input for MULTIDAY on mobile, if applicable */
+@media (max-width: 768px) {
+  .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Target multiday native inputs */
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-primary);
+    border-radius: 5px;
+    box-sizing: border-box;
+    color: var(--text-secondary);
+    display: block !important; /* Ensure it's visible */
+    font-size: 14px;
+    height: auto;
+    opacity: 1;
+    padding: 12px 15px !important;
+    pointer-events: all;
+    position: relative;
+    width: 100%;
+  }
+
+  .date-input-column:not(.single) .date-input { /* Hide custom styled div for multiday on mobile */
+    display: none !important;
+  }
+
+  /* For ALL native date pickers on mobile (single and multi) */
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 4px;
+  }
+
+  /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
+  input[type="date"].native-date-picker-single {
+    /* While it's styled as display:none !important in HTML,
+       if JS needs to interact with it (e.g., for .showPicker()),
+       it might need to be briefly visible or at least not pointer-events:none.
+       However, the primary interaction is through the buttons.
+       The .showPicker() method works on hidden inputs.
+    */
+  }
+}
+
+@media (min-width: 769px) {
+  .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Hide native multiday input on desktop */
+    display: none !important;
+  }
+
+  .date-input-column:not(.single) .date-input { /* Show custom styled div for multiday on desktop */
+    display: flex !important;
+  }
+
+  /* On desktop, ensure the single day native picker remains completely non-interactive */
+  input[type="date"].native-date-picker-single {
+    display: none !important; /* Keep it hidden */
+    pointer-events: none !important; /* Ensure no interaction on desktop */
+  }
+}

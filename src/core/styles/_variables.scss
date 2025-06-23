@@ -1,0 +1,68 @@
+/* latin-ext */
+@font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(./DMSans-VariableFont_opsz,wght.ttf) format("ttf");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* latin */
+@font-face {
+    font-family: 'DM Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(./DMSans-VariableFont_opsz,wght.ttf) format("ttf");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+.diana-container {
+    /* --- THEME VARIABLES --- */
+    /* Base Colors (These are the values you can override from your own CSS) */
+    --primary-color: #4285f4;
+    --secondary-color: #ccc;
+    --success-color: #28a745;
+    --warning-color: #ffd38c;
+    --error-color: #dc3545;
+    --wait-color: #ff9500;
+
+    /* Derived Colors (These update dynamically based on the base colors above) */
+    --bg-apply-hover: color-mix(in srgb, var(--primary-color), black 10%);
+
+    /* Text Colors */
+    --text-primary: #000;
+    --text-secondary: #333;
+    --text-tertiary: #666;
+    --text-muted: #838383;
+    --text-disabled: #999;
+    --text-error: var(--error-color);
+    --text-info: color-mix(in srgb, var(--primary-color), black 30%);
+    --text-warning: color-mix(in srgb, var(--warning-color), black 40%);
+    --icon-input-color: #656C6E;
+
+    /* Background Colors */
+    --bg-primary: #fff;
+    --bg-secondary: #fafafa;
+    --bg-tertiary: #f5f5f5;
+    --bg-hover: #f0f0f0;
+    --bg-error: color-mix(in srgb, var(--error-color) 10%, transparent);
+    --bg-info: color-mix(in srgb, var(--primary-color), white 80%);
+    --bg-transparent: rgba(128, 128, 128, 0.05);
+    --bg-waiting-block: color-mix(in srgb, var(--wait-color) 8%, transparent);
+
+    /* Border Colors */
+    --border-primary: #e0e0e0;
+    --border-secondary: #d3d3d3;
+    --border-tertiary: #eaeaea;
+    --border-error: color-mix(in srgb, var(--error-color) 20%, transparent);
+    --border-info: color-mix(in srgb, var(--primary-color), white 60%);
+
+    /* Shadows */
+    --shadow-verylight: rgba(0, 0, 0, 0.08);
+    --shadow-light: rgba(0, 0, 0, 0.1);
+    --shadow-medium: rgba(0, 0, 0, 0.15);
+    --shadow-dark: rgba(0, 0, 0, 0.2);
+    --shadow-gray: rgba(255, 255, 255, 0.3);
+}
