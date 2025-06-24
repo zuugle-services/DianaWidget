@@ -308,6 +308,10 @@ export default class DianaWidget {
             throw new Error(errorMsg);
         }
 
+        if (config.apiBaseUrl[config.apiBaseUrl.length - 1] === "/") {
+            config.apiBaseUrl = config.apiBaseUrl.slice(0, -1);
+        }
+
         if (!DateTime.local().setZone(config.timezone).isValid) {
             console.warn(`Invalid timezone '${config.timezone}' provided, falling back to 'Europe/Vienna'. Error: ${DateTime.local().setZone(config.timezone).invalidReason}`);
             config.timezone = 'Europe/Vienna';
