@@ -1,9 +1,12 @@
 # Diana GreenConnect - Activity Transit Planner Widget
 
-![Widget Preview](img/preview.png)
+<!-- ![Widget Preview](img/preview.png) -->
 
-<div style="text-align: center;">
-<img src="https://img.shields.io/github/v/release/zuugle-services/DianaWidget" alt="Current Release Version"/>
+![Widget Preview](https://github.com/user-attachments/assets/d0a47a3f-c40d-4289-834a-a5e685830647)
+
+
+<div align="center">
+    <img src="https://img.shields.io/github/v/release/zuugle-services/DianaWidget" alt="Current Release Version"/>
 </div>
 
 ## Table of Contents
