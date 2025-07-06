@@ -2582,7 +2582,7 @@ export default class DianaWidget {
         const displayElement = this.elements[displayElementId];
         if (!displayElement) return;
 
-        const localeMap = {EN: 'en-GB', DE: 'de-DE'}; // Simple map for common cases
+        const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
         const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
         if (date && !isNaN(date.getTime())) {
             displayElement.textContent = formatDateForDisplay(date, locale, this.config.timezone);
@@ -2627,7 +2627,8 @@ export default class DianaWidget {
 
 
         if (selected) {
-            const locale = this.config.language === 'DE' ? 'de-DE' : 'en-GB'; // Or use Luxon's locale system more directly
+            const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
+            const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
             if (selected.getTime() === today.getTime()) {
                 this.elements.dateBtnToday.classList.add('active');
             } else if (selected.getTime() === tomorrow.getTime()) {

@@ -46,7 +46,7 @@ export function getFormPageTemplateHTML(args) {
                        <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                        </svg>
-                       <span id="dateDisplayStart" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, config.language === 'DE' ? 'de-DE' : 'en-GB', config.timezone) : t('selectDate')}</span>
+                       <span id="dateDisplayStart" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
                      </div>
                      <input type="date" id="activityDateStart" class="native-date-picker-multiday" style="display:none !important;" aria-hidden="true" value="${state.selectedDate ? formatDatetime(state.selectedDate) : ''}">
                    </div>
@@ -77,7 +77,7 @@ export function getFormPageTemplateHTML(args) {
                       <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                       </svg>
-                      <span id="dateDisplayEnd" class="date-input-display">${state.selectedEndDate ? formatDateForDisplay(state.selectedEndDate, config.language === 'DE' ? 'de-DE' : 'en-GB', config.timezone) : t('selectDate')}</span>
+                      <span id="dateDisplayEnd" class="date-input-display">${state.selectedEndDate ? formatDateForDisplay(state.selectedEndDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
                     </div>
                     <input type="date" id="activityDateEnd" class="native-date-picker-multiday" style="display:none !important;" aria-hidden="true" value="${state.selectedEndDate ? formatDatetime(state.selectedEndDate) : ''}">
                   </div>
@@ -107,7 +107,7 @@ export function getFormPageTemplateHTML(args) {
                          <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                          </svg>
-                        <span id="dateDisplay" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, config.language === 'DE' ? 'de-DE' : 'en-GB', config.timezone) : t('selectDate')}</span>
+                        <span id="dateDisplay" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
                       </div>
                       <input type="date" id="activityDate" class="native-date-picker-single" aria-hidden="true" style="display:none !important;" value="${state.selectedDate ? formatDatetime(state.selectedDate, config.timezone) : ''}">
                     </div>

@@ -217,7 +217,7 @@ export class SingleCalendar {
 
     _updateDisplayElement() {
         if (this.displayElement && this.displayElement === this.widget.elements?.otherDateText) {
-            const localeMap = {EN: 'en-GB', DE: 'de-DE'};
+            const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
             const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
 
             if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {

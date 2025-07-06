@@ -370,7 +370,7 @@ export function formatLegDateForDisplay(isoString, timezone, language) {
             console.warn(`Invalid ISO string for leg date display: ${isoString}`);
             return "";
         }
-        const localeMap = {EN: 'en-GB', DE: 'de-DE'}; // Map language to full locale
+        const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}
         const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`; // Fallback e.g. en-EN
         return localDt.setLocale(locale).toFormat('dd. MMM');
     } catch (error) {
@@ -388,7 +388,7 @@ export function formatLegDateForDisplay(isoString, timezone, language) {
 export function formatFullDateForDisplay(date, language) {
     if (!date || isNaN(date.getTime())) return '';
     try {
-        const localeMap = {EN: 'en-GB', DE: 'de-DE'};
+        const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
         const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`;
 
         // Format date for display using locale settings, ensuring UTC interpretation
