@@ -21,7 +21,7 @@
             max-height: 620px !important; /* Fixed height for the widget container */
         }
         #dianaWidgetContainer:hover {
-             box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
         }
         .gallery-img {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -51,7 +51,7 @@
         }
         /* Header gradient for Eishöhle */
         .header-gradient-eishoehle {
-             background-image: linear-gradient(to right, #3b82f6, #60a5fa); /* Blue gradient */
+            background-image: linear-gradient(to right, #3b82f6, #60a5fa); /* Blue gradient */
         }
         /* Header gradient for Rax Hike */
         .header-gradient-rax {
@@ -81,9 +81,11 @@
             <button id="navRax" class="nav-button px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('rax')">
                 Rax 2-Day Hike
             </button>
+            <!--
             <button id="navBangkokaquarium" class="nav-button px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base font-medium rounded-lg text-gray-700 hover:bg-indigo-100" onclick="showActivity('bangkokaquarium')">
                 Bangkok Aquarium �🇭
             </button>
+            -->
         </div>
 
         <div class="flex flex-col lg:flex-row gap-8 lg:gap-12">
@@ -93,10 +95,10 @@
                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
                         <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Your Adventure to the Ice Kingdom</h2>
                         <img
-                            src="https://placehold.co/800x450/a0aec0/ffffff?text=Marktschellenberger+Eish%C3%B6hle+Entrance"
-                            alt="Entrance or impressive ice formation of Marktschellenberger Eishöhle"
-                            class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
-                            onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
+                                src="https://placehold.co/800x450/a0aec0/ffffff?text=Marktschellenberger+Eish%C3%B6hle+Entrance"
+                                alt="Entrance or impressive ice formation of Marktschellenberger Eishöhle"
+                                class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
+                                onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
                         >
                         <p class="mb-4 text-gray-700 leading-relaxed">
                             Embark on an unforgettable journey into the Marktschellenberger Eishöhle, Germany's largest ice cave, nestled within the majestic Untersberg massif. Discover a subterranean world of glittering ice formations, frozen waterfalls, and vast caverns. This natural wonder offers a unique experience for adventurers and nature lovers alike, showcasing the raw beauty sculpted by millennia of ice and rock.
@@ -113,10 +115,10 @@
                                 <span>Spectacular Ice Formations</span>
                             </li>
                             <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
-                                 <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.0006 1.50098L20.5006 18.001H3.50061L12.0006 1.50098ZM12.0006 4.7312L7.13461 16.001H16.8666L12.0006 4.7312Z M10.0006 19.001C10.0006 18.4487 10.4483 18.001 11.0006 18.001H13.0006C13.5529 18.001 14.0006 18.4487 14.0006 19.001V22.001H10.0006V19.001Z"/></svg>
+                                <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.0006 1.50098L20.5006 18.001H3.50061L12.0006 1.50098ZM12.0006 4.7312L7.13461 16.001H16.8666L12.0006 4.7312Z M10.0006 19.001C10.0006 18.4487 10.4483 18.001 11.0006 18.001H13.0006C13.5529 18.001 14.0006 18.4487 14.0006 19.001V22.001H10.0006V19.001Z"/></svg>
                                 <span>Germany's Largest Ice Cave</span>
                             </li>
-                             <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
+                            <li class="flex items-start gap-3 p-3 bg-gray-50 rounded-md">
                                 <svg class="w-5 h-5 text-blue-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 <span>Guided Tours Available</span>
                             </li>
@@ -126,7 +128,7 @@
                             </li>
                         </ul>
                     </section>
-                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear</h3>
                         <ul class="list-disc list-inside space-y-2 text-gray-700">
                             <li>Warm, layered clothing (temperature inside is near freezing)</li>
@@ -151,11 +153,11 @@
                 <div id="contentRax" class="activity-content">
                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
                         <h2 class="text-2xl font-semibold mb-4 text-gray-800 border-b pb-2">Conquer the Rax: A 2-Day Alpine Adventure</h2>
-                         <img
-                            src="https://placehold.co/800x450/34d399/ffffff?text=Rax+Mountain+Panorama"
-                            alt="Panoramic view of the Rax mountain range"
-                            class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
-                            onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
+                        <img
+                                src="https://placehold.co/800x450/34d399/ffffff?text=Rax+Mountain+Panorama"
+                                alt="Panoramic view of the Rax mountain range"
+                                class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
+                                onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
                         >
                         <p class="mb-4 text-gray-700 leading-relaxed">
                             Experience the breathtaking beauty of the Rax massif on an invigorating 2-day hike. This adventure is perfect for those looking to immerse themselves in alpine scenery, enjoy stunning vistas, and spend a night in a cozy mountain hut. The Rax offers a variety of trails, from gentle paths across alpine meadows to more challenging ascents.
@@ -175,7 +177,7 @@
                                 <svg class="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
                                 <span>Overnight Stay in a Mountain Hut</span>
                             </li>
-                             <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
+                            <li class="flex items-start gap-3 p-3 bg-green-50 rounded-md">
                                 <svg class="w-5 h-5 text-green-500 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                                 <span>Varied Trails for Different Fitness Levels</span>
                             </li>
@@ -185,7 +187,7 @@
                             </li>
                         </ul>
                     </section>
-                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
+                    <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 mt-8">
                         <h3 class="text-xl font-semibold mb-4 text-gray-800">Recommended Gear for 2-Day Hike</h3>
                         <ul class="list-disc list-inside space-y-2 text-gray-700">
                             <li>Backpack (30-40 liters)</li>
@@ -216,10 +218,10 @@
                     <section class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300">
                         <h2 class="text-2xl font-semibold mb-4 text-orange-600 border-b border-orange-200 pb-2">Dive into Bangkok's Ocean World Aquarium! 🇹🇭</h2>
                         <img
-                            src="https://placehold.co/800x450/f97316/ffffff?text=Bangkok+Ocean+World"
-                            alt="SEA LIFE Bangkok Ocean World main exhibit"
-                            class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
-                            onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
+                                src="https://placehold.co/800x450/f97316/ffffff?text=Bangkok+Ocean+World"
+                                alt="SEA LIFE Bangkok Ocean World main exhibit"
+                                class="w-full h-auto object-cover rounded-lg mb-5 shadow-sm"
+                                onerror="this.onerror=null; this.src='https://placehold.co/800x450/cccccc/ffffff?text=Image+Not+Available';"
                         >
                         <p class="mb-4 text-gray-700 leading-relaxed">
                             Discover an amazing underwater world right in the heart of Bangkok at SEA LIFE Bangkok Ocean World, one of Southeast Asia's largest aquariums. Located beneath the Siam Paragon mall, it offers an incredible journey through diverse marine habitats.
@@ -238,7 +240,7 @@
                             <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
                                 <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" /></svg> <span>Shark Shipwreck Zone</span>
                             </li>
-                             <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
+                            <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
                                 <svg class="w-5 h-5 text-orange-500 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg> <span>Penguin Ice Adventure</span>
                             </li>
                             <li class="flex items-start gap-3 p-3 bg-orange-50 rounded-md">
@@ -278,7 +280,7 @@
         </div>
 
         <footer class="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
-            <p class="mt-1">Travel planning widget powered by Zuugle Services GmbH.</p>
+            <p class="mt-1">Travel planning widget</p>
         </footer>
     </div>
 
@@ -389,7 +391,7 @@
                 activeButton.classList.add('bg-indigo-600', 'text-white');
                 activeButton.classList.remove('text-gray-700', 'hover:bg-indigo-100');
             } else {
-                 console.error('Active button not found for ID:', activeButtonId);
+                console.error('Active button not found for ID:', activeButtonId);
             }
 
 
@@ -411,8 +413,8 @@
                 pageHeader.classList.add('header-gradient-rax');
                 pageTitle.textContent = 'Conquer the Rax: 2-Day Alpine Adventure!';
                 pageSubtitle.textContent = 'Plan your multi-day hike with an overnight hut stay.';
-                widgetTitleElement.textContent = 'Rax Hike Planner';
-            } else if (activityKey === 'bangkokaquarium') { // New case for Bangkok Aquarium
+                widgetTitleElement.textContent = 'Rax Hike Planner (using Realtime data)';
+            } else if (activityKey === 'bangkokaquarium') {
                 pageHeader.classList.add('header-gradient-bangkok');
                 pageTitle.textContent = 'Discover Bangkok Ocean World! 🇹🇭';
                 pageSubtitle.textContent = 'Plan your visit to this amazing underwater attraction in Thailand.';
@@ -449,11 +451,11 @@
             document.querySelectorAll('.nav-button').forEach(button => {
                 button.addEventListener('click', function() {
                     if (this.id === 'navBangkokaquarium') {
-                         window.location.hash = 'bangkokaquarium';
+                        window.location.hash = 'bangkokaquarium';
                     } else if (this.id === 'navEishoehle') {
-                         window.location.hash = 'eishoehle';
+                        window.location.hash = 'eishoehle';
                     } else if (this.id === 'navRax') {
-                         window.location.hash = 'rax';
+                        window.location.hash = 'rax';
                     }
                 });
             });
