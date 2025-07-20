@@ -22,7 +22,6 @@
 * [Architecture](#architecture)
 * [Deployment](#deployment)
 * [Contributing](#contributing)
-* [License](#license)
 
 ## Project Overview
 
@@ -464,9 +463,5 @@ We welcome contributions! Here's how to help:
 * Work with modern web technologies (ES modules, CSS variables, Webpack).
 * Impact users needing efficient travel planning.
 * Learn from a production-grade widget codebase.
-
-## License
-
-Proprietary software © Zuugle Services GmbH. Contact team@zuugle-services.net for licensing inquiries.
 
 > Let's build better activity planning experiences together! 🏔️🚌✨
