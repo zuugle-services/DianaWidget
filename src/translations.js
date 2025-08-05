@@ -49,8 +49,8 @@ export default {
         share: "Share",
         shareUrlCopied: "Share URL copied to clipboard!",
         shareUrlCopyFailed: "Could not copy URL.",
-        live: "Live",
-        liveConnection: "Live Connection",
+        live: "Realtime",
+        liveConnection: "Realtime Connection",
         menu: {
             helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -205,8 +205,8 @@ export default {
         share: "Teilen",
         shareUrlCopied: "Share-URL wurde in die Zwischenablage kopiert!",
         shareUrlCopyFailed: "URL konnte nicht kopiert werden.",
-        live: "Live",
-        liveConnection: "Live-Verbindung",
+        live: "Realtime",
+        liveConnection: "Realtime-Verbindung",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
