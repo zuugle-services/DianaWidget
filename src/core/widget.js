@@ -1361,33 +1361,53 @@ export default class DianaWidget {
     renderTimeSlots(sliderId, connections, type) {
         const slider = this.elements[sliderId];
         slider.innerHTML = '';
+        let lastDate = null; // To track the date of the last processed connection
+
         connections.forEach((conn, index) => {
+            // Determine the date of the current connection in the configured timezone
+            const connDate = DateTime.fromISO(conn.connection_start_timestamp, { zone: 'utc' })
+                .setZone(this.config.timezone)
+                .toISODate();
+
+            // If the date has changed from the previous connection, or if it's the first one
+            if (lastDate !== connDate) {
+                // Create and insert the vertical date separator
+                const dateSeparator = document.createElement('div');
+                dateSeparator.classList.add('slider-date-separator');
+                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language);
+                slider.appendChild(dateSeparator);
+
+                // Update the tracker for the next iteration
+                lastDate = connDate;
+            }
+
             const startTimeLocal = convertUTCToLocalTime(conn.connection_start_timestamp, this.config.timezone);
             const endTimeLocal = convertUTCToLocalTime(conn.connection_end_timestamp, this.config.timezone);
             const duration = calculateTimeDifference(conn.connection_start_timestamp, conn.connection_end_timestamp, (key) => this.t(key));
             const anytime = conn.connection_anytime;
             const btn = document.createElement('button');
             btn.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center;">
-          <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold;">${startTimeLocal} - ${endTimeLocal}</div>
-          <div style="display: flex; justify-content:space-between; width: 100%; /*noinspection CssInvalidPropertyValue*/width: -moz-available; /*noinspection CssInvalidPropertyValue*/width: -webkit-fill-available; /*noinspection CssInvalidPropertyValue*/width: fill-available; align-items: center; font-size: 12px; color: #666;">
-            <span>${duration}</span>
-            <div style="display: flex; gap:2px; align-items: center;">
-              ${anytime ? this.getTransportIcon("WALK_BLACK") : `
-              <span>${conn.connection_transfers}</span>
-              <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/>
-              </svg>
-              `}
-            </div>
-          </div>
-        </div>`;
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                  <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold;">${startTimeLocal} - ${endTimeLocal}</div>
+                  <div style="display: flex; justify-content:space-between; width: 100%; /*noinspection CssInvalidPropertyValue*/width: -moz-available; /*noinspection CssInvalidPropertyValue*/width: -webkit-fill-available; /*noinspection CssInvalidPropertyValue*/width: fill-available; align-items: center; font-size: 12px; color: #666;">
+                    <span>${duration}</span>
+                    <div style="display: flex; gap:2px; align-items: center;">
+                      ${anytime ? this.getTransportIcon("WALK_BLACK") : `
+                      <span>${conn.connection_transfers}</span>
+                      <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/>
+                      </svg>
+                      `}
+                    </div>
+                  </div>
+                </div>`;
             btn.addEventListener('click', () => this.filterConnectionsByTime(type, startTimeLocal, endTimeLocal));
             const isRecommended = (type === 'to' && index === this.state.recommendedToIndex) || (type === 'from' && index === this.state.recommendedFromIndex);
             if (isRecommended) btn.classList.add('active-time');
             slider.appendChild(btn);
         });
     }
+
 
     calculateAnytimeConnections(connections, type) {
         const activityDateForCalc = this.config.multiday && type === "from" && this.state.selectedEndDate

@@ -220,7 +220,6 @@
 
 .slider {
   font-family: "DM Sans", sans-serif !important;
-  margin-left: 5px;
   -webkit-overflow-scrolling: touch;
   overflow-x: auto;
   padding: 0 10px;
@@ -228,11 +227,32 @@
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
 }
 
 .slider::-webkit-scrollbar {
   display: none;
 }
+
+.slider-date-separator {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin: 0 4px 0 2px;
+  padding: 5px 4px;
+  white-space: nowrap;
+  border-left: 1px solid var(--border-secondary);
+  height: 48px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+}
+
 
 .slider button {
   background: var(--bg-primary);
@@ -250,6 +270,7 @@
   scroll-snap-align: start;
   text-align: center;
   transition: border-color 0.1s ease, background-color 0.1s ease;
+  flex-shrink: 0;
 }
 
 .slider button:hover {
