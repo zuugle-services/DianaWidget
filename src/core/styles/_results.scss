@@ -538,3 +538,66 @@ div#eleCont {
   padding: 10px 15px;
   text-align: center;
 }
+
+/* --- Live Indicator Styles --- */
+.summary-line-3 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--success-color);
+  margin-right: 35px;
+
+  &::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--success-color);
+    animation: pulse 2s infinite;
+  }
+}
+
+.live-indicator-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: color-mix(in srgb, var(--success-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--success-color) 20%, transparent);
+  border-radius: 6px;
+  color: var(--success-color);
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 15px;
+
+  .live-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--success-color);
+    animation: pulse 2s infinite;
+    flex-shrink: 0;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success-color) 70%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 10px color-mix(in srgb, var(--success-color) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--success-color) 0%, transparent);
+  }
+}

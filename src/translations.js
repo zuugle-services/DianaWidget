@@ -49,6 +49,8 @@ export default {
         share: "Share",
         shareUrlCopied: "Share URL copied to clipboard!",
         shareUrlCopyFailed: "Could not copy URL.",
+        live: "Live",
+        liveConnection: "Live Connection",
         menu: {
             helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -203,6 +205,8 @@ export default {
         share: "Teilen",
         shareUrlCopied: "Share-URL wurde in die Zwischenablage kopiert!",
         shareUrlCopyFailed: "URL konnte nicht kopiert werden.",
+        live: "Live",
+        liveConnection: "Live-Verbindung",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
@@ -357,6 +361,8 @@ export default {
         share: "Compartir",
         shareUrlCopied: "¡URL para compartir copiada al portapapeles!",
         shareUrlCopyFailed: "No se pudo copiar la URL.",
+        live: "En vivo",
+        liveConnection: "Conexión en vivo",
         menu: {
             helpAndSupport: "Ayuda",
             helpAndSupportSubtitle: "Preguntas frecuentes y guías.",
@@ -511,6 +517,8 @@ export default {
         share: "Partager",
         shareUrlCopied: "URL de partage copiée dans le presse-papiers !",
         shareUrlCopyFailed: "Impossible de copier l'URL.",
+        live: "En direct",
+        liveConnection: "Connexion en direct",
         menu: {
             helpAndSupport: "Aide",
             helpAndSupportSubtitle: "Trouver des réponses et des guides.",
@@ -665,6 +673,8 @@ export default {
         share: "Condividi",
         shareUrlCopied: "URL di condivisione copiato negli appunti!",
         shareUrlCopyFailed: "Impossibile copiare l'URL.",
+        live: "Dal vivo",
+        liveConnection: "Connessione dal vivo",
         menu: {
             helpAndSupport: "Aiuto",
             helpAndSupportSubtitle: "Trova risposte e guide.",
@@ -819,6 +829,8 @@ export default {
         share: "แชร์",
         shareUrlCopied: "คัดลอก URL สำหรับแชร์ไปยังคลิปบอร์ดแล้ว!",
         shareUrlCopyFailed: "ไม่สามารถคัดลอก URL ได้",
+        live: "สด",
+        liveConnection: "การเชื่อมต่อสด",
         menu: {
             helpAndSupport: "ความช่วยเหลือ",
             helpAndSupportSubtitle: "ค้นหาคำตอบและคู่มือ",

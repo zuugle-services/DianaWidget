@@ -1466,6 +1466,9 @@ export default class DianaWidget {
 
         const iconsHTML = mainTransportTypes.slice(0, 4).map(t => this.getTransportIcon(t)).join('');
 
+        const isLive = connection.connection_elements && connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.provider === 'live');
+        const liveIndicatorHTML = isLive ? `<span class="live-indicator">${this.t('live')}</span>` : '';
+
         return `
             <div class="summary-line-1">
                 <strong>${type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal} - ${endTimeLocal}</strong>
@@ -1476,6 +1479,7 @@ export default class DianaWidget {
             </div>
             <div class="summary-line-3">
                 <span>${duration} &bull; ${transfers} ${this.t('transfers')}</span>
+                ${liveIndicatorHTML}
             </div>
         `;
     }
@@ -1703,7 +1707,10 @@ export default class DianaWidget {
                 return `<div>${this.t('noConnectionElements')}</div>`;
             }
 
-            let html = `<div class="connection-elements">`;
+            const isLive = conn.connection_elements && conn.connection_elements.length > 0 && conn.connection_elements.every(el => el.provider === 'live');
+            const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
+
+            let html = `<div class="connection-details-wrapper">${liveIndicatorHTML}<div class="connection-elements">`;
 
             // Display waiting time after activity ends (for 'from' connections)
             if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
@@ -1865,7 +1872,7 @@ export default class DianaWidget {
                 }
             }
 
-            html += `</div>`;
+            html += `</div></div>`;
             return html;
         }).join('');
     }
