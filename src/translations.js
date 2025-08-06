@@ -51,6 +51,8 @@ export default {
         shareUrlCopyFailed: "Could not copy URL.",
         live: "Realtime",
         liveConnection: "Realtime Connection",
+        platform: "Platform",
+        direction: "Direction",
         menu: {
             helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -207,6 +209,8 @@ export default {
         shareUrlCopyFailed: "URL konnte nicht kopiert werden.",
         live: "Realtime",
         liveConnection: "Realtime-Verbindung",
+        platform: "Bahnsteig",
+        direction: "Richtung",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
@@ -363,6 +367,8 @@ export default {
         shareUrlCopyFailed: "No se pudo copiar la URL.",
         live: "En vivo",
         liveConnection: "Conexión en vivo",
+        platform: "Andén",
+        direction: "Dirección",
         menu: {
             helpAndSupport: "Ayuda",
             helpAndSupportSubtitle: "Preguntas frecuentes y guías.",
@@ -519,6 +525,8 @@ export default {
         shareUrlCopyFailed: "Impossible de copier l'URL.",
         live: "En direct",
         liveConnection: "Connexion en direct",
+        platform: "Quai",
+        direction: "Direction",
         menu: {
             helpAndSupport: "Aide",
             helpAndSupportSubtitle: "Trouver des réponses et des guides.",
@@ -675,6 +683,8 @@ export default {
         shareUrlCopyFailed: "Impossibile copiare l'URL.",
         live: "Dal vivo",
         liveConnection: "Connessione dal vivo",
+        platform: "Binario",
+        direction: "Direzione",
         menu: {
             helpAndSupport: "Aiuto",
             helpAndSupportSubtitle: "Trova risposte e guide.",
@@ -831,6 +841,8 @@ export default {
         shareUrlCopyFailed: "ไม่สามารถคัดลอก URL ได้",
         live: "สด",
         liveConnection: "การเชื่อมต่อสด",
+        platform: "ชานชาลา",
+        direction: "ทิศทาง",
         menu: {
             helpAndSupport: "ความช่วยเหลือ",
             helpAndSupportSubtitle: "ค้นหาคำตอบและคู่มือ",

@@ -1795,8 +1795,10 @@ export default class DianaWidget {
 
                 html += `
                   <div class="connection-element">
-                    <div class="element-time">
-                      <span>${departureTime}</span> ${fromLocationDisplay}
+                    <div class="element-time-location-group">
+                        <span class="element-time">${departureTime}</span>
+                        <span class="element-location">${fromLocationDisplay}</span>
+                        ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
                     </div>
                     <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
                       <div class="element-circle"></div>
@@ -1824,8 +1826,10 @@ export default class DianaWidget {
 
                     html += `
                     <div class="connection-element">
-                      <div class="element-time">
-                        <span>${finalArrivalTime}</span> ${toLocationDisplay}
+                      <div class="element-time-location-group">
+                        <span class="element-time">${finalArrivalTime}</span>
+                        <span class="element-location">${toLocationDisplay}</span>
+                        ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
                       </div>
                       <div class="element-circle"></div>
                     </div>
@@ -1883,7 +1887,7 @@ export default class DianaWidget {
             let n_intermediate_stops = element.n_intermediate_stops + 1 || 0; // n_intermediate_stops seems to be exclusive of final stop
             const stopString = n_intermediate_stops !== 1 ? `, ${n_intermediate_stops} ${this.t("stopPl")})` : `, ${n_intermediate_stops} ${this.t("stopSg")})`;
             durationString = `${element.vehicle_name} -> ${element.direction} (${duration}`;
-            durationString += (n_intermediate_stops > 0) ? ` ${stopString}` : `)`; // Only add stop string if stops > 0
+            durationString += (n_intermediate_stops > 0) ? `${stopString}` : `)`; // Only add stop string if stops > 0
             return durationString;
         } else {
             durationString = `${duration}`;
