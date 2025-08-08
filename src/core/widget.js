@@ -1484,6 +1484,100 @@ export default class DianaWidget {
         `;
     }
 
+    _updateOppositeSlider(sourceType) {
+        const { selectedToConnection, selectedFromConnection, toConnections, fromConnections } = this.state;
+        const { topSlider, bottomSlider, collapsibleToActivity, collapsibleFromActivity } = this.elements;
+
+        if (sourceType === 'to') {
+            // Update 'from' slider based on 'to' selection
+            const fromButtons = bottomSlider.querySelectorAll('button');
+            if (!selectedToConnection) {
+                fromButtons.forEach(btn => btn.classList.remove('disabled'));
+                return;
+            }
+            const arrivalTime = DateTime.fromISO(selectedToConnection.connection_end_timestamp, { zone: 'utc' });
+
+            // Disable invalid buttons
+            fromConnections.forEach((fromConn, index) => {
+                const departureTime = DateTime.fromISO(fromConn.connection_start_timestamp, { zone: 'utc' });
+                if (fromButtons[index]) {
+                    if (departureTime < arrivalTime) {
+                        fromButtons[index].classList.add('disabled');
+                    } else {
+                        fromButtons[index].classList.remove('disabled');
+                    }
+                }
+            });
+
+            // Check if current 'from' selection is now invalid
+            if (selectedFromConnection) {
+                const selectedDepartureTime = DateTime.fromISO(selectedFromConnection.connection_start_timestamp, { zone: 'utc' });
+                if (selectedDepartureTime < arrivalTime) {
+                    // It's invalid, so clear it
+                    this.state.selectedFromConnection = null;
+                    this.state.activityTimes.end = ''; // Clear end time
+                    this.state.activityTimes.duration = ''; // Clear duration
+
+                    // Reset UI for 'from' connection
+                    const summaryWrapper = collapsibleFromActivity?.querySelector('.summary-content-wrapper');
+                    if (summaryWrapper) {
+                        summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+                        collapsibleFromActivity.classList.remove('has-summary', 'expanded');
+                    }
+                    this.elements.responseBoxBottom.innerHTML = '';
+                    bottomSlider.querySelectorAll('button.active-time').forEach(btn => btn.classList.remove('active-time'));
+
+                    // Re-render activity box with partial data
+                    this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+                }
+            }
+
+        } else if (sourceType === 'from') {
+            // Update 'to' slider based on 'from' selection
+            const toButtons = topSlider.querySelectorAll('button');
+            if (!selectedFromConnection) {
+                toButtons.forEach(btn => btn.classList.remove('disabled'));
+                return;
+            }
+            const departureTime = DateTime.fromISO(selectedFromConnection.connection_start_timestamp, { zone: 'utc' });
+
+            // Disable invalid buttons
+            toConnections.forEach((toConn, index) => {
+                const arrivalTime = DateTime.fromISO(toConn.connection_end_timestamp, { zone: 'utc' });
+                if (toButtons[index]) {
+                    if (arrivalTime > departureTime) {
+                        toButtons[index].classList.add('disabled');
+                    } else {
+                        toButtons[index].classList.remove('disabled');
+                    }
+                }
+            });
+
+            // Check if current 'to' selection is now invalid
+            if (selectedToConnection) {
+                const selectedArrivalTime = DateTime.fromISO(selectedToConnection.connection_end_timestamp, { zone: 'utc' });
+                if (selectedArrivalTime > departureTime) {
+                    // It's invalid, so clear it
+                    this.state.selectedToConnection = null;
+                    this.state.activityTimes.start = ''; // Clear start time
+                    this.state.activityTimes.duration = ''; // Clear duration
+
+                    // Reset UI for 'to' connection
+                    const summaryWrapper = collapsibleToActivity?.querySelector('.summary-content-wrapper');
+                    if (summaryWrapper) {
+                        summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+                        collapsibleToActivity.classList.remove('has-summary', 'expanded');
+                    }
+                    this.elements.responseBox.innerHTML = '';
+                    topSlider.querySelectorAll('button.active-time').forEach(btn => btn.classList.remove('active-time'));
+
+                    // Re-render activity box with partial data
+                    this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+                }
+            }
+        }
+    }
+
     filterConnectionsByTime(type, startTimeLocal, endTimeLocal) {
         const connections = type === 'from' ? this.state.fromConnections : this.state.toConnections;
         const sliderId = type === 'from' ? 'bottomSlider' : 'topSlider';
@@ -1526,6 +1620,7 @@ export default class DianaWidget {
             } else {
                 this.state.selectedFromConnection = selectedConnection;
             }
+            this._updateOppositeSlider(type);
         } else {
             targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
             if(summaryWrapper && container) {

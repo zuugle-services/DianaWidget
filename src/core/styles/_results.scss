@@ -269,8 +269,14 @@
   padding: 5px;
   scroll-snap-align: start;
   text-align: center;
-  transition: border-color 0.1s ease, background-color 0.1s ease;
+  transition: border-color 0.1s ease, background-color 0.1s ease, opacity 0.2s ease;
   flex-shrink: 0;
+
+  &.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
 }
 
 .slider button:hover {
