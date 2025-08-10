@@ -515,6 +515,13 @@ export default class DianaWidget {
         this.setupEventListeners();
         this._initCustomCalendar();
         this._initializeOriginInputWithOverridesAndCache();
+
+        var _mtm = window._mtm = window._mtm || [];
+        _mtm.push({'mtm.startTime': (new Date().getTime()), 'event': 'mtm.Start'});
+        (function() {
+            var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+            g.async=true; g.src='https://stats.zuugle-services.net/js/container_2uCTsl7N.js'; s.parentNode.insertBefore(g,s);
+        })();
     }
 
 
