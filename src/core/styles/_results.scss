@@ -373,6 +373,8 @@
 
 .activity-time-value {
   color: var(--text-secondary);
+  display: flex;
+  align-items: center;
 }
 
 .activity-time-divider {
@@ -380,15 +382,60 @@
   padding: 0 2px;
 }
 
-.activity-time-warning-text {
-  background: var(--warning-color);
-  border-radius: 6px;
-  box-shadow: 0 1px 3px var(--shadow-light);
-  color: var(--text-warning);
-  font-size: 12px;
+.activity-time-value.has-warning {
+  color: var(--wait-color);
+  font-weight: 500;
+}
+
+.warning-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
   margin-left: 5px;
-  margin-top: 6px;
-  padding: 8px 10px;
+
+  .warning-icon {
+    width: 16px;
+    height: 16px;
+    cursor: help;
+  }
+
+  .warning-tooltip {
+    visibility: hidden;
+    width: max-content;
+    max-width: 200px;
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 10;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    box-shadow: 0 2px 4px var(--shadow-medium);
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: var(--text-primary) transparent transparent transparent;
+    }
+  }
+
+  &:hover .warning-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
 }
 
 

@@ -1727,13 +1727,23 @@ export default class DianaWidget {
                             day: activityStartDate.getDate()
                         });
                     const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
+                    this.state.activityTimes.duration = durationResult.text; // Store for sharing
+                    warningDuration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
+
+                    const warningIconHTML = `<span class="warning-icon-wrapper">
+                                                        <svg class="warning-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.33333 3.33333H8.66667V4.66667H7.33333V3.33333ZM7.33333 6H8.66667V10H7.33333V6ZM8 0.666667C4.01333 0.666667 0.666667 4.01333 0.666667 8C0.666667 11.9867 4.01333 15.3333 8 15.3333C11.9867 15.3333 15.3333 11.9867 15.3333 8C15.3333 4.01333 11.9867 0.666667 8 0.666667ZM8 14C4.68667 14 2 11.3133 2 8C2 4.68667 4.68667 2 8 2C11.3133 2 14 4.68667 14 8C14 11.3133 11.3133 14 8 14Z" fill="#FF9500"/></svg>
+                                                        <span class="warning-tooltip">${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})</span>
+                                                        <span>&nbsp;&nbsp;${this.t("warnings.durationShort")}</span>
+                                                    </span>`;
+
                     durationDisplayHtml = `
                       <div class="activity-time-row">
                           <span class="activity-time-label">${this.t('activityDuration')}</span>
-                          <span class="activity-time-value">${durationResult.text}</span>
+                          <span class="activity-time-value ${warningDuration ? 'has-warning' : ''}">
+                            <span>${durationResult.text}</span>
+                            ${warningDuration ? warningIconHTML : ''}
+                          </span>
                       </div>`;
-                    this.state.activityTimes.duration = durationResult.text; // Store for sharing
-                    warningDuration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
                 } else {
                     durationDisplayHtml = `
                       <div class="activity-time-row">
@@ -1757,7 +1767,6 @@ export default class DianaWidget {
                             <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
                         </div>
                         ${durationDisplayHtml}
-                        ${warningDuration ? `<div class="activity-time-row"><span class="activity-time-label"></span> <div class="activity-time-warning-text">${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})</div></div>` : ''}
                         <div class="activity-time-row">
                             <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
                             <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${endDisplayDate}</span>
