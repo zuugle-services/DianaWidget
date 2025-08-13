@@ -608,7 +608,40 @@ div#eleCont {
   text-align: center;
 }
 
-/* --- Live Indicator Styles --- */
+/* --- Live Indicator & Ticket Button Styles --- */
+.connection-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  gap: 10px;
+}
+
+.ticket-button {
+  background-color: var(--primary-color);
+  color: var(--bg-primary);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: var(--bg-apply-hover);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .summary-line-3 {
   display: flex;
   justify-content: space-between;
@@ -647,7 +680,7 @@ div#eleCont {
   color: var(--success-color);
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 15px;
+  flex-grow: 1;
 
   .live-dot {
     width: 10px;

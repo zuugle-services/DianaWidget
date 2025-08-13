@@ -53,6 +53,7 @@ export default {
         liveConnection: "Realtime Connection",
         platform: "Platform",
         direction: "Direction",
+        buyTicket: "Buy Ticket",
         menu: {
             helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
@@ -209,9 +210,10 @@ export default {
         shareUrlCopied: "Share-URL wurde in die Zwischenablage kopiert!",
         shareUrlCopyFailed: "URL konnte nicht kopiert werden.",
         live: "Realtime",
-        liveConnection: "Realtime-Verbindung",
+        liveConnection: "Realtime Fahrplan",
         platform: "Bahnsteig",
         direction: "Richtung",
+        buyTicket: "Ticket kaufen",
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
@@ -371,6 +373,7 @@ export default {
         liveConnection: "Conexión en vivo",
         platform: "Andén",
         direction: "Dirección",
+        buyTicket: "Comprar billete",
         menu: {
             helpAndSupport: "Ayuda",
             helpAndSupportSubtitle: "Preguntas frecuentes y guías.",
@@ -530,6 +533,7 @@ export default {
         liveConnection: "Connexion en direct",
         platform: "Quai",
         direction: "Direction",
+        buyTicket: "Acheter un billet",
         menu: {
             helpAndSupport: "Aide",
             helpAndSupportSubtitle: "Trouver des réponses et des guides.",
@@ -689,6 +693,7 @@ export default {
         liveConnection: "Connessione dal vivo",
         platform: "Binario",
         direction: "Direzione",
+        buyTicket: "Compra biglietto",
         menu: {
             helpAndSupport: "Aiuto",
             helpAndSupportSubtitle: "Trova risposte e guide.",
@@ -848,6 +853,7 @@ export default {
         liveConnection: "การเชื่อมต่อสด",
         platform: "ชานชาลา",
         direction: "ทิศทาง",
+        buyTicket: "ซื้อตั๋ว",
         menu: {
             helpAndSupport: "ความช่วยเหลือ",
             helpAndSupportSubtitle: "ค้นหาคำตอบและคู่มือ",

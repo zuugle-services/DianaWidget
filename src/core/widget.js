@@ -1821,7 +1821,21 @@ export default class DianaWidget {
             const isLive = conn.connection_elements && conn.connection_elements.length > 0 && conn.connection_elements.every(el => el.provider === 'live');
             const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
 
-            let html = `<div class="connection-details-wrapper">${liveIndicatorHTML}<div class="connection-elements">`;
+            const ticketButtonHTML = conn.connection_ticketshop_link ? `
+                <button class="ticket-button" onclick="window.open('${conn.connection_ticketshop_link}', '_blank')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
+                    ${this.t('buyTicket')}
+                </button>
+            ` : '';
+
+            const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML) ? `
+                <div class="connection-details-header">
+                    ${liveIndicatorHTML}
+                    ${ticketButtonHTML}
+                </div>
+            ` : '';
+
+            let html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
 
             // Display waiting time after activity ends (for 'from' connections)
             if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
