@@ -62,7 +62,8 @@ export default class DianaWidget {
         activityDurationDaysFixed: null,
         share: true,
         allowShareView: true,
-        shareURLPrefix: null
+        shareURLPrefix: null,
+        hideOverriddenActivityStartDate: true,
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -147,14 +148,23 @@ export default class DianaWidget {
                         const endDt = DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'});
                         initialSelectedEndDate = endDt.toJSDate();
                         initialSelectedStartDate = endDt.minus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                    } catch (e) { /* Fallback if date parsing fails */
+                    } catch (e) {
+                        console.log(e);
                     }
                 } else if (this.config.overrideActivityStartDate) {
                     try {
                         const startDt = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'});
                         initialSelectedStartDate = startDt.toJSDate();
                         initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                    } catch (e) { /* Fallback */
+                    } catch (e) {
+                        console.log(e);
+                    }
+                } else {
+                    try {
+                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                        initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
+                    } catch (e) {
+                        console.log(e);
                     }
                 }
             }
@@ -164,10 +174,10 @@ export default class DianaWidget {
                     try {
                         initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate();
                     } catch (e) {
-                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes, this.config.readOnly);
+                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
                     }
                 } else {
-                    initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes, this.config.readOnly);
+                    initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
                 }
             }
 
@@ -416,7 +426,7 @@ export default class DianaWidget {
 
         if (config.multiday && config.overrideActivityStartDate && config.overrideActivityEndDate && !config.activityDurationDaysFixed) {
             const oS = DateTime.fromISO(config.overrideActivityStartDate),
-                oE = DateTime.fromISO(config.overrideActivityEndDate);
+                  oE = DateTime.fromISO(config.overrideActivityEndDate);
             if (oS.isValid && oE.isValid && oE < oS) config.overrideActivityEndDate = config.overrideActivityStartDate;
         }
 

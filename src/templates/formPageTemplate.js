@@ -17,9 +17,16 @@ export function getFormPageTemplateHTML(args) {
     const showStartDateInput = !config.overrideActivityStartDate && !datesFullyDeterminedByFixedDurationAndOverride;
     const showEndDateInput = config.multiday && !config.overrideActivityEndDate && !datesFullyDeterminedByFixedDurationAndOverride;
     const showAnyDateSection = config.multiday || !config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride;
+    console.log('showAnyDateSection', showAnyDateSection);
+    console.log('showStartDateInput', showStartDateInput);
+    console.log('showEndDateInput', showEndDateInput);
+
+    console.log('config.overrideActivityStartDate', config.overrideActivityStartDate);
+    console.log('config.overrideActivityEndDate', config.overrideActivityEndDate);
+    console.log('datesFullyDeterminedByFixedDurationAndOverride', datesFullyDeterminedByFixedDurationAndOverride);
 
     let dateSectionHTML = '';
-    if (showAnyDateSection) {
+    if (showAnyDateSection || !config.hideOverriddenActivityStartDate) {
         dateSectionHTML += `<div class="form-section date-section-wrapper">`;
         if (config.multiday) {
             if (showStartDateInput) {
@@ -37,7 +44,7 @@ export function getFormPageTemplateHTML(args) {
                       <input type="date" id="activityDateStart" class="native-date-picker-multiday" aria-hidden="true">
                     </div>
                   </div>`;
-            } else if (config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride) {
+            } else if ((config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride) && !config.hideOverriddenActivityStartDate) {
                 dateSectionHTML += `
                  <div class="date-input-column">
                    <p id="dateLabelStart">${t('activityStartDateLabel')}</p>
@@ -46,7 +53,7 @@ export function getFormPageTemplateHTML(args) {
                        <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                        </svg>
-                       <span id="dateDisplayStart" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
+                       <span id="dateDisplayStart" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[config.language] || (config.language ? `${config.language.toLowerCase()}-${config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
                      </div>
                      <input type="date" id="activityDateStart" class="native-date-picker-multiday" style="display:none !important;" aria-hidden="true" value="${state.selectedDate ? formatDatetime(state.selectedDate) : ''}">
                    </div>
@@ -68,7 +75,7 @@ export function getFormPageTemplateHTML(args) {
                       <input type="date" id="activityDateEnd" class="native-date-picker-multiday" aria-hidden="true">
                     </div>
                   </div>`;
-            } else if (config.multiday && (config.overrideActivityEndDate || datesFullyDeterminedByFixedDurationAndOverride)) {
+            } else if ((config.multiday && (config.overrideActivityEndDate || datesFullyDeterminedByFixedDurationAndOverride)) && !config.hideOverriddenActivityStartDate) {
                 dateSectionHTML += `
                 <div class="date-input-column">
                   <p id="dateLabelEnd">${t('activityEndDateLabel')}</p>
@@ -77,7 +84,7 @@ export function getFormPageTemplateHTML(args) {
                       <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                       </svg>
-                      <span id="dateDisplayEnd" class="date-input-display">${state.selectedEndDate ? formatDateForDisplay(state.selectedEndDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
+                      <span id="dateDisplayEnd" class="date-input-display">${state.selectedEndDate ? formatDateForDisplay(state.selectedEndDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[config.language] || (config.language ? `${config.language.toLowerCase()}-${config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
                     </div>
                     <input type="date" id="activityDateEnd" class="native-date-picker-multiday" style="display:none !important;" aria-hidden="true" value="${state.selectedEndDate ? formatDatetime(state.selectedEndDate) : ''}">
                   </div>
@@ -107,7 +114,7 @@ export function getFormPageTemplateHTML(args) {
                          <svg class="date-input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
                          </svg>
-                        <span id="dateDisplay" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
+                        <span id="dateDisplay" class="date-input-display">${state.selectedDate ? formatDateForDisplay(state.selectedDate, {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[config.language] || (config.language ? `${config.language.toLowerCase()}-${config.language.toUpperCase()}` : 'en-GB'), config.timezone) : t('selectDate')}</span>
                       </div>
                       <input type="date" id="activityDate" class="native-date-picker-single" aria-hidden="true" style="display:none !important;" value="${state.selectedDate ? formatDatetime(state.selectedDate, config.timezone) : ''}">
                     </div>

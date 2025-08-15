@@ -7,7 +7,6 @@ import {DateTime} from 'luxon';
  * @param {string} timezone - The timezone string (e.g., "Europe/Vienna").
  * @param {string} activityLatestEndTime - The latest end time for the activity (HH:MM or HH:MM:SS).
  * @param {string|number} activityDurationMinutes - The duration of the activity in minutes.
- * @param {boolean} isReadOnly - Whether the activity is read-only.
  * @returns {Date} The calculated initial start date as a JavaScript Date object.
  */
 export function calculateInitialStartDate(timezone, activityLatestEndTime, activityDurationMinutes) {
