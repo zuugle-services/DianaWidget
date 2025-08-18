@@ -62,7 +62,7 @@ export function getResultsPageTemplateHTML(args) {
             <div class="slider-wrapper slider-wrap-fixed">
                 <div class="slider" id="bottomSlider" role="group" aria-label="${t('ariaLabels.bottomSlider')}"></div>
             </div>
-            <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
+            <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services</a></div>
         </div>
       </div>
     `;

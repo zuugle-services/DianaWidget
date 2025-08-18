@@ -25,7 +25,7 @@ export function getContentPageTemplateHTML(args) {
         ${headerHTML}
         <div id="contentPageBody" class="modal-body content-page-body">
         </div>
-        <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
+        <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services</a></div>
       </div>
     `;
 }

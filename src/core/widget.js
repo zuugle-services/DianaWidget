@@ -2277,7 +2277,6 @@ export default class DianaWidget {
 
                 // Check if activityDurationDaysFixed is set and if dates are valid
                 if (this.config.activityDurationDaysFixed && sharedDateEnd && sharedDateEnd.diff(sharedDate, 'days').days !== this.config.activityDurationDaysFixed - 1) {
-                    console.log(sharedDateEnd.diff(sharedDate, 'days'), this.config.activityDurationDaysFixed - 1);
                     this.setLoadingState(false, true);
                     this.showInfo(this.t('infos.sharedDateDurationMismatch'));
                     currentUrl.searchParams.delete('diana-share');

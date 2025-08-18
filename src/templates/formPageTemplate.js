@@ -17,13 +17,6 @@ export function getFormPageTemplateHTML(args) {
     const showStartDateInput = !config.overrideActivityStartDate && !datesFullyDeterminedByFixedDurationAndOverride;
     const showEndDateInput = config.multiday && !config.overrideActivityEndDate && !datesFullyDeterminedByFixedDurationAndOverride;
     const showAnyDateSection = config.multiday || !config.overrideActivityStartDate || datesFullyDeterminedByFixedDurationAndOverride;
-    console.log('showAnyDateSection', showAnyDateSection);
-    console.log('showStartDateInput', showStartDateInput);
-    console.log('showEndDateInput', showEndDateInput);
-
-    console.log('config.overrideActivityStartDate', config.overrideActivityStartDate);
-    console.log('config.overrideActivityEndDate', config.overrideActivityEndDate);
-    console.log('datesFullyDeterminedByFixedDurationAndOverride', datesFullyDeterminedByFixedDurationAndOverride);
 
     let dateSectionHTML = '';
     if (showAnyDateSection || !config.hideOverriddenActivityStartDate) {
@@ -159,7 +152,7 @@ export function getFormPageTemplateHTML(args) {
             <button type="submit" class="btn apply-btn" id="searchBtn">${t('search')}</button>
           </div>
         </form>
-        <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services GmbH</a></div>
+        <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services</a></div>
       </div>
     `;
 }

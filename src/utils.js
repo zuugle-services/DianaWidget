@@ -147,6 +147,7 @@ export function getApiErrorTranslationKey(errorCode) {
         2016: 'errors.api.dbErrorActivity',
         '2017-1': 'errors.api.noToConnectionsFound',
         '2017-2': 'errors.api.noFromConnectionsFound',
+        '2017-2F': 'errors.api.noFromConnectionsFoundFallback',
         '2018-1': 'errors.api.toConnectionsNoScore',
         '2018-2': 'errors.api.fromConnectionsNoScore',
         '2019-1': 'errors.api.noToConnectionsMergingMightFail',
