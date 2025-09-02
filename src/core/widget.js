@@ -1654,10 +1654,10 @@ export default class DianaWidget {
             const durationLastLegStr = calculateTimeDifference(connection.connection_elements[connection.connection_elements.length - 1].departure_time, connection.connection_elements[connection.connection_elements.length - 1].arrival_time, (key) => this.t(key));
             const durationLastLegMinutes = parseDurationToMinutes(durationLastLegStr, (key) => this.t(key));
 
-            if (type === 'from' && durationFirstLegMinutes <= 1 && connection.connection_elements[0].type === "WALK") {
+            if (type === 'from' && durationFirstLegMinutes <= 5 && connection.connection_elements[0].type === "WALK") {
                 connectionStartTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_start_timestamp, durationFirstLegMinutes), this.config.timezone);
             }
-            if (type === 'to' && durationLastLegMinutes <= 1 && connection.connection_elements[connection.connection_elements.length - 1].type === "WALK") {
+            if (type === 'to' && durationLastLegMinutes <= 5 && connection.connection_elements[connection.connection_elements.length - 1].type === "WALK") {
                 connectionEndTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_end_timestamp, -durationLastLegMinutes), this.config.timezone);
             }
 
@@ -1807,11 +1807,11 @@ export default class DianaWidget {
                     return true;
                 }
 
-                // Filter out very short (e.g., 1 min) walk legs at the absolute start/end of a multi-leg journey
-                if (type === 'from' && index === 0 && durationMinutes <= 1 && element.type === "WALK") {
+                // Filter out very short (e.g., 5 min) walk legs at the absolute start/end of a multi-leg journey
+                if (type === 'from' && index === 0 && durationMinutes <= 5 && element.type === "WALK") {
                     return false;
                 }
-                if (type === 'to' && index === arr.length - 1 && durationMinutes <= 1 && element.type === "WALK") {
+                if (type === 'to' && index === arr.length - 1 && durationMinutes <= 5 && element.type === "WALK") {
                     return false;
                 }
                 return true;
@@ -1853,8 +1853,6 @@ export default class DianaWidget {
                         day: firstLegDepartureDateTime.day
                     });
 
-                // ** FIX **: If the calculated activity end time is *after* the journey's departure time,
-                // it must have actually ended on the previous day.
                 if (activityEndDateTime > firstLegDepartureDateTime) {
                     activityEndDateTime = activityEndDateTime.minus({days: 1});
                 }
@@ -1911,13 +1909,18 @@ export default class DianaWidget {
                 }
 
                 let fromLocationDisplay = element.from_location;
-                // For the very first leg of a "to activity" journey, use the user's origin input.
-                if (type === "to" && index === 0) {
-                    fromLocationDisplay = this.elements.originInput.value;
-                }
-                // For the very first leg of a "from activity" journey, use the activity's end location display name.
-                else if (type === "from" && index === 0) {
-                    fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
+                if (index === 0) { // This logic only applies to the first displayed leg
+                    const originalFirstLeg = conn.connection_elements[0];
+                    // Check if the current element is indeed the original first leg
+                    if (originalFirstLeg.departure_time === element.departure_time) {
+                        if (type === "to") {
+                            // For the very first leg of a "to activity" journey, use the user's origin input.
+                            fromLocationDisplay = this.elements.originInput.value;
+                        } else { // type === "from"
+                            // For the very first leg of a "from activity" journey, use the activity's end location display name.
+                            fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
+                        }
+                    }
                 }
 
 
@@ -1942,9 +1945,13 @@ export default class DianaWidget {
                     let toLocationDisplay = element.to_location;
                     let finalArrivalTime = arrivalTime; // This is already the arrival time of the last leg.
 
-                    // For the very last leg of a "to activity" journey, the destination is the activity's start location.
                     if (type === "to") {
-                        toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+                        const originalLastLeg = conn.connection_elements[conn.connection_elements.length - 1];
+                        // Only override the display name if the currently displayed last leg is the true last leg of the connection.
+                        if (originalLastLeg.arrival_time === element.arrival_time) {
+                            toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+                        }
+                        // Otherwise, toLocationDisplay remains element.to_location, which is the correct station name.
                     }
                     // For the very last leg of a "from activity" journey, the destination is the user's origin (which was the start of the "to" journey).
                     else { // type === "from"
