@@ -467,7 +467,7 @@ We welcome contributions! Here's how to help:
 
 > Let's build better activity planning experiences together! 🏔️🚌✨
 
-**Contributers**
+**Contributors**
 
 <table>
   <tr>
