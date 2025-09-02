@@ -466,3 +466,26 @@ We welcome contributions! Here's how to help:
 * Learn from a production-grade widget codebase.
 
 > Let's build better activity planning experiences together! 🏔️🚌✨
+
+**Contributers**
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/sheikh-tabarak">
+        <img src="https://github.com/sheikh-tabarak.png" width="100px;" alt="Sheikh Tabarak"/><br />
+        <sub>
+          <b>Sheikh Tabarak</b>
+        </sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/spheppner">
+        <img src="https://github.com/spheppner.png" width="100px;" alt="Simon Heppner"/><br />
+        <sub>
+          <b>Simon Heppner</b>
+        </sub>
+      </a>
+    </td>
+  </tr>
+</table>
