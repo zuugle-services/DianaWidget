@@ -167,7 +167,7 @@ window.dianaActivityConfig = {
 
 ### Scripts
 
-```
+```sh
 npm run dev     # Start dev server with hot-reload
 npm run build   # Create production bundle
 npm run analyze # Analyze bundle size
@@ -176,43 +176,44 @@ npm run analyze # Analyze bundle size
 ### Key Development Patterns
 
 1.  **Diana GreenConnect Widget Initialization**
-    Configure through `window.dianaActivityConfig` in host page:
 
-   ```html
-   <script>
-   window.dianaActivityConfig = {
-     activityName: "Skiing in Alps",
-     activityType: "Skiing",
-     activityStartLocation: "47.422, 10.984", // Example coordinates
-     activityStartLocationType: "coordinates",
-     activityEndLocation: "Alpine Peak",
-     activityEndLocationType: "address",
-     activityEarliestStartTime: "09:00",
-     activityLatestStartTime: "12:00",
-     activityEarliestEndTime: "15:00",
-     activityLatestEndTime: "17:00",
-     activityDurationMinutes: "180",
-     // This token is securely fetched by your server and then passed to the client.
-     apiToken: "YOUR_SERVER_GENERATED_ACCESS_TOKEN",
-     // ... other optional config
-   };
-   </script>
-   <script src="dist/DianaWidget.bundle.js"></script>
-   ```
+Configure through `window.dianaActivityConfig` in host page:
 
-    Place a `div` with the ID `dianaWidgetContainer` (or a custom ID passed to the constructor) where you want the widget to render:
+```html
+<script>
+window.dianaActivityConfig = {
+ activityName: "Skiing in Alps",
+ activityType: "Skiing",
+ activityStartLocation: "47.422, 10.984", // Example coordinates
+ activityStartLocationType: "coordinates",
+ activityEndLocation: "Alpine Peak",
+ activityEndLocationType: "address",
+ activityEarliestStartTime: "09:00",
+ activityLatestStartTime: "12:00",
+ activityEarliestEndTime: "15:00",
+ activityLatestEndTime: "17:00",
+ activityDurationMinutes: "180",
+ // This token is securely fetched by your server and then passed to the client.
+ apiToken: "YOUR_SERVER_GENERATED_ACCESS_TOKEN",
+ // ... other optional config
+};
+</script>
+<script src="dist/DianaWidget.bundle.js"></script>
+```
 
-   ```html
-   <div id="dianaWidgetContainer"></div>
-   ```
+Place a `div` with the ID `dianaWidgetContainer` (or a custom ID passed to the constructor) where you want the widget to render:
 
-    The widget is instantiated like so (typically after the config and bundle script):
+```html
+<div id="dianaWidgetContainer"></div>
+```
 
-   ```javascript
-   new window.DianaWidget(window.dianaActivityConfig, "dianaWidgetContainer");
-   ```
+The widget is instantiated like so (typically after the config and bundle script):
 
-    If you use a custom container ID, ensure you pass it as the second argument to the `DianaWidget` constructor.
+```javascript
+new window.DianaWidget(window.dianaActivityConfig, "dianaWidgetContainer");
+```
+
+If you use a custom container ID, ensure you pass it as the second argument to the `DianaWidget` constructor.
 
 2.  **Component Structure**
    * `src/core/widget.js`: Main widget class
@@ -228,18 +229,40 @@ npm run analyze # Analyze bundle size
 
 ## Demo
 
-There is a demo webpage `./index-demo.html` where either the local dev version of the widget or the live version
-can be loaded. Different configuration can be tried out here and it works well for testing and modifying the
-widget styles.
+A comprehensive demo is available in `index-demo.html`. This page showcases multiple widget configurations for different activities (e.g., a single-day hike, a multi-day trek) and allows you to switch between them to see the widget's versatility.
 
-To run the demo with a development server:
+There are two primary ways to run the demo:
 
-1.  Ensure you have valid credentials and can generate an access token if you intend to test against a live API. For basic UI testing, the default development token might suffice if the API base URL is local or mocked.
-2.  Update the `apiToken` in `index-demo.html` within the `window.dianaActivityConfig` with a valid token if needed.
-3.  Run `npm run dev`.
-4.  Open `index.html` in your browser (usually served at `http://localhost:8080` or similar).
+### 1. Using the PHP Development Server (Recommended)
 
-![Demo Preview](img/demo.png)
+This method simulates a real-world integration where an access token is securely generated on the server and passed to the frontend.
+
+**Prerequisites:**
+
+* PHP installed on your system.
+* Your `CLIENT_ID` and `CLIENT_SECRET` added to `client_id_secret.php`.
+
+**Steps:**
+
+1. Start a PHP server in the root directory of the project:
+```sh
+php -S localhost:8000
+```
+2. Open your browser and navigate to `http://localhost:8000`.
+The `index.php` script will automatically fetch a valid `apiToken` and inject it into the demo page.
+
+### 2. Using the Webpack Dev Server (for UI development)
+
+This method is ideal for making changes to the widget's UI or styles, as it provides hot-reloading.
+
+**Steps:**
+
+1. Run the development command:
+```sh
+npm run dev
+```
+2. Webpack will start a server, typically at `http://localhost:8080`. Open `index-demo.html` from the server's context.
+3. **Note:** For the widget to make successful API calls in this mode, you must manually edit `index-demo.html`. Replace the placeholder `apiToken` values in the `dianaConfigs` object with a valid, pre-generated access token.
 
 ## Configuration
 
