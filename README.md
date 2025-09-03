@@ -1,8 +1,6 @@
 # Diana GreenConnect - Activity Transit Planner Widget
 
-<!-- ![Widget Preview](img/preview.png) -->
-
-![Widget Preview](https://github.com/user-attachments/assets/d0a47a3f-c40d-4289-834a-a5e685830647)
+![Widget Preview](img/preview.png)
 
 
 <div align="center">
@@ -69,9 +67,9 @@ To use the Diana GreenConnect, you need to obtain API credentials which are used
 
 ### 1. Sign Up and Obtain Credentials
 
-* **Register**: First, you or your organization needs to sign up on the [zuugle-services.net](https://zuugle-services.net) portal.
+* **Register**: First, you or your organization needs to sign up on the [zuugle-services.com](https://zuugle-services.com) dashboard.
 * **Application Creation**: Upon successful registration and setup, an "Application" will be created for you in the Zuugle Services backend.
-* **Get Credentials**: Log in to your dashboard on `zuugle-services.net`. Navigate to the API credentials or application settings section. Here, you will find your unique:
+* **Get Credentials**: Log in to your dashboard on `zuugle-services.com`. Navigate to the API credentials or application settings section. Here, you will find your unique:
    * `Client ID`: A public identifier for your application.
    * `Client Secret`: A confidential key. **This** secret must be **kept secure and should never be exposed in client-side code.**
 
@@ -96,7 +94,7 @@ require_once 'oauth2_functions.php';
 require_once 'client_id_secret.php';
 
 // Define the token URL (can be overridden if necessary)
-$tokenUrl = "[https://api.zuugle-services.net/o/token/](https://api.zuugle-services.net/o/token/)";
+$tokenUrl = "https://api.zuugle-services.net/o/token/";
 
 // Call the function to get the token data
 $tokenData = getDianaAccessToken(CLIENT_ID, CLIENT_SECRET, $tokenUrl);
@@ -230,16 +228,18 @@ npm run analyze # Analyze bundle size
 
 ## Demo
 
-There is a demo webpage `./index.html` where either the local dev version of the widget or the live version
+There is a demo webpage `./index-demo.html` where either the local dev version of the widget or the live version
 can be loaded. Different configuration can be tried out here and it works well for testing and modifying the
 widget styles.
 
 To run the demo with a development server:
 
 1.  Ensure you have valid credentials and can generate an access token if you intend to test against a live API. For basic UI testing, the default development token might suffice if the API base URL is local or mocked.
-2.  Update the `apiToken` in `index.html` within the `window.dianaActivityConfig` with a valid token if needed.
+2.  Update the `apiToken` in `index-demo.html` within the `window.dianaActivityConfig` with a valid token if needed.
 3.  Run `npm run dev`.
 4.  Open `index.html` in your browser (usually served at `http://localhost:8080` or similar).
+
+![Demo Preview](img/demo.png)
 
 ## Configuration
 
