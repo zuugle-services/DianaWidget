@@ -373,15 +373,6 @@
   min-height: 70px;
 }
 
-.activity-datetime-row {
-  font-size: 14px;
-  color: var(--text-muted);
-  line-height: 1.4;
-  height: 20px;
-  display: flex;
-  align-items: center;
-}
-
 .activity-main-info {
   display: flex;
   flex-direction: column;
@@ -411,7 +402,6 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: var(--wait-color);
   font-weight: 500;
   font-size: 13px;
 }
@@ -421,22 +411,6 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-
-  .warning-icon-text {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background-color: var(--wait-color);
-    color: var(--bg-primary);
-    font-weight: bold;
-    font-size: 12px;
-    cursor: help;
-    user-select: none;
-    line-height: 1;
-  }
 
   .warning-tooltip {
     visibility: hidden;
@@ -453,6 +427,7 @@
     left: 50%;
     transform: translateX(-50%);
     opacity: 0;
+    cursor: help;
     transition: opacity 0.3s;
     font-size: 12px;
     font-weight: 400;
