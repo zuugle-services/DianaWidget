@@ -1463,10 +1463,10 @@ export default class DianaWidget {
             toLocation = this.elements.originInput.value;
         }
 
-        const mainTransportTypes = [...new Set(connection.connection_elements
+        const mainTransportTypes = [...connection.connection_elements
             .filter(el => el.type === 'JNY')
             .map(el => el.vehicle_type)
-        )];
+        ];
 
         if (connection.connection_anytime || (connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.type === 'WALK'))) {
             if (!mainTransportTypes.includes('WALK')) {
