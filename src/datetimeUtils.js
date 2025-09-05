@@ -360,9 +360,10 @@ export function parseDurationToMinutes(durationString, tFunction) {
  * @param {string} isoString - The ISO 8601 datetime string (assumed UTC).
  * @param {string} timezone - The target display timezone.
  * @param {string} language - The language for locale formatting (e.g., 'en', 'de').
+ * @param {string} format - The format string for the date (e.g., "dd.MM.").
  * @returns {string} Formatted date string, or "" on error.
  */
-export function formatLegDateForDisplay(isoString, timezone, language) {
+export function formatLegDateForDisplay(isoString, timezone, language, format="dd.MM.") {
     try {
         const localDt = DateTime.fromISO(isoString, {zone: 'utc'}).setZone(timezone);
         if (!localDt.isValid) {
@@ -371,7 +372,7 @@ export function formatLegDateForDisplay(isoString, timezone, language) {
         }
         const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}
         const locale = localeMap[language.toUpperCase()] || `${language.toLowerCase()}-${language.toUpperCase()}`; // Fallback e.g. en-EN
-        return localDt.setLocale(locale).toFormat('dd. MMM');
+        return localDt.setLocale(locale).toFormat(format);
     } catch (error) {
         console.error("Error formatting leg date for display:", error);
         return "";

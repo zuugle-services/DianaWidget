@@ -64,7 +64,9 @@ export default {
             earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
             lateEnd: "Warning: Later Departure than recommended ending time of activity!",
             duration: "Warning: Activity duration below recommended",
-            durationShort: "Duration too short"
+            durationShort: "Duration too short",
+            durationShorter: "shorter than recommended",
+            durationLonger: "longer than recommended"
         },
         infos: {
             originRequired: "Please enter an origin location.",
@@ -226,7 +228,9 @@ export default {
             earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
             lateEnd: "Warnung: Spätere Abfahrt als empfohlene Endzeit!",
             duration: "Warnung: Aktivitätsdauer unter Empfehlung.",
-            durationShort: "Dauer zu kurz"
+            durationShort: "Dauer zu kurz",
+            durationShorter: "kürzer als empfohlen",
+            durationLonger: "länger als empfohlen"
         },
         infos: {
             originRequired: "Bitte geben Sie einen Startort ein.",
@@ -388,7 +392,9 @@ export default {
             earlyStart: "Advertencia: ¡Llegada anterior a la hora de inicio recomendada!",
             lateEnd: "Advertencia: ¡Salida posterior a la hora de finalización recomendada!",
             duration: "Advertencia: Duración de la actividad por debajo de la recomendada.",
-            durationShort: "Duración demasiado corta"
+            durationShort: "Duración demasiado corta",
+            durationShorter: "más corto de lo recomendado",
+            durationLonger: "más largo de lo recomendado"
         },
         infos: {
             originRequired: "Por favor, introduzca un lugar de origen.",
@@ -550,7 +556,9 @@ export default {
             earlyStart: "Avertissement : Arrivée plus tôt que l'heure de début d'activité recommandée !",
             lateEnd: "Avertissement : Départ plus tard que l'heure de fin d'activité recommandée !",
             duration: "Avertissement : Durée de l'activité inférieure à la recommandation.",
-            durationShort: "Durée trop courte"
+            durationShort: "Durée trop courte",
+            durationShorter: "plus court que recommandé",
+            durationLonger: "plus long que recommandé"
         },
         infos: {
             originRequired: "Veuillez entrer un lieu de départ.",
@@ -712,7 +720,9 @@ export default {
             earlyStart: "Attenzione: Arrivo in anticipo rispetto all'orario di inizio attività consigliato!",
             lateEnd: "Attenzione: Partenza in ritardo rispetto all'orario di fine attività consigliato!",
             duration: "Attenzione: Durata attività inferiore al consigliato.",
-            durationShort: "Durata troppo breve"
+            durationShort: "Durata troppo breve",
+            durationShorter: "più breve del consigliato",
+            durationLonger: "più lungo del consigliato"
         },
         infos: {
             originRequired: "Si prega di inserire un luogo di partenza.",
@@ -874,7 +884,9 @@ export default {
             earlyStart: "คำเตือน: มาถึงเร็วกว่าเวลาเริ่มต้นกิจกรรมที่แนะนำ!",
             lateEnd: "คำเตือน: ออกเดินทางช้ากว่าเวลาสิ้นสุดกิจกรรมที่แนะนำ!",
             duration: "คำเตือน: ระยะเวลากิจกรรมต่ำกว่าที่แนะนำ",
-            durationShort: "ระยะเวลาสั้นเกินไป"
+            durationShort: "ระยะเวลาสั้นเกินไป",
+            durationShorter: "สั้นกว่าที่แนะนำ",
+            durationLonger: "ยาวนานกว่าที่แนะนำ"
         },
         infos: {
             originRequired: "กรุณาป้อนจุดเริ่มต้น",

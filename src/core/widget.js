@@ -1384,7 +1384,7 @@ export default class DianaWidget {
                 // Create and insert the vertical date separator
                 const dateSeparator = document.createElement('div');
                 dateSeparator.classList.add('slider-date-separator');
-                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language);
+                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language, "dd. MMM");
                 slider.appendChild(dateSeparator);
 
                 // Update the tracker for the next iteration
@@ -1700,21 +1700,17 @@ export default class DianaWidget {
         try {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
+            const recommendedDurationMinutes = parseInt(this.config.activityDurationMinutes, 10);
 
             let durationDisplayHtml;
-            let warningDuration = this.state.activityTimes.warning_duration;
+            let durationWarningHtml = '';
 
             const isMultiDayDisplay = this.config.multiday && activityStartDate && activityEndDate &&
                 DateTime.fromJSDate(activityEndDate).startOf('day') > DateTime.fromJSDate(activityStartDate).startOf('day');
 
             if (isMultiDayDisplay) {
                 const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
-                durationDisplayHtml = `
-                    <div class="activity-time-row">
-                        <span class="activity-time-label">${this.t('activityDuration')}</span>
-                        <span class="activity-time-value">${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>
-                    </div>`;
-                warningDuration = false;
+                durationDisplayHtml = `<span>${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>`;
             } else {
                 if (this.state.activityTimes.start && this.state.activityTimes.end) {
                     const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
@@ -1729,55 +1725,61 @@ export default class DianaWidget {
                             month: activityStartDate.getMonth() + 1,
                             day: activityStartDate.getDate()
                         });
-                    const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
-                    this.state.activityTimes.duration = durationResult.text; // Store for sharing
-                    warningDuration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
 
-                    const warningIconHTML = `<span class="warning-icon-wrapper">
-                                                        <svg class="warning-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.33333 3.33333H8.66667V4.66667H7.33333V3.33333ZM7.33333 6H8.66667V10H7.33333V6ZM8 0.666667C4.01333 0.666667 0.666667 4.01333 0.666667 8C0.666667 11.9867 4.01333 15.3333 8 15.3333C11.9867 15.3333 15.3333 11.9867 15.3333 8C15.3333 4.01333 11.9867 0.666667 8 0.666667ZM8 14C4.68667 14 2 11.3133 2 8C2 4.68667 4.68667 2 8 2C11.3133 2 14 4.68667 14 8C14 11.3133 11.3133 14 8 14Z" fill="#FF9500"/></svg>
-                                                        <span class="warning-tooltip">${this.t("warnings.duration")} (${getTimeFormatFromMinutes(this.config.activityDurationMinutes, (key) => this.t(key))})</span>
-                                                        <span>&nbsp;&nbsp;${this.t("warnings.durationShort")}</span>
-                                                    </span>`;
+                    if (endDateForDuration < startDateForDuration) {
+                        durationDisplayHtml = `<span>--</span>`;
+                    } else {
+                        const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
+                        this.state.activityTimes.duration = durationResult.text; // Store for sharing
+                        durationDisplayHtml = `<span>${durationResult.text}</span>`;
+                        const actualMinutes = durationResult.totalMinutes;
+                        const diffMinutes = actualMinutes - recommendedDurationMinutes;
 
-                    durationDisplayHtml = `
-                      <div class="activity-time-row">
-                          <span class="activity-time-label">${this.t('activityDuration')}</span>
-                          <span class="activity-time-value ${warningDuration ? 'has-warning' : ''}">
-                            <span>${durationResult.text}</span>
-                            ${warningDuration ? warningIconHTML : ''}
-                          </span>
-                      </div>`;
+                        if (diffMinutes < 0) {
+                            const timeShorter = getTimeFormatFromMinutes(Math.abs(diffMinutes), (k) => this.t(k));
+                            durationWarningHtml = `
+                                <span class="activity-duration-warning">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.0833C14.5 12.2982 15.0211 11.6225 15.75 11.4124V10.1667C15.75 8.97005 14.7799 8 13.5833 8H13.5C12.0667 8 11.1667 6.88071 11.1667 5.5C11.1667 4.11929 12.0667 3 13.5 3C14.9333 3 15.75 4.11929 15.75 5.5C15.75 5.91421 16.0858 6.25 16.5 6.25C16.9142 6.25 17.25 5.91421 17.25 5.5C17.25 3.29086 15.584 1.5 13.5 1.5C11.416 1.5 9.66667 3.29086 9.66667 5.5C9.66667 7.70914 11.416 9.5 13.5 9.5H13.5833C13.9338 9.5 14.25 9.79101 14.25 10.1667V11.5876C13.5211 11.9775 13 12.7518 13 13.6667C13 14.8433 13.8433 15.8333 15 15.8333C16.1567 15.8333 17 14.8433 17 13.6667C17 12.7518 16.4789 11.9775 15.75 11.5876V11.4124C16.4789 11.6225 17 12.2982 17 13.0833H14.5Z" fill="currentColor"/><path d="M9.5 21C8.67157 21 8 20.3284 8 19.5V18H3.5C2.67157 18 2 17.3284 2 16.5C2 15.6716 2.67157 15 3.5 15H8V13.5C8 12.6716 8.67157 12 9.5 12C10.3284 12 11 12.6716 11 13.5V19.5C11 20.3284 10.3284 21 9.5 21Z" fill="currentColor"/><path d="M19 19.5C19 20.8807 17.8807 22 16.5 22C15.1193 22 14 20.8807 14 19.5C14 18.1193 15.1193 17 16.5 17C17.8807 17 19 18.1193 19 19.5Z" fill="currentColor"/></svg>
+                                    (!) ${timeShorter} ${this.t("warnings.durationShorter")}
+                                </span>`;
+                        } else if (diffMinutes > 0 && (actualMinutes / recommendedDurationMinutes) > 1.10) {
+                            const timeLonger = getTimeFormatFromMinutes(diffMinutes, (k) => this.t(k));
+                            durationWarningHtml = `
+                                <span class="activity-duration-warning">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 15C4 15 2 15.5 2 17C2 18.5 4 19 4 19M20 15C20 15 22 15.5 22 17C22 18.5 20 19 20 19M16.8889 19C18.6667 19.5 20 18.5 20 17C20 15.5 19 15 18 15H17M7.11111 19C5.33333 19.5 4 18.5 4 17C4 15.5 5 15 6 15H7M8 15H16C17 15 18 15.5 18 17C18 18.5 17 19 16 19H8C7 19 6 18.5 6 17C6 15.5 7 15 8 15ZM8 15V11M16 15V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 11H7C5.34315 11 4 9.65685 4 8C4 6.34315 5.34315 5 7 5H17C18.6569 5 20 6.34315 20 8C20 9.65685 18.6569 11 17 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    (!) ${timeLonger} ${this.t("warnings.durationLonger")}
+                                </span>`;
+                        }
+                    }
+
                 } else {
-                    durationDisplayHtml = `
-                      <div class="activity-time-row">
-                          <span class="activity-time-label"><strong>${this.t('activityDuration')}</strong></span>
-                          <span class="activity-time-value">--</span>
-                      </div>`;
+                    durationDisplayHtml = `<span>--</span>`;
                 }
             }
 
-            const startDisplayDate = isMultiDayDisplay && activityStartDate ? `(${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, this.config.language)})` : '';
-            const endDisplayDate = isMultiDayDisplay && activityEndDate ? `(${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, this.config.language)})` : '';
+            const locale = this.config.language.split('-')[0];
+            const startDateTime = this.state.activityTimes.start ? `${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.start}` : '--';
+            const endDateTime = this.state.activityTimes.end ? `${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.end}` : '--';
 
             return `
-                <div class="activity-time-card">
-                    <div class="activity-time-header">${this.config.activityName}</div>
-                    <div class="activity-time-meta">
-                        <div class="activity-time-row">
-                            <span class="activity-time-label">${this.config.activityStartTimeLabel || this.t("activityStart")}</span>
-                            <span class="activity-time-value">${this.state.activityTimes.start || '--:--'} ${startDisplayDate}</span>
-                            <span class="activity-time-divider">•</span>
-                            <span class="activity-time-value">${this.config.activityStartLocationDisplayName || this.config.activityStartLocation}</span>
-                        </div>
-                        ${durationDisplayHtml}
-                        <div class="activity-time-row">
-                            <span class="activity-time-label">${this.config.activityEndTimeLabel || this.t("activityEnd")}</span>
-                            <span class="activity-time-value">${this.state.activityTimes.end || '--:--'} ${endDisplayDate}</span>
-                            <span class="activity-time-divider">•</span>
-                            <span class="activity-time-value">${this.config.activityEndLocationDisplayName || this.config.activityEndLocation}</span>
+            <div class="activity-time-card">
+                <div class="activity-timeline">
+                    <div class="timeline-line"></div>
+                    <div class="timeline-dot top"></div>
+                    <div class="timeline-dot bottom"></div>
+                </div>
+                <div class="activity-time-content">
+                    <div class="activity-datetime-row">${startDateTime}</div>
+                    <div class="activity-main-info">
+                        <div class="activity-title">${this.config.activityName}</div>
+                        <div class="activity-duration-line">
+                           ${durationDisplayHtml}
+                           ${durationWarningHtml}
                         </div>
                     </div>
-                </div>`;
+                    <div class="activity-datetime-row">${endDateTime}</div>
+                </div>
+            </div>`;
         } catch (error) {
             console.error("Error getting activity time box HTML:", error);
             return `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
