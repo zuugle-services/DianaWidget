@@ -325,79 +325,92 @@
 
 .activity-time-card {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  gap: 15px;
+  min-height: 70px;
 }
 
-.activity-time-header {
-  border-bottom: 1px solid var(--shadow-verylight);
-  color: var(--text-primary);
-  font-family: 'DM Sans', sans-serif;
+.activity-timeline {
+  position: relative;
+  width: 10px;
+  flex-shrink: 0;
+}
+
+.timeline-line {
+  position: absolute;
+  left: 7px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  background-color: var(--border-secondary);
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 6px;
+  width: 5px;
+  height: 5px;
+  background-color: var(--primary-color);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+
+.timeline-dot.top {
+  top: 10px;
+  transform: translateY(-50%);
+}
+
+.timeline-dot.bottom {
+  bottom: 10px;
+  transform: translateY(50%);
+}
+
+.activity-time-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  padding: 0;
+  min-height: 70px;
+}
+
+.activity-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0 10px 0;
+}
+
+.activity-title {
   font-size: 16px;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  line-height: 120%;
-  padding-bottom: 8px;
+  color: var(--text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.activity-time-header a:hover svg {
-  cursor: pointer;
-  filter: brightness(20%);
-  transition: filter 0.2s ease;
-}
-
-.activity-time-meta {
+.activity-duration-line {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.activity-time-row {
   align-items: center;
-  color: var(--text-tertiary);
-  display: flex;
-  font-size: 13px;
   gap: 8px;
-  letter-spacing: 0.02em;
-  line-height: 120%;
-}
-
-.activity-time-label {
-  color: var(--text-tertiary);
-  font-weight: 500;
-  min-width: 70px;
-}
-
-.activity-time-value {
   color: var(--text-secondary);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.activity-duration-warning-wrapper {
   display: flex;
   align-items: center;
-}
-
-.activity-time-divider {
-  color: var(--text-muted);
-  padding: 0 2px;
-}
-
-.activity-time-value.has-warning {
-  color: var(--wait-color);
+  gap: 5px;
   font-weight: 500;
+  font-size: 13px;
 }
 
 .warning-icon-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
-  margin-left: 5px;
-
-  .warning-icon {
-    width: 16px;
-    height: 16px;
-    cursor: help;
-  }
+  gap: 5px;
 
   .warning-tooltip {
     visibility: hidden;
@@ -414,6 +427,7 @@
     left: 50%;
     transform: translateX(-50%);
     opacity: 0;
+    cursor: help;
     transition: opacity 0.3s;
     font-size: 12px;
     font-weight: 400;
@@ -437,7 +451,6 @@
     opacity: 1;
   }
 }
-
 
 .middle-box-content .connection-elements {
   border-left: 3px solid var(--border-tertiary);
@@ -703,3 +716,4 @@ div#eleCont {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--success-color) 0%, transparent);
   }
 }
+
