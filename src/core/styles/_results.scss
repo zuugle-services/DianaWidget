@@ -337,7 +337,7 @@
 
 .timeline-line {
   position: absolute;
-  left: 3.5px;
+  left: 7px;
   top: 10px;
   bottom: 10px;
   width: 3px;
@@ -346,21 +346,22 @@
 
 .timeline-dot {
   position: absolute;
-  left: 0;
-  width: 10px;
-  height: 10px;
+  left: 6px;
+  width: 5px;
+  height: 5px;
   background-color: var(--primary-color);
   border-radius: 50%;
-  border: 2px solid var(--bg-info);
   box-sizing: border-box;
 }
 
 .timeline-dot.top {
-  top: 5px;
+  top: 10px;
+  transform: translateY(-50%);
 }
 
 .timeline-dot.bottom {
-  bottom: 5px;
+  bottom: 10px;
+  transform: translateY(50%);
 }
 
 .activity-time-content {
@@ -368,19 +369,24 @@
   flex-direction: column;
   justify-content: space-between;
   flex-grow: 1;
-  padding: 5px 0;
-  min-height: 60px;
+  padding: 0;
+  min-height: 70px;
 }
 
 .activity-datetime-row {
   font-size: 14px;
-  color: var(--text-secondary);
+  color: var(--text-muted);
+  line-height: 1.4;
+  height: 20px;
+  display: flex;
+  align-items: center;
 }
 
 .activity-main-info {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding: 10px 0 10px 0;
 }
 
 .activity-title {
@@ -401,19 +407,74 @@
   flex-wrap: wrap;
 }
 
-.activity-duration-warning {
+.activity-duration-warning-wrapper {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   color: var(--wait-color);
   font-weight: 500;
   font-size: 13px;
 }
 
-.activity-duration-warning svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
+.warning-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  .warning-icon-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: var(--wait-color);
+    color: var(--bg-primary);
+    font-weight: bold;
+    font-size: 12px;
+    cursor: help;
+    user-select: none;
+    line-height: 1;
+  }
+
+  .warning-tooltip {
+    visibility: hidden;
+    width: max-content;
+    max-width: 200px;
+    background-color: var(--text-primary);
+    color: var(--bg-primary);
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 10;
+    bottom: 150%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.4;
+    box-shadow: 0 2px 4px var(--shadow-medium);
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: var(--text-primary) transparent transparent transparent;
+    }
+  }
+
+  &:hover .warning-tooltip {
+    visibility: visible;
+    opacity: 1;
+  }
 }
 
 .middle-box-content .connection-elements {
@@ -680,3 +741,4 @@ div#eleCont {
     box-shadow: 0 0 0 0 color-mix(in srgb, var(--success-color) 0%, transparent);
   }
 }
+

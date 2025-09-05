@@ -1737,18 +1737,34 @@ export default class DianaWidget {
 
                         if (diffMinutes < 0) {
                             const timeShorter = getTimeFormatFromMinutes(Math.abs(diffMinutes), (k) => this.t(k));
+                            const visibleWarningText = `${timeShorter} ${this.t("warnings.durationShorter")}`;
+                            const tooltipText = `${this.t("warnings.duration")} (${getTimeFormatFromMinutes(recommendedDurationMinutes, (k) => this.t(k))})`;
+                            const rabbitIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.0833C14.5 12.2982 15.0211 11.6225 15.75 11.4124V10.1667C15.75 8.97005 14.7799 8 13.5833 8H13.5C12.0667 8 11.1667 6.88071 11.1667 5.5C11.1667 4.11929 12.0667 3 13.5 3C14.9333 3 15.75 4.11929 15.75 5.5C15.75 5.91421 16.0858 6.25 16.5 6.25C16.9142 6.25 17.25 5.91421 17.25 5.5C17.25 3.29086 15.584 1.5 13.5 1.5C11.416 1.5 9.66667 3.29086 9.66667 5.5C9.66667 7.70914 11.416 9.5 13.5 9.5H13.5833C13.9338 9.5 14.25 9.79101 14.25 10.1667V11.5876C13.5211 11.9775 13 12.7518 13 13.6667C13 14.8433 13.8433 15.8333 15 15.8333C16.1567 15.8333 17 14.8433 17 13.6667C17 12.7518 16.4789 11.9775 15.75 11.5876V11.4124C16.4789 11.6225 17 12.2982 17 13.0833H14.5Z"/><path d="M9.5 21C8.67157 21 8 20.3284 8 19.5V18H3.5C2.67157 18 2 17.3284 2 16.5C2 15.6716 2.67157 15 3.5 15H8V13.5C8 12.6716 8.67157 12 9.5 12C10.3284 12 11 12.6716 11 13.5V19.5C11 20.3284 10.3284 21 9.5 21Z"/><path d="M19 19.5C19 20.8807 17.8807 22 16.5 22C15.1193 22 14 20.8807 14 19.5C14 18.1193 15.1193 17 16.5 17C17.8807 17 19 18.1193 19 19.5Z"/></svg>`;
+
                             durationWarningHtml = `
-                                <span class="activity-duration-warning">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 13.0833C14.5 12.2982 15.0211 11.6225 15.75 11.4124V10.1667C15.75 8.97005 14.7799 8 13.5833 8H13.5C12.0667 8 11.1667 6.88071 11.1667 5.5C11.1667 4.11929 12.0667 3 13.5 3C14.9333 3 15.75 4.11929 15.75 5.5C15.75 5.91421 16.0858 6.25 16.5 6.25C16.9142 6.25 17.25 5.91421 17.25 5.5C17.25 3.29086 15.584 1.5 13.5 1.5C11.416 1.5 9.66667 3.29086 9.66667 5.5C9.66667 7.70914 11.416 9.5 13.5 9.5H13.5833C13.9338 9.5 14.25 9.79101 14.25 10.1667V11.5876C13.5211 11.9775 13 12.7518 13 13.6667C13 14.8433 13.8433 15.8333 15 15.8333C16.1567 15.8333 17 14.8433 17 13.6667C17 12.7518 16.4789 11.9775 15.75 11.5876V11.4124C16.4789 11.6225 17 12.2982 17 13.0833H14.5Z" fill="currentColor"/><path d="M9.5 21C8.67157 21 8 20.3284 8 19.5V18H3.5C2.67157 18 2 17.3284 2 16.5C2 15.6716 2.67157 15 3.5 15H8V13.5C8 12.6716 8.67157 12 9.5 12C10.3284 12 11 12.6716 11 13.5V19.5C11 20.3284 10.3284 21 9.5 21Z" fill="currentColor"/><path d="M19 19.5C19 20.8807 17.8807 22 16.5 22C15.1193 22 14 20.8807 14 19.5C14 18.1193 15.1193 17 16.5 17C17.8807 17 19 18.1193 19 19.5Z" fill="currentColor"/></svg>
-                                    (!) ${timeShorter} ${this.t("warnings.durationShorter")}
-                                </span>`;
+                                <div class="activity-duration-warning-wrapper">
+                                    ${rabbitIcon}
+                                    <span class="warning-icon-wrapper">
+                                        <span class="warning-icon-text">!</span>
+                                        <span class="warning-tooltip">${tooltipText}</span>
+                                    </span>
+                                    <span>${visibleWarningText}</span>
+                                </div>`;
                         } else if (diffMinutes > 0 && (actualMinutes / recommendedDurationMinutes) > 1.10) {
                             const timeLonger = getTimeFormatFromMinutes(diffMinutes, (k) => this.t(k));
+                            const visibleWarningText = `${timeLonger} ${this.t("warnings.durationLonger")}`;
+                            const tooltipText = `${this.t("warnings.duration")} (${getTimeFormatFromMinutes(recommendedDurationMinutes, (k) => this.t(k))})`;
+                            const turtleIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 15C4 15 2 15.5 2 17C2 18.5 4 19 4 19M20 15C20 15 22 15.5 22 17C22 18.5 20 19 20 19M16.8889 19C18.6667 19.5 20 18.5 20 17C20 15.5 19 15 18 15H17M7.11111 19C5.33333 19.5 4 18.5 4 17C4 15.5 5 15 6 15H7M8 15H16C17 15 18 15.5 18 17C18 18.5 17 19 16 19H8C7 19 6 18.5 6 17C6 15.5 7 15 8 15ZM8 15V11M16 15V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 11H7C5.34315 11 4 9.65685 4 8C4 6.34315 5.34315 5 7 5H17C18.6569 5 20 6.34315 20 8C20 9.65685 18.6569 11 17 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
                             durationWarningHtml = `
-                                <span class="activity-duration-warning">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 15C4 15 2 15.5 2 17C2 18.5 4 19 4 19M20 15C20 15 22 15.5 22 17C22 18.5 20 19 20 19M16.8889 19C18.6667 19.5 20 18.5 20 17C20 15.5 19 15 18 15H17M7.11111 19C5.33333 19.5 4 18.5 4 17C4 15.5 5 15 6 15H7M8 15H16C17 15 18 15.5 18 17C18 18.5 17 19 16 19H8C7 19 6 18.5 6 17C6 15.5 7 15 8 15ZM8 15V11M16 15V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M17 11H7C5.34315 11 4 9.65685 4 8C4 6.34315 5.34315 5 7 5H17C18.6569 5 20 6.34315 20 8C20 9.65685 18.6569 11 17 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    (!) ${timeLonger} ${this.t("warnings.durationLonger")}
-                                </span>`;
+                                <div class="activity-duration-warning-wrapper">
+                                    ${turtleIcon}
+                                    <span class="warning-icon-wrapper">
+                                        <span class="warning-icon-text">!</span>
+                                        <span class="warning-tooltip">${tooltipText}</span>
+                                        <span>${visibleWarningText}</span>
+                                    </span>
+                                </div>`;
                         }
                     }
 
