@@ -29,7 +29,6 @@ import {legalContent} from '../templates/legalContent.js';
 export default class DianaWidget {
     defaultConfig = {
         activityName: "[Activity Name]",
-        activityType: "[Activity Type]",
         requiredFields: [
             'activityStartLocation',
             'activityStartLocationType',
@@ -1172,7 +1171,6 @@ export default class DianaWidget {
         let params = {
             date: formatDatetime(activityStartDate, this.config.timezone), // Use timezone for date formatting if it's local
             activity_name: this.config.activityName,
-            activity_type: this.config.activityType,
             activity_start_location: this.config.activityStartLocation,
             activity_start_location_type: this.config.activityStartLocationType,
             activity_end_location: this.config.activityEndLocation,

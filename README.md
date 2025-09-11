@@ -183,7 +183,6 @@ Configure through `window.dianaActivityConfig` in host page:
 <script>
 window.dianaActivityConfig = {
  activityName: "Skiing in Alps",
- activityType: "Skiing",
  activityStartLocation: "47.422, 10.984", // Example coordinates
  activityStartLocationType: "coordinates",
  activityEndLocation: "Alpine Peak",
@@ -275,7 +274,6 @@ These fields must be provided in the configuration object for the widget to init
 | Option                      | Type          | Description                                                                                                                   | Example                                   |
 |:----------------------------|:--------------|:------------------------------------------------------------------------------------------------------------------------------|:------------------------------------------|
 | `activityName`              | String        | Name of the activity displayed in the widget header.                                                                          | `"Hiking Trip"`                           |
-| `activityType`              | String        | Type identifier for the activity (used internally).                                                                           | `"Hiking"`                                |
 | `activityStartLocation`     | String        | Coordinates (`lat,lon`) or address string for the activity start location.                                                    | `"47.72620173410345, 13.042174020936743"` |
 | `activityStartLocationType` | String        | Type of the start location. Valid types: `"coordinates"`, `"coord"`, `"coords"`, `"address"`, `"station"`.                    | `"coordinates"`                           |
 | `activityEndLocation`       | String        | Coordinates (`lat,lon`) or address string for the activity end location.                                                      | `"47.70487271915757, 13.038710343883247"` |
