@@ -1815,7 +1815,15 @@ export default class DianaWidget {
 
             if (isMultiDayDisplay) {
                 const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
-                durationDisplayHtml = `<span>${numDays} ${numDays === 1 ? this.t('daySg') : this.t('dayPl')}</span>`;
+                const numNights = numDays - 1;
+                const daysText = numDays === 1 ? this.t('daySg') : this.t('dayPl');
+
+                if (numNights > 0) {
+                    const nightsText = numNights === 1 ? this.t('nightSg') : this.t('nightPl');
+                    durationDisplayHtml = `<span>${numDays} ${daysText} / ${numNights} ${nightsText}</span>`;
+                } else {
+                    durationDisplayHtml = `<span>${numDays} ${daysText}</span>`;
+                }
             } else {
                 if (this.state.activityTimes.start && this.state.activityTimes.end) {
                     const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
