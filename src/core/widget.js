@@ -1231,6 +1231,25 @@ export default class DianaWidget {
         }
         this.state.toConnections = result.connections.to_activity;
         this.state.fromConnections = result.connections.from_activity;
+
+        // Mark original first and last elements
+        this.state.toConnections.forEach(conn => {
+            if (conn.connection_elements && conn.connection_elements.length > 0) {
+                conn.connection_elements[0].isOriginalFirst = true;
+                conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
+            }
+        });
+        this.state.fromConnections.forEach(conn => {
+            if (conn.connection_elements && conn.connection_elements.length > 0) {
+                conn.connection_elements[0].isOriginalFirst = true;
+                conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
+            }
+        });
+
+        // Process connections to filter short walks and adjust times
+        this._processAndFilterConnections(this.state.toConnections, 'to');
+        this._processAndFilterConnections(this.state.fromConnections, 'from');
+
         const toIndex = result.connections.recommended_to_activity_connection;
         const fromIndex = result.connections.recommended_from_activity_connection;
         this.state.recommendedToIndex = (typeof toIndex === 'number' && toIndex >= 0 && toIndex < this.state.toConnections.length) ? toIndex : 0;
@@ -1241,6 +1260,45 @@ export default class DianaWidget {
         else if (this.state.fromConnections.length === 0) console.warn("No 'from_activity' connections received.");
 
         this.renderConnectionResults();
+    }
+
+    _getElementDurationMinutes(element) {
+        if (typeof element.duration === 'number') {
+            return element.duration;
+        }
+        // Fallback to calculate from timestamps
+        const durationStr = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
+        return parseDurationToMinutes(durationStr, (key) => this.t(key));
+    }
+
+    _processAndFilterConnections(connections, type) {
+        connections.forEach(conn => {
+            if (!conn.connection_elements || conn.connection_elements.length <= 1) {
+                return; // Nothing to filter if 0 or 1 elements
+            }
+
+            if (type === 'to') {
+                const lastElement = conn.connection_elements[conn.connection_elements.length - 1];
+                const durationLastLegMinutes = this._getElementDurationMinutes(lastElement);
+
+                if (durationLastLegMinutes <= 5 && lastElement.type === "WALK") {
+                    // Filter out the last element
+                    const removedElement = conn.connection_elements.pop();
+                    // Adjust the main connection's end time to the start time of the removed walk
+                    conn.connection_end_timestamp = removedElement.departure_time;
+                }
+            } else if (type === 'from') {
+                const firstElement = conn.connection_elements[0];
+                const durationFirstLegMinutes = this._getElementDurationMinutes(firstElement);
+
+                if (durationFirstLegMinutes <= 5 && firstElement.type === "WALK") {
+                    // Filter out the first element
+                    const removedElement = conn.connection_elements.shift();
+                    // Adjust the main connection's start time to the arrival time of the removed walk
+                    conn.connection_start_timestamp = removedElement.arrival_time;
+                }
+            }
+        });
     }
 
     renderSuggestions() {
@@ -1382,7 +1440,7 @@ export default class DianaWidget {
                 // Create and insert the vertical date separator
                 const dateSeparator = document.createElement('div');
                 dateSeparator.classList.add('slider-date-separator');
-                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language, "dd. MMM");
+                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language);
                 slider.appendChild(dateSeparator);
 
                 // Update the tracker for the next iteration
@@ -1394,21 +1452,29 @@ export default class DianaWidget {
             const duration = calculateTimeDifference(conn.connection_start_timestamp, conn.connection_end_timestamp, (key) => this.t(key));
             const anytime = conn.connection_anytime;
             const btn = document.createElement('button');
+            btn.dataset.index = index; // Add index for easy targeting
+
+            const transfersHtml = anytime ? this.getTransportIcon("WALK_BLACK") : `
+                <div class="transfers-group">
+                  <span>${conn.connection_transfers}</span>
+                  <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/>
+                  </svg>
+                </div>
+            `;
+
+            const dotPlaceholder = type === 'from' ? `<div class="duration-dot"></div>` : '';
+
             btn.innerHTML = `
-                <div style="display: flex; flex-direction: column; align-items: center;">
+                <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
                   <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold;">${startTimeLocal} - ${endTimeLocal}</div>
-                  <div style="display: flex; justify-content:space-between; width: 100%; /*noinspection CssInvalidPropertyValue*/width: -moz-available; /*noinspection CssInvalidPropertyValue*/width: -webkit-fill-available; /*noinspection CssInvalidPropertyValue*/width: fill-available; align-items: center; font-size: 12px; color: #666;">
+                  <div class="slider-button-details">
                     <span>${duration}</span>
-                    <div style="display: flex; gap:2px; align-items: center;">
-                      ${anytime ? this.getTransportIcon("WALK_BLACK") : `
-                      <span>${conn.connection_transfers}</span>
-                      <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M14.8537 8.85354L12.8537 10.8535C12.7598 10.9474 12.6326 11.0001 12.4999 11.0001C12.3672 11.0001 12.24 10.9474 12.1462 10.8535C12.0523 10.7597 11.9996 10.6325 11.9996 10.4998C11.9996 10.3671 12.0523 10.2399 12.1462 10.146L13.293 8.99979H2.70678L3.85366 10.146C3.94748 10.2399 4.00018 10.3671 4.00018 10.4998C4.00018 10.6325 3.94748 10.7597 3.85366 10.8535C3.75983 10.9474 3.63259 11.0001 3.49991 11.0001C3.36722 11.0001 3.23998 10.9474 3.14616 10.8535L1.14616 8.85354C1.09967 8.8071 1.06279 8.75196 1.03763 8.69126C1.01246 8.63056 0.999512 8.5655 0.999512 8.49979C0.999512 8.43408 1.01246 8.36902 1.03763 8.30832C1.06279 8.24762 1.09967 8.19248 1.14616 8.14604L3.14616 6.14604C3.23998 6.05222 3.36722 5.99951 3.49991 5.99951C3.63259 5.99951 3.75983 6.05222 3.85366 6.14604C3.94748 6.23986 4.00018 6.36711 4.00018 6.49979C4.00018 6.63247 3.94748 6.75972 3.85366 6.85354L2.70678 7.99979H13.293L12.1462 6.85354C12.0523 6.75972 11.9996 6.63247 11.9996 6.49979C11.9996 6.36711 12.0523 6.23986 12.1462 6.14604C12.24 6.05222 12.3672 5.99951 12.4999 5.99951C12.6326 5.99951 12.7598 6.05222 12.8537 6.14604L14.8537 8.14604C14.9001 8.19248 14.937 8.24762 14.9622 8.30832C14.9873 8.36902 15.0003 8.43408 15.0003 8.49979C15.0003 8.5655 14.9873 8.63056 14.9622 8.69126C14.937 8.75196 14.9001 8.8071 14.8537 8.85354Z" fill="black"/>
-                      </svg>
-                      `}
-                    </div>
+                    ${dotPlaceholder}
+                    ${transfersHtml}
                   </div>
                 </div>`;
+
             btn.addEventListener('click', () => this.filterConnectionsByTime(type, startTimeLocal, endTimeLocal));
             const isRecommended = (type === 'to' && index === this.state.recommendedToIndex) || (type === 'from' && index === this.state.recommendedFromIndex);
             if (isRecommended) btn.classList.add('active-time');
@@ -1501,6 +1567,7 @@ export default class DianaWidget {
             const fromButtons = bottomSlider.querySelectorAll('button');
             if (!selectedToConnection) {
                 fromButtons.forEach(btn => btn.classList.remove('disabled'));
+                this._updateFromConnectionDots(); // Clear dots
                 return;
             }
             const arrivalTime = DateTime.fromISO(selectedToConnection.connection_end_timestamp, { zone: 'utc' });
@@ -1508,11 +1575,12 @@ export default class DianaWidget {
             // Disable invalid buttons
             fromConnections.forEach((fromConn, index) => {
                 const departureTime = DateTime.fromISO(fromConn.connection_start_timestamp, { zone: 'utc' });
-                if (fromButtons[index]) {
+                const button = bottomSlider.querySelector(`button[data-index="${index}"]`);
+                if (button) {
                     if (departureTime < arrivalTime) {
-                        fromButtons[index].classList.add('disabled');
+                        button.classList.add('disabled');
                     } else {
-                        fromButtons[index].classList.remove('disabled');
+                        button.classList.remove('disabled');
                     }
                 }
             });
@@ -1539,6 +1607,8 @@ export default class DianaWidget {
                     this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
                 }
             }
+            this._updateFromConnectionDots();
+
 
         } else if (sourceType === 'from') {
             // Update 'to' slider based on 'from' selection
@@ -1552,11 +1622,12 @@ export default class DianaWidget {
             // Disable invalid buttons
             toConnections.forEach((toConn, index) => {
                 const arrivalTime = DateTime.fromISO(toConn.connection_end_timestamp, { zone: 'utc' });
-                if (toButtons[index]) {
+                const button = topSlider.querySelector(`button[data-index="${index}"]`);
+                if (button) {
                     if (arrivalTime > departureTime) {
-                        toButtons[index].classList.add('disabled');
+                        button.classList.add('disabled');
                     } else {
-                        toButtons[index].classList.remove('disabled');
+                        button.classList.remove('disabled');
                     }
                 }
             });
@@ -1581,6 +1652,7 @@ export default class DianaWidget {
 
                     // Re-render activity box with partial data
                     this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+                    this._updateFromConnectionDots(); // Clear dots
                 }
             }
         }
@@ -1596,7 +1668,8 @@ export default class DianaWidget {
         const slider = this.elements[sliderId];
         slider.querySelectorAll('button').forEach(btn => {
             btn.classList.remove('active-time');
-            if (btn.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
+            const timeDiv = btn.querySelector('div > div:first-child');
+            if (timeDiv && timeDiv.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
                 btn.classList.add('active-time');
             }
         });
@@ -1639,25 +1712,59 @@ export default class DianaWidget {
     }
 
 
+    _updateFromConnectionDots() {
+        if (this.config.multiday || !this.elements.bottomSlider) {
+            return;
+        }
+
+        const recommendedDurationMinutes = parseInt(this.config.activityDurationMinutes, 10);
+
+        // Clear all dots if no 'to' connection is selected
+        if (!this.state.selectedToConnection) {
+            this.elements.bottomSlider.querySelectorAll('.duration-dot').forEach(dot => {
+                dot.className = 'duration-dot'; // Reset classes
+            });
+            return;
+        }
+
+        const arrivalTimeToActivity = DateTime.fromISO(this.state.selectedToConnection.connection_end_timestamp, { zone: 'utc' }).setZone(this.config.timezone);
+
+        this.state.fromConnections.forEach((fromConn, index) => {
+            const button = this.elements.bottomSlider.querySelector(`button[data-index="${index}"]`);
+            if (!button) return;
+
+            const dotElement = button.querySelector('.duration-dot');
+            if (!dotElement) return;
+
+            // Reset dot style
+            dotElement.className = 'duration-dot';
+
+            const departureTimeFromActivity = DateTime.fromISO(fromConn.connection_start_timestamp, { zone: 'utc' }).setZone(this.config.timezone);
+
+            // Skip if this 'from' connection is invalid based on the 'to' connection
+            if (departureTimeFromActivity < arrivalTimeToActivity) return;
+
+            const durationResult = calculateDurationLocalWithDates(arrivalTimeToActivity, departureTimeFromActivity, (key) => this.t(key));
+            const actualMinutes = durationResult.totalMinutes;
+
+            if (actualMinutes < recommendedDurationMinutes) {
+                dotElement.classList.add('dot-too-short');
+            } else if ((actualMinutes / recommendedDurationMinutes) > 1.10) {
+                dotElement.classList.add('dot-too-long');
+            }
+        });
+    }
+
+
     updateActivityTimeBox(connection, type) {
         if (!connection) return;
         try {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
 
-            let connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
-            let connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
-            const durationFirstLegStr = calculateTimeDifference(connection.connection_elements[0].departure_time, connection.connection_elements[0].arrival_time, (key) => this.t(key));
-            const durationFirstLegMinutes = parseDurationToMinutes(durationFirstLegStr, (key) => this.t(key));
-            const durationLastLegStr = calculateTimeDifference(connection.connection_elements[connection.connection_elements.length - 1].departure_time, connection.connection_elements[connection.connection_elements.length - 1].arrival_time, (key) => this.t(key));
-            const durationLastLegMinutes = parseDurationToMinutes(durationLastLegStr, (key) => this.t(key));
-
-            if (type === 'from' && durationFirstLegMinutes <= 5 && connection.connection_elements[0].type === "WALK") {
-                connectionStartTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_start_timestamp, durationFirstLegMinutes), this.config.timezone);
-            }
-            if (type === 'to' && durationLastLegMinutes <= 5 && connection.connection_elements[connection.connection_elements.length - 1].type === "WALK") {
-                connectionEndTimeLocal = convertUTCToLocalTime(addMinutesToDate(connection.connection_end_timestamp, -durationLastLegMinutes), this.config.timezone);
-            }
+            // The connection timestamps are pre-adjusted by _processAndFilterConnections, so we use them directly.
+            const connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
+            const connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
 
             if (type === 'to') {
                 const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
@@ -1821,30 +1928,10 @@ export default class DianaWidget {
                 return `<div>${this.t('noConnectionElements')}</div>`;
             }
 
-            const filteredElements = conn.connection_elements.filter((element, index, arr) => {
-                let durationMinutes;
-                if (typeof element.duration === 'number') {
-                    durationMinutes = element.duration;
-                } else {
-                    const durationStr = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
-                    durationMinutes = parseDurationToMinutes(durationStr, (key) => this.t(key));
-                }
+            // The connection_elements array is now pre-filtered by _processAndFilterConnections.
+            const filteredElements = conn.connection_elements;
 
-                if (arr.length === 1) { // If only one leg, always show it
-                    return true;
-                }
-
-                // Filter out very short (e.g., 5 min) walk legs at the absolute start/end of a multi-leg journey
-                if (type === 'from' && index === 0 && durationMinutes <= 5 && element.type === "WALK") {
-                    return false;
-                }
-                if (type === 'to' && index === arr.length - 1 && durationMinutes <= 5 && element.type === "WALK") {
-                    return false;
-                }
-                return true;
-            });
-
-            if (filteredElements.length === 0) { // If filtering removed all elements
+            if (filteredElements.length === 0) { // If filtering removed all elements (edge case)
                 return `<div>${this.t('noConnectionElements')}</div>`;
             }
 
@@ -1852,18 +1939,18 @@ export default class DianaWidget {
             const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
 
             const ticketButtonHTML = conn.connection_ticketshop_link ? `
-                <button class="ticket-button" onclick="window.open('${conn.connection_ticketshop_link}', '_blank')">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
-                    ${this.t('buyTicket')}
-                </button>
-            ` : '';
+            <button class="ticket-button" onclick="window.open('${conn.connection_ticketshop_link}', '_blank')">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
+                ${this.t('buyTicket')}
+            </button>
+        ` : '';
 
             const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML) ? `
-                <div class="connection-details-header">
-                    ${liveIndicatorHTML}
-                    ${ticketButtonHTML}
-                </div>
-            ` : '';
+            <div class="connection-details-header">
+                ${liveIndicatorHTML}
+                ${ticketButtonHTML}
+            </div>
+        ` : '';
 
             let html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
 
@@ -1888,18 +1975,18 @@ export default class DianaWidget {
                     const waitDuration = calculateDurationLocalWithDates(activityEndDateTime, firstLegDepartureDateTime, (key) => this.t(key));
                     if (waitDuration.totalMinutes > 0) {
                         html += `
-                          <div class="connection-element waiting-block">
-                              <div class="element-time">
-                              <span>${this.state.activityTimes.end}</span>
-                              ${this.t('waiting.afterActivity')}
-                              </div>
-                              <div id="eleCont">
-                              <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
-                              <span class="element-duration">
-                                  ${waitDuration.text}
-                              </span>
-                              </div>
-                          </div>`;
+                      <div class="connection-element waiting-block">
+                          <div class="element-time">
+                          <span>${this.state.activityTimes.end}</span>
+                          ${this.t('waiting.afterActivity')}
+                          </div>
+                          <div id="eleCont">
+                          <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                          <span class="element-duration">
+                              ${waitDuration.text}
+                          </span>
+                          </div>
+                      </div>`;
                     }
                 }
             }
@@ -1936,66 +2023,51 @@ export default class DianaWidget {
                 }
 
                 let fromLocationDisplay = element.from_location;
-                if (index === 0) { // This logic only applies to the first displayed leg
-                    const originalFirstLeg = conn.connection_elements[0];
-                    // Check if the current element is indeed the original first leg
-                    if (originalFirstLeg.departure_time === element.departure_time) {
-                        if (type === "to") {
-                            // For the very first leg of a "to activity" journey, use the user's origin input.
-                            fromLocationDisplay = this.elements.originInput.value;
-                        } else { // type === "from"
-                            // For the very first leg of a "from activity" journey, use the activity's end location display name.
-                            fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
-                        }
+                if (element.isOriginalFirst) {
+                    if (type === "to") {
+                        fromLocationDisplay = this.elements.originInput.value;
+                    } else { // type === "from"
+                        fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
                     }
                 }
 
-
                 html += `
-                  <div class="connection-element">
-                    <div class="element-time-location-group">
-                        <span class="element-time">${departureTime}</span>
-                        <span class="element-location">${fromLocationDisplay}</span>
-                        ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
-                    </div>
-                    <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
-                      <div class="element-circle"></div>
-                      <span class="element-icon">${icon}</span>
-                      <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
-                    </div>
-                    ${dateDisplay}
-                  </div>
-                `;
+              <div class="connection-element">
+                <div class="element-time-location-group">
+                    <span class="element-time">${departureTime}</span>
+                    <span class="element-location">${fromLocationDisplay}</span>
+                    ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
+                </div>
+                <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
+                  <div class="element-circle"></div>
+                  <span class="element-icon">${icon}</span>
+                  <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
+                </div>
+                ${dateDisplay}
+              </div>
+            `;
 
                 // After the last leg, display the final arrival.
                 if (index === filteredElements.length - 1) {
                     let toLocationDisplay = element.to_location;
-                    let finalArrivalTime = arrivalTime; // This is already the arrival time of the last leg.
-
-                    if (type === "to") {
-                        const originalLastLeg = conn.connection_elements[conn.connection_elements.length - 1];
-                        // Only override the display name if the currently displayed last leg is the true last leg of the connection.
-                        if (originalLastLeg.arrival_time === element.arrival_time) {
+                    if (element.isOriginalLast) {
+                        if (type === "to") {
                             toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+                        } else { // type === "from"
+                            toLocationDisplay = this.elements.originInput.value;
                         }
-                        // Otherwise, toLocationDisplay remains element.to_location, which is the correct station name.
                     }
-                    // For the very last leg of a "from activity" journey, the destination is the user's origin (which was the start of the "to" journey).
-                    else { // type === "from"
-                        toLocationDisplay = this.elements.originInput.value;
-                    }
-
 
                     html += `
-                    <div class="connection-element">
-                      <div class="element-time-location-group">
-                        <span class="element-time">${finalArrivalTime}</span>
-                        <span class="element-location">${toLocationDisplay}</span>
-                        ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
-                      </div>
-                      <div class="element-circle"></div>
-                    </div>
-                  `;
+                <div class="connection-element">
+                  <div class="element-time-location-group">
+                    <span class="element-time">${arrivalTime}</span>
+                    <span class="element-location">${toLocationDisplay}</span>
+                    ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
+                  </div>
+                  <div class="element-circle"></div>
+                </div>
+              `;
                 }
             });
 
@@ -2021,18 +2093,18 @@ export default class DianaWidget {
                         const waitDuration = calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime, (key) => this.t(key));
                         if (waitDuration.totalMinutes > 0) { // Only show if there's actual waiting time
                             html += `
-                              <div class="connection-element waiting-block">
-                                  <div class="element-time">
-                                  <span>${convertUTCToLocalTime(lastLegArrivalTimeISO, this.config.timezone)}</span>
-                                  ${this.t('waiting.beforeActivity')}
-                                  </div>
-                                  <div id="eleCont">
-                                  <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
-                                  <span class="element-duration">
-                                      ${waitDuration.text}
-                                  </span>
-                                  </div>
-                              </div>`;
+                          <div class="connection-element waiting-block">
+                              <div class="element-time">
+                              <span>${convertUTCToLocalTime(lastLegArrivalTimeISO, this.config.timezone)}</span>
+                              ${this.t('waiting.beforeActivity')}
+                              </div>
+                              <div id="eleCont">
+                              <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                              <span class="element-duration">
+                                  ${waitDuration.text}
+                              </span>
+                              </div>
+                          </div>`;
                         }
                     }
                 }

@@ -295,6 +295,37 @@
   border-color: var(--primary-color);
 }
 
+.slider button .slider-button-details {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 0 4px;
+}
+
+.slider button .duration-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.slider button .dot-too-short {
+  background-color: var(--error-color);
+}
+
+.slider button .dot-too-long {
+  background-color: var(--primary-color);
+}
+
+.slider button .transfers-group {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
 .middle-box {
   background: var(--bg-info);
   border: 1px solid var(--border-primary);
