@@ -1519,11 +1519,25 @@ export default class DianaWidget {
         const transfers = connection.connection_transfers;
 
         let fromLocation, toLocation;
+
+        console.log("type:", type);
+        console.log("connection[-1]:", connection.connection_elements[connection.connection_elements.length-1]);
+        console.log("connection[0]:", connection.connection_elements[0]);
+
         if (type === 'to') {
             fromLocation = this.elements.originInput.value;
-            toLocation = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+
+            if (connection.connection_elements[connection.connection_elements.length-1].isOriginalLast) {
+                toLocation = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
+            } else {
+                toLocation = connection.connection_elements[connection.connection_elements.length-1].to_location;
+            }
         } else { // 'from'
-            fromLocation = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
+            if (connection.connection_elements[0].isOriginalFirst) {
+                fromLocation = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
+            } else {
+                fromLocation = connection.connection_elements[0].from_location;
+            }
             toLocation = this.elements.originInput.value;
         }
 
