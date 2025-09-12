@@ -148,7 +148,7 @@ export default class DianaWidget {
                         initialSelectedEndDate = endDt.toJSDate();
                         initialSelectedStartDate = endDt.minus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                     } catch (e) {
-                        console.log(e);
+                        console.error(e);
                     }
                 } else if (this.config.overrideActivityStartDate) {
                     try {
@@ -156,14 +156,14 @@ export default class DianaWidget {
                         initialSelectedStartDate = startDt.toJSDate();
                         initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                     } catch (e) {
-                        console.log(e);
+                        console.error(e);
                     }
                 } else {
                     try {
                         initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
                         initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                     } catch (e) {
-                        console.log(e);
+                        console.error(e);
                     }
                 }
             }
@@ -1519,10 +1519,6 @@ export default class DianaWidget {
         const transfers = connection.connection_transfers;
 
         let fromLocation, toLocation;
-
-        console.log("type:", type);
-        console.log("connection[-1]:", connection.connection_elements[connection.connection_elements.length-1]);
-        console.log("connection[0]:", connection.connection_elements[0]);
 
         if (type === 'to') {
             fromLocation = this.elements.originInput.value;
