@@ -141,10 +141,6 @@ export function getApiErrorTranslationKey(errorCode) {
         2010: 'errors.api.geocodeActivityEndFailed',
         2011: 'errors.api.geocodeActivityEndFailedInternal',
         2012: 'errors.api.unsupportedActivityEndType',
-        2013: 'errors.api.activityNotFound',
-        2014: 'errors.api.noToConnections',
-        2015: 'errors.api.noFromConnections',
-        2016: 'errors.api.dbErrorActivity',
         '2017-1': 'errors.api.noToConnectionsFound',
         '2017-2': 'errors.api.noFromConnectionsFound',
         '2017-2F': 'errors.api.noFromConnectionsFoundFallback',
@@ -167,8 +163,12 @@ export function getApiErrorTranslationKey(errorCode) {
         3001: 'errors.api.internalErrorCalcToProvider',
         3002: 'errors.api.internalErrorCalcFromProvider',
         3003: 'errors.api.internalErrorCalcFromProviderFallback',
+        3004: 'errors.api.internalErrorProcessingFallback',
         4001: 'errors.api.reverseGeocodeParameterMissing',
         4002: 'errors.api.reverseGeocodeFailed',
+        5001: 'errors.api.sharedLinkInvalid',
+        5002: 'errors.api.sharedLinkRetrievalError',
+        6001: 'errors.api.monthlyQuotaExceeded',
         'APP_INVALID_DATA': 'errors.api.invalidDataReceived'
     };
     return codeMap[errorCode] || 'errors.api.unknown';
