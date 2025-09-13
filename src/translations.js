@@ -150,7 +150,27 @@ export default {
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",
-            afterActivity: "Waiting after activity ends"
+            afterActivity: "Waiting after activity ends",
+            title: "Waiting Time"
+        },
+        vehicles: {
+            '1': 'Train',
+            '2': 'Bus',
+            '3': 'Tram',
+            '4': 'Subway',
+            '5': 'Monorail',
+            '6': 'Cog Train',
+            '7': 'Funicular',
+            '8': 'Aerial Lift',
+            '9': 'Ferry',
+            '10': 'Taxi',
+            '20': 'Miscellaneous',
+            '30': 'House',
+            '31': 'Street',
+            '32': 'Square',
+            '33': 'Park',
+            'WALK': 'Walk',
+            'TRSF': 'Transfer'
         }
     },
     DE: {
@@ -304,7 +324,27 @@ export default {
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
-            afterActivity: "Warten nach dem Ende der Aktivität"
+            afterActivity: "Warten nach dem Ende der Aktivität",
+            title: "Wartezeit"
+        },
+        vehicles: {
+            '1': 'Zug',
+            '2': 'Bus',
+            '3': 'Straßenbahn',
+            '4': 'U-Bahn',
+            '5': 'Einschienenbahn',
+            '6': 'Zahnradbahn',
+            '7': 'Standseilbahn',
+            '8': 'Seilbahn',
+            '9': 'Fähre',
+            '10': 'Taxi',
+            '20': 'Verschiedenes',
+            '30': 'Haus',
+            '31': 'Straße',
+            '32': 'Platz',
+            '33': 'Park',
+            'WALK': 'Fußweg',
+            'TRSF': 'Umstieg'
         }
     },
     ES: {
@@ -458,7 +498,27 @@ export default {
         },
         waiting: {
             beforeActivity: "Esperando el inicio de la actividad",
-            afterActivity: "Esperando después del fin de la actividad"
+            afterActivity: "Esperando después del fin de la actividad",
+            title: "Tiempo de espera"
+        },
+        vehicles: {
+            '1': 'Tren',
+            '2': 'Autobús',
+            '3': 'Tranvía',
+            '4': 'Metro',
+            '5': 'Monorraíl',
+            '6': 'Tren cremallera',
+            '7': 'Funicular',
+            '8': 'Teleférico',
+            '9': 'Ferry',
+            '10': 'Taxi',
+            '20': 'Misceláneo',
+            '30': 'Casa',
+            '31': 'Calle',
+            '32': 'Plaza',
+            '33': 'Parque',
+            'WALK': 'A pie',
+            'TRSF': 'Transbordo'
         }
     },
     FR: {
@@ -612,7 +672,27 @@ export default {
         },
         waiting: {
             beforeActivity: "En attente du début de l'activité",
-            afterActivity: "En attente après la fin de l'activité"
+            afterActivity: "En attente après la fin de l'activité",
+            title: "Temps d'attente"
+        },
+        vehicles: {
+            '1': 'Train',
+            '2': 'Bus',
+            '3': 'Tramway',
+            '4': 'Métro',
+            '5': 'Monorail',
+            '6': 'Crémaillère',
+            '7': 'Funiculaire',
+            '8': 'Téléporté',
+            '9': 'Ferry',
+            '10': 'Taxi',
+            '20': 'Différents',
+            '30': 'Maison',
+            '31': 'Rue',
+            '32': 'Place',
+            '33': 'Parc',
+            'WALK': 'À pied',
+            'TRSF': 'Correspondance'
         }
     },
     IT: {
@@ -766,7 +846,27 @@ export default {
         },
         waiting: {
             beforeActivity: "In attesa dell'inizio dell'attività",
-            afterActivity: "In attesa dopo la fine dell'attività"
+            afterActivity: "In attesa dopo la fine dell'attività",
+            title: "Tempo di attesa"
+        },
+        vehicles: {
+            '1': 'Treno',
+            '2': 'Bus',
+            '3': 'Tram',
+            '4': 'Metro',
+            '5': 'Monorotaia',
+            '6': 'Cremagliera',
+            '7': 'Funicolare',
+            '8': 'Funivia',
+            '9': 'Traghetto',
+            '10': 'Taxi',
+            '20': 'Misto',
+            '30': 'Casa',
+            '31': 'Strada',
+            '32': 'Piazza',
+            '33': 'Parco',
+            'WALK': 'A piedi',
+            'TRSF': 'Cambio'
         }
     },
     TH: {
@@ -920,7 +1020,27 @@ export default {
         },
         waiting: {
             beforeActivity: "กำลังรอให้กิจกรรมเริ่มต้น",
-            afterActivity: "กำลังรอหลังจากกิจกรรมสิ้นสุด"
+            afterActivity: "กำลังรอหลังจากกิจกรรมสิ้นสุด",
+            title: "เวลารอ"
+        },
+        vehicles: {
+            '1': 'รถไฟ',
+            '2': 'รถบัส',
+            '3': 'รถราง',
+            '4': 'รถไฟใต้ดิน',
+            '5': 'รถไฟฟ้ารางเดี่ยว',
+            '6': 'รถไฟขึ้นเขา',
+            '7': 'รถกระเช้าไฟฟ้า',
+            '8': 'กระเช้าลอยฟ้า',
+            '9': 'เรือข้ามฟาก',
+            '10': 'แท็กซี่',
+            '20': 'เบ็ดเตล็ด',
+            '30': 'บ้าน',
+            '31': 'ถนน',
+            '32': 'จัตุรัส',
+            '33': 'สวนสาธารณะ',
+            'WALK': 'เดิน',
+            'TRSF': 'เปลี่ยนรถ'
         }
     }
 };

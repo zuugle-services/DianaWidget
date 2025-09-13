@@ -1548,7 +1548,7 @@ export default class DianaWidget {
             }
         }
 
-        const iconsHTML = mainTransportTypes.slice(0, 4).map(t => this.getTransportIcon(t)).join('');
+        const iconsHTML = mainTransportTypes.slice(0, 4).map(t => `<span title="${this.getTransportName(t)}" alt="${this.getTransportName(t)}">${this.getTransportIcon(t)}</span>`).join('');
 
         const isLive = connection.connection_elements && connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.provider === 'live');
         const liveIndicatorHTML = isLive ? `<span class="live-indicator">${this.t('live')}</span>` : '';
@@ -1999,7 +1999,7 @@ export default class DianaWidget {
                           ${this.t('waiting.afterActivity')}
                           </div>
                           <div id="eleCont">
-                          <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                          <span class="element-icon" title="${this.t('waiting.title')}" alt="${this.t('waiting.title')}">${this.getTransportIcon('WAIT')}</span>
                           <span class="element-duration">
                               ${waitDuration.text}
                           </span>
@@ -2015,7 +2015,9 @@ export default class DianaWidget {
                 const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
                 const durationDisplayString = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
 
-                let icon = (element.type !== 'JNY') ? this.getTransportIcon(element.type || 'DEFAULT') : this.getTransportIcon(element.vehicle_type || 'DEFAULT');
+                const vehicleType = (element.type !== 'JNY') ? (element.type || 'DEFAULT') : (element.vehicle_type || 'DEFAULT');
+                const icon = this.getTransportIcon(vehicleType);
+                const transportName = this.getTransportName(vehicleType);
 
                 // Date display logic
                 let dateDisplay = '';
@@ -2058,7 +2060,7 @@ export default class DianaWidget {
                 </div>
                 <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
                   <div class="element-circle"></div>
-                  <span class="element-icon">${icon}</span>
+                  <span class="element-icon" title="${transportName}" alt="${transportName}">${icon}</span>
                   <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
                 </div>
                 ${dateDisplay}
@@ -2117,7 +2119,7 @@ export default class DianaWidget {
                               ${this.t('waiting.beforeActivity')}
                               </div>
                               <div id="eleCont">
-                              <span class="element-icon">${this.getTransportIcon('WAIT')}</span>
+                              <span class="element-icon" title="${this.t('waiting.title')}" alt="${this.t('waiting.title')}">${this.getTransportIcon('WAIT')}</span>
                               <span class="element-duration">
                                   ${waitDuration.text}
                               </span>
@@ -2131,6 +2133,18 @@ export default class DianaWidget {
             html += `</div></div>`;
             return html;
         }).join('');
+    }
+
+    getTransportName(type) {
+        // Map API vehicle type IDs or string types to translation keys
+        const vehicleName = this.t(`vehicles.${type}`);
+
+        if (vehicleName && !vehicleName.startsWith('[vehicles.')) {
+            return vehicleName;
+        }
+
+        // '20' is 'Miscellaneous' in the API doc.
+        return this.t('vehicles.20');
     }
 
     getDurationString(index, type, element, duration) {
