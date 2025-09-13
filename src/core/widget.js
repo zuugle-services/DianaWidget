@@ -1440,7 +1440,7 @@ export default class DianaWidget {
                 // Create and insert the vertical date separator
                 const dateSeparator = document.createElement('div');
                 dateSeparator.classList.add('slider-date-separator');
-                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language);
+                dateSeparator.textContent = formatLegDateForDisplay(conn.connection_start_timestamp, this.config.timezone, this.config.language, "dd. MMM");
                 slider.appendChild(dateSeparator);
 
                 // Update the tracker for the next iteration
