@@ -2594,9 +2594,9 @@ export default class DianaWidget {
                         if (this.state.loading && this.elements.searchBtn) {
                             this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateSearching")}`;
                         }
-                    }, 600);
+                    }, 1800);
                 }
-            }, 600);
+            }, 1300);
         } else {
             if (this.elements.searchBtn) this.elements.searchBtn.innerHTML = this.t('search');
         }
