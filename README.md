@@ -14,6 +14,7 @@
 * [Installation](#installation)
 * [Apply for Access & Security Process](#apply-for-access--security-process)
 * [Development](#development)
+* [Interacting with the Widget](#interacting-with-the-widget)
 * [Demo](#demo)
 * [Configuration](#configuration)
 * [Styling & Theming](#styling--theming)
@@ -226,6 +227,59 @@ If you use a custom container ID, ensure you pass it as the second argument to t
    * Loading states
    * Validation warnings
 
+## Interacting with the Widget
+
+Once initialized, you can interact with the widget instance programmatically.
+
+### `setSelectedDate(dateString)`
+
+You can externally set the activity date of the widget. This is useful for synchronizing the widget's state with other UI elements on your page, like a custom date picker or a list of event dates.
+
+* **`dateString`** (String): The date to set, in `'YYYY-MM-DD'` format.
+
+**Example:**
+
+```
+// Assume 'dianaWidgetInstance' is the variable holding your widget instance.
+// For example, from: const dianaWidgetInstance = new window.DianaWidget(...);
+
+const myDateButton = document.getElementById('set-date-to-christmas');
+
+myDateButton.addEventListener('click', () => {
+  dianaWidgetInstance.setSelectedDate('2024-12-25');
+});
+
+```
+
+### `onDateChange` Hook
+
+The `onDateChange` configuration option allows you to register a callback function that will be executed whenever the user changes the date *inside* the widget. This is useful for keeping your page's UI in sync with the widget.
+
+* **`callback`** (Function): A function that receives the new date as a string in `'YYYY-MM-DD'` format.
+
+**Example:**
+
+In your widget configuration, add the `onDateChange` property:
+
+```
+window.dianaActivityConfig = {
+  // ... other required configurations
+  onDateChange: function(newDate) {
+    console.log("The date was changed inside the widget to:", newDate);
+    
+    // Example: Update an external element on your page
+    const externalDisplay = document.getElementById('current-widget-date');
+    if (externalDisplay) {
+      externalDisplay.textContent = `Widget is set to ${newDate}`;
+    }
+  }
+};
+
+// Initialize the widget
+const dianaWidgetInstance = new window.DianaWidget(window.dianaActivityConfig, "dianaWidgetContainer");
+
+```
+
 ## Demo
 
 A comprehensive demo is available in `index-demo.html`. This page showcases multiple widget configurations for different activities (e.g., a single-day hike, a multi-day trek) and allows you to switch between them to see the widget's versatility.
@@ -288,31 +342,33 @@ These fields must be provided in the configuration object for the widget to init
 
 **Optional Parameters**
 
-| Option                             | Type    | Default                             | Description                                                                                                                                                                                                                                              | Example                                           |
-|:-----------------------------------|:--------|:------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------|
-| `activityStartLocationDisplayName` | String  | `null`                              | Custom display name for the activity start location, shown in the results view.                                                                                                                                                                          | `"Untersbergbahn Talstation"`                     |
-| `activityEndLocationDisplayName`   | String  | `null`                              | Custom display name for the activity end location, shown in the results view.                                                                                                                                                                            | `"Eishöhle, Marktschellenberg"`                   |
-| `timezone`                         | String  | `"Europe/Vienna"`                   | IANA timezone identifier (e.g., "America/New_York", "Europe/Berlin"). Used for displaying times and interpreting activity times. Validated using Luxon. Invalid values default to `"Europe/Vienna"`.                                                     | `"America/New_York"`                              |
-| `activityStartTimeLabel`           | String  | `null`                              | Custom label for the activity start time displayed in the results view (defaults to localized "Activity Start" or similar).                                                                                                                              | `"Tour Begins"`                                   |
-| `activityEndTimeLabel`             | String  | `null`                              | Custom label for the activity end time displayed in the results view (defaults to localized "Activity End" or similar).                                                                                                                                  | `"Tour Ends"`                                     |
-| `apiBaseUrl`                       | String  | `"https://api.zuugle-services.net"` | Base URL for the Zuugle Services API.                                                                                                                                                                                                                    | `"http://localhost:8000/"`                        |
-| `apiToken`                         | String  | `"development-token"`               | API token for authenticating with Zuugle Services. **For production, this MUST be a server-obtained Access Token.** The default token is for development/testing only. See [Apply for Access & Security Process](#apply-for-access--security-process).   | `"your-server-obtained-access-token"`             |
-| `language`                         | String  | `"EN"`                              | Language for the widget UI (`"EN"`, `"DE"`, `"FR"`, `"IT"`, `"TH"` or `"ES"` currently supported). Falls back to `EN` if an unsupported language is provided.                                                                                            | `"DE"`                                            |
-| `cacheUserStartLocation`           | Boolean | `true`                              | If `true`, the user's last entered start location (address and coordinates) will be cached in the browser's localStorage.                                                                                                                                | `false`                                           |
-| `userStartLocationCacheTTLMinutes` | Number  | `15`                                | Time in minutes for how long the cached user start location remains valid. After this period, the cached value is ignored.                                                                                                                               | `120` (for 2 hours)                               |
-| `overrideUserStartLocation`        | String  | `null`                              | A specific start location (address string or "latitude,longitude" string) to pre-fill the origin input. This value bypasses any cached location.                                                                                                         | `"Vienna Central Station"` or `"48.2082,16.3738"` |
-| `overrideUserStartLocationType`    | String  | `null`                              | Specifies the type of `overrideUserStartLocation`. Must be `"address"` or `"coordinates"` (or `"coord"`, `"coords"`). Required if `overrideUserStartLocation` is set.                                                                                    | `"address"` or `"coordinates"`                    |
-| `displayStartDate`                 | String  | `null`                              | Optional start date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or after this date.                                                                                                                                      | `"2024-06-01"`                                    |
-| `displayEndDate`                   | String  | `null`                              | Optional end date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or before this date.                                                                                                                                       | `"2024-06-30"`                                    |
-| `destinationInputName`             | String  | `null`                              | Custom value for the destination input field. If set, this is used instead of the general activity name.                                                                                                                                                 | `"activity-destination"`                          |
-| `multiday`                         | Boolean | `false`                             | If set to `true`, enables multi-day activity mode. When enabled, the widget allows selection of different dates for start and end locations, supporting activities that span multiple days. This affects the calendar UI and connection search behavior. | `true`                                            |
-| `overrideActivityStartDate`        | String  | `null`                              | Optional date (YYYY-MM-DD) to pre-select as the activity start date in the calendar. If provided, this date will be automatically selected when the widget loads.                                                                                        | `"2024-06-15"`                                    |
-| `overrideActivityEndDate`          | String  | `null`                              | Optional date (YYYY-MM-DD) to pre-select as the activity end date in the calendar. Only used when `multiday` is `true`. If provided, this date will be automatically selected when the widget loads.                                                     | `"2024-06-16"`                                    |
-| `activityDurationDaysFixed`        | Number  | `null`                              | When set in multiday mode, fixes the duration of the activity to the specified number of days. This overrides the end date selection, automatically calculating it based on the start date and fixed duration.                                           | `3`                                               |
-| `share`                            | Boolean | `true`                              | If `true`, displays a share button in the widget menu, allowing users to generate a shareable link for their selected journey.                                                                                                                           | `false`                                           |
-| `allowShareView`                   | Boolean | `true`                              | If `true`, the widget can be loaded in a read-only "share view" when a `diana-share` URL parameter is present. Set to `false` to disable this behavior.                                                                                                  | `false`                                           |
-| `shareURLPrefix`                   | String  | `null`                              | The base URL to use when generating share links. If `null`, it defaults to the current page's URL (`window.location.href`).                                                                                                                              | `"https://my-domain.com/planner/"`                |
-| `hideOverriddenActivityStartDate`  | Boolean | `true`                              | If `true`, the start date input for single day activities is hidden if fully defined by config (`overrideActivityStartDate`).                                                                                                                            | `false`                                           |
+| Option                             | Type     | Default                             | Description                                                                                                                                                                                                                                              | Example                                           |
+|:-----------------------------------|:---------|:------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------|
+| `activityStartLocationDisplayName` | String   | `null`                              | Custom display name for the activity start location, shown in the results view.                                                                                                                                                                          | `"Untersbergbahn Talstation"`                     |
+| `activityEndLocationDisplayName`   | String   | `null`                              | Custom display name for the activity end location, shown in the results view.                                                                                                                                                                            | `"Eishöhle, Marktschellenberg"`                   |
+| `timezone`                         | String   | `"Europe/Vienna"`                   | IANA timezone identifier (e.g., "America/New_York", "Europe/Berlin"). Used for displaying times and interpreting activity times. Validated using Luxon. Invalid values default to `"Europe/Vienna"`.                                                     | `"America/New_York"`                              |
+| `activityStartTimeLabel`           | String   | `null`                              | Custom label for the activity start time displayed in the results view (defaults to localized "Activity Start" or similar).                                                                                                                              | `"Tour Begins"`                                   |
+| `activityEndTimeLabel`             | String   | `null`                              | Custom label for the activity end time displayed in the results view (defaults to localized "Activity End" or similar).                                                                                                                                  | `"Tour Ends"`                                     |
+| `apiBaseUrl`                       | String   | `"https://api.zuugle-services.net"` | Base URL for the Zuugle Services API.                                                                                                                                                                                                                    | `"http://localhost:8000/"`                        |
+| `apiToken`                         | String   | `"development-token"`               | API token for authenticating with Zuugle Services. **For production, this MUST be a server-obtained Access Token.** The default token is for development/testing only. See [Apply for Access & Security Process](#apply-for-access--security-process).   | `"your-server-obtained-access-token"`             |
+| `language`                         | String   | `"EN"`                              | Language for the widget UI (`"EN"`, `"DE"`, `"FR"`, `"IT"`, `"TH"` or `"ES"` currently supported). Falls back to `EN` if an unsupported language is provided.                                                                                            | `"DE"`                                            |
+| `cacheUserStartLocation`           | Boolean  | `true`                              | If `true`, the user's last entered start location (address and coordinates) will be cached in the browser's localStorage.                                                                                                                                | `false`                                           |
+| `userStartLocationCacheTTLMinutes` | Number   | `15`                                | Time in minutes for how long the cached user start location remains valid. After this period, the cached value is ignored.                                                                                                                               | `120` (for 2 hours)                               |
+| `overrideUserStartLocation`        | String   | `null`                              | A specific start location (address string or "latitude,longitude" string) to pre-fill the origin input. This value bypasses any cached location.                                                                                                         | `"Vienna Central Station"` or `"48.2082,16.3738"` |
+| `overrideUserStartLocationType`    | String   | `null`                              | Specifies the type of `overrideUserStartLocation`. Must be `"address"` or `"coordinates"` (or `"coord"`, `"coords"`). Required if `overrideUserStartLocation` is set.                                                                                    | `"address"` or `"coordinates"`                    |
+| `displayStartDate`                 | String   | `null`                              | Optional start date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or after this date.                                                                                                                                      | `"2024-06-01"`                                    |
+| `displayEndDate`                   | String   | `null`                              | Optional end date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or before this date.                                                                                                                                       | `"2024-06-30"`                                    |
+| `destinationInputName`             | String   | `null`                              | Custom value for the destination input field. If set, this is used instead of the general activity name.                                                                                                                                                 | `"activity-destination"`                          |
+| `multiday`                         | Boolean  | `false`                             | If set to `true`, enables multi-day activity mode. When enabled, the widget allows selection of different dates for start and end locations, supporting activities that span multiple days. This affects the calendar UI and connection search behavior. | `true`                                            |
+| `overrideActivityStartDate`        | String   | `null`                              | Optional date (YYYY-MM-DD) to pre-select as the activity start date in the calendar. If provided, this date will be automatically selected when the widget loads.                                                                                        | `"2024-06-15"`                                    |
+| `overrideActivityEndDate`          | String   | `null`                              | Optional date (YYYY-MM-DD) to pre-select as the activity end date in the calendar. Only used when `multiday` is `true`. If provided, this date will be automatically selected when the widget loads.                                                     | `"2024-06-16"`                                    |
+| `activityDurationDaysFixed`        | Number   | `null`                              | When set in multiday mode, fixes the duration of the activity to the specified number of days. This overrides the end date selection, automatically calculating it based on the start date and fixed duration.                                           | `3`                                               |
+| `share`                            | Boolean  | `true`                              | If `true`, displays a share button in the widget menu, allowing users to generate a shareable link for their selected journey.                                                                                                                           | `false`                                           |
+| `allowShareView`                   | Boolean  | `true`                              | If `true`, the widget can be loaded in a read-only "share view" when a `diana-share` URL parameter is present. Set to `false` to disable this behavior.                                                                                                  | `false`                                           |
+| `shareURLPrefix`                   | String   | `null`                              | The base URL to use when generating share links. If `null`, it defaults to the current page's URL (`window.location.href`).                                                                                                                              | `"https://my-domain.com/planner/"`                |
+| `hideOverriddenActivityStartDate`  | Boolean  | `true`                              | If `true`, the start date input for single day activities is hidden if fully defined by config (`overrideActivityStartDate`).                                                                                                                            | `false`                                           |
+| `dateList`                         | Array    | `null`                              | An array of specific dates (YYYY-MM-DD) for which the activity is available. If provided, the date picker is replaced by a dropdown menu containing only these dates.                                                                                    | `['2024-08-10', '2024-08-17']`                    |
+| `onDateChange`                     | Function | `null`                              | A callback function that is triggered when the date is changed from within the widget. It receives the new date as a string in 'YYYY-MM-DD' format.                                                                                                      | `function(newDate) { console.log(newDate); }`     |
 
 ## Styling & Theming
 
@@ -332,7 +388,7 @@ To override the default theme, define your custom property values in a CSS rule 
 
 Example Override:
 
-```css
+```
 #dianaWidgetContainer {
   --primary-color: #ff6f61; /* A nice coral color */
   --bg-secondary: #f8f8f8;
