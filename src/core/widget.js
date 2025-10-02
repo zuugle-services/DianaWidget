@@ -432,7 +432,7 @@ export default class DianaWidget {
         return config;
     }
 
-    t(keyPath) {
+    t(keyPath, replacements = {}) {
         const keys = keyPath.split('.');
         let result = translations[this.config.language];
         for (const key of keys) {
@@ -447,7 +447,17 @@ export default class DianaWidget {
             }
             result = fallbackResult;
         }
-        return result || `[${keyPath}]`;
+
+        let text = result || `[${keyPath}]`;
+
+        for (const placeholder in replacements) {
+            if (Object.hasOwnProperty.call(replacements, placeholder)) {
+                const regex = new RegExp(`{${placeholder}}`, 'g');
+                text = text.replace(regex, replacements[placeholder]);
+            }
+        }
+
+        return text;
     }
 
     injectBaseStyles() {
@@ -1320,11 +1330,11 @@ export default class DianaWidget {
         this.elements.topSlider.innerHTML = '';
         this.elements.bottomSlider.innerHTML = '';
 
-        if(this.elements.collapsibleToActivity) {
+        if (this.elements.collapsibleToActivity) {
             this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
             this.elements.collapsibleToActivity.classList.remove('has-summary', 'expanded');
         }
-        if(this.elements.collapsibleFromActivity) {
+        if (this.elements.collapsibleFromActivity) {
             this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
             this.elements.collapsibleFromActivity.classList.remove('has-summary', 'expanded');
         }
@@ -1392,11 +1402,30 @@ export default class DianaWidget {
             this.filterConnectionsByTime('from', convertUTCToLocalTime(recFrom.connection_start_timestamp, this.config.timezone), convertUTCToLocalTime(recFrom.connection_end_timestamp, this.config.timezone));
         }
 
+
+        // Automatically expand single "anytime" connections
+        if (this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime) {
+            if (this.elements.collapsibleToActivity) {
+                this.elements.collapsibleToActivity.classList.add('expanded');
+            }
+        }
+        if (this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime) {
+            if (this.elements.collapsibleFromActivity) {
+                this.elements.collapsibleFromActivity.classList.add('expanded');
+            }
+        }
+
+
         this.addSwipeBehavior('topSlider');
         this.addSwipeBehavior('bottomSlider');
 
         if (this.state.preselectTimes) {
-            const {to_start, to_end, from_start, from_end} = this.state.preselectTimes;
+            const {
+                to_start,
+                to_end,
+                from_start,
+                from_end
+            } = this.state.preselectTimes;
 
             if (to_start && to_end && this.state.toConnections.length > 0) {
                 const toConn = this.state.toConnections.find(c =>
@@ -1693,16 +1722,16 @@ export default class DianaWidget {
             this.updateActivityTimeBox(selectedConnection, type);
             targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
 
-            if(summaryWrapper && container) {
+            if (summaryWrapper && container) {
                 summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
                 container.classList.add('has-summary');
             }
 
-            // Collapse BOTH containers to show their summaries on any new selection.
-            if (this.elements.collapsibleToActivity) {
+            // Collapse containers on new selection, unless they are single "anytime" connections.
+            if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime)) {
                 this.elements.collapsibleToActivity.classList.remove('expanded');
             }
-            if (this.elements.collapsibleFromActivity) {
+            if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime)) {
                 this.elements.collapsibleFromActivity.classList.remove('expanded');
             }
 
@@ -1714,7 +1743,7 @@ export default class DianaWidget {
             this._updateOppositeSlider(type);
         } else {
             targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
-            if(summaryWrapper && container) {
+            if (summaryWrapper && container) {
                 summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('noConnectionDetails')}</span>`;
                 container.classList.remove('has-summary', 'expanded');
             }
@@ -1970,23 +1999,31 @@ export default class DianaWidget {
             </div>
         ` : '';
 
-            let html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
+            let
+                html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
 
             // Display waiting time after activity ends (for 'from' connections)
             if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
                 const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
-                const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {zone: 'utc'}).setZone(this.config.timezone);
+                const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {
+                    zone: 'utc'
+                }).setZone(this.config.timezone);
 
                 // Construct activity end time, assuming it's on the same day as the return journey starts
-                let activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {zone: this.config.timezone})
-                    .set({
-                        year: firstLegDepartureDateTime.year,
-                        month: firstLegDepartureDateTime.month,
-                        day: firstLegDepartureDateTime.day
-                    });
+                let
+                    activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {
+                        zone: this.config.timezone
+                    })
+                        .set({
+                            year: firstLegDepartureDateTime.year,
+                            month: firstLegDepartureDateTime.month,
+                            day: firstLegDepartureDateTime.day
+                        });
 
                 if (activityEndDateTime > firstLegDepartureDateTime) {
-                    activityEndDateTime = activityEndDateTime.minus({days: 1});
+                    activityEndDateTime = activityEndDateTime.minus({
+                        days: 1
+                    });
                 }
 
                 if (activityEndDateTime.isValid && firstLegDepartureDateTime.isValid && firstLegDepartureDateTime > activityEndDateTime) {
@@ -2020,11 +2057,17 @@ export default class DianaWidget {
                 const transportName = this.getTransportName(vehicleType);
 
                 // Date display logic
-                let dateDisplay = '';
-                const departureDate = DateTime.fromISO(element.departure_time, {zone: this.config.timezone}).startOf('day');
-                const arrivalDate = DateTime.fromISO(element.arrival_time, {zone: this.config.timezone}).startOf('day');
+                let
+                    dateDisplay = '';
+                const departureDate = DateTime.fromISO(element.departure_time, {
+                    zone: this.config.timezone
+                }).startOf('day');
+                const arrivalDate = DateTime.fromISO(element.arrival_time, {
+                    zone: this.config.timezone
+                }).startOf('day');
 
-                let datesToShow = [];
+                let
+                    datesToShow = [];
                 // Show departure date for the first leg
                 if (index === 0) {
                     datesToShow.push(formatLegDateForDisplay(element.departure_time, this.config.timezone, this.config.language));
@@ -2042,7 +2085,8 @@ export default class DianaWidget {
                     dateDisplay = `<span class="connection-leg-date-display">${datesToShow.join('<br>')}</span>`;
                 }
 
-                let fromLocationDisplay = element.from_location;
+                let
+                    fromLocationDisplay = element.from_location;
                 if (element.isOriginalFirst) {
                     if (type === "to") {
                         fromLocationDisplay = this.elements.originInput.value;
@@ -2061,7 +2105,7 @@ export default class DianaWidget {
                 <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
                   <div class="element-circle"></div>
                   <span class="element-icon" title="${transportName}" alt="${transportName}">${icon}</span>
-                  <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString)}</span>
+                  <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn)}</span>
                 </div>
                 ${dateDisplay}
               </div>
@@ -2069,7 +2113,8 @@ export default class DianaWidget {
 
                 // After the last leg, display the final arrival.
                 if (index === filteredElements.length - 1) {
-                    let toLocationDisplay = element.to_location;
+                    let
+                        toLocationDisplay = element.to_location;
                     if (element.isOriginalLast) {
                         if (type === "to") {
                             toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
@@ -2147,7 +2192,25 @@ export default class DianaWidget {
         return this.t('vehicles.20');
     }
 
-    getDurationString(index, type, element, duration) {
+    getDurationString(index, type, element, duration, conn) {
+        if (conn && conn.connection_anytime && element.type === "WALK") {
+            const durationMinutes = conn.connection_elements[0].duration;
+            const durationText = getTimeFormatFromMinutes(durationMinutes, (k) => this.t(k));
+            if (type === 'to') {
+                const leaveByTime = DateTime.fromFormat(
+                    this.state.activityTimes.start,
+                    'HH:mm',
+                    {zone: this.config.timezone}
+                ).minus({
+                    minutes: durationMinutes
+                }).toFormat('HH:mm');
+                return `${durationText} - ${this.t('anytimeLeaveBy', { time: leaveByTime })}`;
+            } else { // type === 'from'
+                const destination = this.elements.originInput.value;
+                return `${durationText} - ${this.t('anytimeWalkTo', { destination: destination })}`;
+            }
+        }
+
         let durationString = "";
         if (element.vehicle_name && element.type === "JNY") {
             let n_intermediate_stops = element.n_intermediate_stops + 1 || 0; // n_intermediate_stops seems to be exclusive of final stop
