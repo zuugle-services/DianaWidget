@@ -1631,10 +1631,10 @@ export default class DianaWidget {
             if (conn.connection_anytime && conn.connection_elements && conn.connection_elements.length > 0) {
                 const connectionDuration = conn.connection_elements[0].duration;
                 if (type === "to") {
-                    conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(this.config.activityEarliestStartTime, activityDateForCalc, this.config.timezone);
+                    conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(this.config.activityLatestStartTime, activityDateForCalc, this.config.timezone);
                     conn.connection_start_timestamp = addMinutesToDate(conn.connection_end_timestamp, -connectionDuration);
                 } else {
-                    conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(this.config.activityLatestEndTime, activityDateForCalc, this.config.timezone);
+                    conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(this.config.activityEarliestEndTime, activityDateForCalc, this.config.timezone);
                     conn.connection_end_timestamp = addMinutesToDate(conn.connection_start_timestamp, connectionDuration);
                 }
                 conn.connection_elements[0].departure_time = conn.connection_start_timestamp;
