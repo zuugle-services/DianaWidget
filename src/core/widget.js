@@ -63,6 +63,7 @@ export default class DianaWidget {
         allowShareView: true,
         shareURLPrefix: null,
         hideOverriddenActivityStartDate: true,
+        dateList: null,
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -425,8 +426,24 @@ export default class DianaWidget {
 
         if (config.multiday && config.overrideActivityStartDate && config.overrideActivityEndDate && !config.activityDurationDaysFixed) {
             const oS = DateTime.fromISO(config.overrideActivityStartDate),
-                  oE = DateTime.fromISO(config.overrideActivityEndDate);
+                oE = DateTime.fromISO(config.overrideActivityEndDate);
             if (oS.isValid && oE.isValid && oE < oS) config.overrideActivityEndDate = config.overrideActivityStartDate;
+        }
+
+        if (config.dateList) {
+            if (!Array.isArray(config.dateList)) {
+                console.warn(`Invalid dateList config: not an array. It will be ignored.`);
+                config.dateList = null;
+            } else {
+                const validDates = config.dateList.filter(date => {
+                    if (typeof date === 'string' && dateRegex.test(date) && DateTime.fromISO(date).isValid) {
+                        return true;
+                    }
+                    console.warn(`Invalid date format in dateList: '${date}'. It will be ignored.`);
+                    return false;
+                });
+                config.dateList = validDates.length > 0 ? validDates : null;
+            }
         }
 
         return config;
@@ -532,8 +549,101 @@ export default class DianaWidget {
             }
         }
         this.setupEventListeners();
+        this._setupDateInput();
         this._initCustomCalendar();
         this._initializeOriginInputWithOverridesAndCache();
+    }
+
+    _setupDateInput() {
+        if (this.config.multiday || this.config.overrideActivityStartDate) {
+            return;
+        }
+
+        if (this.config.dateList) {
+            const now = DateTime.now().setZone(this.config.timezone).startOf('day');
+            this.state.availableDates = this.config.dateList
+                .map(d => DateTime.fromISO(d, {zone: 'utc'}).startOf('day'))
+                .filter(dt => dt >= now)
+                .sort((a, b) => a - b);
+
+            if (this.state.availableDates.length > 0) {
+                const dateContainer = this.elements.dateSelectorButtonsGroup?.parentElement;
+                if (dateContainer) {
+                    dateContainer.innerHTML = '';
+                    dateContainer.className = 'date-select-container';
+
+                    const label = document.createElement('label');
+                    label.htmlFor = 'diana-date-select';
+                    label.textContent = this.t('activityDate');
+                    label.className = 'form-label';
+                    dateContainer.appendChild(label);
+
+                    const select = document.createElement('select');
+                    select.id = 'diana-date-select';
+                    this.state.availableDates.forEach(dt => {
+                        const option = document.createElement('option');
+                        const isoDate = dt.toISODate();
+                        option.value = isoDate;
+                        option.textContent = this.formatDateForSelect(dt);
+                        select.appendChild(option);
+                    });
+                    dateContainer.appendChild(select);
+                    this.elements.dateSelect = select;
+
+                    const initialDate = this.state.availableDates[0].toJSDate();
+                    this.onDateSelectedByButton(initialDate);
+
+                    select.addEventListener('change', (e) => {
+                        const selectedIso = e.target.value;
+                        const newDate = DateTime.fromISO(selectedIso, {zone: 'utc'}).toJSDate();
+                        this.onDateSelectedByButton(newDate);
+                    });
+                }
+            }
+        }
+    }
+
+    formatDateForSelect(luxonDate) {
+        const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
+        const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
+        return luxonDate.setLocale(locale).toFormat('ccc, dd. MMM yyyy');
+    }
+
+    /**
+     * Sets the selected activity date from outside the widget.
+     * @param {string} dateString - The date to set, in 'YYYY-MM-DD' format.
+     */
+    setSelectedDate(dateString) {
+        try {
+            const newDateDt = DateTime.fromISO(dateString, {zone: 'utc'}).startOf('day');
+            if (!newDateDt.isValid) {
+                console.error(`DianaWidget.setSelectedDate: Invalid date string provided: "${dateString}"`);
+                return;
+            }
+
+            const today = DateTime.now().setZone(this.config.timezone).startOf('day');
+            if (newDateDt < today) {
+                console.warn(`DianaWidget.setSelectedDate: Past date provided: "${dateString}". Date not set.`);
+                return;
+            }
+
+            const newDate = newDateDt.toJSDate();
+
+            if (this.elements.dateSelect) { // The dropdown is active
+                const isoDate = newDateDt.toISODate();
+                const optionExists = Array.from(this.elements.dateSelect.options).some(opt => opt.value === isoDate);
+                if (optionExists) {
+                    this.elements.dateSelect.value = isoDate;
+                    this.onDateSelectedByButton(newDate);
+                } else {
+                    console.warn(`DianaWidget.setSelectedDate: Date "${dateString}" is not in the provided dateList.`);
+                }
+            } else { // The standard date picker is active
+                this.onDateSelectedByButton(newDate);
+            }
+        } catch (error) {
+            console.error(`DianaWidget.setSelectedDate: Error setting date.`, error);
+        }
     }
 
 
@@ -2756,6 +2866,10 @@ export default class DianaWidget {
     }
 
     _initCustomCalendar() {
+        if (this.elements.dateSelect) {
+            return;
+        }
+
         const datesFullyDetermined = this.config.multiday && this.config.activityDurationDaysFixed && (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
 
         if (this.config.multiday) {
@@ -2866,12 +2980,7 @@ export default class DianaWidget {
                         this.state.selectedDate,
                         this,
                         (newDate) => { // Calendar onDateSelectCallback
-                            this.state.selectedDate = newDate;
-                            if (this.elements.activityDate) {
-                                this.elements.activityDate.value = formatDatetime(newDate, this.config.timezone);
-                            }
-                            this._updateSingleDayDateButtonStates();
-                            this.clearMessages();
+                            this.onDateSelectedByButton(newDate);
                         },
                         otherDateButtonElement,
                         dateButtonsGroupElement,
@@ -2908,30 +3017,25 @@ export default class DianaWidget {
                             }
                         }
                     }
-                    // For desktop, the SingleCalendar's own listener will handle toggling the custom calendar.
                 });
 
 
                 if (this.elements.activityDate) {
                     this.elements.activityDate.addEventListener('change', (e) => {
-                        if (e.target.value) { // Ensure a value is selected
-                            // Parse date as UTC to avoid timezone issues from native picker
+                        if (e.target.value) {
                             const [year, month, day] = e.target.value.split('-').map(Number);
                             const newSelectedDate = new Date(Date.UTC(year, month - 1, day));
+                            this.onDateSelectedByButton(newSelectedDate);
 
-                            this.state.selectedDate = newSelectedDate;
-                            this._updateSingleDayDateButtonStates();
-                            this.clearMessages();
                             if (this.singleCalendarInstance) {
-                                this.singleCalendarInstance.setSelectedDate(newSelectedDate, false); // Update custom calendar without triggering callback
+                                this.singleCalendarInstance.setSelectedDate(newSelectedDate, false);
                             }
                         }
                     });
                 }
-                this._updateSingleDayDateButtonStates(); // Initial state update
+                this._updateSingleDayDateButtonStates();
 
             } else if (this.config.overrideActivityStartDate && this.elements.dateDisplay) {
-                // If date is overridden, just display it.
                 this.updateDateDisplay(this.state.selectedDate, 'dateDisplay');
             }
         }
