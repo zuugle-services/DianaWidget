@@ -64,6 +64,7 @@ export default class DianaWidget {
         shareURLPrefix: null,
         hideOverriddenActivityStartDate: true,
         dateList: null,
+        onDateChange: null,
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -3068,6 +3069,15 @@ export default class DianaWidget {
             this.singleCalendarInstance.hide(); // Hide custom calendar if open
         }
         this.clearMessages();
+
+        if (typeof this.config.onDateChange === 'function') {
+            try {
+                const isoDate = DateTime.fromJSDate(date).toISODate();
+                this.config.onDateChange(isoDate);
+            } catch (e) {
+                console.error("Error executing onDateChange callback:", e);
+            }
+        }
     }
 
     _updateSingleDayDateButtonStates() {
