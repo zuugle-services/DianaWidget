@@ -1,6 +1,6 @@
 {
     "name": "diana-greenconnect-widget",
-    "version": "1.13.8",
+    "version": "1.13.9",
     "description": "",
     "main": "DianaWidget.js",
     "scripts": {
