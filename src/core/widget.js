@@ -279,6 +279,26 @@ export default class DianaWidget {
             }
         });
 
+        // Check for logical time errors only if formats are valid
+        if (!errors.some(e => e.includes('Invalid time format'))) {
+            try {
+                const earliestStart = convertLocalTimeToUTC(config.activityEarliestStartTime, new Date("2000-10-10"), config.timezone);
+                const latestStart = convertLocalTimeToUTC(config.activityLatestStartTime, new Date("2000-10-10"), config.timezone);
+                if (latestStart < earliestStart) {
+                    errors.push(`activityLatestStartTime (${config.activityLatestStartTime}) cannot be before activityEarliestStartTime (${config.activityEarliestStartTime}).`);
+                }
+
+                const earliestEnd = convertLocalTimeToUTC(config.activityEarliestEndTime, new Date("2000-10-10"), config.timezone);
+                const latestEnd = convertLocalTimeToUTC(config.activityLatestEndTime, new Date("2000-10-10"), config.timezone);
+                console.log(earliestEnd, latestEnd);
+                if (latestEnd < earliestEnd) {
+                    errors.push(`activityLatestEndTime (${config.activityLatestEndTime}) cannot be before activityEarliestEndTime (${config.activityEarliestEndTime}).`);
+                }
+            } catch (e) {
+                errors.push("There was an issue parsing activity time configurations for logical validation.");
+            }
+        }
+
         if (config.overrideUserStartLocation && (typeof config.overrideUserStartLocation !== 'string')) {
             errors.push(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
         }
@@ -312,6 +332,19 @@ export default class DianaWidget {
                 config.overrideActivityEndDate = null;
             } else if (config.overrideActivityStartDate && DateTime.fromISO(config.overrideActivityEndDate) < DateTime.fromISO(config.overrideActivityStartDate)) {
                 errors.push(`overrideActivityEndDate cannot be before overrideActivityStartDate.`);
+            }
+        }
+
+        if (config.multiday && config.activityDurationDaysFixed && config.overrideActivityStartDate && config.overrideActivityEndDate) {
+            const start = DateTime.fromISO(config.overrideActivityStartDate);
+            const end = DateTime.fromISO(config.overrideActivityEndDate);
+            if (start.isValid && end.isValid) {
+                // +1 because a 2-day duration is start_date -> start_date + 1 day. Diff will be 1 day.
+                const diffInDays = end.diff(start, 'days').as('days') + 1;
+                const fixedDuration = parseInt(config.activityDurationDaysFixed, 10);
+                if (diffInDays !== fixedDuration) {
+                    errors.push(`The duration between overrideActivityStartDate (${config.overrideActivityStartDate}) and overrideActivityEndDate (${config.overrideActivityEndDate}) is ${diffInDays} days, which contradicts the fixed duration of ${fixedDuration} days.`);
+                }
             }
         }
 
@@ -1109,6 +1142,7 @@ export default class DianaWidget {
                 errorMessage = !window.navigator.onLine ? this.t('errors.api.networkError') : this.t('errors.api.apiUnreachable');
             } else if (error.response) {
                 errorResponse = error.response;
+                errorResponse = error.response.clone();
                 try {
                     const errorBody = await error.response.json();
                     if (errorBody && errorBody.code) errorMessage = this.t(getApiErrorTranslationKey(errorBody.code));
