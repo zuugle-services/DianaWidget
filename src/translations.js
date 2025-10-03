@@ -136,6 +136,10 @@ export default {
                 unknown: "An unexpected error occurred. Please try again.",
             }
         },
+        debug: {
+            showDetails: "Show debug details",
+            hideDetails: "Hide debug details"
+        },
         months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
         shortDays: ["M", "T", "W", "T", "F", "S", "S"],
         ariaLabels: {
@@ -311,6 +315,10 @@ export default {
                 invalidDataReceived: "Ungültige Daten vom Server empfangen. Bitte versuchen Sie es erneut.",
                 unknown: "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.",
             }
+        },
+        debug: {
+            showDetails: "Debug-Details anzeigen",
+            hideDetails: "Debug-Details ausblenden"
         },
         months: ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
         shortDays: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
@@ -488,6 +496,10 @@ export default {
                 unknown: "Ocurrió un error inesperado. Por favor, inténtelo de nuevo.",
             }
         },
+        debug: {
+            showDetails: "Mostrar detalles de depuración",
+            hideDetails: "Ocultar detalles de depuración"
+        },
         months: ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"],
         shortDays: ["Lu", "Ma", "Mi", "Ju", "Vi", "Sá", "Do"],
         ariaLabels: {
@@ -663,6 +675,10 @@ export default {
                 invalidDataReceived: "Données invalides reçues du serveur. Veuillez réessayer.",
                 unknown: "Une erreur inattendue est survenue. Veuillez réessayer.",
             }
+        },
+        debug: {
+            showDetails: "Afficher les détails de débogage",
+            hideDetails: "Masquer les détails de débogage"
         },
         months: ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"],
         shortDays: ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"],
@@ -840,6 +856,10 @@ export default {
                 unknown: "Si è verificato un errore imprevisto. Riprova.",
             }
         },
+        debug: {
+            showDetails: "Mostra dettagli di debug",
+            hideDetails: "Nascondi dettagli di debug"
+        },
         months: ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"],
         shortDays: ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"],
         ariaLabels: {
@@ -1015,6 +1035,10 @@ export default {
                 invalidDataReceived: "ได้รับข้อมูลไม่ถูกต้องจากเซิร์ฟเวอร์ กรุณาลองอีกครั้ง",
                 unknown: "เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองอีกครั้ง",
             }
+        },
+        debug: {
+            showDetails: "แสดงรายละเอียดการดีบัก",
+            hideDetails: "ซ่อนรายละเอียดการดีบัก"
         },
         months: ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."],
         shortDays: ["จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส.", "อา."],

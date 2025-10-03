@@ -48,6 +48,7 @@ export default class DianaWidget {
         activityEndTimeLabel: null,
         apiBaseUrl: "https://api.zuugle-services.net",
         language: 'EN',
+        dev: false,
         cacheUserStartLocation: true,
         userStartLocationCacheTTLMinutes: 15,
         overrideUserStartLocation: null,
@@ -68,33 +69,28 @@ export default class DianaWidget {
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
+        this.config = {...this.defaultConfig, ...config};
+        const configErrors = this.validateConfig(this.config);
+
+        this.container = document.getElementById(containerId);
+        if (this.container?.shadowRoot) {
+            this.shadowRoot = this.container.shadowRoot;
+        } else if (this.container) {
+            this.shadowRoot = this.container.attachShadow({mode: 'open'});
+        }
+
+        if (configErrors.length > 0) {
+            this._handleConfigErrors(configErrors, containerId);
+            return;
+        }
+
         try {
             const urlParams = new URLSearchParams(window.location.search);
             const shareId = urlParams.get('diana-share');
-
-            // Determine if the widget should be in share view (read-only)
-            const isShareView = config.allowShareView !== false && !!shareId;
-
-            if (isShareView) {
-                config.shareId = shareId;
-            }
-
-            // Set a single internal readOnly flag based on share view status
-            config.readOnly = isShareView;
-
-            this.config = this.validateConfig({...config});
-
-            if (this.config.shareURLPrefix === null) {
-                this.config.shareURLPrefix = window.location.href;
-            }
-
-            this.container = document.getElementById(containerId);
-            if (this.container.shadowRoot) {
-                this.shadowRoot = this.container.shadowRoot;
-            } else {
-                this.shadowRoot = this.container.attachShadow({mode: 'open'});
-            }
-
+            const isShareView = this.config.allowShareView !== false && !!shareId;
+            if (isShareView) this.config.shareId = shareId;
+            this.config.readOnly = isShareView;
+            if (this.config.shareURLPrefix === null) this.config.shareURLPrefix = window.location.href;
 
             if (!this.container) {
                 console.error(`Container with ID "${containerId}" not found.`);
@@ -103,29 +99,14 @@ export default class DianaWidget {
 
             if (this.config.displayStartDate || this.config.displayEndDate) {
                 const now = DateTime.now().startOf('day');
-                let startDate = null;
-                let endDate = null;
-
-                if (this.config.displayStartDate) {
-                    startDate = DateTime.fromISO(this.config.displayStartDate).startOf('day');
-                }
-                if (this.config.displayEndDate) {
-                    endDate = DateTime.fromISO(this.config.displayEndDate).startOf('day');
-                }
-
+                let startDate = this.config.displayStartDate ? DateTime.fromISO(this.config.displayStartDate).startOf('day') : null;
+                let endDate = this.config.displayEndDate ? DateTime.fromISO(this.config.displayEndDate).startOf('day') : null;
                 let shouldDisplay = true;
-                if (startDate && now < startDate) {
-                    shouldDisplay = false;
-                }
-                if (endDate && now > endDate) {
-                    shouldDisplay = false;
-                }
-
+                if (startDate && now < startDate) shouldDisplay = false;
+                if (endDate && now > endDate) shouldDisplay = false;
                 if (!shouldDisplay) {
-                    if (this.container) {
-                        this.container.innerHTML = '';
-                    }
-                    console.info(`DianaWidget: Current date is outside the display range (${this.config.displayStartDate || 'N/A'} - ${this.config.displayEndDate || 'N/A'}). Widget will not be displayed.`);
+                    if (this.container) this.container.innerHTML = '';
+                    console.info(`DianaWidget: Current date is outside the display range. Widget will not be displayed.`);
                     return;
                 }
             }
@@ -140,67 +121,35 @@ export default class DianaWidget {
             `;
             document.body.appendChild(style);
 
-            let initialSelectedStartDate;
-            let initialSelectedEndDate = null;
-
+            let initialSelectedStartDate, initialSelectedEndDate = null;
             if (this.config.multiday && this.config.activityDurationDaysFixed) {
                 if (this.config.overrideActivityEndDate) {
-                    try {
-                        const endDt = DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'});
-                        initialSelectedEndDate = endDt.toJSDate();
-                        initialSelectedStartDate = endDt.minus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                    } catch (e) {
-                        console.error(e);
-                    }
+                    const endDt = DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'});
+                    initialSelectedEndDate = endDt.toJSDate();
+                    initialSelectedStartDate = endDt.minus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 } else if (this.config.overrideActivityStartDate) {
-                    try {
-                        const startDt = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'});
-                        initialSelectedStartDate = startDt.toJSDate();
-                        initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                    } catch (e) {
-                        console.error(e);
-                    }
-                } else {
-                    try {
-                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
-                        initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                    } catch (e) {
-                        console.error(e);
-                    }
-                }
-            }
-
-            if (!initialSelectedStartDate) { // If not set by fixed duration logic
-                if (this.config.overrideActivityStartDate) {
-                    try {
-                        initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate();
-                    } catch (e) {
-                        initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
-                    }
+                    const startDt = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'});
+                    initialSelectedStartDate = startDt.toJSDate();
+                    initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 } else {
                     initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                    initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 }
             }
 
-            if (this.config.multiday && !initialSelectedEndDate) { // If not set by fixed duration logic
-                if (this.config.overrideActivityEndDate) {
-                    try {
-                        initialSelectedEndDate = DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'}).toJSDate();
-                    } catch (e) {
-                        initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: 1}).toJSDate();
-                    }
-                } else {
-                    initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: 1}).toJSDate();
-                }
+            if (!initialSelectedStartDate) {
+                initialSelectedStartDate = this.config.overrideActivityStartDate
+                    ? DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate()
+                    : calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
             }
-
-            // Final check for multiday date validity
-            if (this.config.multiday && initialSelectedStartDate && initialSelectedEndDate) {
-                if (DateTime.fromJSDate(initialSelectedEndDate) < DateTime.fromJSDate(initialSelectedStartDate)) {
-                    initialSelectedEndDate = new Date(initialSelectedStartDate.valueOf());
-                }
+            if (this.config.multiday && !initialSelectedEndDate) {
+                initialSelectedEndDate = this.config.overrideActivityEndDate
+                    ? DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'}).toJSDate()
+                    : DateTime.fromJSDate(initialSelectedStartDate).plus({days: 1}).toJSDate();
             }
-
+            if (this.config.multiday && initialSelectedStartDate && initialSelectedEndDate && DateTime.fromJSDate(initialSelectedEndDate) < DateTime.fromJSDate(initialSelectedStartDate)) {
+                initialSelectedEndDate = new Date(initialSelectedStartDate.valueOf());
+            }
 
             this.state = {
                 fromConnections: [],
@@ -248,19 +197,7 @@ export default class DianaWidget {
             console.error("Failed to initialize Diana GreenConnect Widget:", error);
             const fallbackContainer = document.getElementById(containerId);
             if (fallbackContainer) {
-                const fallback = document.createElement('div');
-                fallback.style.padding = '20px';
-                fallback.style.backgroundColor = '#ffebee';
-                fallback.style.border = '1px solid #ef9a9a';
-                fallback.style.borderRadius = '4px';
-                fallback.style.margin = '10px';
-                fallback.innerHTML = `
-          <h3 style="color: #c62828; margin-top: 0;">Diana GreenConnect Widget Failed to Load</h3>
-          <p>We're unable to load the Diana GreenConnect widget at this time. Please try again later.</p>
-          <p><small>${error.message}</small></p>
-        `;
-                fallbackContainer.innerHTML = "";
-                fallbackContainer.appendChild(fallback);
+                this._showFallbackUI();
             }
         }
     }
@@ -291,32 +228,23 @@ export default class DianaWidget {
         });
     }
 
-    validateConfig(userConfig) {
-        const config = {...this.defaultConfig, ...userConfig};
+    validateConfig(config) {
+        const errors = [];
 
         if (!translations[config.language]) {
             console.warn(`Unsupported language '${config.language}', falling back to EN`);
             config.language = 'EN';
         }
 
-        const missingFields = config.requiredFields.filter(
-            field => !config[field]
-        );
-
-        if (config.multiday) {
-            if (!config.activityDurationMinutes) {
-                const index = missingFields.indexOf('activityDurationMinutes');
-                if (index > -1) {
-                    missingFields.splice(index, 1);
-                }
-                config.activityDurationMinutes = 1;
+        const missingFields = config.requiredFields.filter(field => !config[field]);
+        if (config.multiday && !config.activityDurationMinutes) {
+            const index = missingFields.indexOf('activityDurationMinutes');
+            if (index > -1) {
+                missingFields.splice(index, 1);
             }
         }
-
         if (missingFields.length > 0) {
-            const errorMsg = `Missing required configuration: ${missingFields.join(', ')}`;
-            console.error(errorMsg);
-            throw new Error(errorMsg);
+            errors.push(`Missing required configuration: ${missingFields.join(', ')}`);
         }
 
         if (config.apiBaseUrl[config.apiBaseUrl.length - 1] === "/") {
@@ -324,130 +252,91 @@ export default class DianaWidget {
         }
 
         if (!DateTime.local().setZone(config.timezone).isValid) {
-            console.warn(`Invalid timezone '${config.timezone}' provided, falling back to 'Europe/Vienna'. Error: ${DateTime.local().setZone(config.timezone).invalidReason}`);
+            errors.push(`Invalid timezone '${config.timezone}'. Error: ${DateTime.local().setZone(config.timezone).invalidReason}`);
             config.timezone = 'Europe/Vienna';
         }
 
         const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
-        if (config.activityStartLocationType) {
-            if (!validLocationTypes.includes(config.activityStartLocationType)) {
-                throw new Error(`Invalid activityStartLocationType '${config.activityStartLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
-            }
+        if (config.activityStartLocationType && !validLocationTypes.includes(config.activityStartLocationType)) {
+            errors.push(`Invalid activityStartLocationType '${config.activityStartLocationType}'.`);
         }
-        if (config.activityEndLocationType) {
-            if (!validLocationTypes.includes(config.activityEndLocationType)) {
-                throw new Error(`Invalid activityEndLocationType '${config.activityEndLocationType}'. Valid types: ${validLocationTypes.join(', ')}`);
-            }
+        if (config.activityEndLocationType && !validLocationTypes.includes(config.activityEndLocationType)) {
+            errors.push(`Invalid activityEndLocationType '${config.activityEndLocationType}'.`);
         }
 
         if (config.activityDurationMinutes) {
             const duration = parseInt(config.activityDurationMinutes, 10);
             if (isNaN(duration) || duration <= 0) {
-                throw new Error(`Invalid activityDurationMinutes '${config.activityDurationMinutes}'. Must be a positive integer.`);
+                errors.push(`Invalid activityDurationMinutes '${config.activityDurationMinutes}'. Must be a positive integer.`);
             }
         }
 
         const timeRegex = /^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?$/;
-        const timeFields = [
-            'activityEarliestStartTime', 'activityLatestStartTime',
-            'activityEarliestEndTime', 'activityLatestEndTime'
-        ];
+        const timeFields = ['activityEarliestStartTime', 'activityLatestStartTime', 'activityEarliestEndTime', 'activityLatestEndTime'];
         timeFields.forEach(field => {
-            if (config[field]) {
-                if (!timeRegex.test(config[field])) {
-                    throw new Error(`Invalid time format for '${field}': '${config[field]}'. Expected HH:MM or HH:MM:SS`);
-                }
+            if (config[field] && !timeRegex.test(config[field])) {
+                errors.push(`Invalid time format for '${field}': '${config[field]}'. Expected HH:MM or HH:MM:SS`);
             }
         });
 
-        if (typeof config.cacheUserStartLocation !== 'boolean') {
-            config.cacheUserStartLocation = this.defaultConfig.cacheUserStartLocation;
+        if (config.overrideUserStartLocation && (typeof config.overrideUserStartLocation !== 'string')) {
+            errors.push(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
         }
-        if (typeof config.userStartLocationCacheTTLMinutes !== 'number' || config.userStartLocationCacheTTLMinutes <= 0) {
-            config.userStartLocationCacheTTLMinutes = this.defaultConfig.userStartLocationCacheTTLMinutes;
-        }
-        if (config.overrideUserStartLocation !== null && typeof config.overrideUserStartLocation !== 'string') {
-            throw new Error(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
-        }
-        if (config.overrideUserStartLocation !== null) {
-            if (!config.overrideUserStartLocationType || !validLocationTypes.includes(config.overrideUserStartLocationType)) {
-                throw new Error(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}'. Required if overrideUserStartLocation is set.`);
+        if (config.overrideUserStartLocation && (!config.overrideUserStartLocationType || !validLocationTypes.includes(config.overrideUserStartLocationType))) {
+            errors.push(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}'.`);
+        } else if (config.overrideUserStartLocation && ['coordinates', 'coord', 'coords'].includes(config.overrideUserStartLocationType)) {
+            const coordsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
+            if (!coordsRegex.test(config.overrideUserStartLocation)) {
+                errors.push(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
             }
-            if (['coordinates', 'coord', 'coords'].includes(config.overrideUserStartLocationType)) {
-                const coordsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
-                if (!coordsRegex.test(config.overrideUserStartLocation)) {
-                    throw new Error(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
-                }
-            }
-        } else if (config.overrideUserStartLocationType !== null) {
-            config.overrideUserStartLocationType = null;
         }
 
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (config.displayStartDate !== null && (!dateRegex.test(config.displayStartDate) || !DateTime.fromISO(config.displayStartDate).isValid)) {
-            config.displayStartDate = null;
+        if (config.displayStartDate && (!dateRegex.test(config.displayStartDate) || !DateTime.fromISO(config.displayStartDate).isValid)) {
+            errors.push(`Invalid displayStartDate: ${config.displayStartDate}.`);
         }
-        if (config.displayEndDate !== null && (!dateRegex.test(config.displayEndDate) || !DateTime.fromISO(config.displayEndDate).isValid)) {
-            config.displayEndDate = null;
+        if (config.displayEndDate && (!dateRegex.test(config.displayEndDate) || !DateTime.fromISO(config.displayEndDate).isValid)) {
+            errors.push(`Invalid displayEndDate: ${config.displayEndDate}.`);
         }
-        if (config.displayStartDate && config.displayEndDate) {
-            const startDate = DateTime.fromISO(config.displayStartDate);
-            const endDate = DateTime.fromISO(config.displayEndDate);
-            if (startDate.isValid && endDate.isValid && startDate > endDate) {
-                config.displayStartDate = null;
-                config.displayEndDate = null;
-            }
+        if (config.displayStartDate && config.displayEndDate && DateTime.fromISO(config.displayStartDate) > DateTime.fromISO(config.displayEndDate)) {
+            errors.push(`displayStartDate cannot be after displayEndDate.`);
         }
-
-        if (typeof config.multiday !== 'boolean') {
-            console.warn(`Invalid multiday config: ${config.multiday}. Defaulting to false.`);
-            config.multiday = false;
+        if (config.overrideActivityStartDate && (!dateRegex.test(config.overrideActivityStartDate) || !DateTime.fromISO(config.overrideActivityStartDate).isValid)) {
+            errors.push(`Invalid overrideActivityStartDate: ${config.overrideActivityStartDate}.`);
         }
-        if (config.overrideActivityStartDate !== null && (!dateRegex.test(config.overrideActivityStartDate) || !DateTime.fromISO(config.overrideActivityStartDate).isValid)) {
-            console.warn(`Invalid overrideActivityStartDate: ${config.overrideActivityStartDate}. It will be ignored.`);
-            config.overrideActivityStartDate = null;
-        }
-        if (config.overrideActivityEndDate !== null) {
+        if (config.overrideActivityEndDate) {
             if (!dateRegex.test(config.overrideActivityEndDate) || !DateTime.fromISO(config.overrideActivityEndDate).isValid) {
-                console.warn(`Invalid overrideActivityEndDate: ${config.overrideActivityEndDate}. It will be ignored.`);
-                config.overrideActivityEndDate = null;
+                errors.push(`Invalid overrideActivityEndDate: ${config.overrideActivityEndDate}.`);
             } else if (!config.multiday) {
-                console.warn("Warning: 'overrideActivityEndDate' is provided but 'multiday' is false. The end date override will be ignored.");
+                console.warn("Warning: 'overrideActivityEndDate' is provided but 'multiday' is false. It will be ignored.");
                 config.overrideActivityEndDate = null;
-            }
-        }
-        if (config.multiday && config.overrideActivityStartDate && config.overrideActivityEndDate) {
-            const overrideStart = DateTime.fromISO(config.overrideActivityStartDate);
-            const overrideEnd = DateTime.fromISO(config.overrideActivityEndDate);
-            if (overrideStart.isValid && overrideEnd.isValid && overrideEnd < overrideStart) {
-                console.warn(`overrideActivityEndDate (${config.overrideActivityEndDate}) is before overrideActivityStartDate (${config.overrideActivityStartDate}). Setting overrideActivityEndDate to be the same as overrideActivityStartDate.`);
-                config.overrideActivityEndDate = config.overrideActivityStartDate;
+            } else if (config.overrideActivityStartDate && DateTime.fromISO(config.overrideActivityEndDate) < DateTime.fromISO(config.overrideActivityStartDate)) {
+                errors.push(`overrideActivityEndDate cannot be before overrideActivityStartDate.`);
             }
         }
 
-        if (config.multiday && config.overrideActivityStartDate && config.overrideActivityEndDate && !config.activityDurationDaysFixed) {
-            const oS = DateTime.fromISO(config.overrideActivityStartDate),
-                oE = DateTime.fromISO(config.overrideActivityEndDate);
-            if (oS.isValid && oE.isValid && oE < oS) config.overrideActivityEndDate = config.overrideActivityStartDate;
+        return errors;
+    }
+
+    _handleConfigErrors(errors, containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) {
+            console.error(`Container with ID "${containerId}" not found.`);
+            return;
         }
 
-        if (config.dateList) {
-            if (!Array.isArray(config.dateList)) {
-                console.warn(`Invalid dateList config: not an array. It will be ignored.`);
-                config.dateList = null;
-            } else {
-                const validDates = config.dateList.filter(date => {
-                    if (typeof date === 'string' && dateRegex.test(date) && DateTime.fromISO(date).isValid) {
-                        return true;
-                    }
-                    console.warn(`Invalid date format in dateList: '${date}'. It will be ignored.`);
-                    return false;
-                });
-                config.dateList = validDates.length > 0 ? validDates : null;
-            }
+        if (this.config.dev) {
+            const errorMsg = `Configuration Errors:\n- ${errors.join('\n- ')}`;
+            console.error("Diana GreenConnect Widget: " + errorMsg);
+            this._showFatalError("Widget Configuration Error", `<pre style="text-align: left; white-space: pre-wrap;">${errorMsg}</pre>`);
+        } else {
+            console.error(`Diana GreenConnect Widget: Configuration errors found. Showing fallback. Details: ${errors.join(', ')}`);
+            this._showFallbackUI();
         }
+    }
 
-        return config;
+    _showFallbackUI() {
+        this._showFatalError(this.t('errors.widgetLoadErrorTitle'), this.t('errors.api.internalError'));
     }
 
     t(keyPath, replacements = {}) {
@@ -732,7 +621,9 @@ export default class DianaWidget {
             searchBtn: this.shadowRoot.querySelector("#searchBtn"),
             backBtn: this.shadowRoot.querySelector("#backBtn"),
             formErrorContainer: this.shadowRoot.querySelector("#formErrorContainer"),
+            formDebugContainer: this.shadowRoot.querySelector("#formDebugContainer"),
             resultsErrorContainer: this.shadowRoot.querySelector("#resultsErrorContainer"),
+            resultsDebugContainer: this.shadowRoot.querySelector("#resultsDebugContainer"),
             infoContainer: this.shadowRoot.querySelector("#infoContainer"),
 
             collapsibleToActivity: this.shadowRoot.querySelector("#collapsibleToActivity"),
@@ -1213,9 +1104,11 @@ export default class DianaWidget {
         } catch (error) {
             console.error("Search error:", error);
             let errorMessage = this.t('errors.connectionError');
+            let errorResponse = null;
             if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
                 errorMessage = !window.navigator.onLine ? this.t('errors.api.networkError') : this.t('errors.api.apiUnreachable');
             } else if (error.response) {
+                errorResponse = error.response;
                 try {
                     const errorBody = await error.response.json();
                     if (errorBody && errorBody.code) errorMessage = this.t(getApiErrorTranslationKey(errorBody.code));
@@ -1227,7 +1120,7 @@ export default class DianaWidget {
                 // Use the error message directly if it's not one of the known API error patterns
                 errorMessage = error.message || this.t('errors.api.unknown');
             }
-            this.showError(errorMessage, 'form');
+            this.showError(errorMessage, 'form', false, errorResponse);
         } finally {
             this.setLoadingState(false);
         }
@@ -2776,10 +2669,25 @@ export default class DianaWidget {
      * @param {boolean} isShareError If true, there is a reload page button.
      */
     _showFatalError(title, message, type = 'error', isShareError = false) {
-        if (!this.dianaWidgetRootContainer) {
-            this.container.innerHTML = `<div class="diana-container"></div>`;
-            this.dianaWidgetRootContainer = this.container.querySelector('.diana-container');
+        if (!this.shadowRoot) {
+            console.error("Cannot show fatal error because shadowRoot is not available.");
+            if (this.container) {
+                this.container.innerHTML = `<div><h3>${title}</h3><div>${message}</div></div>`;
+            }
+            return;
         }
+
+        // Always clear shadow root and set up container + styles for a fatal error
+        this.shadowRoot.innerHTML = '';
+
+        const styleTag = document.createElement('style');
+        styleTag.textContent = styles; // Assuming `styles` is available from import
+        this.shadowRoot.appendChild(styleTag);
+
+        this.dianaWidgetRootContainer = document.createElement('div');
+        this.dianaWidgetRootContainer.className = 'diana-container';
+        this.shadowRoot.appendChild(this.dianaWidgetRootContainer);
+        this._applyExternalStyles();
 
         const boxClass = type === 'info' ? 'fatal-info-box' : 'fatal-error-box';
         const titleClass = type === 'info' ? 'title-info' : 'title-error';
@@ -2793,11 +2701,12 @@ export default class DianaWidget {
             `;
         }
 
+        const messageHTML = message.trim().startsWith('<') ? message : `<p>${message}</p>`;
 
         const fallbackHTML = `
           <div class="${boxClass}">
             <h3 class="${titleClass}">${title}</h3>
-            <p>${message}</p>
+            ${messageHTML}
             ${reloadButtonHTML}
           </div>
         `;
@@ -2816,14 +2725,52 @@ export default class DianaWidget {
         }
     }
 
-    showError(message, page = 'form', preserveContent = false) {
+    showError(message, page = 'form', preserveContent = false, rawError = null) {
         this.state.error = message;
         const errorContainer = page === 'form' ? this.elements.formErrorContainer : this.elements.resultsErrorContainer;
+        const debugContainer = page === 'form' ? this.elements.formDebugContainer : this.elements.resultsDebugContainer;
 
         if (errorContainer) {
             errorContainer.textContent = message;
             errorContainer.style.display = message ? "block" : "none";
             errorContainer.setAttribute('role', message ? 'alert' : null);
+        }
+
+        if (debugContainer) {
+            if (this.config.dev && rawError) {
+                debugContainer.style.display = 'block';
+                const clonedError = rawError.clone();
+                clonedError.json().then(json => {
+                    debugContainer.innerHTML = `
+                        <div class="debug-toggle">${this.t('debug.showDetails')}</div>
+                        <div class="debug-content" style="display:none;">
+                            <pre>${JSON.stringify(json, null, 2)}</pre>
+                        </div>`;
+                    debugContainer.querySelector('.debug-toggle').addEventListener('click', (e) => {
+                        const content = e.target.nextElementSibling;
+                        const isVisible = content.style.display === 'block';
+                        content.style.display = isVisible ? 'none' : 'block';
+                        e.target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
+                    });
+                }).catch(() => {
+                    clonedError.text().then(text => {
+                        debugContainer.innerHTML = `
+                        <div class="debug-toggle">${this.t('debug.showDetails')}</div>
+                        <div class="debug-content" style="display:none;">
+                            <pre>${text}</pre>
+                        </div>`;
+                        debugContainer.querySelector('.debug-toggle').addEventListener('click', (e) => {
+                            const content = e.target.nextElementSibling;
+                            const isVisible = content.style.display === 'block';
+                            content.style.display = isVisible ? 'none' : 'block';
+                            e.target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
+                        });
+                    });
+                });
+            } else {
+                debugContainer.innerHTML = '';
+                debugContainer.style.display = 'none';
+            }
         }
 
         if (message) {

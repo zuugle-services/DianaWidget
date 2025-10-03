@@ -125,6 +125,7 @@ export function getFormPageTemplateHTML(args) {
         ${headerHTML}
         <div id="infoContainer" class="info-message" style="display: none;" role="status"></div>
         <div id="formErrorContainer" class="error-message" style="display: none;" role="alert"></div>
+        <div id="formDebugContainer" class="debug-container" style="display: none;"></div>
         <form class="modal-body" aria-labelledby="formHeading">
           <div style="position:relative" class="form-section">
             <p id="originLabel">${t('origin')}</p>

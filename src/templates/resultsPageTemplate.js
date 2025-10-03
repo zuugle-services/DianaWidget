@@ -16,6 +16,7 @@ export function getResultsPageTemplateHTML(args) {
       <div id="resultsPage" class="modal-page">
         <div class="modal-body-result">
             <div id="resultsErrorContainer" class="error-message" style="display: none" role="alert"></div>
+            <div id="resultsDebugContainer" class="debug-container" style="display: none;"></div>
 
             <!-- Persistent Header -->
             <div class="slider-wrapper etc">

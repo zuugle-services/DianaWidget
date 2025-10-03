@@ -466,3 +466,39 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary-color) 20%, transparent);
 }
 
+/* --- Debug Box Styles --- */
+.debug-container {
+  margin: 10px 20px 0;
+  font-size: 12px;
+}
+
+.debug-toggle {
+  color: var(--primary-color);
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+  display: inline-block;
+  margin-bottom: 5px;
+}
+
+.debug-toggle:hover {
+  color: var(--bg-apply-hover);
+}
+
+.debug-content {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: 4px;
+  padding: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.debug-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
