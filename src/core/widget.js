@@ -1651,7 +1651,7 @@ export default class DianaWidget {
      * @returns {string} HTML string for the summary.
      */
     _renderConnectionSummary(connection, type) {
-        if (!connection) return '';
+        if (!connection || !connection.connection_elements || connection.connection_elements.length === 0) return '';
 
         const startTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
         const endTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
@@ -1662,18 +1662,9 @@ export default class DianaWidget {
 
         if (type === 'to') {
             fromLocation = this.elements.originInput.value;
-
-            if (connection.connection_elements[connection.connection_elements.length-1].isOriginalLast) {
-                toLocation = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
-            } else {
-                toLocation = connection.connection_elements[connection.connection_elements.length-1].to_location;
-            }
+            toLocation = connection.connection_elements[connection.connection_elements.length - 1].to_location;
         } else { // 'from'
-            if (connection.connection_elements[0].isOriginalFirst) {
-                fromLocation = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
-            } else {
-                fromLocation = connection.connection_elements[0].from_location;
-            }
+            fromLocation = connection.connection_elements[0].from_location;
             toLocation = this.elements.originInput.value;
         }
 
