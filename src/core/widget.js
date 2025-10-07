@@ -671,7 +671,6 @@ export default class DianaWidget {
             dateBtnOther: this.shadowRoot.querySelector("#dateBtnOther"),
             otherDateText: this.shadowRoot.querySelector("#otherDateText"),
             dateSelectorButtonsGroup: this.shadowRoot.querySelector(".date-selector-buttons"),
-            dateInputContainer: this.shadowRoot.querySelector(".date-input-container"),
             toActivityDateDisplay: this.shadowRoot.querySelector("#toActivityDateDisplay"),
             fromActivityDateDisplay: this.shadowRoot.querySelector("#fromActivityDateDisplay"),
 
@@ -887,9 +886,16 @@ export default class DianaWidget {
             this.elements.dateSelect,
             this.elements.activityDateStart,
             this.elements.activityDateEnd,
-            this.elements.activityDate,
-            this.elements.dateInputContainer,
+            this.elements.activityDate
         ];
+
+        this.shadowRoot.querySelectorAll(".date-input-container").forEach(el => {
+            if (el) {
+                el.disabled = true;
+                el.style.pointerEvents = 'none';
+                el.classList.add('disabled-by-session-expiry');
+            }
+        });
 
         elementsToDisable.forEach(el => {
             if (el) {
