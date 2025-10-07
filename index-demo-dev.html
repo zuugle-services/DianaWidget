@@ -38,6 +38,8 @@
         <a href="#minimal" class="nav-link active text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('minimal')">Minimalistic</a>
         <a href="#corporate" class="nav-link text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('corporate')">Corporate</a>
         <a href="#vibrant" class="nav-link text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('vibrant')">Vibrant</a>
+        <a href="#errortest" class="nav-link text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('errortest')">Error Test</a>
+        <a href="#sessiontest" class="nav-link text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('sessiontest')">Session Test</a>
     </nav>
 
     <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -56,6 +58,16 @@
             <div id="page-vibrant" class="page p-6 rounded-lg">
                 <h2 class="text-2xl font-semibold mb-4 border-b border-purple-300 pb-2">Vibrant Festival Planner</h2>
                 <p>A colorful, energetic theme for a festival or concert. This test case uses date overrides and custom display names.</p>
+            </div>
+            <!-- Error Test -->
+            <div id="page-errortest" class="page p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b border-purple-300 pb-2">Error Testing Widget</h2>
+                <p>Lorem ipsum...</p>
+            </div>
+            <!-- Session Test -->
+            <div id="page-sessiontest" class="page p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b border-purple-300 pb-2">Session Expiration Testing Widget</h2>
+                <p>Lorem ipsum...</p>
             </div>
         </div>
 
@@ -120,7 +132,48 @@
             language: "EN",
             dev: true,
             // apiToken: "test_token", //
-        }
+        },
+        errortesting: {
+            activityName: "Marktschellenberger Eishöhle im Untersberg",
+            activityStartLocation: "47.72620173410345, 13.042174020936743",
+            activityStartLocationDisplayName: "Untersbergbahn Talstation",
+            activityStartLocationType: "coordinates",
+            activityEndLocation: "47.70487271915757, 13.038710343883247",
+            activityEndLocationDisplayName: "Eishöhle, Marktschellenberg",
+            activityEndLocationType: "coordinates",
+            activityEarliestStartTime: "08:00:00",
+            activityLatestStartTime: "14:00:00",
+            activityEarliestEndTime: "10:00:00",
+            activityLatestEndTime: "20:00:00",
+            activityDurationMinutes: "180",
+            multiday: false,
+            activityStartTimeLabel: "Beginn Tour",
+            activityEndTimeLabel: "Ende Tour",
+            timezone: "Europe/Berlin",
+            language: "EN",
+            dev: true,
+            // apiToken: "test_token", //
+        },
+        sessiontesting: {
+            activityName: "Rax 2-Tages Wanderung mit Hüttenübernachtung",
+            activityStartLocation: "47.71568304486876, 15.80409680698376",
+            activityStartLocationDisplayName: "Raxseilbahn Talstation",
+            activityStartLocationType: "coordinates",
+            activityEndLocation: "47.71568304486876, 15.80409680698376",
+            activityEndLocationDisplayName: "Raxseilbahn Talstation",
+            activityEndLocationType: "coordinates",
+            activityEarliestStartTime: "08:00:00",
+            activityLatestStartTime: "14:00:00",
+            activityEarliestEndTime: "12:00:00",
+            activityLatestEndTime: "20:00:00",
+            multiday: true,
+            activityDurationDaysFixed: 2,
+            activityStartTimeLabel: "Beginn",
+            activityEndTimeLabel: "Ende",
+            timezone: "Europe/Vienna",
+            language: "DE",
+            apiToken: "aaa",
+        },
     };
 
     let currentWidgetInstance = null;
