@@ -17,6 +17,7 @@
 * [Interacting with the Widget](#interacting-with-the-widget)
 * [Demo](#demo)
 * [Configuration](#configuration)
+* [Token Expiration and Refresh](#token-expiration-and-refresh)
 * [Styling & Theming](#styling--theming)
 * [Architecture](#architecture)
 * [Deployment](#deployment)
@@ -154,14 +155,6 @@ window.dianaActivityConfig = {
 <script src="dist/DianaWidget.bundle.js"></script>
 ```
 
-### 4. Token Expiration and Refresh
-
-* **Token Lifetime**: Access Tokens have a limited lifetime (e.g., 1 hour).
-* **Server Responsibility**: Your server-side logic should manage the token's lifecycle. This includes:
-   * Caching the token to avoid requesting a new one for every page load.
-   * Requesting a new token from the OAuth endpoint before the current one expires or if an API call fails due to an expired token.
-* **Updating the Widget**: If a token expires while a user is on the page, the widget might start receiving errors. Your application may need a strategy to fetch a new token from your server and re-initialize the widget or update its configuration.
-
 **In summary:** The `Client Secret` is used by your server to get an `Access Token`. This `Access Token` is then safely passed to the client-side widget. This ensures your `Client Secret` remains secure.
 
 ## Development
@@ -239,7 +232,7 @@ You can externally set the activity date of the widget. This is useful for synch
 
 **Example:**
 
-```
+```javascript
 // Assume 'dianaWidgetInstance' is the variable holding your widget instance.
 // For example, from: const dianaWidgetInstance = new window.DianaWidget(...);
 
@@ -261,7 +254,7 @@ The `onDateChange` configuration option allows you to register a callback functi
 
 In your widget configuration, add the `onDateChange` property:
 
-```
+```javascript
 window.dianaActivityConfig = {
   // ... other required configurations
   onDateChange: function(newDate) {
@@ -350,7 +343,7 @@ These fields must be provided in the configuration object for the widget to init
 | `activityStartTimeLabel`           | String   | `null`                              | Custom label for the activity start time displayed in the results view (defaults to localized "Activity Start" or similar).                                                                                                                              | `"Tour Begins"`                                   |
 | `activityEndTimeLabel`             | String   | `null`                              | Custom label for the activity end time displayed in the results view (defaults to localized "Activity End" or similar).                                                                                                                                  | `"Tour Ends"`                                     |
 | `apiBaseUrl`                       | String   | `"https://api.zuugle-services.net"` | Base URL for the Zuugle Services API.                                                                                                                                                                                                                    | `"http://localhost:8000/"`                        |
-| `apiToken`                         | String   | `"development-token"`               | API token for authenticating with Zuugle Services. **For production, this MUST be a server-obtained Access Token.** The default token is for development/testing only. See [Apply for Access & Security Process](#apply-for-access--security-process).   | `"your-server-obtained-access-token"`             |
+| `apiToken`                         | String   | `null`                              | **Required.** API token for authenticating with Zuugle Services. **This MUST be a server-obtained Access Token.** See [Apply for Access & Security Process](#apply-for-access--security-process).                                                        | `"your-server-obtained-access-token"`             |
 | `language`                         | String   | `"EN"`                              | Language for the widget UI (`"EN"`, `"DE"`, `"FR"`, `"IT"`, `"TH"` or `"ES"` currently supported). Falls back to `EN` if an unsupported language is provided.                                                                                            | `"DE"`                                            |
 | `cacheUserStartLocation`           | Boolean  | `true`                              | If `true`, the user's last entered start location (address and coordinates) will be cached in the browser's localStorage.                                                                                                                                | `false`                                           |
 | `userStartLocationCacheTTLMinutes` | Number   | `15`                                | Time in minutes for how long the cached user start location remains valid. After this period, the cached value is ignored.                                                                                                                               | `120` (for 2 hours)                               |
@@ -369,7 +362,73 @@ These fields must be provided in the configuration object for the widget to init
 | `hideOverriddenActivityStartDate`  | Boolean  | `true`                              | If `true`, the start date input for single day activities is hidden if fully defined by config (`overrideActivityStartDate`).                                                                                                                            | `false`                                           |
 | `dateList`                         | Array    | `null`                              | An array of specific dates (YYYY-MM-DD) for which the activity is available. If provided, the date picker is replaced by a dropdown menu containing only these dates.                                                                                    | `['2024-08-10', '2024-08-17']`                    |
 | `onDateChange`                     | Function | `null`                              | A callback function that is triggered when the date is changed from within the widget. It receives the new date as a string in 'YYYY-MM-DD' format.                                                                                                      | `function(newDate) { console.log(newDate); }`     |
+| `onApiTokenExpired`                | Function | `null`                              | A callback function that is triggered when the API returns a 401 Unauthorized error. It should return a `Promise` that resolves with a new, valid API token. See [Token Expiration and Refresh](#token-expiration-and-refresh) for details.              | `async () => { return await fetchNewToken(); }`   |
 | `dev`                              | Boolean  | `false`                             | If `true`, enables development mode with verbose logging to the console and detailled Configuration Error Descriptions. This is useful for debugging during development but should be set to `false` in production environments.                         | `true`                                            |
+
+## Token Expiration and Refresh
+
+Access Tokens have a limited lifetime (e.g., 1 hour). When a token expires, API calls will fail with a `401 Unauthorized` status. The widget provides a robust mechanism to handle this seamlessly without requiring a full page reload.
+
+This is managed through the optional `onApiTokenExpired` configuration callback.
+
+### How It Works
+
+1.  **401 Error Detected**: When any API call made by the widget receives a 401 error, it automatically triggers the token refresh process.
+
+2.  **`onApiTokenExpired` Callback**:
+    * The widget checks if you have provided an `onApiTokenExpired` function in your configuration.
+    * If the function exists, the widget calls it.
+    * Your implementation of this function is responsible for contacting your backend to get a new, valid access token.
+    * This function **must return a Promise** that resolves with the new token string.
+
+3.  **Automatic Retry**:
+    * Once the promise resolves and the widget receives the new token, it automatically updates its internal configuration.
+    * It then retries the original API request that failed, using the new token. To the user, this process is completely seamless.
+
+4.  **Graceful Fallback**:
+    * If you **do not** provide an `onApiTokenExpired` function, or if the promise returned by your function is rejected (i.e., your backend fails to provide a new token), the widget will enter a "graceful failure" state.
+    * In this state:
+        * The widget's UI (inputs, buttons) is disabled to prevent further action.
+        * A clear message is displayed: "Your session has expired. Please reload the page to continue."
+        * A "Reload Page" button is provided, allowing the user to refresh the page, which should trigger your server to provide a fresh token on page load.
+
+### Implementation Example
+
+This is a robust solution that creates a formal contract between the widget and the host page, allowing for a seamless, no-reload token refresh.
+
+```javascript
+// In your main page's JavaScript
+window.dianaActivityConfig = {
+  // ...other required configurations...
+  
+  /**
+   * This function is called by the widget when the API token expires.
+   * It must return a Promise that resolves with a new, valid token.string
+   */
+  onApiTokenExpired: async () => {
+    try {
+      // Make a call to YOUR backend endpoint that is responsible for
+      // generating or refreshing the API token.
+      const response = await fetch('/api/get-new-diana-token'); 
+      if (!response.ok) {
+        throw new Error('Failed to fetch a new token from the server.');
+      }
+      const data = await response.json();
+      return data.accessToken; // JSON like { "accessToken": "new_token_here" }, return the api token string
+    } catch (error) {
+      console.error('Error refreshing API token:', error);
+      // By throwing an error here, you cause the Promise to be rejected,
+      // which will trigger the widget's graceful fallback UI.
+      throw error; 
+    }
+  }
+};
+
+// Initialize the widget
+const dianaWidgetInstance = new window.DianaWidget(window.dianaActivityConfig, "dianaWidgetContainer");
+```
+
+By implementing the `onApiTokenExpired` callback, you provide the best possible user experience, while the widget's built-in fallback ensures a safe and user-friendly alternative for all scenarios.
 
 ## Styling & Theming
 
@@ -452,6 +511,7 @@ Example:
 
 ```html
 <div id="dianaWidgetContainer" style="max-height: 620px;">
+</div>
 ```
 
 You can even set more complex styles to the outermost container, e.g.:

@@ -84,6 +84,7 @@ export default {
             shareLinkInvalid: "This shared link is invalid or has expired."
         },
         errors: {
+            sessionExpired: "Your session has expired. Please reload the page to continue.",
             connectionError: "Failed to load connections. Please try again.",
             suggestionError: "Failed to load suggestions. Please try again.",
             activityTimeError: "Failed to calculate activity times. Please try again.",
@@ -264,6 +265,7 @@ export default {
             shareLinkInvalid: "Dieser geteilte Link ist ungültig oder abgelaufen."
         },
         errors: {
+            sessionExpired: "Ihre Sitzung ist abgelaufen. Bitte laden Sie die Seite neu, um fortzufahren.",
             connectionError: "Verbindungsdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
             suggestionError: "Vorschläge konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
             activityTimeError: "Aktivitätszeiten konnten nicht berechnet werden. Bitte versuchen Sie es erneut.",
@@ -444,6 +446,7 @@ export default {
             shareLinkInvalid: "Este enlace compartido no es válido o ha caducado."
         },
         errors: {
+            sessionExpired: "Su sesión ha caducado. Por favor, recargue la página para continuar.",
             connectionError: "No se pudieron cargar los datos de conexión. Por favor, inténtelo de nuevo.",
             suggestionError: "No se pudieron cargar las sugerencias. Por favor, inténtelo de nuevo.",
             activityTimeError: "No se pudieron calcular los horarios de la actividad. Por favor, inténtelo de nuevo.",
@@ -624,6 +627,7 @@ export default {
             shareLinkInvalid: "Ce lien partagé est invalide ou a expiré."
         },
         errors: {
+            sessionExpired: "Votre session a expiré. Veuillez recharger la page pour continuer.",
             connectionError: "Échec du chargement des données de connexion. Veuillez réessayer.",
             suggestionError: "Échec du chargement des suggestions. Veuillez réessayer.",
             activityTimeError: "Échec du calcul des heures d'activité. Veuillez réessayer.",
@@ -804,6 +808,7 @@ export default {
             shareLinkInvalid: "Questo link condiviso non è valido o è scaduto."
         },
         errors: {
+            sessionExpired: "La sessione è scaduta. Si prega di ricaricare la pagina per continuare.",
             connectionError: "Impossibile caricare i dati di connessione. Riprova.",
             suggestionError: "Impossibile caricare i suggerimenti. Riprova.",
             activityTimeError: "Impossibile calcolare gli orari dell'attività. Riprova.",
@@ -984,6 +989,7 @@ export default {
             shareLinkInvalid: "ลิงก์ที่แชร์นี้ไม่ถูกต้องหรือหมดอายุแล้ว"
         },
         errors: {
+            sessionExpired: "เซสชันของคุณหมดอายุแล้ว กรุณาโหลดหน้าใหม่เพื่อดำเนินการต่อ",
             connectionError: "ไม่สามารถโหลดข้อมูลการเชื่อมต่อได้ กรุณาลองอีกครั้ง",
             suggestionError: "ไม่สามารถโหลดคำแนะนำได้ กรุณาลองอีกครั้ง",
             activityTimeError: "ไม่สามารถคำนวณเวลาของกิจกรรมได้ กรุณาลองอีกครั้ง",

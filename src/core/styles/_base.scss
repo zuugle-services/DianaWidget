@@ -502,3 +502,32 @@
   font-size: 11px;
   color: var(--text-secondary);
 }
+
+.disabled-by-session-expiry {
+  opacity: 0.6;
+}
+
+.session-expired-message {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px;
+  text-align: center;
+}
+
+.reload-button {
+  background-color: var(--primary-color);
+  border: none;
+  border-radius: 5px;
+  color: var(--bg-primary);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: background-color 0.2s ease;
+}
+
+.reload-button:hover {
+  background-color: var(--bg-apply-hover);
+}

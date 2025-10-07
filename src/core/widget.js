@@ -66,6 +66,7 @@ export default class DianaWidget {
         hideOverriddenActivityStartDate: true,
         dateList: null,
         onDateChange: null,
+        onApiTokenExpired: null,
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -290,7 +291,6 @@ export default class DianaWidget {
 
                 const earliestEnd = convertLocalTimeToUTC(config.activityEarliestEndTime, new Date("2000-10-10"), config.timezone);
                 const latestEnd = convertLocalTimeToUTC(config.activityLatestEndTime, new Date("2000-10-10"), config.timezone);
-                console.log(earliestEnd, latestEnd);
                 if (latestEnd < earliestEnd) {
                     errors.push(`activityLatestEndTime (${config.activityLatestEndTime}) cannot be before activityEarliestEndTime (${config.activityEarliestEndTime}).`);
                 }
@@ -398,15 +398,6 @@ export default class DianaWidget {
         }
 
         return text;
-    }
-
-    injectBaseStyles() {
-        if (!document.getElementById('diana-styles')) {
-            const style = document.createElement('style');
-            style.id = 'diana-styles';
-            style.textContent = styles.toString();
-            document.head.appendChild(style);
-        }
     }
 
     async initDOM() {
@@ -882,6 +873,102 @@ export default class DianaWidget {
         }
     }
 
+    _handleSessionExpired() {
+        // Disable UI elements to prevent further interaction
+        const elementsToDisable = [
+            this.elements.originInput,
+            this.elements.searchBtn,
+            this.elements.currentLocationBtn,
+            this.elements.clearInputBtn,
+            this.elements.dateBtnToday,
+            this.elements.dateBtnTomorrow,
+            this.elements.dateBtnOther,
+            this.elements.dateSelect,
+            this.elements.activityDateStart,
+            this.elements.activityDateEnd,
+            this.elements.activityDate,
+        ];
+
+        elementsToDisable.forEach(el => {
+            if (el) {
+                el.disabled = true;
+                el.style.pointerEvents = 'none';
+                el.classList.add('disabled-by-session-expiry');
+            }
+        });
+
+        // Display a non-dismissible error message with a reload button
+        if (this.elements.formErrorContainer) {
+            const messageContainer = document.createElement('div');
+            messageContainer.className = 'session-expired-message';
+
+            const messageText = document.createElement('span');
+            messageText.textContent = this.t('errors.sessionExpired');
+            messageContainer.appendChild(messageText);
+
+            const reloadButton = document.createElement('button');
+            reloadButton.textContent = this.t('reloadPage');
+            reloadButton.className = 'reload-button';
+            reloadButton.onclick = () => window.location.reload(true);
+            messageContainer.appendChild(reloadButton);
+
+            this.elements.formErrorContainer.innerHTML = ''; // Clear previous errors
+            this.elements.formErrorContainer.appendChild(messageContainer);
+            this.elements.formErrorContainer.style.display = 'block';
+            this.elements.formErrorContainer.setAttribute('role', 'alert');
+        }
+    }
+
+    async _fetchApi(url, originalOptions = {}, isRetry = false) {
+        const options = {
+            ...originalOptions,
+            headers: {
+                ...originalOptions.headers,
+                'Authorization': `Bearer ${this.config.apiToken}`
+            }
+        };
+
+        const response = await fetch(url, options);
+
+        if (response.ok) {
+            return response;
+        }
+
+        if (response.status === 401 && !isRetry) {
+            if (typeof this.config.onApiTokenExpired === 'function') {
+                try {
+                    const newToken = await this.config.onApiTokenExpired();
+                    if (typeof newToken === 'string' && newToken) {
+                        this.config.apiToken = newToken;
+                        return this._fetchApi(url, originalOptions, true);
+                    }
+                    throw new Error("onApiTokenExpired callback did not return a valid string token.");
+                } catch (error) {
+                    console.error("Token refresh via onApiTokenExpired failed:", error);
+                    this._handleSessionExpired();
+                    const sessionError = new Error(this.t('errors.sessionExpired'));
+                    sessionError.isSessionExpired = true;
+                    throw sessionError;
+                }
+            } else {
+                this._handleSessionExpired();
+                const sessionError = new Error(this.t('errors.sessionExpired'));
+                sessionError.isSessionExpired = true;
+                throw sessionError;
+            }
+        }
+
+        const error = new Error(`API Error: ${response.status} ${response.statusText}`);
+        error.response = response;
+        try {
+            error.body = await response.clone().json();
+        } catch (e) {
+            error.body = await response.clone().text();
+        }
+        throw error;
+    }
+
+
     async handleCurrentLocation() {
         this.clearMessages();
         if (!navigator.geolocation) {
@@ -932,32 +1019,13 @@ export default class DianaWidget {
     async fetchReverseGeocode(latitude, longitude) {
         this.showInfo(this.t('infos.fetchingAddress'));
         try {
-            const response = await fetch(
+            const response = await this._fetchApi(
                 `${this.config.apiBaseUrl}/reverse-geocode?lat=${latitude}&lon=${longitude}`,
                 {
                     method: 'GET',
-                    headers: {'Content-Type': 'application/json', 'Authorization': `Bearer ${this.config.apiToken}`}
+                    headers: {'Content-Type': 'application/json'}
                 });
-            if (!response.ok) {
-                if (response.status === 401) {
-                    const responseBody = await response.json();
-                    if (this.config.apiToken !== "" && responseBody["detail"] === "Authentication credentials were not provided.") {
-                        window.location.reload(true);
-                    }
-                }
-                let errorCode = null;
-                try {
-                    const errorBody = await response.json();
-                    if (errorBody && errorBody.code) {
-                        errorCode = errorBody.code;
-                        throw new Error(this.t(getApiErrorTranslationKey(errorCode)));
-                    } else if (errorBody && errorBody.error) throw new Error(this.t('errors.api.unknown'));
-                } catch (e) {
-                    if (e instanceof SyntaxError) throw new Error(this.t('errors.api.unknown'));
-                    else throw e;
-                }
-                throw new Error(this.t('errors.api.unknown'));
-            }
+
             const data = await response.json();
             if (data.features && data.features.length > 0 && data.features[0].diana_properties && data.features[0].diana_properties.display_name) {
                 const displayName = data.features[0].diana_properties.display_name;
@@ -975,10 +1043,16 @@ export default class DianaWidget {
                 throw new Error(this.t('errors.reverseGeocodeNoResults'));
             }
         } catch (error) {
+            if (error.isSessionExpired) return;
+
             console.error("Reverse geocode error:", error);
-            let errorMessage = this.t('errors.reverseGeocodeFailed');
-            if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
+            let errorMessage;
+            if (error.body && typeof error.body === 'object' && error.body.code) {
+                errorMessage = this.t(getApiErrorTranslationKey(error.body.code));
+            } else if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
                 errorMessage = !window.navigator.onLine ? this.t('errors.api.networkError') : this.t('errors.api.apiUnreachable');
+            } else {
+                errorMessage = error.message || this.t('errors.reverseGeocodeFailed');
             }
             this.showError(errorMessage, 'form');
         } finally {
@@ -1135,6 +1209,10 @@ export default class DianaWidget {
             this.navigateToResults();
             this.slideToRecommendedConnections();
         } catch (error) {
+            if (error.isSessionExpired) {
+                this.setLoadingState(false);
+                return;
+            }
             console.error("Search error:", error);
             let errorMessage = this.t('errors.connectionError');
             let errorResponse = null;
@@ -1162,40 +1240,20 @@ export default class DianaWidget {
 
     async fetchSuggestions(query) {
         try {
-            const fetch_lang = navigator.language.split("-")[0]
-            const response = await fetch(
-                `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}&lang=${fetch_lang}`,
-                {headers: {"Authorization": `Bearer ${this.config.apiToken}`}}
+            const fetch_lang = navigator.language.split("-")[0];
+            const response = await this._fetchApi(
+                `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}&lang=${fetch_lang}`
             );
-            if (!response.ok) {
-                if (response.status === 401) {
-                    const responseBody = await response.json();
-                    if (this.config.apiToken !== "" && responseBody["detail"] === "Authentication credentials were not provided.") {
-                        window.location.reload(true);
-                    }
-                }
-
-                try {
-                    const errorBody = await response.json();
-                    if (errorBody && errorBody.code) {
-                        throw new Error(this.t(getApiErrorTranslationKey(errorBody.code)));
-                    } else if (errorBody && errorBody.error) {
-                        throw new Error(this.t('errors.api.unknown'));
-                    }
-                } catch (e) {
-                    if (e instanceof SyntaxError) {
-                        throw new Error(this.t('errors.api.unknown'));
-                    } else {
-                        throw e;
-                    }
-                }
-                throw new Error(this.t('errors.api.unknown'));
+            return await response.json();
+        } catch (error) {
+            if (error.isSessionExpired) {
+                return {features: []};
             }
-            return response.json();
-        } catch (e) {
-            console.error("Suggestions error:", e);
+            console.error("Suggestions error:", error);
             let errorMessage = this.t('errors.suggestionError');
-            if (e.message && e.message.toLowerCase().includes('failed to fetch')) {
+            if (error.body && typeof error.body === 'object' && error.body.code) {
+                errorMessage = this.t(getApiErrorTranslationKey(error.body.code));
+            } else if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
                 errorMessage = !window.navigator.onLine ? this.t('errors.api.networkError') : this.t('errors.api.apiUnreachable');
             }
             this.showError(errorMessage, 'form');
@@ -1251,22 +1309,10 @@ export default class DianaWidget {
         if (this.config.activityEndTimeLabel) params.activity_end_time_label = this.config.activityEndTimeLabel;
 
         const queryString = new URLSearchParams(params);
-        const response = await fetch(
-            `${this.config.apiBaseUrl}/connections?${queryString}`,
-            {headers: {"Authorization": `Bearer ${this.config.apiToken}`}}
+        const response = await this._fetchApi(
+            `${this.config.apiBaseUrl}/connections?${queryString}`
         );
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                const responseBody = await response.json();
-                if (this.config.apiToken !== "" && responseBody["detail"] === "Authentication credentials were not provided.") {
-                    window.location.reload(true);
-                }
-            }
-            const error = new Error(this.t('errors.api.unknown'));
-            error.response = response;
-            throw error;
-        }
         const result = await response.json();
         if (!result?.connections?.from_activity || !result?.connections?.to_activity) {
             console.error("API response missing expected connection data:", result);
@@ -2388,20 +2434,13 @@ export default class DianaWidget {
                 shareURLPrefix: this.config.shareURLPrefix,
             };
 
-            const response = await fetch(`${this.config.apiBaseUrl}/share/`, {
+            const response = await this._fetchApi(`${this.config.apiBaseUrl}/share/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.apiToken}`
                 },
                 body: JSON.stringify(dataToShare)
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => null);
-                console.error("API Error creating share link:", errorData);
-                throw new Error(this.t('errors.shareLinkCreateFailed'));
-            }
 
             const result = await response.json();
             const shareId = result.shareId;
@@ -2441,9 +2480,10 @@ export default class DianaWidget {
                 }
             }
         } catch (error) {
+            if (error.isSessionExpired) return;
             console.error("Share failed:", error);
             if (error.name !== 'AbortError') {
-                this.showError(this.t('shareUrlCopyFailed'), 'results', true); // Pass true to preserve content
+                this.showError(this.t('shareUrlCopyFailed'), 'results', true);
             }
         }
     }
@@ -2454,11 +2494,9 @@ export default class DianaWidget {
         const currentUrl = new URL(window.location.href);
 
         try {
-            const response = await fetch(`${this.config.apiBaseUrl}/share/${shareId}/`, {
-                headers: {"Authorization": `Bearer ${this.config.apiToken}`}
-            });
+            const response = await this._fetchApi(`${this.config.apiBaseUrl}/share/${shareId}/`);
 
-            if (!response.ok) {
+            if (!response.ok) { // This check is redundant now but kept for safety
                 this.setLoadingState(false, true);
                 this.showInfo(this.t('errors.shareLinkInvalidExpired'));
                 currentUrl.searchParams.delete('diana-share');
@@ -2543,6 +2581,7 @@ export default class DianaWidget {
             await this.handleSearch();
 
         } catch (error) {
+            if (error.isSessionExpired) return;
             console.error("Failed to load data from shareID:", error);
             this.setLoadingState(false, true);
             this._showFatalError(this.t('errors.shareLinkErrorTitle'), error.message, "info", true);
