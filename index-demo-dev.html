@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DianaWidget Dev Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #111827; color: #e5e7eb; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .nav-link { transition: all 0.2s ease-in-out; }
+        .nav-link.active { background-color: #4f46e5; color: white; }
+        .nav-link:not(.active):hover { background-color: #374151; }
+        #dianaWidgetContainer { max-height: 700px; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 0 40px rgba(79, 70, 229, 0.2); }
+
+        /* Page specific styles */
+        #page-minimal { background-color: #1f2937; border: 1px solid #374151; }
+        #page-corporate { background-color: #f9fafb; color: #1f2937; border: 1px solid #e5e7eb; }
+        #page-vibrant { background-image: linear-gradient(to right, #ec4899, #8b5cf6); color: white; }
+    </style>
+</head>
+<body class="antialiased">
+
+<div class="container mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-bold tracking-tight text-white sm:text-5xl">DianaWidget Dev Environment</h1>
+        <p class="mt-3 text-lg text-gray-400">Testing different configurations and styles.</p>
+    </header>
+
+    <nav class="flex justify-center bg-gray-800 rounded-lg p-2 mb-8 shadow-md">
+        <a href="#minimal" class="nav-link active text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('minimal')">Minimalistic</a>
+        <a href="#corporate" class="nav-link text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('corporate')">Corporate</a>
+        <a href="#vibrant" class="nav-link text-sm font-medium rounded-md px-4 py-2" onclick="switchPage('vibrant')">Vibrant</a>
+    </nav>
+
+    <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div id="page-container" class="rounded-lg p-6 transition-all duration-300">
+            <!-- Minimal Page -->
+            <div id="page-minimal" class="page active p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-600 pb-2">Minimal Setup</h2>
+                <p class="text-gray-400">A straightforward, dark-themed test for a single-day event. This uses the most basic required configuration for the widget.</p>
+            </div>
+            <!-- Corporate Page -->
+            <div id="page-corporate" class="page p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b border-gray-300 pb-2">Corporate Integration</h2>
+                <p>A clean, light-themed setup simulating a corporate event booking. This configuration tests a multi-day event with fixed duration and language settings.</p>
+            </div>
+            <!-- Vibrant Page -->
+            <div id="page-vibrant" class="page p-6 rounded-lg">
+                <h2 class="text-2xl font-semibold mb-4 border-b border-purple-300 pb-2">Vibrant Festival Planner</h2>
+                <p>A colorful, energetic theme for a festival or concert. This test case uses date overrides and custom display names.</p>
+            </div>
+        </div>
+
+        <div class="sticky top-8">
+            <div id="dianaWidgetContainer"></div>
+        </div>
+    </main>
+
+</div>
+
+<script src="./dist/DianaWidget.bundle-dev.js"></script>
+<script>
+    const dianaConfigs = {
+        minimal: {
+            activityName: "Tech Meetup",
+            activityStartLocation: "48.2082, 16.3738", // Vienna, Austria
+            activityStartLocationType: "coordinates",
+            activityEndLocation: "48.2082, 16.3738",
+            activityEndLocationType: "coordinates",
+            activityEarliestStartTime: "18:00",
+            activityLatestStartTime: "19:00",
+            activityEarliestEndTime: "21:00",
+            activityLatestEndTime: "22:00",
+            activityDurationMinutes: "120",
+            timezone: "Europe/Vienna",
+            language: "EN",
+            dev: true,
+            // apiToken: "test_token_dev", //
+        },
+        corporate: {
+            activityName: "Annual Company Conference",
+            activityStartLocation: "Messe Wien, Messeplatz 1, 1020 Wien",
+            activityStartLocationType: "address",
+            activityEndLocation: "Messe Wien, Messeplatz 1, 1020 Wien",
+            activityEndLocationType: "address",
+            activityEarliestStartTime: "09:00",
+            activityLatestStartTime: "10:00",
+            activityEarliestEndTime: "17:00",
+            activityLatestEndTime: "18:00",
+            multiday: true,
+            activityDurationDaysFixed: 3,
+            timezone: "Europe/Vienna",
+            language: "DE",
+            dev: true,
+            // apiToken: "test_token_dev", //
+        },
+        vibrant: {
+            activityName: "Summer Music Festival",
+            activityStartLocation: "Donauinsel, Vienna",
+            activityStartLocationDisplayName: "Festival Main Stage",
+            activityStartLocationType: "address",
+            activityEndLocation: "Donauinsel, Vienna",
+            activityEndLocationDisplayName: "Festival Main Stage",
+            activityEndLocationType: "address",
+            activityEarliestStartTime: "14:00",
+            activityLatestStartTime: "20:00",
+            activityEarliestEndTime: "22:00",
+            activityLatestEndTime: "23:59",
+            activityDurationMinutes: "300",
+            overrideActivityStartDate: "2025-07-18",
+            timezone: "Europe/Vienna",
+            language: "EN",
+            dev: true,
+            // apiToken: "test_token_dev", //
+        }
+    };
+
+    let currentWidgetInstance = null;
+
+    function initializeWidget(configKey) {
+        const widgetContainer = document.getElementById('dianaWidgetContainer');
+        widgetContainer.innerHTML = '';
+        if (window.DianaWidget && dianaConfigs[configKey]) {
+            currentWidgetInstance = new window.DianaWidget(dianaConfigs[configKey], "dianaWidgetContainer");
+        } else {
+            widgetContainer.innerHTML = "<p class='p-4 text-red-500'>Error: DianaWidget dev bundle could not be loaded.</p>";
+        }
+    }
+
+    function switchPage(pageKey) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(`page-${pageKey}`).classList.add('active');
+
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector(`a[href="#${pageKey}"]`).classList.add('active');
+
+        initializeWidget(pageKey);
+    }
+
+    window.onload = function() {
+        const initialPage = window.location.hash.substring(1) || 'minimal';
+        switchPage(initialPage);
+    };
+</script>
+</body>
+</html>

@@ -1,89 +1,155 @@
-name: 🚀 Deploy DianaWidget on Release
+name: 🚀 Deploy DianaWidget 🚀
 
 on:
   release:
     types: [created]
+  push:
+    branches:
+      - dev
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: 🎉 Deploy to Pseudo-CDN
+  deploy-release:
+    name: 🎉 Deploy Release to CDN
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🚚 Checkout code
-      uses: actions/checkout@v4
+      - name: 🚚 Checkout code
+        uses: actions/checkout@v4
 
-    - name: ⎔ Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: 20
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
 
-    - name: 📦 Install dependencies
-      run: npm ci
+      - name: 📦 Install dependencies
+        run: npm ci
 
-    - name: 🧪 Run tests
-      run: npm test
+      - name: 🧪 Run tests
+        run: npm test
 
-    - name: 🔨 Build production bundle
-      run: npm run build
+      - name: 🔨 Build production bundle
+        run: npm run build
 
-    - name: 🏷️ Extract version from package.json
-      id: get-version
-      run: |
-        VERSION=$(jq -r .version package.json)
-        echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: 🏷️ Extract version from package.json
+        id: get-version
+        run: |
+          VERSION=$(jq -r .version package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-    - name: 📂 Create versioned bundle copy
-      run: |
-        cp ./dist/DianaWidget.bundle.js "./dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js"
+      - name: 📂 Create versioned bundle copy
+        run: |
+          cp ./dist/DianaWidget.bundle.js "./dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js"
 
-    - name: 📤 Deploy main bundle to Server
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-      with:
-        username: ${{ secrets.FTP_USERNAME }}
-        server: ${{ secrets.FTP_SERVER }}
-        port: ${{ secrets.FTP_PORT }}
-        local_path: './dist/DianaWidget.bundle.js'
-        remote_path: './dist/'
-        sftp_only: true
-        password: ${{ secrets.FTP_PASSWORD }}
+      - name: 📤 Deploy main bundle to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          local_path: './dist/DianaWidget.bundle.js'
+          remote_path: './dist/'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 📤 Deploy versioned bundle to Server
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-      with:
-        username: ${{ secrets.FTP_USERNAME }}
-        server: ${{ secrets.FTP_SERVER }}
-        port: ${{ secrets.FTP_PORT }}
-        local_path: './dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js'
-        remote_path: './dist/'
-        sftp_only: true
-        password: ${{ secrets.FTP_PASSWORD }}
+      - name: 📤 Deploy versioned bundle to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          local_path: './dist/DianaWidget.bundle-${{ steps.get-version.outputs.version }}.js'
+          remote_path: './dist/'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 📤 Deploy index-demo.html demo page to Server
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-      with:
-        username: ${{ secrets.FTP_USERNAME }}
-        server: ${{ secrets.FTP_SERVER }}
-        port: ${{ secrets.FTP_PORT }}
-        local_path: './index-demo.html'
-        remote_path: './'
-        sftp_only: true
-        password: ${{ secrets.FTP_PASSWORD }}
+      - name: 📤 Deploy index-demo.html to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          local_path: './index-demo.html'
+          remote_path: './'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 📤 Deploy index.php demo page to Server
-      uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-      with:
-        username: ${{ secrets.FTP_USERNAME }}
-        server: ${{ secrets.FTP_SERVER }}
-        port: ${{ secrets.FTP_PORT }}
-        local_path: './index.php'
-        remote_path: './'
-        sftp_only: true
-        password: ${{ secrets.FTP_PASSWORD }}
+      - name: 📤 Deploy index.php to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          local_path: './index.php'
+          remote_path: './'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD }}
 
-    - name: 💾 Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: diana-widget-dist # Name of the artifact
-        path: ./dist/
+      - name: 💾 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: diana-widget-dist-release
+          path: ./dist/
+
+  deploy-dev:
+    name: 🛠️ Deploy Dev Version
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚚 Checkout code
+        uses: actions/checkout@v4
+
+      - name: ⎔ Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔨 Build development bundle
+        run: npm run build
+
+      - name: 📂 Create dev bundle copy
+        run: cp ./dist/DianaWidget.bundle.js ./dist/DianaWidget.bundle-dev.js
+
+      - name: 📤 Deploy dev bundle to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME_DEV }}
+          server: ${{ secrets.FTP_SERVER_DEV }}
+          port: ${{ secrets.FTP_PORT_DEV }}
+          local_path: './dist/DianaWidget.bundle-dev.js'
+          remote_path: './dist/'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD_DEV }}
+
+      - name: 📤 Deploy dev demo HTML to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME_DEV }}
+          server: ${{ secrets.FTP_SERVER_DEV }}
+          port: ${{ secrets.FTP_PORT_DEV }}
+          local_path: './index-demo-dev.html'
+          remote_path: './'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD_DEV }}
+
+      - name: 📤 Deploy dev demo PHP to Server
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME_DEV }}
+          server: ${{ secrets.FTP_SERVER_DEV }}
+          port: ${{ secrets.FTP_PORT_DEV }}
+          local_path: './index-dev.php'
+          remote_path: './'
+          sftp_only: true
+          password: ${{ secrets.FTP_PASSWORD_DEV }}
+
+      - name: 💾 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: diana-widget-dist-dev
+          path: ./dist/
