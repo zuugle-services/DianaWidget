@@ -118,35 +118,35 @@ jobs:
       - name: 📤 Deploy dev bundle to Server
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          username: ${{ secrets.FTP_USERNAME_DEV }}
-          server: ${{ secrets.FTP_SERVER_DEV }}
-          port: ${{ secrets.FTP_PORT_DEV }}
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
           local_path: './dist/DianaWidget.bundle-dev.js'
           remote_path: './dist/'
           sftp_only: true
-          password: ${{ secrets.FTP_PASSWORD_DEV }}
+          password: ${{ secrets.FTP_PASSWORD }}
 
       - name: 📤 Deploy dev demo HTML to Server
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          username: ${{ secrets.FTP_USERNAME_DEV }}
-          server: ${{ secrets.FTP_SERVER_DEV }}
-          port: ${{ secrets.FTP_PORT_DEV }}
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
           local_path: './index-demo-dev.html'
           remote_path: './'
           sftp_only: true
-          password: ${{ secrets.FTP_PASSWORD_DEV }}
+          password: ${{ secrets.FTP_PASSWORD }}
 
       - name: 📤 Deploy dev demo PHP to Server
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
-          username: ${{ secrets.FTP_USERNAME_DEV }}
-          server: ${{ secrets.FTP_SERVER_DEV }}
-          port: ${{ secrets.FTP_PORT_DEV }}
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
           local_path: './index-dev.php'
           remote_path: './'
           sftp_only: true
-          password: ${{ secrets.FTP_PASSWORD_DEV }}
+          password: ${{ secrets.FTP_PASSWORD }}
 
       - name: 💾 Upload build artifacts
         uses: actions/upload-artifact@v4
