@@ -12,7 +12,13 @@
         .nav-link { transition: all 0.2s ease-in-out; }
         .nav-link.active { background-color: #4f46e5; color: white; }
         .nav-link:not(.active):hover { background-color: #374151; }
-        #dianaWidgetContainer { max-height: 700px; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 0 40px rgba(79, 70, 229, 0.2); }
+        #dianaWidgetContainer {
+            background-color: #ffffff;
+            border-radius: 0.5rem; /* 12px */
+            box-shadow: 0 0 40px rgba(79, 70, 229, 0.2);
+            transition: box-shadow 0.3s ease-in-out;
+            max-height: 620px !important; /* Fixed height for the widget container */
+        }
 
         /* Page specific styles */
         #page-minimal { background-color: #1f2937; border: 1px solid #374151; }
@@ -64,16 +70,16 @@
 <script>
     const dianaConfigs = {
         minimal: {
-            activityName: "Tech Meetup",
-            activityStartLocation: "48.2082, 16.3738", // Vienna, Austria
+            activityName: "Mediamarkt Wien Mitte",
+            activityStartLocation: "48.20687250915278, 16.385245200208153", // Vienna, Austria
             activityStartLocationType: "coordinates",
-            activityEndLocation: "48.2082, 16.3738",
+            activityEndLocation: "48.20687250915278, 16.385245200208153",
             activityEndLocationType: "coordinates",
-            activityEarliestStartTime: "18:00",
-            activityLatestStartTime: "19:00",
-            activityEarliestEndTime: "21:00",
+            activityEarliestStartTime: "10:00",
+            activityLatestStartTime: "18:00",
+            activityEarliestEndTime: "11:00",
             activityLatestEndTime: "22:00",
-            activityDurationMinutes: "120",
+            activityDurationMinutes: "60",
             timezone: "Europe/Vienna",
             language: "EN",
             dev: true,
