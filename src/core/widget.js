@@ -1235,6 +1235,9 @@ export default class DianaWidget {
             const endDateLuxon = DateTime.fromJSDate(this.state.selectedEndDate).startOf('day');
             const diffDays = endDateLuxon.diff(startDateLuxon, 'days').days;
             params.activity_duration_days = Math.max(1, diffDays + 1);
+            if (!this.config.activityDurationMinutes) {
+                params.activity_duration_minutes = 0;
+            }
         }
 
         if (this.elements.originInput.attributes["data-lat"] && this.elements.originInput.attributes["data-lon"]) {
