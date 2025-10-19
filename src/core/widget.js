@@ -2056,19 +2056,13 @@ export default class DianaWidget {
         button.disabled = true;
 
         try {
-            const response = await fetch(`${this.config.apiBaseUrl}/generate-ticketshop-link`, {
+            const response = await this._fetchApi(`${this.config.apiBaseUrl}/generate-ticketshop-link`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.apiToken}`
                 },
                 body: JSON.stringify({ connection_elements: connection.connection_elements })
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ error: 'Failed to generate link.' }));
-                throw new Error(errorData.error || 'Failed to generate ticketshop link.');
-            }
 
             const result = await response.json();
             if (result.ticketshop_url) {
@@ -2078,6 +2072,7 @@ export default class DianaWidget {
             }
 
         } catch (error) {
+            if (error.isSessionExpired) return;
             console.error('Error fetching ticketshop link:', error);
             this.showError(error.message || this.t('errors.api.internalError'), 'results', true);
         } finally {
