@@ -778,6 +778,9 @@ export default class DianaWidget {
         this.elements.collapsibleToActivity?.addEventListener('click', () => this.toggleCollapsible('to'));
         this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
 
+        if (this.elements.responseBox) this.elements.responseBox.addEventListener('click', (e) => this.handleBuyTicketClick(e));
+        if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleBuyTicketClick(e));
+
 
         // --- Generic Menu Handling ---
         const menuButtons = [this.elements.formPageMenuButton, this.elements.resultsPageMenuButton, this.elements.contentPageMenuButton];
@@ -852,24 +855,6 @@ export default class DianaWidget {
 
         if (container && container.classList.contains('has-summary')) {
             container.classList.toggle('expanded');
-        }
-    }
-
-    /**
-     * Toggles the visibility of the menu dropdown.
-     * @param {boolean|null} forceShow - true to show, false to hide, null to toggle.
-     */
-    toggleMenuDropdown(forceShow = null) {
-        if (!this.elements.menuDropdown) return;
-
-        const isVisible = this.elements.menuDropdown.style.display === 'block';
-
-        if (forceShow === true) {
-            this.elements.menuDropdown.style.display = 'block';
-        } else if (forceShow === false) {
-            this.elements.menuDropdown.style.display = 'none';
-        } else {
-            this.elements.menuDropdown.style.display = isVisible ? 'none' : 'block';
         }
     }
 
@@ -1301,6 +1286,9 @@ export default class DianaWidget {
             const endDateLuxon = DateTime.fromJSDate(this.state.selectedEndDate).startOf('day');
             const diffDays = endDateLuxon.diff(startDateLuxon, 'days').days;
             params.activity_duration_days = Math.max(1, diffDays + 1);
+            if (!this.config.activityDurationMinutes) {
+                params.activity_duration_minutes = 0;
+            }
         }
 
         if (this.elements.originInput.attributes["data-lat"] && this.elements.originInput.attributes["data-lon"]) {
@@ -2048,6 +2036,56 @@ export default class DianaWidget {
         }
     }
 
+    async handleBuyTicketClick(event) {
+        const button = event.target.closest('.ticket-button');
+        if (!button) return;
+
+        event.stopPropagation();
+        this.clearMessages();
+
+        const connType = button.dataset.connType;
+        const connection = connType === 'to' ? this.state.selectedToConnection : this.state.selectedFromConnection;
+
+        if (!connection) {
+            console.error("No selected connection found to generate ticket link.");
+            return;
+        }
+
+        const originalContent = button.innerHTML;
+        button.innerHTML = `<span class="loading-spinner-small"></span>`;
+        button.disabled = true;
+
+        try {
+            const response = await fetch(`${this.config.apiBaseUrl}/generate-ticketshop-link`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.config.apiToken}`
+                },
+                body: JSON.stringify({ connection_elements: connection.connection_elements })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ error: 'Failed to generate link.' }));
+                throw new Error(errorData.error || 'Failed to generate ticketshop link.');
+            }
+
+            const result = await response.json();
+            if (result.ticketshop_url) {
+                window.open(result.ticketshop_url, '_blank');
+            } else {
+                throw new Error('No ticketshop URL returned from the server.');
+            }
+
+        } catch (error) {
+            console.error('Error fetching ticketshop link:', error);
+            this.showError(error.message || this.t('errors.api.internalError'), 'results', true);
+        } finally {
+            button.innerHTML = originalContent;
+            button.disabled = false;
+        }
+    }
+
     renderConnectionDetails(connections, type) {
         if (!connections || connections.length === 0) {
             return `<div>${this.t('noConnectionDetails')}</div>`;
@@ -2068,19 +2106,19 @@ export default class DianaWidget {
             const isLive = conn.connection_elements && conn.connection_elements.length > 0 && conn.connection_elements.every(el => el.provider === 'live');
             const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
 
-            const ticketButtonHTML = conn.connection_ticketshop_link ? `
-            <button class="ticket-button" onclick="event.stopPropagation(); window.open('${conn.connection_ticketshop_link}', '_blank')">
+            const ticketButtonHTML = conn.connection_ticketshop_provider ? `
+            <button class="ticket-button" data-conn-type="${type}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
-                ${this.t('buyTicket')}
+                ${this.t('buyTicket')} (${conn.connection_ticketshop_provider})
             </button>
-        ` : '';
+            ` : '';
 
             const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML) ? `
             <div class="connection-details-header">
                 ${liveIndicatorHTML}
                 ${ticketButtonHTML}
             </div>
-        ` : '';
+            ` : '';
 
             let
                 html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
