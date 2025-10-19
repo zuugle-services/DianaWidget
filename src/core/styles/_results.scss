@@ -675,6 +675,9 @@ div#eleCont {
   gap: 6px;
   transition: background-color 0.2s ease;
   white-space: nowrap;
+  min-height: 34px; /* Ensure consistent height */
+  min-width: 90px;  /* Ensure consistent width */
+  justify-content: center;
 
   &:hover {
     background-color: var(--bg-apply-hover);
@@ -683,6 +686,23 @@ div#eleCont {
   svg {
     width: 16px;
     height: 16px;
+  }
+}
+
+.ticket-button .loading-spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
