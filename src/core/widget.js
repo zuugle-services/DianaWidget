@@ -579,14 +579,12 @@ export default class DianaWidget {
             if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
             return;
         }
-        if (this.config.cacheUserStartLocation) {
-            const cachedLocation = this._getCachedStartLocation();
-            if (cachedLocation) {
-                originInput.value = cachedLocation.value;
-                if (cachedLocation.lat && cachedLocation.lon) {
-                    originInput.setAttribute('data-lat', cachedLocation.lat);
-                    originInput.setAttribute('data-lon', cachedLocation.lon);
-                }
+        const cachedLocation = this._getCachedStartLocation();
+        if (cachedLocation) {
+            originInput.value = cachedLocation.value;
+            if (cachedLocation.lat && cachedLocation.lon) {
+                originInput.setAttribute('data-lat', cachedLocation.lat);
+                originInput.setAttribute('data-lon', cachedLocation.lon);
             }
         }
 
@@ -602,7 +600,21 @@ export default class DianaWidget {
         }
     }
 
+    _shouldCacheUserStartLocation() {
+        const cacheConfig = this.config.cacheUserStartLocation;
+        if (typeof cacheConfig === 'function') {
+            try {
+                return !!cacheConfig();
+            } catch (error) {
+                console.error("Error executing cacheUserStartLocation callback:", error);
+                return false;
+            }
+        }
+        return !!cacheConfig;
+    }
+
     _getCachedStartLocation() {
+        if (!this._shouldCacheUserStartLocation()) return null;
         try {
             const cachedItem = localStorage.getItem(this.CACHE_KEY_USER_START_LOCATION);
             if (!cachedItem) return null;
@@ -622,7 +634,7 @@ export default class DianaWidget {
     }
 
     _setCachedStartLocation(value, lat, lon) {
-        if (!this.config.cacheUserStartLocation) return;
+        if (!this._shouldCacheUserStartLocation()) return;
         try {
             const locationData = {
                 value: value, lat: lat ? lat.toString() : null, lon: lon ? lon.toString() : null, timestamp: Date.now()
