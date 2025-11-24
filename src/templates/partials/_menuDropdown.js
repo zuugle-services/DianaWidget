@@ -25,11 +25,11 @@ export function getMenuDropdownHTML(args) {
                 </svg>
                 <span>${t('menu.helpAndSupport')}</span>
             </a>
-            <a href="#" class="menu-dropdown-item" data-content-key="legal">
+            <a href="https://zuugle-services.com/en/imprint/" target="_blank" rel="noopener noreferrer" class="menu-dropdown-item" id="imprintMenuItem">
                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zM11 17.93c-3.14-.9-5-4.04-5-7.93v-3.69l5-2.25v13.87zM18 10c0 3.89-1.86 7.03-5 7.93V8.1l5-2.25v4.15z" fill="currentColor"/>
                 </svg>
-                <span>${t('menu.legal')}</span>
+                <span>${t('menu.imprint')}</span>
             </a>
         </div>
     `;
