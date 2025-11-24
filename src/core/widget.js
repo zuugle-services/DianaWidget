@@ -53,6 +53,7 @@ export default class DianaWidget {
         userStartLocationCacheTTLMinutes: 15,
         overrideUserStartLocation: null,
         overrideUserStartLocationType: null,
+        disableUserStartLocationField: false,
         displayStartDate: null,
         displayEndDate: null,
         destinationInputName: null,
@@ -309,6 +310,11 @@ export default class DianaWidget {
             if (!coordsRegex.test(config.overrideUserStartLocation)) {
                 errors.push(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
             }
+        }
+
+        if (config.disableUserStartLocationField && !config.overrideUserStartLocation) {
+            console.warn("Warning: 'disableUserStartLocationField' is set to true but 'overrideUserStartLocation' is not provided. The parameter will be ignored.");
+            config.disableUserStartLocationField = false;
         }
 
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -573,10 +579,20 @@ export default class DianaWidget {
                     originInput.setAttribute('data-lon', parts[1].trim());
                 }
             }
-            originInput.disabled = true;
-            originInput.classList.add('disabled');
-            if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
-            if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
+            
+            // Only disable the field if disableUserStartLocationField is true
+            if (this.config.disableUserStartLocationField) {
+                originInput.disabled = true;
+                originInput.classList.add('disabled');
+                if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
+                if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
+            } else {
+                // Field is editable, show appropriate buttons
+                if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
+                    this.elements.clearInputBtn.style.display = 'block';
+                    this.elements.currentLocationBtn.style.display = 'none';
+                }
+            }
             return;
         }
         if (this.config.cacheUserStartLocation) {
@@ -727,7 +743,11 @@ export default class DianaWidget {
     setupEventListeners() {
         if (!this.elements) return;
 
-        if (!this.config.overrideUserStartLocation && this.elements.originInput) {
+        // Allow event listeners if either no override is set, or override is set but field is not disabled
+        const shouldEnableOriginInput = !this.config.overrideUserStartLocation || 
+                                       (this.config.overrideUserStartLocation && !this.config.disableUserStartLocationField);
+        
+        if (shouldEnableOriginInput && this.elements.originInput) {
             this.elements.originInput.addEventListener('input', (e) => {
                 this.elements.originInput.removeAttribute("data-lat");
                 this.elements.originInput.removeAttribute("data-lon");
