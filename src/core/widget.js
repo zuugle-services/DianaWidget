@@ -810,15 +810,18 @@ export default class DianaWidget {
                 dropdown.addEventListener('click', (e) => {
                     const menuItem = e.target.closest('.menu-dropdown-item');
                     if (menuItem) {
-                        e.preventDefault();
                         if (menuItem.classList.contains('disabled')) {
+                            e.preventDefault();
                             return; // Do nothing if disabled
                         }
                         if (menuItem.id === 'shareMenuItem') {
+                            e.preventDefault();
                             this.handleShare();
                         } else if (menuItem.dataset.contentKey) {
+                            e.preventDefault();
                             this.navigateToContentPage(menuItem.dataset.contentKey);
                         }
+                        // For external links (like imprint), don't prevent default - let them navigate normally
                         // Close all dropdowns
                         menuDropdowns.forEach(d => {
                             if (d) d.style.display = 'none';
