@@ -8,12 +8,15 @@
 - **Phase 3.1-3.4:** File Migrations (utils.ts, datetimeUtils.ts, translations.ts, all templates, components)
 - **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines → 3230 lines after extractions)
 - **Phase 3.6:** Entry point (index.ts)
-- **Phase 4.1 (partial):** Extracted validation logic into `src/core/Validator.ts` (~130 lines)
-- **Phase 4.1 (partial):** Created and integrated `src/services/ApiService.ts` (~230 lines)
+- **Phase 4.1:** Extract large methods - COMPLETED:
+  - Extracted validation logic into `src/core/Validator.ts` (~200 lines)
+  - Created and integrated `src/services/ApiService.ts` (~260 lines)
+  - Created `src/core/StateManager.ts` (~280 lines) - state management class with getter/setter properties
+  - Created `src/core/EventManager.ts` (~250 lines) - event binding and cleanup management
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.1:** Continue extracting large methods (StateManager, EventManager)
 - **Phase 4.3:** Add strict null checks
+- **Phase 4.4:** Improve type safety (replace `any` types)
 
 ### 📝 NOTES:
 - tsconfig.json uses lenient settings (strict: false, noImplicitAny: false, strictNullChecks: false) for gradual migration
@@ -28,6 +31,8 @@
   - Event handler type casting for DOM events
 - Validator.ts: Extracted config validation logic (~130 lines) into separate module
 - ApiService.ts: Created API service class with fetch delegation, error handling, and type exports
+- StateManager.ts: Created state management class (~280 lines) with getter/setter properties and helper methods
+- EventManager.ts: Created event manager class (~250 lines) for DOM event binding and cleanup
 
 ---
 
@@ -194,8 +199,8 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Identify methods in `widget.ts` exceeding 50 lines (identified: renderConnectionDetails 226 lines, constructor 187 lines, _initCustomCalendar 178 lines, setupEventListeners 144 lines, validateConfig 131 lines, etc.)
 - [x] Create `src/services/ApiService.ts` with types and base implementation
 - [x] Integrate ApiService into widget.ts (widget now delegates to ApiService.fetch())
-- [ ] Extract state management into `src/core/StateManager.ts`
-- [ ] Extract event binding logic into `src/core/EventManager.ts`
+- [x] Extract state management into `src/core/StateManager.ts`
+- [x] Extract event binding logic into `src/core/EventManager.ts`
 - [x] Extract validation logic into `src/core/Validator.ts`
 
 ### 4.2 Improve Module Organization
