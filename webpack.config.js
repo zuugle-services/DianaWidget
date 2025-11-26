@@ -5,7 +5,7 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const sass = require('sass');
 
 module.exports = {
-  entry: './src/index.js',
+  entry: './src/index.ts',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'DianaWidget.bundle.js', // This ensures the main output file is named DianaWidget.bundle.js
@@ -16,8 +16,16 @@ module.exports = {
     },
     assetModuleFilename: 'assets/[hash][ext][query]' // Defines a general path for other assets if not inlined
   },
+  resolve: {
+    extensions: ['.ts', '.tsx', '.js', '.jsx']
+  },
   module: {
     rules: [
+      {
+        test: /\.tsx?$/,
+        use: 'ts-loader',
+        exclude: /node_modules/
+      },
       {
         test: /\.(s[ac]|c)ss$/i, // Updated to include .scss, .sass, and .css
         use: [
