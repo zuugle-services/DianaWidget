@@ -67,6 +67,7 @@ export default class DianaWidget {
         dateList: null,
         onDateChange: null,
         onApiTokenExpired: null,
+        defaultAlertExpanded: true,
     };
 
     constructor(config = {}, containerId = "dianaWidgetContainer") {
@@ -2133,6 +2134,7 @@ export default class DianaWidget {
     /**
      * Handles click events on expandable alert text elements.
      * Uses event delegation to toggle the 'expanded' class.
+     * When defaultAlertExpanded is true, clicking does nothing (alert stays expanded).
      * @param {Event} event - The click event.
      */
     handleAlertExpandClick(event) {
@@ -2148,6 +2150,12 @@ export default class DianaWidget {
         
         // Stop event propagation to prevent toggling the collapsible container
         event.stopPropagation();
+        
+        // When defaultAlertExpanded is true, do not toggle - keep alerts expanded
+        // Set defaultAlertExpanded: false in config to enable toggle behavior
+        if (this.config.defaultAlertExpanded) {
+            return;
+        }
         
         // Toggle all expandable elements inside this alert box (header and description expand together)
         const expandables = alertBox.querySelectorAll('.expandable');
@@ -2420,6 +2428,9 @@ export default class DianaWidget {
         const headerText = alert.header_text ? escapeHtml(alert.header_text) : '';
         const descriptionText = alert.description_text ? linkifyDescription(alert.description_text) : '';
 
+        // Determine if alerts should be expanded by default (set defaultAlertExpanded: false to revert to collapsed)
+        const expandedClass = this.config.defaultAlertExpanded ? ' expanded' : '';
+
         // Build the alert HTML - using data-expandable class for event delegation
         let alertHTML = `
             <div class="connection-element-alert">
@@ -2430,12 +2441,12 @@ export default class DianaWidget {
 
         if (headerText) {
             alertHTML += `
-                <div class="alert-header-text expandable" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
+                <div class="alert-header-text expandable${expandedClass}" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
         }
 
         if (descriptionText) {
             alertHTML += `
-                <div class="alert-description expandable" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
+                <div class="alert-description expandable${expandedClass}" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
         }
 
         alertHTML += `
