@@ -63,14 +63,14 @@ export type CoordinateLocationType = typeof COORDINATE_LOCATION_TYPES[number];
  * Type guard for checking if a value is a valid location type
  */
 export function isValidLocationType(value: unknown): value is ValidLocationType {
-    return typeof value === 'string' && VALID_LOCATION_TYPES.includes(value as ValidLocationType);
+    return typeof value === 'string' && (VALID_LOCATION_TYPES as readonly string[]).includes(value);
 }
 
 /**
  * Type guard for checking if a value is a coordinate location type
  */
 export function isCoordinateLocationType(value: unknown): value is CoordinateLocationType {
-    return typeof value === 'string' && COORDINATE_LOCATION_TYPES.includes(value as CoordinateLocationType);
+    return typeof value === 'string' && (COORDINATE_LOCATION_TYPES as readonly string[]).includes(value);
 }
 
 /**
@@ -104,6 +104,7 @@ export const TIME_CONFIG_FIELDS = [
  */
 export const DEFAULT_CONFIG: WidgetConfig = {
     activityName: '[Activity Name]',
+    // REQUIRED_CONFIG_FIELDS is readonly to prevent mutation; cast needed for WidgetConfig.requiredFields type
     requiredFields: REQUIRED_CONFIG_FIELDS as unknown as string[],
     activityStartLocationDisplayName: null,
     activityEndLocationDisplayName: null,
