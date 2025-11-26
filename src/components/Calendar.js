@@ -1,8 +1,8 @@
 import {DateTime} from 'luxon';
 import {formatDateForDisplay, getMonthName, getShortDayName, throttle} from "../utils";
 import {convertToUTCMidnightJSDate, formatDatetime} from "../datetimeUtils";
-import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate.js';
-import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate.js';
+import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate';
+import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate';
 
 export class SingleCalendar {
     constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerElement, anchorElement, styles) {

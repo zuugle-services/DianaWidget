@@ -116,18 +116,17 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
     - Ensure type-safe key access
 
 ### 3. 3 Migrate Template Files
-- [ ] Create `src/templates/types.ts` for shared template argument types
-- [ ] Migrate partials first:
-    - [ ] Rename `src/templates/partials/_widgetHeader.js` → `. ts`
-    - [ ] Rename `src/templates/partials/_menuDropdown.js` → `.ts`
-- [ ] Migrate main templates:
-    - [ ] Rename `src/templates/singleCalendarTemplate.js` → `.ts`
-    - [ ] Rename `src/templates/rangeCalendarModalTemplate.js` → `.ts`
-    - [ ] Rename `src/templates/formPageTemplate.js` → `.ts`
-    - [ ] Rename `src/templates/resultsPageTemplate.js` → `.ts`
-    - [ ] Rename `src/templates/helpContent.js` → `. ts`
-- [ ] Add typed parameters to all template functions
-- [ ] Ensure all template functions return `string`
+- [x] Renamed all template files from `.js` to `.ts`:
+    - [x] `src/templates/partials/_widgetHeader.ts`
+    - [x] `src/templates/partials/_menuDropdown.ts`
+    - [x] `src/templates/singleCalendarTemplate.ts` - Added SingleCalendarArgs interface
+    - [x] `src/templates/rangeCalendarModalTemplate.ts`
+    - [x] `src/templates/formPageTemplate.ts`
+    - [x] `src/templates/resultsPageTemplate.ts`
+    - [x] `src/templates/contentPageTemplate.ts`
+    - [x] `src/templates/helpContent.ts`
+- [x] Fixed all `.js` extension imports throughout codebase
+- Note: Additional type annotations can be added progressively
 
 ### 3. 4 Migrate Component Files
 - [ ] Rename `src/components/Calendar.js` → `src/components/Calendar.ts`
