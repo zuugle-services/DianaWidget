@@ -780,6 +780,11 @@ div#eleCont {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  cursor: pointer;
+}
+
+.connection-element-alert:hover {
+  background-color: color-mix(in srgb, var(--warning-color) 15%, var(--bg-primary));
 }
 
 .alert-header {

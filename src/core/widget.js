@@ -2136,13 +2136,18 @@ export default class DianaWidget {
      * @param {Event} event - The click event.
      */
     handleAlertExpandClick(event) {
-        const expandable = event.target.closest('.expandable');
-        if (!expandable) return;
+        const alertBox = event.target.closest('.connection-element-alert');
+        if (!alertBox) return;
         
         // Don't expand if clicking on a link inside the alert
         if (event.target.tagName === 'A') return;
         
-        expandable.classList.toggle('expanded');
+        // Stop event propagation to prevent toggling the collapsible container
+        event.stopPropagation();
+        
+        // Toggle all expandable elements inside this alert box (header and description expand together)
+        const expandables = alertBox.querySelectorAll('.expandable');
+        expandables.forEach(el => el.classList.toggle('expanded'));
     }
 
     renderConnectionDetails(connections, type) {
