@@ -2,14 +2,15 @@
  * Utility functions for DianaWidget
  */
 import {DateTime} from 'luxon';
+import type { TranslationFunction } from './types';
 
 /**
  * Gets the localized month name.
- * @param {number} monthIndex - The 0-based index of the month.
- * @param {function} tFunction - The translation function.
- * @returns {string} The localized month name.
+ * @param monthIndex - The 0-based index of the month.
+ * @param tFunction - The translation function.
+ * @returns The localized month name.
  */
-export function getMonthName(monthIndex, tFunction) {
+export function getMonthName(monthIndex: number, tFunction: TranslationFunction): string {
     // Ensure monthIndex is within a valid range if necessary, or trust tFunction to handle it.
     // Assuming tFunction can access an array like `months.0`, `months.1` etc., or a nested object
     // For example, if translations are structured as: { EN: { months: ["Jan", "Feb", ...] } }
@@ -25,11 +26,11 @@ export function getMonthName(monthIndex, tFunction) {
 
 /**
  * Gets the localized short day name.
- * @param {number} dayIndex - The 0-based index of the day (e.g., 0 for Monday).
- * @param {function} tFunction - The translation function.
- * @returns {string} The localized short day name.
+ * @param dayIndex - The 0-based index of the day (e.g., 0 for Monday).
+ * @param tFunction - The translation function.
+ * @returns The localized short day name.
  */
-export function getShortDayName(dayIndex, tFunction) {
+export function getShortDayName(dayIndex: number, tFunction: TranslationFunction): string {
     // Similar to getMonthName, assuming tFunction('shortDays') returns the array ["M", "T", ...]
     const daysArray = tFunction('shortDays');
     if (Array.isArray(daysArray) && dayIndex >= 0 && dayIndex < daysArray.length) {
@@ -41,12 +42,12 @@ export function getShortDayName(dayIndex, tFunction) {
 
 /**
  * Formats a Date object for display according to locale and timezone.
- * @param {Date} date - The date object to format.
- * @param {string} locale - The locale string (e.g., 'en-GB', 'de-DE').
- * @param {string} [timeZone="UTC"] - The timezone for formatting.
- * @returns {string} The formatted date string, or an empty string if date is invalid.
+ * @param date - The date object to format.
+ * @param locale - The locale string (e.g., 'en-GB', 'de-DE').
+ * @param timeZone - The timezone for formatting.
+ * @returns The formatted date string, or an empty string if date is invalid.
  */
-export function formatDateForDisplay(date, locale, timeZone = "UTC") {
+export function formatDateForDisplay(date: Date, locale: string, timeZone: string = "UTC"): string {
     if (!date || isNaN(date.getTime())) return '';
     // Using Luxon for robust date formatting, consistent with the rest of the widget
     try {
@@ -62,7 +63,7 @@ export function formatDateForDisplay(date, locale, timeZone = "UTC") {
     } catch (error) {
         console.error("Error formatting date for display:", error);
         // Fallback to native toLocaleDateString if Luxon fails
-        const options = {day: "numeric", month: "short", year: "numeric", timeZone: timeZone};
+        const options: Intl.DateTimeFormatOptions = {day: "numeric", month: "short", year: "numeric", timeZone: timeZone};
         try {
             return date.toLocaleDateString(locale, options);
         } catch (nativeError) {
@@ -75,23 +76,23 @@ export function formatDateForDisplay(date, locale, timeZone = "UTC") {
 /**
  * Throttles a function using requestAnimationFrame to synchronize with browser repaints.
  * Ensures the function is called at most once per frame during frequent events.
- * @param {Function} func The function to throttle.
- * @param {number} delay The delay in ms (not directly used by rAF, but common for throttle)
- * @returns {Function} The throttled function.
+ * @param func The function to throttle.
+ * @param _delay The delay in ms (not directly used by rAF, but common for throttle)
+ * @returns The throttled function.
  */
-export function throttle(func, delay) { // delay is not used with rAF but kept for signature consistency
+export function throttle<T extends (...args: unknown[]) => void>(func: T, _delay?: number): (...args: Parameters<T>) => void {
     let isScheduled = false;
-    let lastArgs = null;
-    let lastContext = null;
+    let lastArgs: Parameters<T> | null = null;
+    let lastContext: unknown = null;
 
-    return function (...args) {
+    return function (this: unknown, ...args: Parameters<T>): void {
         lastArgs = args;
         lastContext = this;
 
         if (!isScheduled) {
             isScheduled = true;
             requestAnimationFrame(() => {
-                func.apply(lastContext, lastArgs);
+                func.apply(lastContext, lastArgs as Parameters<T>);
                 isScheduled = false;
             });
         }
@@ -101,31 +102,38 @@ export function throttle(func, delay) { // delay is not used with rAF but kept f
 /**
  * Debounces a function, delaying its execution until after a specified wait time
  * has elapsed since the last time it was invoked.
- * @param {Function} func - The function to debounce.
- * @param {number} wait - The wait time in milliseconds.
- * @returns {Function} The debounced function.
+ * @param func - The function to debounce.
+ * @param wait - The wait time in milliseconds.
+ * @returns The debounced function.
  */
-export function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
+export function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    return function executedFunction(this: unknown, ...args: Parameters<T>): void {
         const context = this;
-        const later = function () {
+        const later = function (): void {
             timeout = null;
             func.apply(context, args);
         };
-        clearTimeout(timeout);
+        if (timeout !== null) {
+            clearTimeout(timeout);
+        }
         timeout = setTimeout(later, wait);
     };
 }
 
 
 /**
- * Maps API error codes to translation keys.
- * @param {string|number} errorCode - The error code from the API.
- * @returns {string} The translation key for the error message.
+ * Error code map type
  */
-export function getApiErrorTranslationKey(errorCode) {
-    const codeMap = {
+type ErrorCodeMap = Record<string | number, string>;
+
+/**
+ * Maps API error codes to translation keys.
+ * @param errorCode - The error code from the API.
+ * @returns The translation key for the error message.
+ */
+export function getApiErrorTranslationKey(errorCode: string | number): string {
+    const codeMap: ErrorCodeMap = {
         1001: 'errors.api.queryParamMissing',
         1002: 'errors.api.invalidLimitParam',
         1003: 'errors.api.internalError',

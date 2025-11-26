@@ -1,5 +1,5 @@
-import { getWidgetHeaderHTML } from './partials/_widgetHeader.js';
-import { getMenuDropdownHTML } from './partials/_menuDropdown.js';
+import { getWidgetHeaderHTML } from './partials/_widgetHeader';
+import { getMenuDropdownHTML } from './partials/_menuDropdown';
 
 /**
  * Generates the HTML for the form page.
