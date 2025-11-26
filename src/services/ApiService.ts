@@ -169,7 +169,14 @@ export class ApiService {
      * @returns Promise resolving to connection data
      */
     async fetchConnections(params: Record<string, string | number | undefined>): Promise<unknown> {
-        const queryString = new URLSearchParams(params as Record<string, string>);
+        // Filter out undefined values and convert numbers to strings
+        const cleanParams: Record<string, string> = {};
+        for (const [key, value] of Object.entries(params)) {
+            if (value !== undefined) {
+                cleanParams[key] = String(value);
+            }
+        }
+        const queryString = new URLSearchParams(cleanParams);
         const response = await this.fetch(
             `${this.config.apiBaseUrl}/connections?${queryString}`
         );
@@ -216,6 +223,21 @@ export class ApiService {
 }
 
 /**
+ * Interface for API error body with code
+ */
+interface ApiErrorBody {
+    code?: string;
+    error?: string;
+}
+
+/**
+ * Type guard to check if error body has a code property
+ */
+function hasErrorCode(body: unknown): body is ApiErrorBody {
+    return typeof body === 'object' && body !== null && 'code' in body && typeof (body as ApiErrorBody).code === 'string';
+}
+
+/**
  * Helper function to determine error message from API error
  * @param error - The error object
  * @param getErrorMessage - Translation function
@@ -226,8 +248,8 @@ export function getApiErrorMessage(
     getErrorMessage: (key: string) => string,
     getApiErrorTranslationKey: (code: string) => string
 ): string {
-    if (error.body && typeof error.body === 'object' && (error.body as { code?: string }).code) {
-        return getErrorMessage(getApiErrorTranslationKey((error.body as { code: string }).code));
+    if (error.body && hasErrorCode(error.body) && error.body.code) {
+        return getErrorMessage(getApiErrorTranslationKey(error.body.code));
     } else if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
         return !window.navigator.onLine 
             ? getErrorMessage('errors.api.networkError') 

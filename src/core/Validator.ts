@@ -79,9 +79,11 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
     }
 
     // Validate activity duration
-    if (config.activityDurationMinutes) {
-        const duration = parseInt(String(config.activityDurationMinutes), 10);
-        if (isNaN(duration) || duration <= 0) {
+    if (config.activityDurationMinutes !== undefined && config.activityDurationMinutes !== null) {
+        const durationValue = typeof config.activityDurationMinutes === 'number' 
+            ? config.activityDurationMinutes 
+            : parseInt(config.activityDurationMinutes, 10);
+        if (isNaN(durationValue) || durationValue <= 0) {
             errors.push(`Invalid activityDurationMinutes '${config.activityDurationMinutes}'. Must be a positive integer.`);
         }
     }
@@ -187,7 +189,9 @@ function validateDateFields(config: WidgetConfig, errors: string[]): void {
         if (start.isValid && end.isValid) {
             // +1 because a 2-day duration is start_date -> start_date + 1 day. Diff will be 1 day.
             const diffInDays = end.diff(start, 'days').as('days') + 1;
-            const fixedDuration = parseInt(String(config.activityDurationDaysFixed), 10);
+            const fixedDuration = typeof config.activityDurationDaysFixed === 'number'
+                ? config.activityDurationDaysFixed
+                : parseInt(config.activityDurationDaysFixed, 10);
             if (diffInDays !== fixedDuration) {
                 errors.push(`The duration between overrideActivityStartDate (${config.overrideActivityStartDate}) and overrideActivityEndDate (${config.overrideActivityEndDate}) is ${diffInDays} days, which contradicts the fixed duration of ${fixedDuration} days.`);
             }
