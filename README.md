@@ -344,8 +344,8 @@ These fields must be provided in the configuration object for the widget to init
 | `activityEndTimeLabel`             | String   | `null`                              | Custom label for the activity end time displayed in the results view (defaults to localized "Activity End" or similar).                                                                                                                                  | `"Tour Ends"`                                     |
 | `apiBaseUrl`                       | String   | `"https://api.zuugle-services.net"` | Base URL for the Zuugle Services API.                                                                                                                                                                                                                    | `"http://localhost:8000/"`                        |
 | `apiToken`                         | String   | `null`                              | **Required.** API token for authenticating with Zuugle Services. **This MUST be a server-obtained Access Token.** See [Apply for Access & Security Process](#apply-for-access--security-process).                                                        | `"your-server-obtained-access-token"`             |
-| `language`                         | String   | `"EN"`                              | Language for the widget UI. Supported values: `"EN"`, `"DE"`, `"FR"`, `"IT"`, `"TH"`, or `"ES"`. Case-insensitive (both `"en"` and `"EN"` work). Falls back to `EN` if an unsupported language is provided.                                             | `"DE"` or `"de"`                                  |
-| `cacheUserStartLocation`           | Boolean  | `true`                              | If `true`, the user's last entered start location (address and coordinates) will be cached in the browser's localStorage.                                                                                                                                | `false`                                           |
+| `language`                         | String   | `"EN"`                              | Language for the widget UI. Supported values: `"EN"`, `"DE"`, `"FR"`, `"IT"`, `"TH"`, or `"ES"`. Case-insensitive (both `"en"` and `"EN"` work). Falls back to `EN` if an unsupported language is provided.                                             | `"DE"` or `"de"`                                   |
+| `cacheUserStartLocation`           | Boolean/Function  | `true`                              | If `true`, the user's last entered start location (address and coordinates) will be cached in the browser's localStorage. Can also be a callback function that returns a boolean value to dynamically determine if caching should be enabled.                                                                                                                                | `false` or `() => shouldCache()`                                           |
 | `userStartLocationCacheTTLMinutes` | Number   | `15`                                | Time in minutes for how long the cached user start location remains valid. After this period, the cached value is ignored.                                                                                                                               | `120` (for 2 hours)                               |
 | `overrideUserStartLocation`        | String   | `null`                              | A specific start location (address string or "latitude,longitude" string) to pre-fill the origin input. This value bypasses any cached location.                                                                                                         | `"Vienna Central Station"` or `"48.2082,16.3738"` |
 | `overrideUserStartLocationType`    | String   | `null`                              | Specifies the type of `overrideUserStartLocation`. Must be `"address"` or `"coordinates"` (or `"coord"`, `"coords"`). Required if `overrideUserStartLocation` is set.                                                                                    | `"address"` or `"coordinates"`                    |
@@ -365,6 +365,50 @@ These fields must be provided in the configuration object for the widget to init
 | `onDateChange`                     | Function | `null`                              | A callback function that is triggered when the date is changed from within the widget. It receives the new date as a string in 'YYYY-MM-DD' format.                                                                                                      | `function(newDate) { console.log(newDate); }`     |
 | `onApiTokenExpired`                | Function | `null`                              | A callback function that is triggered when the API returns a 401 Unauthorized error. It should return a `Promise` that resolves with a new, valid API token. See [Token Expiration and Refresh](#token-expiration-and-refresh) for details.              | `async () => { return await fetchNewToken(); }`   |
 | `dev`                              | Boolean  | `false`                             | If `true`, enables development mode with verbose logging to the console and detailled Configuration Error Descriptions. This is useful for debugging during development but should be set to `false` in production environments.                         | `true`                                            |
+
+### Dynamic Cache Control with `cacheUserStartLocation`
+
+The `cacheUserStartLocation` configuration option accepts either a boolean value or a callback function, giving you flexible control over when the user's start location should be cached.
+
+**Using a Boolean Value:**
+
+```javascript
+window.dianaActivityConfig = {
+  // ... other required configurations
+  cacheUserStartLocation: true,  // Always cache
+  // or
+  cacheUserStartLocation: false, // Never cache
+};
+```
+
+**Using a Callback Function:**
+
+When you need dynamic control over caching behavior, provide a function that returns a boolean:
+
+```javascript
+window.dianaActivityConfig = {
+  // ... other required configurations
+  
+  // Example 1: Only cache for logged-in users
+  cacheUserStartLocation: () => {
+    return window.currentUser && window.currentUser.isLoggedIn;
+  },
+  
+  // Example 2: Cache based on user preferences
+  cacheUserStartLocation: () => {
+    const userPreferences = JSON.parse(localStorage.getItem('userPreferences') || '{}');
+    return userPreferences.rememberLocation !== false;
+  },
+  
+  // Example 3: Conditional caching based on time of day
+  cacheUserStartLocation: () => {
+    const hour = new Date().getHours();
+    return hour >= 6 && hour < 22; // Only cache during daytime
+  },
+};
+```
+
+The callback function is evaluated each time the widget needs to determine whether to read from or write to the cache. If the callback throws an error, caching is disabled for that operation.
 
 ## Token Expiration and Refresh
 
