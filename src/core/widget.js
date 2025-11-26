@@ -24,7 +24,6 @@ import {UIManager} from '../components/UIManager';
 import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent.js';
-import {legalContent} from '../templates/legalContent.js';
 
 export default class DianaWidget {
     defaultConfig = {
@@ -53,6 +52,7 @@ export default class DianaWidget {
         userStartLocationCacheTTLMinutes: 15,
         overrideUserStartLocation: null,
         overrideUserStartLocationType: null,
+        disableUserStartLocationField: false,
         displayStartDate: null,
         displayEndDate: null,
         destinationInputName: null,
@@ -232,6 +232,11 @@ export default class DianaWidget {
     validateConfig(config) {
         const errors = [];
 
+        // Normalize language to uppercase and trim to allow both 'en' and 'EN'
+        if (config.language && typeof config.language === 'string') {
+            config.language = config.language.trim().toUpperCase();
+        }
+        
         if (!translations[config.language]) {
             console.warn(`Unsupported language '${config.language}', falling back to EN`);
             config.language = 'EN';
@@ -309,6 +314,11 @@ export default class DianaWidget {
             if (!coordsRegex.test(config.overrideUserStartLocation)) {
                 errors.push(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
             }
+        }
+
+        if (config.disableUserStartLocationField && !config.overrideUserStartLocation) {
+            console.warn("Warning: 'disableUserStartLocationField' is set to true but 'overrideUserStartLocation' is not provided. The parameter will be ignored.");
+            config.disableUserStartLocationField = false;
         }
 
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -573,10 +583,20 @@ export default class DianaWidget {
                     originInput.setAttribute('data-lon', parts[1].trim());
                 }
             }
-            originInput.disabled = true;
-            originInput.classList.add('disabled');
-            if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
-            if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
+            
+            // Only disable the field if disableUserStartLocationField is true
+            if (this.config.disableUserStartLocationField) {
+                originInput.disabled = true;
+                originInput.classList.add('disabled');
+                if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
+                if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
+            } else {
+                // Field is editable, show appropriate buttons
+                if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
+                    this.elements.clearInputBtn.style.display = 'block';
+                    this.elements.currentLocationBtn.style.display = 'none';
+                }
+            }
             return;
         }
         const cachedLocation = this._getCachedStartLocation();
@@ -739,7 +759,11 @@ export default class DianaWidget {
     setupEventListeners() {
         if (!this.elements) return;
 
-        if (!this.config.overrideUserStartLocation && this.elements.originInput) {
+        // Allow event listeners if either no override is set, or override is set but field is not disabled
+        const shouldEnableOriginInput = !this.config.overrideUserStartLocation || 
+                                       (this.config.overrideUserStartLocation && !this.config.disableUserStartLocationField);
+        
+        if (shouldEnableOriginInput && this.elements.originInput) {
             this.elements.originInput.addEventListener('input', (e) => {
                 this.elements.originInput.removeAttribute("data-lat");
                 this.elements.originInput.removeAttribute("data-lon");
@@ -823,15 +847,18 @@ export default class DianaWidget {
                 dropdown.addEventListener('click', (e) => {
                     const menuItem = e.target.closest('.menu-dropdown-item');
                     if (menuItem) {
-                        e.preventDefault();
                         if (menuItem.classList.contains('disabled')) {
+                            e.preventDefault();
                             return; // Do nothing if disabled
                         }
                         if (menuItem.id === 'shareMenuItem') {
+                            e.preventDefault();
                             this.handleShare();
                         } else if (menuItem.dataset.contentKey) {
+                            e.preventDefault();
                             this.navigateToContentPage(menuItem.dataset.contentKey);
                         }
+                        // For external links (like imprint), don't prevent default - let them navigate normally
                         // Close all dropdowns
                         menuDropdowns.forEach(d => {
                             if (d) d.style.display = 'none';
@@ -2696,7 +2723,7 @@ export default class DianaWidget {
         let contentHTML;
 
         // Get the current language, fallback to EN if not supported
-        const language = this.config.language && (helpContent[this.config.language] || legalContent[this.config.language])
+        const language = this.config.language && helpContent[this.config.language]
             ? this.config.language
             : 'EN';
 
@@ -2704,10 +2731,6 @@ export default class DianaWidget {
             case 'help':
                 title = this.t('menu.helpAndSupport');
                 contentHTML = helpContent[language];
-                break;
-            case 'legal':
-                title = this.t('menu.legal');
-                contentHTML = legalContent[language];
                 break;
             default:
                 title = this.t('content.defaultTitle');
