@@ -22,8 +22,11 @@
   - Removed all `: any` type annotations
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.3:** Add strict null checks (214+ TypeScript errors to fix when enabled)
-  - Requires adding null guards in Calendar.ts, Validator.ts, widget.ts
+- **Phase 4.3:** Add strict null checks (~201 TypeScript errors to fix when enabled)
+  - Fixed: Validator.ts null checks for optional time configuration fields
+  - Fixed: widget.ts initialSelectedStartDate/initialSelectedEndDate variable typing
+  - Remaining: ~201 errors in Calendar.ts, widget.ts
+  - Requires adding null guards where DOM elements are accessed
   - Requires optional chaining (`?.`) and nullish coalescing (`??`) in many places
   - Consider doing incrementally by file
 
