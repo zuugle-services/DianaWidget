@@ -114,6 +114,12 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
  * Validates logical consistency of time configurations
  */
 function validateTimeLogic(config: WidgetConfig, errors: string[]): void {
+    // Skip validation if any of the required time fields are undefined
+    if (!config.activityEarliestStartTime || !config.activityLatestStartTime ||
+        !config.activityEarliestEndTime || !config.activityLatestEndTime) {
+        return;
+    }
+
     try {
         const earliestStart = convertLocalTimeToUTC(config.activityEarliestStartTime, new Date("2000-10-10"), config.timezone);
         const latestStart = convertLocalTimeToUTC(config.activityLatestStartTime, new Date("2000-10-10"), config.timezone);

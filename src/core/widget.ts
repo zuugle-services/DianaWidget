@@ -201,7 +201,8 @@ export default class DianaWidget {
             `;
             document.body.appendChild(style);
 
-            let initialSelectedStartDate, initialSelectedEndDate = null;
+            let initialSelectedStartDate: Date | null = null;
+            let initialSelectedEndDate: Date | null = null;
             if (this.config.multiday && this.config.activityDurationDaysFixed) {
                 if (this.config.overrideActivityEndDate) {
                     const endDt = DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'});
@@ -211,18 +212,20 @@ export default class DianaWidget {
                     const startDt = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'});
                     initialSelectedStartDate = startDt.toJSDate();
                     initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                } else {
+                } else if (this.config.activityLatestEndTime) {
                     initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
                     initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 }
             }
 
             if (!initialSelectedStartDate) {
-                initialSelectedStartDate = this.config.overrideActivityStartDate
-                    ? DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate()
-                    : calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                if (this.config.overrideActivityStartDate) {
+                    initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate();
+                } else if (this.config.activityLatestEndTime) {
+                    initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                }
             }
-            if (this.config.multiday && !initialSelectedEndDate) {
+            if (this.config.multiday && !initialSelectedEndDate && initialSelectedStartDate) {
                 initialSelectedEndDate = this.config.overrideActivityEndDate
                     ? DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'}).toJSDate()
                     : DateTime.fromJSDate(initialSelectedStartDate).plus({days: 1}).toJSDate();
@@ -410,8 +413,8 @@ export default class DianaWidget {
                 .filter(dt => dt >= now)
                 .sort((a, b) => a.toMillis() - b.toMillis());
             
-            // Store as any since it's internally used as DateTime[]
-            (this.state as any).availableDates = availableDates;
+            // Store availableDates as DateTime[] on state
+            this.state.availableDates = availableDates;
 
             if (availableDates.length > 0) {
                 const dateContainer = this.elements.dateSelectorButtonsGroup?.parentElement;
@@ -853,7 +856,6 @@ export default class DianaWidget {
         this.shadowRoot?.querySelectorAll(".date-input-container").forEach(el => {
             const htmlEl = el as HTMLElement;
             if (htmlEl) {
-                (htmlEl as any).disabled = true;
                 htmlEl.style.pointerEvents = 'none';
                 htmlEl.classList.add('disabled-by-session-expiry');
             }
@@ -1249,7 +1251,8 @@ export default class DianaWidget {
         if (this.config.activityStartTimeLabel) params.activity_start_time_label = this.config.activityStartTimeLabel;
         if (this.config.activityEndTimeLabel) params.activity_end_time_label = this.config.activityEndTimeLabel;
 
-        const queryString = new URLSearchParams(params as any);
+        // Type assertion needed as URLSearchParams expects Record<string, string> but params has mixed types
+        const queryString = new URLSearchParams(params as Record<string, string>);
         const response = await this._fetchApi(
             `${this.config.apiBaseUrl}/connections?${queryString}`
         );
@@ -1268,13 +1271,13 @@ export default class DianaWidget {
         this.state.fromConnections = result.connections.from_activity;
 
         // Mark original first and last elements
-        this.state.toConnections.forEach((conn: any) => {
+        this.state.toConnections.forEach((conn) => {
             if (conn.connection_elements && conn.connection_elements.length > 0) {
                 conn.connection_elements[0].isOriginalFirst = true;
                 conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
             }
         });
-        this.state.fromConnections.forEach((conn: any) => {
+        this.state.fromConnections.forEach((conn) => {
             if (conn.connection_elements && conn.connection_elements.length > 0) {
                 conn.connection_elements[0].isOriginalFirst = true;
                 conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
@@ -1338,7 +1341,7 @@ export default class DianaWidget {
 
     renderSuggestions(): void {
         if (!this.elements.suggestionsContainer || !this.elements.originInput) return;
-        this.elements.suggestionsContainer.innerHTML = (this.state.suggestions as any[])
+        this.elements.suggestionsContainer.innerHTML = this.state.suggestions
             .map(feature => `
         <div class="suggestion-item" role="option" tabindex="0"
              data-value="${feature.diana_properties.display_name.replace(/"/g, '"')}"
@@ -1392,7 +1395,7 @@ export default class DianaWidget {
         if (this.state.toConnections.length > 0) {
             let foundRecommendedTo = false;
             for (let i = 0; i < this.state.toConnections.length; i++) {
-                if ((this.state.toConnections[i] as any).connection_id === this.state.recommendedToIndex) { // Original recommendedToIndex was an ID
+                if (this.state.toConnections[i].connection_id === this.state.recommendedToIndex) { // Original recommendedToIndex was an ID
                     this.state.recommendedToIndex = i; // Update to be an array index
                     foundRecommendedTo = true;
                     break;
@@ -1406,7 +1409,7 @@ export default class DianaWidget {
         if (this.state.fromConnections.length > 0) {
             let foundRecommendedFrom = false;
             for (let i = 0; i < this.state.fromConnections.length; i++) {
-                if ((this.state.fromConnections[i] as any).connection_id === this.state.recommendedFromIndex) { // Original recommendedFromIndex was an ID
+                if (this.state.fromConnections[i].connection_id === this.state.recommendedFromIndex) { // Original recommendedFromIndex was an ID
                     this.state.recommendedFromIndex = i; // Update to be an array index
                     foundRecommendedFrom = true;
                     break;
@@ -1429,12 +1432,12 @@ export default class DianaWidget {
 
 
         // Automatically expand single "anytime" connections
-        if (this.state.toConnections.length === 1 && (this.state.toConnections[0] as any).connection_anytime) {
+        if (this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime) {
             if (this.elements.collapsibleToActivity) {
                 this.elements.collapsibleToActivity.classList.add('expanded');
             }
         }
-        if (this.state.fromConnections.length === 1 && (this.state.fromConnections[0] as any).connection_anytime) {
+        if (this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime) {
             if (this.elements.collapsibleFromActivity) {
                 this.elements.collapsibleFromActivity.classList.add('expanded');
             }
@@ -1744,10 +1747,10 @@ export default class DianaWidget {
             }
 
             // Collapse containers on new selection, unless they are single "anytime" connections.
-            if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && (this.state.toConnections[0] as any).connection_anytime)) {
+            if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime)) {
                 this.elements.collapsibleToActivity.classList.remove('expanded');
             }
-            if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && (this.state.fromConnections[0] as any).connection_anytime)) {
+            if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime)) {
                 this.elements.collapsibleFromActivity.classList.remove('expanded');
             }
 
@@ -2008,7 +2011,7 @@ export default class DianaWidget {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ connection_elements: (connection as any).connection_elements })
+                body: JSON.stringify({ connection_elements: connection.connection_elements })
             });
 
             const result = await response.json();

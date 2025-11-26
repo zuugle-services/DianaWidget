@@ -20,9 +20,12 @@ export type {
 // API types
 export type { 
     Connection, 
+    ConnectionElement,
     TransportLeg, 
     TransportAlert,
     Suggestion,
+    SuggestionProperties,
+    SuggestionGeometry,
     ConnectionSearchResponse,
     AutocompleteResponse,
     ShareDataResponse,

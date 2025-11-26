@@ -3,7 +3,62 @@
  */
 
 /**
- * Transport leg in a connection
+ * Connection element representing a single leg/segment of a journey
+ * This is the structure used internally by the widget
+ */
+export interface ConnectionElement {
+    /** Element type (e.g., 'WALK', 'TRSF', 'JNY') */
+    type: string;
+    
+    /** Departure time (ISO 8601) */
+    departure_time: string;
+    
+    /** Arrival time (ISO 8601) */
+    arrival_time: string;
+    
+    /** Duration in minutes */
+    duration?: number;
+    
+    /** Origin location name */
+    from_location?: string;
+    
+    /** Destination location name */
+    to_location?: string;
+    
+    /** Vehicle type for journey legs */
+    vehicle_type?: string;
+    
+    /** Vehicle name/line name */
+    vehicle_name?: string;
+    
+    /** Direction/destination of the vehicle */
+    direction?: string;
+    
+    /** Platform at origin */
+    platform_orig?: string;
+    
+    /** Platform at destination */
+    platform_dest?: string;
+    
+    /** Number of intermediate stops */
+    n_intermediate_stops?: number;
+    
+    /** Data provider (e.g., 'live') */
+    provider?: string;
+    
+    /** Alerts/warnings for this element */
+    alerts?: TransportAlert[];
+    
+    /** Whether this is the first element in the original connection (set internally) */
+    isOriginalFirst?: boolean;
+    
+    /** Whether this is the last element in the original connection (set internally) */
+    isOriginalLast?: boolean;
+}
+
+/**
+ * Transport leg in a connection (legacy interface)
+ * @deprecated Use ConnectionElement instead
  */
 export interface TransportLeg {
     /** Leg type (e.g., 'WALK', 'TRSF', or vehicle type number) */
@@ -76,6 +131,9 @@ export interface Connection {
     /** Unique identifier */
     id?: string;
     
+    /** Connection ID from API */
+    connection_id?: string | number;
+    
     /** Connection start timestamp (ISO 8601) */
     connection_start_timestamp: string;
     
@@ -94,7 +152,13 @@ export interface Connection {
     /** Number of transfers */
     transfers?: number;
     
-    /** Individual legs of the connection */
+    /** Number of transfers (API field name) */
+    connection_transfers?: number;
+    
+    /** Individual elements/legs of the connection */
+    connection_elements?: ConnectionElement[];
+    
+    /** Individual legs of the connection (legacy) */
     legs?: TransportLeg[];
     
     /** Score for ranking */
@@ -105,23 +169,57 @@ export interface Connection {
     
     /** Whether this connection has realtime data */
     has_realtime?: boolean;
+    
+    /** Whether this is an "anytime" connection (flexible timing) */
+    connection_anytime?: boolean;
+    
+    /** Ticketshop provider name if available */
+    connection_ticketshop_provider?: string;
 }
 
 /**
- * Address/location suggestion from autocomplete
+ * Diana properties for a suggestion
  */
-export interface Suggestion {
+export interface SuggestionProperties {
     /** Display name */
-    name: string;
-    
-    /** Latitude */
-    lat?: string | number;
-    
-    /** Longitude */
-    lon?: string | number;
+    display_name: string;
     
     /** Location type */
+    location_type?: string;
+}
+
+/**
+ * Geometry for a suggestion (GeoJSON Point)
+ */
+export interface SuggestionGeometry {
+    /** Geometry type */
     type?: string;
+    
+    /** Coordinates [lon, lat] */
+    coordinates: [number, number];
+}
+
+/**
+ * Address/location suggestion from autocomplete (GeoJSON Feature)
+ */
+export interface Suggestion {
+    /** Feature type */
+    type?: string;
+    
+    /** Diana-specific properties */
+    diana_properties: SuggestionProperties;
+    
+    /** Geometry with coordinates */
+    geometry: SuggestionGeometry;
+    
+    /** Legacy: Display name */
+    name?: string;
+    
+    /** Legacy: Latitude */
+    lat?: string | number;
+    
+    /** Legacy: Longitude */
+    lon?: string | number;
 }
 
 /**
