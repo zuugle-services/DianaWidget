@@ -492,11 +492,14 @@
 
 .middle-box-content .connection-element {
   margin-bottom: 15px;
-  position: relative;
 }
 
 .middle-box-content .connection-element:last-child {
   margin-bottom: 0;
+}
+
+.middle-box-content .connection-element-content {
+  position: relative;
 }
 
 .connection-leg-date-display {
@@ -785,6 +788,7 @@ div#eleCont {
 
 .connection-element-alert:hover {
   background-color: color-mix(in srgb, var(--warning-color) 15%, var(--bg-primary));
+  border-color: color-mix(in srgb, var(--warning-color) 60%, transparent);
 }
 
 .alert-header {
@@ -817,11 +821,6 @@ div#eleCont {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
-}
-
-.alert-header-text.expandable:hover {
-  text-decoration: underline;
 }
 
 .alert-header-text.expanded {
@@ -835,11 +834,6 @@ div#eleCont {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
-}
-
-.alert-description.expandable:hover {
-  text-decoration: underline;
 }
 
 .alert-description.expanded {
