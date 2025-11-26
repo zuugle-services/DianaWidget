@@ -8,9 +8,12 @@
 - **Phase 3.1-3.4:** File Migrations (utils.ts, datetimeUtils.ts, translations.ts, all templates, components)
 - **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines)
 - **Phase 3.6:** Entry point (index.ts)
+- **Phase 4.1 (partial):** Extracted validation logic into `src/core/Validator.ts`
+- **Phase 4.2 (partial):** Created `src/services/ApiService.ts` with types and helper functions
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4:** Code Cleanup & Refactoring - Extract large methods, improve module organization
+- **Phase 4.1:** Continue extracting large methods (ApiService integration, StateManager, EventManager)
+- **Phase 4.3:** Add strict null checks
 
 ### 📝 NOTES:
 - tsconfig.json uses lenient settings (strict: false, noImplicitAny: false, strictNullChecks: false) for gradual migration
@@ -23,6 +26,8 @@
   - Type assertions for API responses (using `any` where types don't match actual API structure)
   - Custom interfaces: WidgetElements, ApiError, FetchOptions
   - Event handler type casting for DOM events
+- Validator.ts: Extracted config validation logic (~130 lines) into separate module
+- ApiService.ts: Created API service class structure, ready for integration with widget.ts
 
 ---
 
@@ -187,13 +192,16 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 
 ### 4.1 Extract Large Methods
 - [x] Identify methods in `widget.ts` exceeding 50 lines (identified: renderConnectionDetails 226 lines, constructor 187 lines, _initCustomCalendar 178 lines, setupEventListeners 144 lines, validateConfig 131 lines, etc.)
-- [ ] Extract API communication logic into `src/services/ApiService.ts`
+- [x] Create `src/services/ApiService.ts` with types and base implementation (ready for integration)
+- [ ] Integrate ApiService into widget.ts (requires refactoring API method calls)
 - [ ] Extract state management into `src/core/StateManager.ts`
 - [ ] Extract event binding logic into `src/core/EventManager.ts`
-- [ ] Extract validation logic into `src/core/Validator.ts`
+- [x] Extract validation logic into `src/core/Validator.ts`
 
 ### 4.2 Improve Module Organization
-- [x] Create `src/services/` directory for API-related code (directory created, content pending Phase 4.1 completion)
+- [x] Create `src/services/` directory for API-related code
+- [x] Create `src/services/ApiService.ts` with ApiError, FetchOptions types and helper functions
+- [x] Create `src/services/index.ts` barrel export
 - [x] Create `src/constants/` directory for magic values and config defaults
 - [x] Create `src/constants/defaults.ts` with DEFAULT_CONFIG, DEFAULT_STATE, and other constants
 - [x] Add type guards `isValidLocationType()` and `isCoordinateLocationType()` in defaults.ts
