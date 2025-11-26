@@ -47,8 +47,22 @@ export class StateManager {
      * @param updates - Partial state updates
      */
     setState(updates: Partial<WidgetState>): void {
-        this.state = { ...this.state, ...updates };
-        this.notifyListeners();
+        // Check if any values actually changed
+        let hasChanged = false;
+        for (const key in updates) {
+            if (Object.prototype.hasOwnProperty.call(updates, key)) {
+                const updateKey = key as keyof WidgetState;
+                if (this.state[updateKey] !== updates[updateKey]) {
+                    hasChanged = true;
+                    break;
+                }
+            }
+        }
+        
+        if (hasChanged) {
+            this.state = { ...this.state, ...updates };
+            this.notifyListeners();
+        }
     }
 
     /**
@@ -73,8 +87,10 @@ export class StateManager {
 
     /**
      * Notifies all listeners of state change
+     * Creates a single copy of state and reuses for all listeners
      */
     private notifyListeners(): void {
+        if (this.listeners.length === 0) return;
         const currentState = this.getState();
         this.listeners.forEach(callback => callback(currentState));
     }

@@ -96,10 +96,34 @@ export class EventManager {
     off(target: EventTarget | null, type: string, handler: EventHandler): void {
         if (!target) return;
 
-        target.removeEventListener(type, handler);
-        this.registeredEvents = this.registeredEvents.filter(
-            e => !(e.target === target && e.type === type && e.handler === handler)
+        // Find the event in registeredEvents to get the original options
+        const registeredEvent = this.registeredEvents.find(
+            e => e.target === target && e.type === type && e.handler === handler
         );
+        
+        // Also check documentEvents if target is document
+        const documentEvent = target === document 
+            ? this.documentEvents.find(e => e.type === type && e.handler === handler)
+            : null;
+
+        if (registeredEvent) {
+            target.removeEventListener(type, handler, registeredEvent.options);
+            this.registeredEvents = this.registeredEvents.filter(
+                e => !(e.target === target && e.type === type && e.handler === handler)
+            );
+        }
+        
+        if (documentEvent) {
+            target.removeEventListener(type, handler, documentEvent.options);
+            this.documentEvents = this.documentEvents.filter(
+                e => !(e.type === type && e.handler === handler)
+            );
+        }
+        
+        // Fallback: if not found in either array, still try to remove
+        if (!registeredEvent && !documentEvent) {
+            target.removeEventListener(type, handler);
+        }
     }
 
     /**
