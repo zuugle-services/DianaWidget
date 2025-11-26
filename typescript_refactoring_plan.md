@@ -129,14 +129,16 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - Note: Additional type annotations can be added progressively
 
 ### 3. 4 Migrate Component Files
-- [ ] Rename `src/components/Calendar.js` → `src/components/Calendar.ts`
-    - Type `SingleCalendar` class properties and methods
-    - Type `RangeCalendarModal` class properties and methods
-    - Add DOM element types (`HTMLElement`, `HTMLInputElement`, etc.)
-- [ ] Rename `src/components/UIManager.js` → `src/components/UIManager.ts`
-    - Type template loading and rendering methods
-- [ ] Rename `src/components/PageManager.js` → `src/components/PageManager.ts`
-    - Type page navigation and state management methods
+- [x] Rename `src/components/Calendar.js` → `src/components/Calendar.ts`
+    - Added property declarations and type annotations for SingleCalendar class
+    - Added property declarations and type annotations for RangeCalendarModal class
+    - Added WidgetInstance interface for type-safe widget reference
+- [x] Rename `src/components/UIManager.js` → `src/components/UIManager.ts`
+    - Added TemplateArgs and TemplateModule interfaces
+    - Typed template loading method
+- [x] Rename `src/components/PageManager.js` → `src/components/PageManager.ts`
+    - Added HTMLElement property declarations
+    - Typed all public methods with return types
 
 ### 3.5 Migrate Core Widget File
 - [ ] Rename `src/core/widget.js` → `src/core/widget.ts`
