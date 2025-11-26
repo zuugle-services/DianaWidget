@@ -232,6 +232,11 @@ export default class DianaWidget {
     validateConfig(config) {
         const errors = [];
 
+        // Normalize language to uppercase and trim to allow both 'en' and 'EN'
+        if (config.language && typeof config.language === 'string') {
+            config.language = config.language.trim().toUpperCase();
+        }
+        
         if (!translations[config.language]) {
             console.warn(`Unsupported language '${config.language}', falling back to EN`);
             config.language = 'EN';
