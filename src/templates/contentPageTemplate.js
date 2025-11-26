@@ -1,5 +1,5 @@
-import { getWidgetHeaderHTML } from './partials/_widgetHeader';
-import { getMenuDropdownHTML } from './partials/_menuDropdown';
+import { getWidgetHeaderHTML } from './partials/_widgetHeader.js';
+import { getMenuDropdownHTML } from './partials/_menuDropdown.js';
 
 /**
  * Generates the HTML for a generic content page.

@@ -23,7 +23,7 @@ import {PageManager} from '../components/PageManager';
 import {UIManager} from '../components/UIManager';
 import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
-import {helpContent} from '../templates/helpContent';
+import {helpContent} from '../templates/helpContent.js';
 
 export default class DianaWidget {
     defaultConfig = {

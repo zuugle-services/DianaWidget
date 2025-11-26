@@ -1,18 +1,4 @@
 /**
- * Template arguments interface (generic)
- */
-interface TemplateArgs {
-    [key: string]: unknown;
-}
-
-/**
- * Template module interface
- */
-interface TemplateModule {
-    [key: string]: ((args: TemplateArgs) => string) | unknown;
-}
-
-/**
  * Manages the loading and rendering of UI templates.
  */
 export class UIManager {
@@ -23,32 +9,32 @@ export class UIManager {
      * For example, for 'formPageTemplate', it expects `getFormPageTemplateHTML`.
      */
     constructor() {
-        // Base path for dynamic imports is relative to this UIManager.ts file.
-        // If UIManager.ts is in components/ and templates are in templates/,
-        // the path for dynamic import would be `../templates/${templateFileName}`.
+        // Base path for dynamic imports is relative to this UIManager.js file.
+        // If UIManager.js is in components/ and templates are in templates/,
+        // the path for dynamic import would be `../templates/${templateFileName}.js`.
     }
 
     /**
      * Loads an HTML template.
-     * @param templateFileName - The name of the template file (e.g., 'formPageTemplate').
-     * @param args - An object containing arguments to pass to the template function (config, t, state, etc.).
-     * @returns A promise that resolves with the HTML string of the template.
+     * @param {string} templateFileName - The name of the template file (e.g., 'formPageTemplate').
+     * @param {object} args - An object containing arguments to pass to the template function (config, t, state, etc.).
+     * @returns {Promise<string>} A promise that resolves with the HTML string of the template.
      */
-    async loadTemplate(templateFileName: string, args: TemplateArgs): Promise<string> {
+    async loadTemplate(templateFileName, args) {
         try {
             // Construct the function name, e.g., formPageTemplate -> getFormPageTemplateHTML
             const functionName = `get${templateFileName.charAt(0).toUpperCase() + templateFileName.slice(1)}HTML`;
 
             // Dynamically import the template module.
-            // The path is relative to UIManager.ts (components/UIManager.ts)
+            // The path is relative to UIManager.js (components/UIManager.js)
             // going up to the parent and then into templates/
-            const module: TemplateModule = await import(`../templates/${templateFileName}.js`);
+            const module = await import(`../templates/${templateFileName}.js`);
 
             if (module && typeof module[functionName] === 'function') {
                 // Call the template function with the provided arguments
-                return (module[functionName] as (args: TemplateArgs) => string)(args);
+                return module[functionName](args);
             } else {
-                throw new Error(`Template function '${functionName}' not found in ${templateFileName}`);
+                throw new Error(`Template function '${functionName}' not found in ${templateFileName}.js`);
             }
         } catch (error) {
             console.error(`Error loading template module ${templateFileName}:`, error);
