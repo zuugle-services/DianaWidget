@@ -15,5 +15,12 @@ export {
     REQUIRED_CONFIG_FIELDS,
     TIME_CONFIG_FIELDS,
     DEFAULT_CONFIG,
-    DEFAULT_STATE
+    DEFAULT_STATE,
+    isValidLocationType,
+    isCoordinateLocationType
+} from './defaults';
+
+export type {
+    ValidLocationType,
+    CoordinateLocationType
 } from './defaults';

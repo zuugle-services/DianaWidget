@@ -193,11 +193,12 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [ ] Extract validation logic into `src/core/Validator.ts`
 
 ### 4.2 Improve Module Organization
-- [x] Create `src/services/` directory for API-related code
+- [x] Create `src/services/` directory for API-related code (directory created, content pending Phase 4.1 completion)
 - [x] Create `src/constants/` directory for magic values and config defaults
 - [x] Create `src/constants/defaults.ts` with DEFAULT_CONFIG, DEFAULT_STATE, and other constants
+- [x] Add type guards `isValidLocationType()` and `isCoordinateLocationType()` in defaults.ts
 - [x] Create `src/constants/index.ts` barrel export
-- [x] Update `widget.ts` to use imported constants (DEFAULT_CONFIG, DEFAULT_STATE, ADDRESS_INPUT_DEBOUNCE_MS, VALID_LOCATION_TYPES, COORDINATE_LOCATION_TYPES, TIME_CONFIG_FIELDS)
+- [x] Update `widget.ts` to use imported constants and type guards
 - [x] Move CSS/SCSS type declarations to `src/types/styles.d.ts` (already exists)
 - [x] Create barrel exports (`index.ts`) in each directory
 

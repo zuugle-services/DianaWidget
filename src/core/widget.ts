@@ -29,9 +29,9 @@ import {
     DEFAULT_CONFIG,
     DEFAULT_STATE,
     ADDRESS_INPUT_DEBOUNCE_MS,
-    VALID_LOCATION_TYPES,
-    COORDINATE_LOCATION_TYPES,
-    TIME_CONFIG_FIELDS
+    TIME_CONFIG_FIELDS,
+    isValidLocationType,
+    isCoordinateLocationType
 } from '../constants';
 
 import type {
@@ -316,10 +316,10 @@ export default class DianaWidget {
             config.timezone = 'Europe/Vienna';
         }
 
-        if (config.activityStartLocationType && !VALID_LOCATION_TYPES.includes(config.activityStartLocationType as typeof VALID_LOCATION_TYPES[number])) {
+        if (config.activityStartLocationType && !isValidLocationType(config.activityStartLocationType)) {
             errors.push(`Invalid activityStartLocationType '${config.activityStartLocationType}'.`);
         }
-        if (config.activityEndLocationType && !VALID_LOCATION_TYPES.includes(config.activityEndLocationType as typeof VALID_LOCATION_TYPES[number])) {
+        if (config.activityEndLocationType && !isValidLocationType(config.activityEndLocationType)) {
             errors.push(`Invalid activityEndLocationType '${config.activityEndLocationType}'.`);
         }
 
@@ -359,9 +359,9 @@ export default class DianaWidget {
         if (config.overrideUserStartLocation && (typeof config.overrideUserStartLocation !== 'string')) {
             errors.push(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
         }
-        if (config.overrideUserStartLocation && (!config.overrideUserStartLocationType || !VALID_LOCATION_TYPES.includes(config.overrideUserStartLocationType as typeof VALID_LOCATION_TYPES[number]))) {
+        if (config.overrideUserStartLocation && !isValidLocationType(config.overrideUserStartLocationType)) {
             errors.push(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}'.`);
-        } else if (config.overrideUserStartLocation && COORDINATE_LOCATION_TYPES.includes(config.overrideUserStartLocationType as typeof COORDINATE_LOCATION_TYPES[number])) {
+        } else if (config.overrideUserStartLocation && isCoordinateLocationType(config.overrideUserStartLocationType)) {
             const coordsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
             if (!coordsRegex.test(config.overrideUserStartLocation)) {
                 errors.push(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
@@ -631,7 +631,7 @@ export default class DianaWidget {
         const originInput = this.elements.originInput;
         if (this.config.overrideUserStartLocation) {
             originInput.value = this.config.overrideUserStartLocation;
-            if (COORDINATE_LOCATION_TYPES.includes(this.config.overrideUserStartLocationType as typeof COORDINATE_LOCATION_TYPES[number])) {
+            if (isCoordinateLocationType(this.config.overrideUserStartLocationType)) {
                 const parts = this.config.overrideUserStartLocation.split(',');
                 if (parts.length === 2) {
                     originInput.setAttribute('data-lat', parts[0].trim());

@@ -45,9 +45,33 @@ export const CACHE_KEY_PREFIX = 'diana_user_start_location_';
 export const VALID_LOCATION_TYPES = ['coordinates', 'coord', 'coords', 'address', 'station'] as const;
 
 /**
+ * Type for valid location types
+ */
+export type ValidLocationType = typeof VALID_LOCATION_TYPES[number];
+
+/**
  * Coordinate-based location types
  */
 export const COORDINATE_LOCATION_TYPES = ['coordinates', 'coord', 'coords'] as const;
+
+/**
+ * Type for coordinate location types
+ */
+export type CoordinateLocationType = typeof COORDINATE_LOCATION_TYPES[number];
+
+/**
+ * Type guard for checking if a value is a valid location type
+ */
+export function isValidLocationType(value: unknown): value is ValidLocationType {
+    return typeof value === 'string' && VALID_LOCATION_TYPES.includes(value as ValidLocationType);
+}
+
+/**
+ * Type guard for checking if a value is a coordinate location type
+ */
+export function isCoordinateLocationType(value: unknown): value is CoordinateLocationType {
+    return typeof value === 'string' && COORDINATE_LOCATION_TYPES.includes(value as CoordinateLocationType);
+}
 
 /**
  * Required configuration fields
@@ -80,7 +104,7 @@ export const TIME_CONFIG_FIELDS = [
  */
 export const DEFAULT_CONFIG: WidgetConfig = {
     activityName: '[Activity Name]',
-    requiredFields: [...REQUIRED_CONFIG_FIELDS],
+    requiredFields: REQUIRED_CONFIG_FIELDS as unknown as string[],
     activityStartLocationDisplayName: null,
     activityEndLocationDisplayName: null,
     timezone: DEFAULT_TIMEZONE,
