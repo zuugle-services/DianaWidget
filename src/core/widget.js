@@ -814,8 +814,18 @@ export default class DianaWidget {
         this.elements.collapsibleToActivity?.addEventListener('click', () => this.toggleCollapsible('to'));
         this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
 
-        if (this.elements.responseBox) this.elements.responseBox.addEventListener('click', (e) => this.handleBuyTicketClick(e));
-        if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleBuyTicketClick(e));
+        if (this.elements.responseBox) {
+            this.elements.responseBox.addEventListener('click', (e) => {
+                this.handleBuyTicketClick(e);
+                this.handleAlertExpandClick(e);
+            });
+        }
+        if (this.elements.responseBoxBottom) {
+            this.elements.responseBoxBottom.addEventListener('click', (e) => {
+                this.handleBuyTicketClick(e);
+                this.handleAlertExpandClick(e);
+            });
+        }
 
 
         // --- Generic Menu Handling ---
@@ -2120,6 +2130,21 @@ export default class DianaWidget {
         }
     }
 
+    /**
+     * Handles click events on expandable alert text elements.
+     * Uses event delegation to toggle the 'expanded' class.
+     * @param {Event} event - The click event.
+     */
+    handleAlertExpandClick(event) {
+        const expandable = event.target.closest('.expandable');
+        if (!expandable) return;
+        
+        // Don't expand if clicking on a link inside the alert
+        if (event.target.tagName === 'A') return;
+        
+        expandable.classList.toggle('expanded');
+    }
+
     renderConnectionDetails(connections, type) {
         if (!connections || connections.length === 0) {
             return `<div>${this.t('noConnectionDetails')}</div>`;
@@ -2263,6 +2288,7 @@ export default class DianaWidget {
                   <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn)}</span>
                 </div>
                 ${dateDisplay}
+                ${this.renderAlert(element)}
               </div>
             `;
 
@@ -2333,6 +2359,76 @@ export default class DianaWidget {
             html += `</div></div>`;
             return html;
         }).join('');
+    }
+
+    /**
+     * Renders alert information for a connection element if alerts are present.
+     * @param {object} element - The connection element containing potential alerts.
+     * @returns {string} HTML string for the alert display, or empty string if no alerts.
+     */
+    renderAlert(element) {
+        if (!element.alerts || element.alerts.length === 0) {
+            return '';
+        }
+
+        // Only show the first alert as per requirements
+        const alert = element.alerts[0];
+        
+        const alertIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+
+        // Escape HTML to prevent XSS, but allow links in description
+        const escapeHtml = (text) => {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        };
+
+        // Escape for use in HTML attributes (more strict escaping)
+        const escapeAttr = (text) => {
+            if (!text) return '';
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        };
+
+        // Convert URLs to clickable links in description
+        const linkifyDescription = (text) => {
+            if (!text) return '';
+            const escaped = escapeHtml(text);
+            // Match URLs and convert to links
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return escaped.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        };
+
+        const headerText = alert.header_text ? escapeHtml(alert.header_text) : '';
+        const descriptionText = alert.description_text ? linkifyDescription(alert.description_text) : '';
+
+        // Build the alert HTML - using data-expandable class for event delegation
+        let alertHTML = `
+            <div class="connection-element-alert">
+                <div class="alert-header">
+                    <span class="alert-icon">${alertIcon}</span>
+                    <span>${this.t('alert.label')}</span>
+                </div>`;
+
+        if (headerText) {
+            alertHTML += `
+                <div class="alert-header-text expandable" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
+        }
+
+        if (descriptionText) {
+            alertHTML += `
+                <div class="alert-description expandable" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
+        }
+
+        alertHTML += `
+            </div>`;
+
+        return alertHTML;
     }
 
     getTransportName(type) {

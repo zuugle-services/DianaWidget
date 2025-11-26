@@ -177,6 +177,9 @@ export default {
             '33': 'Park',
             'WALK': 'Walk',
             'TRSF': 'Transfer'
+        },
+        alert: {
+            label: 'Alert'
         }
     },
     DE: {
@@ -357,6 +360,9 @@ export default {
             '33': 'Park',
             'WALK': 'Fußweg',
             'TRSF': 'Umstieg'
+        },
+        alert: {
+            label: 'Hinweis'
         }
     },
     ES: {
@@ -537,6 +543,9 @@ export default {
             '33': 'Parque',
             'WALK': 'A pie',
             'TRSF': 'Transbordo'
+        },
+        alert: {
+            label: 'Alerta'
         }
     },
     FR: {
@@ -717,6 +726,9 @@ export default {
             '33': 'Parc',
             'WALK': 'À pied',
             'TRSF': 'Correspondance'
+        },
+        alert: {
+            label: 'Alerte'
         }
     },
     IT: {
@@ -897,6 +909,9 @@ export default {
             '33': 'Parco',
             'WALK': 'A piedi',
             'TRSF': 'Cambio'
+        },
+        alert: {
+            label: 'Avviso'
         }
     },
     TH: {
@@ -1077,6 +1092,9 @@ export default {
             '33': 'สวนสาธารณะ',
             'WALK': 'เดิน',
             'TRSF': 'เปลี่ยนรถ'
+        },
+        alert: {
+            label: 'แจ้งเตือน'
         }
     }
 };
