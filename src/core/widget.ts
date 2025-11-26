@@ -2443,7 +2443,9 @@ export default class DianaWidget {
                       <span class="element-location">${toLocationDisplay}</span>
                       ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
                     </div>
-                    <div class="element-circle"></div>
+                    <div class="element-circle-wrapper">
+                      <div class="element-circle"></div>
+                    </div>
                   </div>
                 </div>
               `;
@@ -2541,6 +2543,8 @@ export default class DianaWidget {
         const descriptionText = alert.description_text ? linkifyDescription(alert.description_text) : '';
 
         // Build the alert HTML - using data-expandable class for event delegation
+        // Note: Alerts are expanded by default. To revert to collapsed by default,
+        // remove "expanded" class from "alert-header-text" and "alert-description" elements below.
         let alertHTML = `
             <div class="connection-element-alert">
                 <div class="alert-header">
@@ -2550,12 +2554,12 @@ export default class DianaWidget {
 
         if (headerText) {
             alertHTML += `
-                <div class="alert-header-text expandable" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
+                <div class="alert-header-text expandable expanded" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
         }
 
         if (descriptionText) {
             alertHTML += `
-                <div class="alert-description expandable" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
+                <div class="alert-description expandable expanded" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
         }
 
         alertHTML += `
