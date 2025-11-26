@@ -101,10 +101,10 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 ## Phase 3: File Migration (Bottom-Up Approach)
 
 ### 3.1 Migrate Utility Files (No Dependencies)
-- [ ] Rename `src/utils. js` → `src/utils. ts`
+- [x] Rename `src/utils. js` → `src/utils. ts`
     - Add type annotations to all functions (`debounce`, `throttle`, `formatDateForDisplay`, `getApiErrorTranslationKey`, etc.)
     - Add return types to all exported functions
-- [ ] Rename `src/datetimeUtils.js` → `src/datetimeUtils. ts`
+- [x] Rename `src/datetimeUtils.js` → `src/datetimeUtils. ts`
     - Type all datetime manipulation functions
     - Use Luxon's built-in TypeScript types (`DateTime`, `Duration`, etc.)
     - Add explicit types for all date/time parameters

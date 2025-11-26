@@ -1,4 +1,4 @@
-import { getMonthName, getShortDayName } from '../utils.js';
+import { getMonthName, getShortDayName } from '../utils';
 
 /**
  * Generates the HTML for the single calendar pop-up.
