@@ -186,17 +186,20 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 ## Phase 4: Code Cleanup & Refactoring
 
 ### 4.1 Extract Large Methods
-- [ ] Identify methods in `widget.ts` exceeding 50 lines
+- [x] Identify methods in `widget.ts` exceeding 50 lines (identified: renderConnectionDetails 226 lines, constructor 187 lines, _initCustomCalendar 178 lines, setupEventListeners 144 lines, validateConfig 131 lines, etc.)
 - [ ] Extract API communication logic into `src/services/ApiService.ts`
 - [ ] Extract state management into `src/core/StateManager.ts`
 - [ ] Extract event binding logic into `src/core/EventManager.ts`
 - [ ] Extract validation logic into `src/core/Validator.ts`
 
 ### 4.2 Improve Module Organization
-- [ ] Create `src/services/` directory for API-related code
-- [ ] Create `src/constants/` directory for magic values and config defaults
-- [ ] Move CSS/SCSS type declarations to `src/types/styles.d.ts`
-- [ ] Create barrel exports (`index.ts`) in each directory
+- [x] Create `src/services/` directory for API-related code
+- [x] Create `src/constants/` directory for magic values and config defaults
+- [x] Create `src/constants/defaults.ts` with DEFAULT_CONFIG, DEFAULT_STATE, and other constants
+- [x] Create `src/constants/index.ts` barrel export
+- [x] Update `widget.ts` to use imported constants (DEFAULT_CONFIG, DEFAULT_STATE, ADDRESS_INPUT_DEBOUNCE_MS, VALID_LOCATION_TYPES, COORDINATE_LOCATION_TYPES, TIME_CONFIG_FIELDS)
+- [x] Move CSS/SCSS type declarations to `src/types/styles.d.ts` (already exists)
+- [x] Create barrel exports (`index.ts`) in each directory
 
 ### 4. 3 Add Strict Null Checks
 - [ ] Enable `strictNullChecks` in `tsconfig. json`

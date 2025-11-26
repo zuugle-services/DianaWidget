@@ -25,6 +25,15 @@ import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent';
 
+import {
+    DEFAULT_CONFIG,
+    DEFAULT_STATE,
+    ADDRESS_INPUT_DEBOUNCE_MS,
+    VALID_LOCATION_TYPES,
+    COORDINATE_LOCATION_TYPES,
+    TIME_CONFIG_FIELDS
+} from '../constants';
+
 import type {
     WidgetConfig,
     PartialWidgetConfig,
@@ -123,49 +132,8 @@ export default class DianaWidget {
     lastQuery: string;
 
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
-        // Initialize default config
-        this.defaultConfig = {
-            activityName: "[Activity Name]",
-            requiredFields: [
-                'activityStartLocation',
-                'activityStartLocationType',
-                'activityEndLocation',
-                'activityEndLocationType',
-                'activityEarliestStartTime',
-                'activityLatestStartTime',
-                'activityEarliestEndTime',
-                'activityLatestEndTime',
-                'activityDurationMinutes',
-                'apiToken'
-            ],
-            activityStartLocationDisplayName: null,
-            activityEndLocationDisplayName: null,
-            timezone: "Europe/Vienna",
-            activityStartTimeLabel: null,
-            activityEndTimeLabel: null,
-            apiBaseUrl: "https://api.zuugle-services.net",
-            language: 'EN',
-            dev: false,
-            cacheUserStartLocation: true,
-            userStartLocationCacheTTLMinutes: 15,
-            overrideUserStartLocation: null,
-            overrideUserStartLocationType: null,
-            disableUserStartLocationField: false,
-            displayStartDate: null,
-            displayEndDate: null,
-            destinationInputName: null,
-            multiday: false,
-            overrideActivityStartDate: null,
-            overrideActivityEndDate: null,
-            activityDurationDaysFixed: null,
-            share: true,
-            allowShareView: true,
-            shareURLPrefix: null,
-            hideOverriddenActivityStartDate: true,
-            dateList: null,
-            onDateChange: null,
-            onApiTokenExpired: null,
-        };
+        // Initialize default config using imported constant
+        this.defaultConfig = { ...DEFAULT_CONFIG };
         
         this.config = {...this.defaultConfig, ...config} as WidgetConfig;
         
@@ -181,29 +149,8 @@ export default class DianaWidget {
         this.uiManager = null;
         this.elements = {} as WidgetElements;
         this.lastQuery = '';
-        this.state = {
-            fromConnections: [],
-            toConnections: [],
-            selectedToConnection: null,
-            selectedFromConnection: null,
-            selectedDate: null,
-            selectedEndDate: null,
-            loading: false,
-            error: null,
-            info: null,
-            suggestions: [],
-            recommendedToIndex: 0,
-            recommendedFromIndex: 0,
-            activityTimes: {
-                start: '',
-                end: '',
-                duration: '',
-                warning_duration: false,
-            },
-            currentContentKey: null,
-            preselectTimes: null
-        };
-        this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), 700);
+        this.state = { ...DEFAULT_STATE };
+        this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const configErrors = this.validateConfig(this.config);
 
@@ -369,11 +316,10 @@ export default class DianaWidget {
             config.timezone = 'Europe/Vienna';
         }
 
-        const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
-        if (config.activityStartLocationType && !validLocationTypes.includes(config.activityStartLocationType)) {
+        if (config.activityStartLocationType && !VALID_LOCATION_TYPES.includes(config.activityStartLocationType as typeof VALID_LOCATION_TYPES[number])) {
             errors.push(`Invalid activityStartLocationType '${config.activityStartLocationType}'.`);
         }
-        if (config.activityEndLocationType && !validLocationTypes.includes(config.activityEndLocationType)) {
+        if (config.activityEndLocationType && !VALID_LOCATION_TYPES.includes(config.activityEndLocationType as typeof VALID_LOCATION_TYPES[number])) {
             errors.push(`Invalid activityEndLocationType '${config.activityEndLocationType}'.`);
         }
 
@@ -385,8 +331,7 @@ export default class DianaWidget {
         }
 
         const timeRegex = /^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?$/;
-        const timeFields = ['activityEarliestStartTime', 'activityLatestStartTime', 'activityEarliestEndTime', 'activityLatestEndTime'];
-        timeFields.forEach(field => {
+        TIME_CONFIG_FIELDS.forEach(field => {
             if (config[field] && !timeRegex.test(config[field])) {
                 errors.push(`Invalid time format for '${field}': '${config[field]}'. Expected HH:MM or HH:MM:SS`);
             }
@@ -414,9 +359,9 @@ export default class DianaWidget {
         if (config.overrideUserStartLocation && (typeof config.overrideUserStartLocation !== 'string')) {
             errors.push(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
         }
-        if (config.overrideUserStartLocation && (!config.overrideUserStartLocationType || !validLocationTypes.includes(config.overrideUserStartLocationType))) {
+        if (config.overrideUserStartLocation && (!config.overrideUserStartLocationType || !VALID_LOCATION_TYPES.includes(config.overrideUserStartLocationType as typeof VALID_LOCATION_TYPES[number]))) {
             errors.push(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}'.`);
-        } else if (config.overrideUserStartLocation && ['coordinates', 'coord', 'coords'].includes(config.overrideUserStartLocationType)) {
+        } else if (config.overrideUserStartLocation && COORDINATE_LOCATION_TYPES.includes(config.overrideUserStartLocationType as typeof COORDINATE_LOCATION_TYPES[number])) {
             const coordsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
             if (!coordsRegex.test(config.overrideUserStartLocation)) {
                 errors.push(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
@@ -686,7 +631,7 @@ export default class DianaWidget {
         const originInput = this.elements.originInput;
         if (this.config.overrideUserStartLocation) {
             originInput.value = this.config.overrideUserStartLocation;
-            if (['coordinates', 'coord', 'coords'].includes(this.config.overrideUserStartLocationType)) {
+            if (COORDINATE_LOCATION_TYPES.includes(this.config.overrideUserStartLocationType as typeof COORDINATE_LOCATION_TYPES[number])) {
                 const parts = this.config.overrideUserStartLocation.split(',');
                 if (parts.length === 2) {
                     originInput.setAttribute('data-lat', parts[0].trim());
