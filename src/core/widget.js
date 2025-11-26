@@ -779,12 +779,16 @@ export default class DianaWidget {
         this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
 
         if (this.elements.responseBox) {
-            this.elements.responseBox.addEventListener('click', (e) => this.handleBuyTicketClick(e));
-            this.elements.responseBox.addEventListener('click', (e) => this.handleAlertExpandClick(e));
+            this.elements.responseBox.addEventListener('click', (e) => {
+                this.handleBuyTicketClick(e);
+                this.handleAlertExpandClick(e);
+            });
         }
         if (this.elements.responseBoxBottom) {
-            this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleBuyTicketClick(e));
-            this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleAlertExpandClick(e));
+            this.elements.responseBoxBottom.addEventListener('click', (e) => {
+                this.handleBuyTicketClick(e);
+                this.handleAlertExpandClick(e);
+            });
         }
 
 

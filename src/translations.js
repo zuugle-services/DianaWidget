@@ -180,8 +180,7 @@ export default {
             'TRSF': 'Transfer'
         },
         alert: {
-            label: 'Alert',
-            serviceAlert: 'Service Alert'
+            label: 'Alert'
         }
     },
     DE: {
@@ -365,8 +364,7 @@ export default {
             'TRSF': 'Umstieg'
         },
         alert: {
-            label: 'Hinweis',
-            serviceAlert: 'Dienstmeldung'
+            label: 'Hinweis'
         }
     },
     ES: {
@@ -550,8 +548,7 @@ export default {
             'TRSF': 'Transbordo'
         },
         alert: {
-            label: 'Alerta',
-            serviceAlert: 'Alerta de servicio'
+            label: 'Alerta'
         }
     },
     FR: {
@@ -735,8 +732,7 @@ export default {
             'TRSF': 'Correspondance'
         },
         alert: {
-            label: 'Alerte',
-            serviceAlert: 'Alerte de service'
+            label: 'Alerte'
         }
     },
     IT: {
@@ -920,8 +916,7 @@ export default {
             'TRSF': 'Cambio'
         },
         alert: {
-            label: 'Avviso',
-            serviceAlert: 'Avviso di servizio'
+            label: 'Avviso'
         }
     },
     TH: {
@@ -1105,8 +1100,7 @@ export default {
             'TRSF': 'เปลี่ยนรถ'
         },
         alert: {
-            label: 'แจ้งเตือน',
-            serviceAlert: 'การแจ้งเตือนบริการ'
+            label: 'แจ้งเตือน'
         }
     }
 };
