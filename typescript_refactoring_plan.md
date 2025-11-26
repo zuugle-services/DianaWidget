@@ -6,13 +6,13 @@
 - **Phase 1:** Project Setup & Configuration (TypeScript, ts-loader, tsconfig.json, webpack, Jest)
 - **Phase 2:** Type Definitions & Interfaces (src/types/ directory with all core types)
 - **Phase 3.1-3.4:** File Migrations (utils.ts, datetimeUtils.ts, translations.ts, all templates, components)
-- **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines)
+- **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines → 3230 lines after extractions)
 - **Phase 3.6:** Entry point (index.ts)
-- **Phase 4.1 (partial):** Extracted validation logic into `src/core/Validator.ts`
-- **Phase 4.2 (partial):** Created `src/services/ApiService.ts` with types and helper functions
+- **Phase 4.1 (partial):** Extracted validation logic into `src/core/Validator.ts` (~130 lines)
+- **Phase 4.1 (partial):** Created and integrated `src/services/ApiService.ts` (~230 lines)
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.1:** Continue extracting large methods (ApiService integration, StateManager, EventManager)
+- **Phase 4.1:** Continue extracting large methods (StateManager, EventManager)
 - **Phase 4.3:** Add strict null checks
 
 ### 📝 NOTES:
@@ -24,10 +24,10 @@
   - Constructor parameter types
   - Method return type annotations where critical
   - Type assertions for API responses (using `any` where types don't match actual API structure)
-  - Custom interfaces: WidgetElements, ApiError, FetchOptions
+  - Custom interfaces: WidgetElements (ApiError, FetchOptions moved to services)
   - Event handler type casting for DOM events
 - Validator.ts: Extracted config validation logic (~130 lines) into separate module
-- ApiService.ts: Created API service class structure, ready for integration with widget.ts
+- ApiService.ts: Created API service class with fetch delegation, error handling, and type exports
 
 ---
 
@@ -192,8 +192,8 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 
 ### 4.1 Extract Large Methods
 - [x] Identify methods in `widget.ts` exceeding 50 lines (identified: renderConnectionDetails 226 lines, constructor 187 lines, _initCustomCalendar 178 lines, setupEventListeners 144 lines, validateConfig 131 lines, etc.)
-- [x] Create `src/services/ApiService.ts` with types and base implementation (ready for integration)
-- [ ] Integrate ApiService into widget.ts (requires refactoring API method calls)
+- [x] Create `src/services/ApiService.ts` with types and base implementation
+- [x] Integrate ApiService into widget.ts (widget now delegates to ApiService.fetch())
 - [ ] Extract state management into `src/core/StateManager.ts`
 - [ ] Extract event binding logic into `src/core/EventManager.ts`
 - [x] Extract validation logic into `src/core/Validator.ts`

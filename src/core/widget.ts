@@ -34,6 +34,9 @@ import {
 
 import { validateConfig } from './Validator';
 
+import { ApiService } from '../services';
+import type { ApiError, FetchOptions } from '../services';
+
 import type {
     WidgetConfig,
     PartialWidgetConfig,
@@ -96,22 +99,6 @@ interface WidgetElements {
     [key: string]: HTMLElement | null | undefined;
 }
 
-/**
- * Extended Error interface for API errors
- */
-interface ApiError extends Error {
-    isSessionExpired?: boolean;
-    response?: Response;
-    body?: unknown;
-}
-
-/**
- * Options for fetch API calls
- */
-interface FetchOptions extends RequestInit {
-    headers?: Record<string, string>;
-}
-
 export default class DianaWidget {
     // Class property declarations
     defaultConfig: WidgetConfig;
@@ -130,6 +117,7 @@ export default class DianaWidget {
     elements: WidgetElements;
     debouncedHandleAddressInput: (query: string) => void;
     lastQuery: string;
+    private apiService: ApiService | null;
 
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
         // Initialize default config using imported constant
@@ -150,11 +138,19 @@ export default class DianaWidget {
         this.elements = {} as WidgetElements;
         this.lastQuery = '';
         this.state = { ...DEFAULT_STATE };
+        this.apiService = null;
         this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const validationResult = validateConfig(this.config);
         this.config = validationResult.config;
         const configErrors = validationResult.errors;
+
+        // Initialize API service after config validation
+        this.apiService = new ApiService(
+            this.config,
+            () => this._handleSessionExpired(),
+            (key: string) => this.t(key)
+        );
 
         this.container = document.getElementById(containerId);
         if (this.container?.shadowRoot) {
@@ -893,53 +889,19 @@ export default class DianaWidget {
         }
     }
 
-    async _fetchApi(url: string, originalOptions: FetchOptions = {}, isRetry: boolean = false): Promise<Response> {
-        const options: FetchOptions = {
-            ...originalOptions,
-            headers: {
-                ...originalOptions.headers,
-                'Authorization': `Bearer ${this.config.apiToken}`
-            }
-        };
-
-        const response = await fetch(url, options);
-
-        if (response.ok) {
-            return response;
+    /**
+     * Makes an authenticated API request using the ApiService
+     * @param url - URL to fetch
+     * @param options - Fetch options
+     * @param isRetry - Whether this is a retry (used internally by ApiService)
+     * @returns Promise resolving to the Response
+     * @throws ApiError on failure
+     */
+    async _fetchApi(url: string, options: FetchOptions = {}, isRetry: boolean = false): Promise<Response> {
+        if (!this.apiService) {
+            throw new Error('ApiService not initialized');
         }
-
-        if (response.status === 401 && !isRetry) {
-            if (typeof this.config.onApiTokenExpired === 'function') {
-                try {
-                    const newToken = await this.config.onApiTokenExpired();
-                    if (typeof newToken === 'string' && newToken) {
-                        this.config.apiToken = newToken;
-                        return this._fetchApi(url, originalOptions, true);
-                    }
-                    throw new Error("onApiTokenExpired callback did not return a valid string token.");
-                } catch (error) {
-                    console.error("Token refresh via onApiTokenExpired failed:", error);
-                    this._handleSessionExpired();
-                    const sessionError: ApiError = new Error(this.t('errors.sessionExpired'));
-                    sessionError.isSessionExpired = true;
-                    throw sessionError;
-                }
-            } else {
-                this._handleSessionExpired();
-                const sessionError: ApiError = new Error(this.t('errors.sessionExpired'));
-                sessionError.isSessionExpired = true;
-                throw sessionError;
-            }
-        }
-
-        const error: ApiError = new Error(`API Error: ${response.status} ${response.statusText}`);
-        error.response = response;
-        try {
-            error.body = await response.clone().json();
-        } catch (e) {
-            error.body = await response.clone().text();
-        }
-        throw error;
+        return this.apiService.fetch(url, options, isRetry);
     }
 
 
