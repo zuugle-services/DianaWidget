@@ -778,8 +778,14 @@ export default class DianaWidget {
         this.elements.collapsibleToActivity?.addEventListener('click', () => this.toggleCollapsible('to'));
         this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
 
-        if (this.elements.responseBox) this.elements.responseBox.addEventListener('click', (e) => this.handleBuyTicketClick(e));
-        if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleBuyTicketClick(e));
+        if (this.elements.responseBox) {
+            this.elements.responseBox.addEventListener('click', (e) => this.handleBuyTicketClick(e));
+            this.elements.responseBox.addEventListener('click', (e) => this.handleAlertExpandClick(e));
+        }
+        if (this.elements.responseBoxBottom) {
+            this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleBuyTicketClick(e));
+            this.elements.responseBoxBottom.addEventListener('click', (e) => this.handleAlertExpandClick(e));
+        }
 
 
         // --- Generic Menu Handling ---
@@ -2081,6 +2087,21 @@ export default class DianaWidget {
         }
     }
 
+    /**
+     * Handles click events on expandable alert text elements.
+     * Uses event delegation to toggle the 'expanded' class.
+     * @param {Event} event - The click event.
+     */
+    handleAlertExpandClick(event) {
+        const expandable = event.target.closest('.expandable');
+        if (!expandable) return;
+        
+        // Don't expand if clicking on a link inside the alert
+        if (event.target.tagName === 'A') return;
+        
+        expandable.classList.toggle('expanded');
+    }
+
     renderConnectionDetails(connections, type) {
         if (!connections || connections.length === 0) {
             return `<div>${this.t('noConnectionDetails')}</div>`;
@@ -2320,6 +2341,17 @@ export default class DianaWidget {
             return div.innerHTML;
         };
 
+        // Escape for use in HTML attributes (more strict escaping)
+        const escapeAttr = (text) => {
+            if (!text) return '';
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+        };
+
         // Convert URLs to clickable links in description
         const linkifyDescription = (text) => {
             if (!text) return '';
@@ -2332,7 +2364,7 @@ export default class DianaWidget {
         const headerText = alert.header_text ? escapeHtml(alert.header_text) : '';
         const descriptionText = alert.description_text ? linkifyDescription(alert.description_text) : '';
 
-        // Build the alert HTML
+        // Build the alert HTML - using data-expandable class for event delegation
         let alertHTML = `
             <div class="connection-element-alert">
                 <div class="alert-header">
@@ -2342,14 +2374,12 @@ export default class DianaWidget {
 
         if (headerText) {
             alertHTML += `
-                <div class="alert-header-text expandable" title="${headerText}" onclick="this.classList.toggle('expanded')">${headerText}</div>`;
+                <div class="alert-header-text expandable" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
         }
 
         if (descriptionText) {
-            // Get the plain text for the title attribute (without HTML)
-            const plainDescription = alert.description_text || '';
             alertHTML += `
-                <div class="alert-description expandable" title="${escapeHtml(plainDescription)}" onclick="this.classList.toggle('expanded')">${descriptionText}</div>`;
+                <div class="alert-description expandable" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
         }
 
         alertHTML += `
