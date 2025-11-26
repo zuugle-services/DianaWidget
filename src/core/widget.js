@@ -2139,8 +2139,12 @@ export default class DianaWidget {
         const alertBox = event.target.closest('.connection-element-alert');
         if (!alertBox) return;
         
-        // Don't expand if clicking on a link inside the alert
-        if (event.target.tagName === 'A') return;
+        // Don't expand if clicking on a link inside the alert, but still stop propagation
+        // to prevent the collapsible container from toggling
+        if (event.target.tagName === 'A') {
+            event.stopPropagation();
+            return;
+        }
         
         // Stop event propagation to prevent toggling the collapsible container
         event.stopPropagation();
@@ -2282,17 +2286,19 @@ export default class DianaWidget {
 
                 html += `
               <div class="connection-element">
-                <div class="element-time-location-group">
-                    <span class="element-time">${departureTime}</span>
-                    <span class="element-location">${fromLocationDisplay}</span>
-                    ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
+                <div class="connection-element-content">
+                  <div class="element-time-location-group">
+                      <span class="element-time">${departureTime}</span>
+                      <span class="element-location">${fromLocationDisplay}</span>
+                      ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
+                  </div>
+                  <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
+                    <div class="element-circle"></div>
+                    <span class="element-icon" title="${transportName}" alt="${transportName}">${icon}</span>
+                    <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn)}</span>
+                  </div>
+                  ${dateDisplay}
                 </div>
-                <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
-                  <div class="element-circle"></div>
-                  <span class="element-icon" title="${transportName}" alt="${transportName}">${icon}</span>
-                  <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn)}</span>
-                </div>
-                ${dateDisplay}
                 ${this.renderAlert(element)}
               </div>
             `;
