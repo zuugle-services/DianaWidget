@@ -25,6 +25,15 @@ import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent';
 
+import {
+    DEFAULT_CONFIG,
+    DEFAULT_STATE,
+    ADDRESS_INPUT_DEBOUNCE_MS,
+    TIME_CONFIG_FIELDS,
+    isValidLocationType,
+    isCoordinateLocationType
+} from '../constants';
+
 import type {
     WidgetConfig,
     PartialWidgetConfig,
@@ -123,49 +132,8 @@ export default class DianaWidget {
     lastQuery: string;
 
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
-        // Initialize default config
-        this.defaultConfig = {
-            activityName: "[Activity Name]",
-            requiredFields: [
-                'activityStartLocation',
-                'activityStartLocationType',
-                'activityEndLocation',
-                'activityEndLocationType',
-                'activityEarliestStartTime',
-                'activityLatestStartTime',
-                'activityEarliestEndTime',
-                'activityLatestEndTime',
-                'activityDurationMinutes',
-                'apiToken'
-            ],
-            activityStartLocationDisplayName: null,
-            activityEndLocationDisplayName: null,
-            timezone: "Europe/Vienna",
-            activityStartTimeLabel: null,
-            activityEndTimeLabel: null,
-            apiBaseUrl: "https://api.zuugle-services.net",
-            language: 'EN',
-            dev: false,
-            cacheUserStartLocation: true,
-            userStartLocationCacheTTLMinutes: 15,
-            overrideUserStartLocation: null,
-            overrideUserStartLocationType: null,
-            disableUserStartLocationField: false,
-            displayStartDate: null,
-            displayEndDate: null,
-            destinationInputName: null,
-            multiday: false,
-            overrideActivityStartDate: null,
-            overrideActivityEndDate: null,
-            activityDurationDaysFixed: null,
-            share: true,
-            allowShareView: true,
-            shareURLPrefix: null,
-            hideOverriddenActivityStartDate: true,
-            dateList: null,
-            onDateChange: null,
-            onApiTokenExpired: null,
-        };
+        // Initialize default config using imported constant
+        this.defaultConfig = { ...DEFAULT_CONFIG };
         
         this.config = {...this.defaultConfig, ...config} as WidgetConfig;
         
@@ -181,29 +149,8 @@ export default class DianaWidget {
         this.uiManager = null;
         this.elements = {} as WidgetElements;
         this.lastQuery = '';
-        this.state = {
-            fromConnections: [],
-            toConnections: [],
-            selectedToConnection: null,
-            selectedFromConnection: null,
-            selectedDate: null,
-            selectedEndDate: null,
-            loading: false,
-            error: null,
-            info: null,
-            suggestions: [],
-            recommendedToIndex: 0,
-            recommendedFromIndex: 0,
-            activityTimes: {
-                start: '',
-                end: '',
-                duration: '',
-                warning_duration: false,
-            },
-            currentContentKey: null,
-            preselectTimes: null
-        };
-        this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), 700);
+        this.state = { ...DEFAULT_STATE };
+        this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const configErrors = this.validateConfig(this.config);
 
@@ -369,11 +316,10 @@ export default class DianaWidget {
             config.timezone = 'Europe/Vienna';
         }
 
-        const validLocationTypes = ['coordinates', 'coord', 'coords', 'address', 'station'];
-        if (config.activityStartLocationType && !validLocationTypes.includes(config.activityStartLocationType)) {
+        if (config.activityStartLocationType && !isValidLocationType(config.activityStartLocationType)) {
             errors.push(`Invalid activityStartLocationType '${config.activityStartLocationType}'.`);
         }
-        if (config.activityEndLocationType && !validLocationTypes.includes(config.activityEndLocationType)) {
+        if (config.activityEndLocationType && !isValidLocationType(config.activityEndLocationType)) {
             errors.push(`Invalid activityEndLocationType '${config.activityEndLocationType}'.`);
         }
 
@@ -385,8 +331,7 @@ export default class DianaWidget {
         }
 
         const timeRegex = /^(2[0-3]|[01]?[0-9]):([0-5]?[0-9])(:([0-5]?[0-9]))?$/;
-        const timeFields = ['activityEarliestStartTime', 'activityLatestStartTime', 'activityEarliestEndTime', 'activityLatestEndTime'];
-        timeFields.forEach(field => {
+        TIME_CONFIG_FIELDS.forEach(field => {
             if (config[field] && !timeRegex.test(config[field])) {
                 errors.push(`Invalid time format for '${field}': '${config[field]}'. Expected HH:MM or HH:MM:SS`);
             }
@@ -414,9 +359,9 @@ export default class DianaWidget {
         if (config.overrideUserStartLocation && (typeof config.overrideUserStartLocation !== 'string')) {
             errors.push(`Invalid overrideUserStartLocation '${config.overrideUserStartLocation}'. Must be a string or null.`);
         }
-        if (config.overrideUserStartLocation && (!config.overrideUserStartLocationType || !validLocationTypes.includes(config.overrideUserStartLocationType))) {
+        if (config.overrideUserStartLocation && !isValidLocationType(config.overrideUserStartLocationType)) {
             errors.push(`Invalid or missing overrideUserStartLocationType '${config.overrideUserStartLocationType}'.`);
-        } else if (config.overrideUserStartLocation && ['coordinates', 'coord', 'coords'].includes(config.overrideUserStartLocationType)) {
+        } else if (config.overrideUserStartLocation && isCoordinateLocationType(config.overrideUserStartLocationType)) {
             const coordsRegex = /^-?\d+(\.\d+)?,-?\d+(\.\d+)?$/;
             if (!coordsRegex.test(config.overrideUserStartLocation)) {
                 errors.push(`Invalid coordinate format for overrideUserStartLocation: '${config.overrideUserStartLocation}'. Expected "lat,lon".`);
@@ -686,7 +631,7 @@ export default class DianaWidget {
         const originInput = this.elements.originInput;
         if (this.config.overrideUserStartLocation) {
             originInput.value = this.config.overrideUserStartLocation;
-            if (['coordinates', 'coord', 'coords'].includes(this.config.overrideUserStartLocationType)) {
+            if (isCoordinateLocationType(this.config.overrideUserStartLocationType)) {
                 const parts = this.config.overrideUserStartLocation.split(',');
                 if (parts.length === 2) {
                     originInput.setAttribute('data-lat', parts[0].trim());
@@ -2443,7 +2388,9 @@ export default class DianaWidget {
                       <span class="element-location">${toLocationDisplay}</span>
                       ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
                     </div>
-                    <div class="element-circle"></div>
+                    <div class="element-circle-wrapper">
+                      <div class="element-circle"></div>
+                    </div>
                   </div>
                 </div>
               `;
@@ -2541,6 +2488,8 @@ export default class DianaWidget {
         const descriptionText = alert.description_text ? linkifyDescription(alert.description_text) : '';
 
         // Build the alert HTML - using data-expandable class for event delegation
+        // Note: Alerts are expanded by default. To revert to collapsed by default,
+        // remove "expanded" class from "alert-header-text" and "alert-description" elements below.
         let alertHTML = `
             <div class="connection-element-alert">
                 <div class="alert-header">
@@ -2550,12 +2499,12 @@ export default class DianaWidget {
 
         if (headerText) {
             alertHTML += `
-                <div class="alert-header-text expandable" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
+                <div class="alert-header-text expandable expanded" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
         }
 
         if (descriptionText) {
             alertHTML += `
-                <div class="alert-description expandable" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
+                <div class="alert-description expandable expanded" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
         }
 
         alertHTML += `
