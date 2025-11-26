@@ -1,55 +1,11 @@
 import {DateTime} from 'luxon';
 import {formatDateForDisplay, getMonthName, getShortDayName, throttle} from "../utils";
 import {convertToUTCMidnightJSDate, formatDatetime} from "../datetimeUtils";
-import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate';
-import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate';
-import type { TranslationFunction } from '../types';
-
-// Widget instance interface (minimal for calendar use)
-interface WidgetInstance {
-    container: HTMLElement;
-    config: {
-        language: string;
-        timezone: string;
-    };
-    t: TranslationFunction;
-    state: {
-        selectedDate: Date | null;
-    };
-    elements?: {
-        otherDateText?: HTMLElement;
-    };
-    dianaWidgetRootContainer: HTMLElement;
-    clearMessages: () => void;
-}
+import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate.js';
+import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate.js';
 
 export class SingleCalendar {
-    inputElement: HTMLInputElement | null;
-    displayElement: HTMLElement | null;
-    widget: WidgetInstance;
-    config: WidgetInstance['config'];
-    t: TranslationFunction;
-    onDateSelectCallback: ((date: Date) => void) | null;
-    styles: string;
-    triggerElement: HTMLElement | null;
-    anchorElement: HTMLElement | null;
-    selectedDate: Date;
-    currentViewMonth: number;
-    currentViewYear: number;
-    calendarContainer: HTMLDivElement | null;
-    shadowRoot: ShadowRoot | null;
-    calendarContentWrapper: HTMLDivElement | null;
-
-    constructor(
-        inputElement: HTMLInputElement | null, 
-        displayElement: HTMLElement | null, 
-        initialDate: Date | null, 
-        widgetInstance: WidgetInstance, 
-        onDateSelectCallback: ((date: Date) => void) | null, 
-        triggerElement: HTMLElement | null, 
-        anchorElement: HTMLElement | null, 
-        styles: string
-    ) {
+    constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerElement, anchorElement, styles) {
         this.inputElement = inputElement; // Hidden input for date value
         this.displayElement = displayElement; // Span inside "Other Date" button for text
         this.widget = widgetInstance;
@@ -219,7 +175,7 @@ export class SingleCalendar {
         this.shadowRoot.querySelectorAll(".calendar-day:not(.empty):not(.disabled)").forEach(dayElement => {
             dayElement.addEventListener("click", (e) => {
                 e.stopPropagation();
-                this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt((dayElement as HTMLElement).dataset.day || '1')));
+                this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt(dayElement.dataset.day)));
                 this._render();
             });
         });
@@ -274,7 +230,7 @@ export class SingleCalendar {
                     this.displayElement.classList.remove("placeholder");
                 }
             } else {
-                this.displayElement.textContent = String(this.t('otherDate'));
+                this.displayElement.textContent = this.t('otherDate');
                 this.displayElement.classList.add("placeholder");
             }
         }
@@ -346,7 +302,7 @@ export class SingleCalendar {
         this.calendarContainer.style.display = 'none';
     }
 
-    setSelectedDate(date: Date, triggerCallback: boolean = true): void {
+    setSelectedDate(date, triggerCallback = true) {
         this.selectedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 
         if (!isNaN(this.selectedDate.getTime())) {
@@ -366,36 +322,12 @@ export class SingleCalendar {
 }
 
 export class RangeCalendarModal {
-    widget: WidgetInstance;
-    config: WidgetInstance['config'];
-    t: TranslationFunction;
-    onRangeSelectCallback: ((startDate: Date, endDate: Date) => void) | null;
-    activityDurationDaysFixed: number | null;
-    fixedStartDate: Date | null;
-    fixedEndDate: Date | null;
-    tempStartDate: Date;
-    tempEndDate: Date;
-    currentViewMonth: number;
-    currentViewYear: number;
-    selectingStartDate: boolean;
-    modalOverlay: HTMLDivElement | null;
-    modalElement: HTMLDivElement | null;
-    calendarInstance: HTMLElement | null;
-
-    constructor(
-        initialStartDate: Date | null, 
-        initialEndDate: Date | null, 
-        widgetInstance: WidgetInstance, 
-        onRangeSelectCallback: ((startDate: Date, endDate: Date) => void) | null, 
-        overrideStartDateStr: string | null, 
-        overrideEndDateStr: string | null, 
-        activityDurationDaysFixed: number | string | null
-    ) {
+    constructor(initialStartDate, initialEndDate, widgetInstance, onRangeSelectCallback, overrideStartDateStr, overrideEndDateStr, activityDurationDaysFixed) {
         this.widget = widgetInstance;
         this.config = widgetInstance.config;
         this.t = widgetInstance.t.bind(widgetInstance);
         this.onRangeSelectCallback = onRangeSelectCallback;
-        this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(String(activityDurationDaysFixed), 10) : null;
+        this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(activityDurationDaysFixed, 10) : null;
 
         this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, {zone: 'utc'}).startOf('day').toJSDate() : null;
         if (this.fixedStartDate && isNaN(this.fixedStartDate.getTime())) this.fixedStartDate = null;

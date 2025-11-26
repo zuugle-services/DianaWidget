@@ -1,6 +1,4 @@
-import type { Translations } from './types';
-
-const translations: Translations = {
+export default {
     EN: {
         origin: "Origin",
         enterOrigin: "Enter origin",
@@ -1100,5 +1098,3 @@ const translations: Translations = {
         }
     }
 };
-
-export default translations;

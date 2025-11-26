@@ -1,26 +1,11 @@
-import { getMonthName, getShortDayName } from '../utils';
-import type { TranslationFunction } from '../types';
-
-/**
- * Arguments for single calendar HTML template
- */
-interface SingleCalendarArgs {
-    /** Translation function */
-    t: TranslationFunction;
-    /** Current view month (0-11) */
-    currentViewMonth: number;
-    /** Current view year */
-    currentViewYear: number;
-    /** Pre-rendered days HTML */
-    daysHTML: string;
-}
+import { getMonthName, getShortDayName } from '../utils.js';
 
 /**
  * Generates the HTML for the single calendar pop-up.
- * @param args - Arguments including t, currentViewMonth, currentViewYear, daysHTML.
- * @returns HTML string for the single calendar.
+ * @param {object} args - Arguments including t, currentViewMonth, currentViewYear, daysHTML.
+ * @returns {string} HTML string for the single calendar.
  */
-export function getSingleCalendarHTML(args: SingleCalendarArgs): string {
+export function getSingleCalendarHTML(args) {
     const { t, currentViewMonth, currentViewYear, daysHTML } = args;
 
     return `
