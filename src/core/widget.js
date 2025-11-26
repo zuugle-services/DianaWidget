@@ -2317,12 +2317,14 @@ export default class DianaWidget {
 
                     html += `
                 <div class="connection-element">
-                  <div class="element-time-location-group">
-                    <span class="element-time">${arrivalTime}</span>
-                    <span class="element-location">${toLocationDisplay}</span>
-                    ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
+                  <div class="connection-element-content">
+                    <div class="element-time-location-group">
+                      <span class="element-time">${arrivalTime}</span>
+                      <span class="element-location">${toLocationDisplay}</span>
+                      ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
+                    </div>
+                    <div class="element-circle"></div>
                   </div>
-                  <div class="element-circle"></div>
                 </div>
               `;
                 }
