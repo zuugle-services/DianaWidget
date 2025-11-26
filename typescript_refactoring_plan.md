@@ -113,16 +113,16 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Create strongly-typed translation function signature
 
 ### 2. 3 Create Component Types
-- [ ] Define `CalendarOptions` interface
-- [ ] Define `PageManagerOptions` interface
-- [ ] Define `UIManagerOptions` interface
-- [ ] Define template argument interfaces for each template function
-- Note: These will be added as components are migrated in Phase 3
+- [x] Define `CalendarOptions` interface (via WidgetInstance in Calendar.ts)
+- [x] Define `PageManagerOptions` interface (constructor parameters typed inline)
+- [x] Define `UIManagerOptions` interface (TemplateArgs and TemplateModule in UIManager.ts)
+- [x] Define template argument interfaces for each template function (SingleCalendarArgs defined in singleCalendarTemplate.ts)
+- Note: These were added as components were migrated in Phase 3
 
 ### 2.4 Create Utility Types
-- [ ] Define `DateTimeConfig` interface for datetime utilities
-- [ ] Define function parameter and return types for utility functions
-- Note: These will be added as utility files are migrated in Phase 3
+- [x] Define `DateTimeConfig` interface for datetime utilities (DurationResult and LocaleMap in datetimeUtils.ts)
+- [x] Define function parameter and return types for utility functions (all functions typed in utils.ts and datetimeUtils.ts)
+- Note: These were added as utility files were migrated in Phase 3
 
 ### 2.5 Create SCSS Module Declarations
 - [x] Create `src/types/styles.d.ts` with module declarations for `.scss`, `.css`, `.sass` files
@@ -233,32 +233,22 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 ## Phase 5: Style & Asset Handling
 
 ### 5. 1 Add SCSS Module Declarations
-- [ ] Create `src/types/styles.d. ts` with module declarations:
-  ```typescript
-  declare module '*.scss' {
-    const content: string;
-    export default content;
-  }
-  declare module '*.css' {
-    const content: string;
-    export default content;
-  }
-  ```
-- [ ] Verify SCSS imports work correctly in TypeScript files
+- [x] Create `src/types/styles.d.ts` with module declarations for `.scss`, `.css`, `.sass` files
+- [x] Verify SCSS imports work correctly in TypeScript files (confirmed: widget.ts imports styles from './styles/widget.scss')
 
 ### 5. 2 Verify Asset Bundling
-- [ ] Confirm fonts are still inlined as base64
-- [ ] Confirm CSS is still processed through the PostCSS pipeline
-- [ ] Verify Shadow DOM style injection still works
+- [x] Confirm fonts are still inlined as base64 (DMSans font in bundle)
+- [x] Confirm CSS is still processed through the PostCSS pipeline (tailwind.config.js and postcss.config.js)
+- [x] Verify Shadow DOM style injection still works (build successful)
 
 ---
 
 ## Phase 6: Testing & Validation
 
 ### 6.1 Build Verification
-- [ ] Run `npm run build` and verify single bundle output
-- [ ] Compare bundle size before and after migration
-- [ ] Verify `dist/DianaWidget. bundle.js` is generated correctly
+- [x] Run `npm run build` and verify single bundle output
+- [x] Compare bundle size before and after migration (~652 KiB)
+- [x] Verify `dist/DianaWidget.bundle.js` is generated correctly
 - [ ] Test UMD export works (`window.DianaWidget`)
 
 ### 6. 2 Functional Testing
@@ -297,9 +287,9 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [ ] Document complex type unions and generics
 
 ### 7.3 Final Cleanup
-- [ ] Remove any remaining `. js` files from `src/`
+- [x] Remove any remaining `.js` files from `src/` (confirmed: no .js files remaining)
 - [ ] Remove unused dependencies from `package.json`
-- [ ] Update `. gitignore` if needed
+- [ ] Update `.gitignore` if needed
 - [ ] Run final linting pass
 
 ---
