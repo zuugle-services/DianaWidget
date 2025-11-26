@@ -68,28 +68,33 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 ## Phase 2: Type Definitions & Interfaces
 
 ### 2.1 Create Core Type Definitions
-- [ ] Create `src/types/` directory
-- [ ] Create `src/types/index.ts` for exporting all types
-- [ ] Define `WidgetConfig` interface (API token, language, activity settings, etc.)
-- [ ] Define `WidgetState` interface (selected dates, connections, loading states, etc.)
-- [ ] Define `Connection` interface (transport data structures)
-- [ ] Define `TransportLeg` interface (individual leg details)
-- [ ] Define `Location` interface (address autocomplete results)
+- [x] Create `src/types/` directory
+- [x] Create `src/types/index.ts` for exporting all types
+- [x] Define `WidgetConfig` interface (API token, language, activity settings, etc.)
+- [x] Define `WidgetState` interface (selected dates, connections, loading states, etc.)
+- [x] Define `Connection` interface (transport data structures)
+- [x] Define `TransportLeg` interface (individual leg details)
+- [x] Define `Location` interface (address autocomplete results)
 
 ### 2.2 Create Translation Types
-- [ ] Define `TranslationKeys` interface based on `translations.js` structure
-- [ ] Define `Language` type union (`'EN' | 'DE' | 'FR'` etc.)
-- [ ] Create strongly-typed translation function signature
+- [x] Define `TranslationKeys` interface based on `translations.js` structure
+- [x] Define `Language` type union (`'EN' | 'DE' | 'FR'` etc.)
+- [x] Create strongly-typed translation function signature
 
 ### 2. 3 Create Component Types
 - [ ] Define `CalendarOptions` interface
 - [ ] Define `PageManagerOptions` interface
 - [ ] Define `UIManagerOptions` interface
 - [ ] Define template argument interfaces for each template function
+- Note: These will be added as components are migrated in Phase 3
 
 ### 2.4 Create Utility Types
 - [ ] Define `DateTimeConfig` interface for datetime utilities
 - [ ] Define function parameter and return types for utility functions
+- Note: These will be added as utility files are migrated in Phase 3
+
+### 2.5 Create SCSS Module Declarations
+- [x] Create `src/types/styles.d.ts` with module declarations for `.scss`, `.css`, `.sass` files
 
 ---
 
