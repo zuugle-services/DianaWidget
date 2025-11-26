@@ -61,8 +61,7 @@ export default {
         menu: {
             helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
-            legal: "Legal",
-            legalSubtitle: "Terms and privacy information."
+            imprint: "Imprint"
         },
         warnings: {
             earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
@@ -242,8 +241,7 @@ export default {
         menu: {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
-            legal: "Rechtliches",
-            legalSubtitle: "Rechtliche Informationen."
+            imprint: "Impressum"
         },
         warnings: {
             earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
@@ -423,8 +421,7 @@ export default {
         menu: {
             helpAndSupport: "Ayuda",
             helpAndSupportSubtitle: "Preguntas frecuentes y guías.",
-            legal: "Legal",
-            legalSubtitle: "Información legal."
+            imprint: "Aviso legal"
         },
         warnings: {
             earlyStart: "Advertencia: ¡Llegada anterior a la hora de inicio recomendada!",
@@ -604,8 +601,7 @@ export default {
         menu: {
             helpAndSupport: "Aide",
             helpAndSupportSubtitle: "Trouver des réponses et des guides.",
-            legal: "Mentions légales",
-            legalSubtitle: "Informations légales."
+            imprint: "Mentions légales"
         },
         warnings: {
             earlyStart: "Avertissement : Arrivée plus tôt que l'heure de début d'activité recommandée !",
@@ -785,8 +781,7 @@ export default {
         menu: {
             helpAndSupport: "Aiuto",
             helpAndSupportSubtitle: "Trova risposte e guide.",
-            legal: "Legale",
-            legalSubtitle: "Informazioni legali."
+            imprint: "Avviso legale"
         },
         warnings: {
             earlyStart: "Attenzione: Arrivo in anticipo rispetto all'orario di inizio attività consigliato!",
@@ -966,8 +961,7 @@ export default {
         menu: {
             helpAndSupport: "ความช่วยเหลือ",
             helpAndSupportSubtitle: "ค้นหาคำตอบและคู่มือ",
-            legal: "กฎหมาย",
-            legalSubtitle: "ข้อมูลทางกฎหมาย"
+            imprint: "ข้อมูลทางกฎหมาย"
         },
         warnings: {
             earlyStart: "คำเตือน: มาถึงเร็วกว่าเวลาเริ่มต้นกิจกรรมที่แนะนำ!",

@@ -24,7 +24,6 @@ import {UIManager} from '../components/UIManager';
 import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent.js';
-import {legalContent} from '../templates/legalContent.js';
 
 export default class DianaWidget {
     defaultConfig = {
@@ -811,15 +810,18 @@ export default class DianaWidget {
                 dropdown.addEventListener('click', (e) => {
                     const menuItem = e.target.closest('.menu-dropdown-item');
                     if (menuItem) {
-                        e.preventDefault();
                         if (menuItem.classList.contains('disabled')) {
+                            e.preventDefault();
                             return; // Do nothing if disabled
                         }
                         if (menuItem.id === 'shareMenuItem') {
+                            e.preventDefault();
                             this.handleShare();
                         } else if (menuItem.dataset.contentKey) {
+                            e.preventDefault();
                             this.navigateToContentPage(menuItem.dataset.contentKey);
                         }
+                        // For external links (like imprint), don't prevent default - let them navigate normally
                         // Close all dropdowns
                         menuDropdowns.forEach(d => {
                             if (d) d.style.display = 'none';
@@ -2684,7 +2686,7 @@ export default class DianaWidget {
         let contentHTML;
 
         // Get the current language, fallback to EN if not supported
-        const language = this.config.language && (helpContent[this.config.language] || legalContent[this.config.language])
+        const language = this.config.language && helpContent[this.config.language]
             ? this.config.language
             : 'EN';
 
@@ -2692,10 +2694,6 @@ export default class DianaWidget {
             case 'help':
                 title = this.t('menu.helpAndSupport');
                 contentHTML = helpContent[language];
-                break;
-            case 'legal':
-                title = this.t('menu.legal');
-                contentHTML = legalContent[language];
                 break;
             default:
                 title = this.t('content.defaultTitle');
