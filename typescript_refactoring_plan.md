@@ -110,8 +110,8 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
     - Add explicit types for all date/time parameters
 
 ### 3. 2 Migrate Translation File
-- [ ] Rename `src/translations. js` → `src/translations.ts`
-    - Define translation object type using `as const` for literal types
+- [x] Rename `src/translations. js` → `src/translations.ts`
+    - Define translation object type using `Translations` type from types/
     - Export typed translation object
     - Ensure type-safe key access
 
