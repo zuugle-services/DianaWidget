@@ -13,10 +13,19 @@
   - Created and integrated `src/services/ApiService.ts` (~260 lines)
   - Created `src/core/StateManager.ts` (~280 lines) - state management class with getter/setter properties
   - Created `src/core/EventManager.ts` (~250 lines) - event binding and cleanup management
+- **Phase 4.4:** Improve type safety (replace `any` types) - COMPLETED:
+  - Added `ConnectionElement` interface with all required properties
+  - Updated `Connection` interface with `connection_id`, `connection_anytime`, `connection_elements`, `connection_transfers`, `connection_ticketshop_provider`
+  - Updated `Suggestion` interface to match GeoJSON-like API response with `diana_properties` and `geometry`
+  - Updated `WidgetState.availableDates` to use Luxon `DateTime[]` instead of `Date[]`
+  - Removed all `as any` type assertions (except one necessary for URLSearchParams)
+  - Removed all `: any` type annotations
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.3:** Add strict null checks
-- **Phase 4.4:** Improve type safety (replace `any` types)
+- **Phase 4.3:** Add strict null checks (214+ TypeScript errors to fix when enabled)
+  - Requires adding null guards in Calendar.ts, Validator.ts, widget.ts
+  - Requires optional chaining (`?.`) and nullish coalescing (`??`) in many places
+  - Consider doing incrementally by file
 
 ### 📝 NOTES:
 - tsconfig.json uses lenient settings (strict: false, noImplicitAny: false, strictNullChecks: false) for gradual migration
@@ -26,13 +35,18 @@
   - Class property declarations with types
   - Constructor parameter types
   - Method return type annotations where critical
-  - Type assertions for API responses (using `any` where types don't match actual API structure)
+  - Proper type definitions for API responses (no more `any` types)
   - Custom interfaces: WidgetElements (ApiError, FetchOptions moved to services)
   - Event handler type casting for DOM events
 - Validator.ts: Extracted config validation logic (~130 lines) into separate module
 - ApiService.ts: Created API service class with fetch delegation, error handling, and type exports
 - StateManager.ts: Created state management class (~280 lines) with getter/setter properties and helper methods
 - EventManager.ts: Created event manager class (~250 lines) for DOM event binding and cleanup
+- Type safety improvements:
+  - `Connection` now has proper types for all properties used in widget.ts
+  - `ConnectionElement` interface added for connection leg/segment data
+  - `Suggestion` interface matches actual GeoJSON-like API response structure
+  - All `as any` type assertions removed from widget.ts (only `Record<string, string>` for URLSearchParams remains)
 
 ---
 
@@ -215,14 +229,20 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Move CSS/SCSS type declarations to `src/types/styles.d.ts` (already exists)
 - [x] Create barrel exports (`index.ts`) in each directory
 
-### 4. 3 Add Strict Null Checks
-- [ ] Enable `strictNullChecks` in `tsconfig. json`
+### 4.3 Add Strict Null Checks
+- [ ] Enable `strictNullChecks` in `tsconfig.json`
 - [ ] Add null guards where DOM elements are accessed
 - [ ] Handle potential undefined values from API responses
 - [ ] Add optional chaining (`?.`) and nullish coalescing (`??`) where appropriate
+- **Note:** 214+ TypeScript errors to fix when strictNullChecks is enabled
 
 ### 4.4 Improve Type Safety
-- [ ] Replace `any` types with specific types (aim for zero `any` usage)
+- [x] Replace `any` types with specific types (aim for zero `any` usage)
+  - Added `ConnectionElement` interface with all required properties
+  - Updated `Connection` interface with all used properties
+  - Updated `Suggestion` interface to match GeoJSON-like API response
+  - Updated `WidgetState.availableDates` to use Luxon `DateTime[]`
+  - Removed all `as any` type assertions (only `Record<string, string>` for URLSearchParams remains)
 - [ ] Use discriminated unions for different connection types
 - [ ] Add generic types where reusable patterns exist
 - [ ] Use `readonly` for immutable properties

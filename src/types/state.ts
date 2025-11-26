@@ -2,6 +2,7 @@
  * State types for DianaWidget
  */
 
+import type { DateTime } from 'luxon';
 import type { Connection, Suggestion } from './api';
 
 /**
@@ -81,6 +82,6 @@ export interface WidgetState {
     /** Preselect times for shared journeys */
     preselectTimes: PreselectTimes | null;
     
-    /** Available dates from dateList (computed internally) */
-    availableDates?: Date[];
+    /** Available dates from dateList (computed internally as Luxon DateTime) */
+    availableDates?: DateTime[];
 }
