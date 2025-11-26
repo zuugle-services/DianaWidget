@@ -25,52 +25,186 @@ import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent';
 
-export default class DianaWidget {
-    defaultConfig = {
-        activityName: "[Activity Name]",
-        requiredFields: [
-            'activityStartLocation',
-            'activityStartLocationType',
-            'activityEndLocation',
-            'activityEndLocationType',
-            'activityEarliestStartTime',
-            'activityLatestStartTime',
-            'activityEarliestEndTime',
-            'activityLatestEndTime',
-            'activityDurationMinutes',
-            'apiToken'
-        ],
-        activityStartLocationDisplayName: null,
-        activityEndLocationDisplayName: null,
-        timezone: "Europe/Vienna",
-        activityStartTimeLabel: null,
-        activityEndTimeLabel: null,
-        apiBaseUrl: "https://api.zuugle-services.net",
-        language: 'EN',
-        dev: false,
-        cacheUserStartLocation: true,
-        userStartLocationCacheTTLMinutes: 15,
-        overrideUserStartLocation: null,
-        overrideUserStartLocationType: null,
-        disableUserStartLocationField: false,
-        displayStartDate: null,
-        displayEndDate: null,
-        destinationInputName: null,
-        multiday: false,
-        overrideActivityStartDate: null,
-        overrideActivityEndDate: null,
-        activityDurationDaysFixed: null,
-        share: true,
-        allowShareView: true,
-        shareURLPrefix: null,
-        hideOverriddenActivityStartDate: true,
-        dateList: null,
-        onDateChange: null,
-        onApiTokenExpired: null,
-    };
+import type {
+    WidgetConfig,
+    PartialWidgetConfig,
+    WidgetState,
+    Connection,
+    Suggestion
+} from '../types';
 
-    constructor(config = {}, containerId = "dianaWidgetContainer") {
-        this.config = {...this.defaultConfig, ...config};
+/** 
+ * Interface for cached DOM elements
+ */
+interface WidgetElements {
+    modal: HTMLElement | null;
+    innerContainer: HTMLElement | null;
+    formPage: HTMLElement | null;
+    resultsPage: HTMLElement | null;
+    contentPage: HTMLElement | null;
+    originInput: HTMLInputElement | null;
+    suggestionsContainer: HTMLElement | null;
+    searchBtn: HTMLButtonElement | null;
+    backBtn: HTMLButtonElement | null;
+    formErrorContainer: HTMLElement | null;
+    formDebugContainer: HTMLElement | null;
+    resultsErrorContainer: HTMLElement | null;
+    resultsDebugContainer: HTMLElement | null;
+    infoContainer: HTMLElement | null;
+    collapsibleToActivity: HTMLElement | null;
+    collapsibleFromActivity: HTMLElement | null;
+    responseBox: HTMLElement | null;
+    responseBoxBottom: HTMLElement | null;
+    topSlider: HTMLElement | null;
+    bottomSlider: HTMLElement | null;
+    activityTimeBox: HTMLElement | null;
+    currentLocationBtn: HTMLButtonElement | null;
+    clearInputBtn: HTMLButtonElement | null;
+    activityDateStart: HTMLInputElement | null;
+    dateDisplayStart: HTMLElement | null;
+    activityDateEnd: HTMLInputElement | null;
+    dateDisplayEnd: HTMLElement | null;
+    activityDate: HTMLInputElement | null;
+    dateDisplay: HTMLElement | null;
+    dateBtnToday: HTMLButtonElement | null;
+    dateBtnTomorrow: HTMLButtonElement | null;
+    dateBtnOther: HTMLButtonElement | null;
+    otherDateText: HTMLElement | null;
+    dateSelectorButtonsGroup: HTMLElement | null;
+    toActivityDateDisplay: HTMLElement | null;
+    fromActivityDateDisplay: HTMLElement | null;
+    formPageMenuButton: HTMLButtonElement | null;
+    resultsPageMenuButton: HTMLButtonElement | null;
+    contentPageMenuButton: HTMLButtonElement | null;
+    formMenuDropdown: HTMLElement | null;
+    resultsMenuDropdown: HTMLElement | null;
+    contentMenuDropdown: HTMLElement | null;
+    contentPageBackBtn: HTMLButtonElement | null;
+    contentPageTitle: HTMLElement | null;
+    contentPageBody: HTMLElement | null;
+    menuModalOverlay?: HTMLElement | null;
+    dateSelect?: HTMLSelectElement | null;
+    [key: string]: HTMLElement | null | undefined;
+}
+
+/**
+ * Extended Error interface for API errors
+ */
+interface ApiError extends Error {
+    isSessionExpired?: boolean;
+    response?: Response;
+    body?: unknown;
+}
+
+/**
+ * Options for fetch API calls
+ */
+interface FetchOptions extends RequestInit {
+    headers?: Record<string, string>;
+}
+
+export default class DianaWidget {
+    // Class property declarations
+    defaultConfig: WidgetConfig;
+    config: WidgetConfig;
+    container: HTMLElement | null;
+    shadowRoot: ShadowRoot | null;
+    dianaWidgetRootContainer: HTMLElement | null;
+    CACHE_KEY_USER_START_LOCATION: string;
+    state: WidgetState;
+    loadingTextTimeout1: ReturnType<typeof setTimeout> | null;
+    loadingTextTimeout2: ReturnType<typeof setTimeout> | null;
+    singleCalendarInstance: SingleCalendar | null;
+    rangeCalendarModal: RangeCalendarModal | null;
+    pageManager: PageManager | null;
+    uiManager: UIManager | null;
+    elements: WidgetElements;
+    debouncedHandleAddressInput: (query: string) => void;
+    lastQuery: string;
+
+    constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
+        // Initialize default config
+        this.defaultConfig = {
+            activityName: "[Activity Name]",
+            requiredFields: [
+                'activityStartLocation',
+                'activityStartLocationType',
+                'activityEndLocation',
+                'activityEndLocationType',
+                'activityEarliestStartTime',
+                'activityLatestStartTime',
+                'activityEarliestEndTime',
+                'activityLatestEndTime',
+                'activityDurationMinutes',
+                'apiToken'
+            ],
+            activityStartLocationDisplayName: null,
+            activityEndLocationDisplayName: null,
+            timezone: "Europe/Vienna",
+            activityStartTimeLabel: null,
+            activityEndTimeLabel: null,
+            apiBaseUrl: "https://api.zuugle-services.net",
+            language: 'EN',
+            dev: false,
+            cacheUserStartLocation: true,
+            userStartLocationCacheTTLMinutes: 15,
+            overrideUserStartLocation: null,
+            overrideUserStartLocationType: null,
+            disableUserStartLocationField: false,
+            displayStartDate: null,
+            displayEndDate: null,
+            destinationInputName: null,
+            multiday: false,
+            overrideActivityStartDate: null,
+            overrideActivityEndDate: null,
+            activityDurationDaysFixed: null,
+            share: true,
+            allowShareView: true,
+            shareURLPrefix: null,
+            hideOverriddenActivityStartDate: true,
+            dateList: null,
+            onDateChange: null,
+            onApiTokenExpired: null,
+        };
+        
+        this.config = {...this.defaultConfig, ...config} as WidgetConfig;
+        
+        // Initialize properties that need default values
+        this.shadowRoot = null;
+        this.dianaWidgetRootContainer = null;
+        this.CACHE_KEY_USER_START_LOCATION = '';
+        this.loadingTextTimeout1 = null;
+        this.loadingTextTimeout2 = null;
+        this.singleCalendarInstance = null;
+        this.rangeCalendarModal = null;
+        this.pageManager = null;
+        this.uiManager = null;
+        this.elements = {} as WidgetElements;
+        this.lastQuery = '';
+        this.state = {
+            fromConnections: [],
+            toConnections: [],
+            selectedToConnection: null,
+            selectedFromConnection: null,
+            selectedDate: null,
+            selectedEndDate: null,
+            loading: false,
+            error: null,
+            info: null,
+            suggestions: [],
+            recommendedToIndex: 0,
+            recommendedFromIndex: 0,
+            activityTimes: {
+                start: '',
+                end: '',
+                duration: '',
+                warning_duration: false,
+            },
+            currentContentKey: null,
+            preselectTimes: null
+        };
+        this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), 700);
+        
         const configErrors = this.validateConfig(this.config);
 
         this.container = document.getElementById(containerId);
@@ -152,36 +286,9 @@ export default class DianaWidget {
                 initialSelectedEndDate = new Date(initialSelectedStartDate.valueOf());
             }
 
-            this.state = {
-                fromConnections: [],
-                toConnections: [],
-                selectedToConnection: null,
-                selectedFromConnection: null,
-                selectedDate: initialSelectedStartDate,
-                selectedEndDate: initialSelectedEndDate,
-                loading: false,
-                error: null,
-                info: null,
-                suggestions: [],
-                recommendedToIndex: 0,
-                recommendedFromIndex: 0,
-                activityTimes: {
-                    start: '',
-                    end: '',
-                    duration: '',
-                    warning_duration: false,
-                },
-                currentContentKey: null,
-                preselectTimes: null
-            };
-
-            this.loadingTextTimeout1 = null;
-            this.loadingTextTimeout2 = null;
-            this.singleCalendarInstance = null;
-            this.pageManager = null;
-            this.uiManager = null;
-
-            this.debouncedHandleAddressInput = debounce((query) => this.handleAddressInput(query), 700);
+            // Update state with calculated dates
+            this.state.selectedDate = initialSelectedStartDate;
+            this.state.selectedEndDate = initialSelectedEndDate;
 
             // The main initialization logic is now split.
             if (shareId && this.config.allowShareView) {
@@ -378,27 +485,27 @@ export default class DianaWidget {
         }
     }
 
-    _showFallbackUI() {
+    _showFallbackUI(): void {
         this._showFatalError(this.t('errors.widgetLoadErrorTitle'), this.t('errors.api.internalError'));
     }
 
-    t(keyPath, replacements = {}) {
+    t(keyPath: string, replacements: Record<string, string> = {}): string {
         const keys = keyPath.split('.');
-        let result = translations[this.config.language];
+        let result: unknown = translations[this.config.language];
         for (const key of keys) {
-            result = result?.[key];
+            result = (result as Record<string, unknown>)?.[key];
             if (!result) break;
         }
         if (!result && this.config.language !== 'EN') {
-            let fallbackResult = translations.EN;
+            let fallbackResult: unknown = translations.EN;
             for (const key of keys) {
-                fallbackResult = fallbackResult?.[key];
+                fallbackResult = (fallbackResult as Record<string, unknown>)?.[key];
                 if (!fallbackResult) break;
             }
             result = fallbackResult;
         }
 
-        let text = result || `[${keyPath}]`;
+        let text: string = (result as string) || `[${keyPath}]`;
 
         for (const placeholder in replacements) {
             if (Object.hasOwnProperty.call(replacements, placeholder)) {
@@ -478,19 +585,22 @@ export default class DianaWidget {
         this._initializeOriginInputWithOverridesAndCache();
     }
 
-    _setupDateInput() {
+    _setupDateInput(): void {
         if (this.config.multiday || this.config.overrideActivityStartDate) {
             return;
         }
 
         if (this.config.dateList) {
             const now = DateTime.now().setZone(this.config.timezone).startOf('day');
-            this.state.availableDates = this.config.dateList
+            const availableDates = this.config.dateList
                 .map(d => DateTime.fromISO(d, {zone: 'utc'}).startOf('day'))
                 .filter(dt => dt >= now)
-                .sort((a, b) => a - b);
+                .sort((a, b) => a.toMillis() - b.toMillis());
+            
+            // Store as any since it's internally used as DateTime[]
+            (this.state as any).availableDates = availableDates;
 
-            if (this.state.availableDates.length > 0) {
+            if (availableDates.length > 0) {
                 const dateContainer = this.elements.dateSelectorButtonsGroup?.parentElement;
                 if (dateContainer) {
                     dateContainer.innerHTML = '';
@@ -504,21 +614,21 @@ export default class DianaWidget {
 
                     const select = document.createElement('select');
                     select.id = 'diana-date-select';
-                    this.state.availableDates.forEach(dt => {
+                    availableDates.forEach(dt => {
                         const option = document.createElement('option');
                         const isoDate = dt.toISODate();
-                        option.value = isoDate;
+                        option.value = isoDate || '';
                         option.textContent = this.formatDateForSelect(dt);
                         select.appendChild(option);
                     });
                     dateContainer.appendChild(select);
                     this.elements.dateSelect = select;
 
-                    const initialDate = this.state.availableDates[0].toJSDate();
+                    const initialDate = availableDates[0].toJSDate();
                     this.onDateSelectedByButton(initialDate);
 
                     select.addEventListener('change', (e) => {
-                        const selectedIso = e.target.value;
+                        const selectedIso = (e.target as HTMLSelectElement).value;
                         const newDate = DateTime.fromISO(selectedIso, {zone: 'utc'}).toJSDate();
                         this.onDateSelectedByButton(newDate);
                     });
@@ -527,7 +637,7 @@ export default class DianaWidget {
         }
     }
 
-    formatDateForSelect(luxonDate) {
+    formatDateForSelect(luxonDate: DateTime): string {
         const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
         const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
         return luxonDate.setLocale(locale).toFormat('ccc, dd. MMM yyyy');
@@ -765,13 +875,14 @@ export default class DianaWidget {
         
         if (shouldEnableOriginInput && this.elements.originInput) {
             this.elements.originInput.addEventListener('input', (e) => {
-                this.elements.originInput.removeAttribute("data-lat");
-                this.elements.originInput.removeAttribute("data-lon");
+                this.elements.originInput!.removeAttribute("data-lat");
+                this.elements.originInput!.removeAttribute("data-lon");
                 this.clearMessages();
-                this.debouncedHandleAddressInput(e.target.value.trim());
+                const target = e.target as HTMLInputElement;
+                this.debouncedHandleAddressInput(target.value.trim());
 
                 if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
-                    if (e.target.value.trim()) {
+                    if (target.value.trim()) {
                         this.elements.clearInputBtn.style.display = 'block';
                         this.elements.currentLocationBtn.style.display = 'none';
                     } else {
@@ -782,7 +893,8 @@ export default class DianaWidget {
             });
             if (this.elements.suggestionsContainer) {
                 this.elements.suggestionsContainer.addEventListener('click', (e) => {
-                    if (e.target.classList.contains('suggestion-item')) this.handleSuggestionSelect(e.target.dataset.value, e.target.dataset.lat, e.target.dataset.lon);
+                    const target = e.target as HTMLElement;
+                    if (target.classList.contains('suggestion-item')) this.handleSuggestionSelect(target.dataset.value, target.dataset.lat, target.dataset.lon);
                 });
             }
 
@@ -855,7 +967,8 @@ export default class DianaWidget {
         menuDropdowns.forEach(dropdown => {
             if (dropdown) {
                 dropdown.addEventListener('click', (e) => {
-                    const menuItem = e.target.closest('.menu-dropdown-item');
+                    const target = e.target as HTMLElement;
+                    const menuItem = target.closest('.menu-dropdown-item') as HTMLElement | null;
                     if (menuItem) {
                         if (menuItem.classList.contains('disabled')) {
                             e.preventDefault();
@@ -879,12 +992,13 @@ export default class DianaWidget {
         });
 
         document.addEventListener("click", (e) => {
-            if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(e.target) && this.elements.originInput && !this.elements.originInput.contains(e.target)) {
+            const target = e.target as Node;
+            if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(target) && this.elements.originInput && !this.elements.originInput.contains(target)) {
                 this.state.suggestions = [];
                 this.renderSuggestions();
             }
             // Close menu dropdowns if click is outside
-            const clickedInsideMenu = menuButtons.some(b => b && b.contains(e.target)) || menuDropdowns.some(d => d && d.style.display === 'block' && d.contains(e.target));
+            const clickedInsideMenu = menuButtons.some(b => b && b.contains(target)) || menuDropdowns.some(d => d && d.style.display === 'block' && d.contains(target));
             if (!clickedInsideMenu) {
                 menuDropdowns.forEach(d => {
                     if (d) d.style.display = 'none';
@@ -897,7 +1011,7 @@ export default class DianaWidget {
      * Toggles the collapsible state of a journey box, if it has content.
      * @param {string} type - 'to' or 'from'.
      */
-    toggleCollapsible(type) {
+    toggleCollapsible(type: string): void {
         const container = type === 'to'
             ? this.elements.collapsibleToActivity
             : this.elements.collapsibleFromActivity;
@@ -907,7 +1021,7 @@ export default class DianaWidget {
         }
     }
 
-    _handleSessionExpired() {
+    _handleSessionExpired(): void {
         // Disable UI elements to prevent further interaction
         const elementsToDisable = [
             this.elements.originInput,
@@ -923,11 +1037,12 @@ export default class DianaWidget {
             this.elements.activityDate
         ];
 
-        this.shadowRoot.querySelectorAll(".date-input-container").forEach(el => {
-            if (el) {
-                el.disabled = true;
-                el.style.pointerEvents = 'none';
-                el.classList.add('disabled-by-session-expiry');
+        this.shadowRoot?.querySelectorAll(".date-input-container").forEach(el => {
+            const htmlEl = el as HTMLElement;
+            if (htmlEl) {
+                (htmlEl as any).disabled = true;
+                htmlEl.style.pointerEvents = 'none';
+                htmlEl.classList.add('disabled-by-session-expiry');
             }
         });
 
@@ -951,7 +1066,7 @@ export default class DianaWidget {
             const reloadButton = document.createElement('button');
             reloadButton.textContent = this.t('reloadPage');
             reloadButton.className = 'reload-button';
-            reloadButton.onclick = () => window.location.reload(true);
+            reloadButton.onclick = () => window.location.reload();
             messageContainer.appendChild(reloadButton);
 
             this.elements.formErrorContainer.innerHTML = ''; // Clear previous errors
@@ -961,8 +1076,8 @@ export default class DianaWidget {
         }
     }
 
-    async _fetchApi(url, originalOptions = {}, isRetry = false) {
-        const options = {
+    async _fetchApi(url: string, originalOptions: FetchOptions = {}, isRetry: boolean = false): Promise<Response> {
+        const options: FetchOptions = {
             ...originalOptions,
             headers: {
                 ...originalOptions.headers,
@@ -988,19 +1103,19 @@ export default class DianaWidget {
                 } catch (error) {
                     console.error("Token refresh via onApiTokenExpired failed:", error);
                     this._handleSessionExpired();
-                    const sessionError = new Error(this.t('errors.sessionExpired'));
+                    const sessionError: ApiError = new Error(this.t('errors.sessionExpired'));
                     sessionError.isSessionExpired = true;
                     throw sessionError;
                 }
             } else {
                 this._handleSessionExpired();
-                const sessionError = new Error(this.t('errors.sessionExpired'));
+                const sessionError: ApiError = new Error(this.t('errors.sessionExpired'));
                 sessionError.isSessionExpired = true;
                 throw sessionError;
             }
         }
 
-        const error = new Error(`API Error: ${response.status} ${response.statusText}`);
+        const error: ApiError = new Error(`API Error: ${response.status} ${response.statusText}`);
         error.response = response;
         try {
             error.body = await response.clone().json();
@@ -1011,7 +1126,7 @@ export default class DianaWidget {
     }
 
 
-    async handleCurrentLocation() {
+    async handleCurrentLocation(): Promise<void> {
         this.clearMessages();
         if (!navigator.geolocation) {
             this.showError(this.t('errors.geolocationNotSupported'), 'form');
@@ -1025,7 +1140,7 @@ export default class DianaWidget {
 
         this.showInfo(this.t('infos.fetchingLocation'));
         try {
-            const position = await new Promise((resolve, reject) => {
+            const position = await new Promise<GeolocationPosition>((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, {
                     enableHighAccuracy: true, timeout: 10000, maximumAge: 0
                 });
@@ -1034,15 +1149,16 @@ export default class DianaWidget {
             await this.fetchReverseGeocode(latitude, longitude);
         } catch (error) {
             let errorMsg = this.t('errors.geolocationError');
-            if (error.code) {
-                switch (error.code) {
-                    case error.PERMISSION_DENIED:
+            const geoError = error as GeolocationPositionError;
+            if (geoError.code) {
+                switch (geoError.code) {
+                    case geoError.PERMISSION_DENIED:
                         errorMsg = this.t('errors.geolocationPermissionDenied');
                         break;
-                    case error.POSITION_UNAVAILABLE:
+                    case geoError.POSITION_UNAVAILABLE:
                         errorMsg = this.t('errors.geolocationPositionUnavailable');
                         break;
-                    case error.TIMEOUT:
+                    case geoError.TIMEOUT:
                         errorMsg = this.t('errors.geolocationTimeout');
                         break;
                 }
@@ -1058,7 +1174,7 @@ export default class DianaWidget {
         }
     }
 
-    async fetchReverseGeocode(latitude, longitude) {
+    async fetchReverseGeocode(latitude: number, longitude: number): Promise<void> {
         this.showInfo(this.t('infos.fetchingAddress'));
         try {
             const response = await this._fetchApi(
@@ -1158,22 +1274,23 @@ export default class DianaWidget {
         }
 
         if (currentIndex >= 0 && currentIndex < items.length) {
-            items[currentIndex].classList.add('active-suggestion');
-            items[currentIndex].focus(); // Make it focusable for screen readers and further interaction
+            const item = items[currentIndex] as HTMLElement;
+            item.classList.add('active-suggestion');
+            item.focus(); // Make it focusable for screen readers and further interaction
             // Scroll into view if necessary
-            items[currentIndex].scrollIntoView({block: 'nearest', inline: 'nearest'});
-            this.elements.originInput.setAttribute('aria-activedescendant', items[currentIndex].id || `suggestion-item-${currentIndex}`); // Assuming items have IDs
+            item.scrollIntoView({block: 'nearest', inline: 'nearest'});
+            this.elements.originInput?.setAttribute('aria-activedescendant', item.id || `suggestion-item-${currentIndex}`); // Assuming items have IDs
         }
     }
 
-    handleSuggestionEnter(e) {
+    handleSuggestionEnter(e: KeyboardEvent): void {
         if (!this.elements.suggestionsContainer || this.state.suggestions.length === 0) return;
 
-        const activeItem = this.elements.suggestionsContainer.querySelector('.suggestion-item.active-suggestion');
+        const activeItem = this.elements.suggestionsContainer.querySelector('.suggestion-item.active-suggestion') as HTMLElement | null;
         if (activeItem) {
             e.preventDefault(); // Prevent form submission if input is in a form
             this.handleSuggestionSelect(activeItem.dataset.value, activeItem.dataset.lat, activeItem.dataset.lon);
-        } else if (this.state.suggestions.length > 0 && this.elements.originInput.value.trim().length >= 2) {
+        } else if (this.state.suggestions.length > 0 && this.elements.originInput?.value.trim().length >= 2) {
             // If no specific item is active but there are suggestions and input has text,
             // potentially select the first one or trigger search directly.
             // For now, let's assume if Enter is pressed without an active suggestion,
@@ -1189,7 +1306,7 @@ export default class DianaWidget {
         // If no active item and no clear "next step", the default browser behavior for Enter on an input might occur (e.g., form submission).
     }
 
-    async handleSearch() {
+    async handleSearch(): Promise<void> {
         if (this.loadingTextTimeout1) clearTimeout(this.loadingTextTimeout1);
         if (this.loadingTextTimeout2) clearTimeout(this.loadingTextTimeout2);
         this.loadingTextTimeout1 = null;
@@ -1213,11 +1330,11 @@ export default class DianaWidget {
             const activityDateEndInput = this.config.multiday ? this.elements.activityDateEnd : null;
 
             if (!this.config.overrideActivityStartDate && (!activityDateStartInput || !activityDateStartInput.value)) {
-                this.showInfo(this.t('infos.dateRequired'), 'form');
+                this.showInfo(this.t('infos.dateRequired'));
                 return;
             }
             if (this.config.multiday && !this.config.overrideActivityEndDate && (!activityDateEndInput || !activityDateEndInput.value) && !this.config.activityDurationDaysFixed) {
-                this.showInfo(this.t('infos.endDateRequired'), 'form');
+                this.showInfo(this.t('infos.endDateRequired'));
                 return;
             }
         }
@@ -1303,7 +1420,7 @@ export default class DianaWidget {
         }
     }
 
-    async fetchActivityData() {
+    async fetchActivityData(): Promise<any> {
         const activityStartDate = this.state.selectedDate;
         if (!activityStartDate) throw new Error("Activity start date is not available.");
 
@@ -1316,7 +1433,7 @@ export default class DianaWidget {
         const utcEarliestEnd = convertLocalTimeToUTC(this.config.activityEarliestEndTime, referenceDateForEndTimes, this.config.timezone);
         const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime, referenceDateForEndTimes, this.config.timezone);
 
-        let params = {
+        const params: Record<string, string | number | undefined> = {
             date: formatDatetime(activityStartDate, this.config.timezone), // Use timezone for date formatting if it's local
             activity_name: this.config.activityName,
             activity_start_location: this.config.activityStartLocation,
@@ -1340,10 +1457,10 @@ export default class DianaWidget {
             }
         }
 
-        if (this.elements.originInput.attributes["data-lat"] && this.elements.originInput.attributes["data-lon"]) {
-            params["user_start_location"] = `${this.elements.originInput.attributes['data-lat'].value},${this.elements.originInput.attributes['data-lon'].value}`;
+        if (this.elements.originInput?.attributes["data-lat"] && this.elements.originInput?.attributes["data-lon"]) {
+            params["user_start_location"] = `${(this.elements.originInput.attributes as NamedNodeMap).getNamedItem('data-lat')?.value},${(this.elements.originInput.attributes as NamedNodeMap).getNamedItem('data-lon')?.value}`;
             params["user_start_location_type"] = "coordinates";
-        } else {
+        } else if (this.elements.originInput) {
             params["user_start_location"] = this.elements.originInput.value;
             params["user_start_location_type"] = "address";
         }
@@ -1353,7 +1470,7 @@ export default class DianaWidget {
         if (this.config.activityStartTimeLabel) params.activity_start_time_label = this.config.activityStartTimeLabel;
         if (this.config.activityEndTimeLabel) params.activity_end_time_label = this.config.activityEndTimeLabel;
 
-        const queryString = new URLSearchParams(params);
+        const queryString = new URLSearchParams(params as any);
         const response = await this._fetchApi(
             `${this.config.apiBaseUrl}/connections?${queryString}`
         );
@@ -1361,24 +1478,24 @@ export default class DianaWidget {
         const result = await response.json();
         if (!result?.connections?.from_activity || !result?.connections?.to_activity) {
             console.error("API response missing expected connection data:", result);
-            const apiError = new Error(this.t('errors.api.invalidDataReceived'));
+            const apiError: ApiError = new Error(this.t('errors.api.invalidDataReceived'));
             apiError.response = {
                 json: async () => ({error: "Invalid connection data", code: "APP_INVALID_DATA"}),
                 status: 500
-            };
+            } as unknown as Response;
             throw apiError;
         }
         this.state.toConnections = result.connections.to_activity;
         this.state.fromConnections = result.connections.from_activity;
 
         // Mark original first and last elements
-        this.state.toConnections.forEach(conn => {
+        this.state.toConnections.forEach((conn: any) => {
             if (conn.connection_elements && conn.connection_elements.length > 0) {
                 conn.connection_elements[0].isOriginalFirst = true;
                 conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
             }
         });
-        this.state.fromConnections.forEach(conn => {
+        this.state.fromConnections.forEach((conn: any) => {
             if (conn.connection_elements && conn.connection_elements.length > 0) {
                 conn.connection_elements[0].isOriginalFirst = true;
                 conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
@@ -1440,9 +1557,9 @@ export default class DianaWidget {
         });
     }
 
-    renderSuggestions() {
+    renderSuggestions(): void {
         if (!this.elements.suggestionsContainer || !this.elements.originInput) return;
-        this.elements.suggestionsContainer.innerHTML = this.state.suggestions
+        this.elements.suggestionsContainer.innerHTML = (this.state.suggestions as any[])
             .map(feature => `
         <div class="suggestion-item" role="option" tabindex="0"
              data-value="${feature.diana_properties.display_name.replace(/"/g, '"')}"
@@ -1454,7 +1571,7 @@ export default class DianaWidget {
         this.elements.originInput.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
     }
 
-    renderConnectionResults() {
+    renderConnectionResults(): void {
         this.showError(null, 'results');
         this.elements.topSlider.innerHTML = '';
         this.elements.bottomSlider.innerHTML = '';
@@ -1496,7 +1613,7 @@ export default class DianaWidget {
         if (this.state.toConnections.length > 0) {
             let foundRecommendedTo = false;
             for (let i = 0; i < this.state.toConnections.length; i++) {
-                if (this.state.toConnections[i].connection_id === this.state.recommendedToIndex) { // Original recommendedToIndex was an ID
+                if ((this.state.toConnections[i] as any).connection_id === this.state.recommendedToIndex) { // Original recommendedToIndex was an ID
                     this.state.recommendedToIndex = i; // Update to be an array index
                     foundRecommendedTo = true;
                     break;
@@ -1510,7 +1627,7 @@ export default class DianaWidget {
         if (this.state.fromConnections.length > 0) {
             let foundRecommendedFrom = false;
             for (let i = 0; i < this.state.fromConnections.length; i++) {
-                if (this.state.fromConnections[i].connection_id === this.state.recommendedFromIndex) { // Original recommendedFromIndex was an ID
+                if ((this.state.fromConnections[i] as any).connection_id === this.state.recommendedFromIndex) { // Original recommendedFromIndex was an ID
                     this.state.recommendedFromIndex = i; // Update to be an array index
                     foundRecommendedFrom = true;
                     break;
@@ -1533,12 +1650,12 @@ export default class DianaWidget {
 
 
         // Automatically expand single "anytime" connections
-        if (this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime) {
+        if (this.state.toConnections.length === 1 && (this.state.toConnections[0] as any).connection_anytime) {
             if (this.elements.collapsibleToActivity) {
                 this.elements.collapsibleToActivity.classList.add('expanded');
             }
         }
-        if (this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime) {
+        if (this.state.fromConnections.length === 1 && (this.state.fromConnections[0] as any).connection_anytime) {
             if (this.elements.collapsibleFromActivity) {
                 this.elements.collapsibleFromActivity.classList.add('expanded');
             }
@@ -1848,10 +1965,10 @@ export default class DianaWidget {
             }
 
             // Collapse containers on new selection, unless they are single "anytime" connections.
-            if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime)) {
+            if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && (this.state.toConnections[0] as any).connection_anytime)) {
                 this.elements.collapsibleToActivity.classList.remove('expanded');
             }
-            if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime)) {
+            if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && (this.state.fromConnections[0] as any).connection_anytime)) {
                 this.elements.collapsibleFromActivity.classList.remove('expanded');
             }
 
@@ -1871,12 +1988,12 @@ export default class DianaWidget {
     }
 
 
-    _updateFromConnectionDots() {
+    _updateFromConnectionDots(): void {
         if (this.config.multiday || !this.elements.bottomSlider) {
             return;
         }
 
-        const recommendedDurationMinutes = parseInt(this.config.activityDurationMinutes, 10);
+        const recommendedDurationMinutes = parseInt(String(this.config.activityDurationMinutes), 10);
 
         // Clear all dots if no 'to' connection is selected
         if (!this.state.selectedToConnection) {
@@ -1946,8 +2063,8 @@ export default class DianaWidget {
                         month: activityStartDate.getMonth() + 1,
                         day: activityStartDate.getDate()
                     });
-                const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
-                this.state.activityTimes.warning_duration = durationResult.totalMinutes < parseInt(this.config.activityDurationMinutes, 10);
+                const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key: string) => this.t(key));
+                this.state.activityTimes.warning_duration = durationResult.totalMinutes < parseInt(String(this.config.activityDurationMinutes), 10);
             } else {
                 this.state.activityTimes.warning_duration = false;
             }
@@ -1956,15 +2073,17 @@ export default class DianaWidget {
 
         } catch (error) {
             console.error("Error updating activity time box:", error);
-            this.elements.activityTimeBox.innerHTML = `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
+            if (this.elements.activityTimeBox) {
+                this.elements.activityTimeBox.innerHTML = `<div class="error-message">${this.t('errors.activityTimeError')}</div>`;
+            }
         }
     }
 
-    getActivityTimeBoxHTML() {
+    getActivityTimeBoxHTML(): string {
         try {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
-            const recommendedDurationMinutes = parseInt(this.config.activityDurationMinutes, 10);
+            const recommendedDurationMinutes = parseInt(String(this.config.activityDurationMinutes), 10);
 
             let durationDisplayHtml;
             let durationWarningHtml = '';
@@ -2110,7 +2229,7 @@ export default class DianaWidget {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ connection_elements: connection.connection_elements })
+                body: JSON.stringify({ connection_elements: (connection as any).connection_elements })
             });
 
             const result = await response.json();
@@ -2121,9 +2240,10 @@ export default class DianaWidget {
             }
 
         } catch (error) {
-            if (error.isSessionExpired) return;
+            const apiError = error as ApiError;
+            if (apiError.isSessionExpired) return;
             console.error('Error fetching ticketshop link:', error);
-            this.showError(error.message || this.t('errors.api.internalError'), 'results', true);
+            this.showError(apiError.message || this.t('errors.api.internalError'), 'results', true);
         } finally {
             button.innerHTML = originalContent;
             button.disabled = false;
@@ -2570,7 +2690,7 @@ export default class DianaWidget {
         }
     }
 
-    slideToRecommendedConnections() {
+    slideToRecommendedConnections(): void {
         requestAnimationFrame(() => {
             if (this.elements.activityTimeBox) {
                 this.elements.activityTimeBox.scrollIntoView({behavior: 'smooth', block: 'center'});
@@ -2578,21 +2698,21 @@ export default class DianaWidget {
 
             const topSlider = this.elements["topSlider"];
             if (topSlider && topSlider.querySelector('.active-time')) {
-                const topActiveBtn = topSlider.querySelector('.active-time');
+                const topActiveBtn = topSlider.querySelector('.active-time') as HTMLElement;
                 const scrollPos = topActiveBtn.offsetLeft - (topSlider.offsetWidth / 2) + (topActiveBtn.offsetWidth / 2);
                 topSlider.scrollTo({left: scrollPos, behavior: 'smooth'});
             }
 
             const bottomSlider = this.elements["bottomSlider"];
             if (bottomSlider && bottomSlider.querySelector('.active-time')) {
-                const bottomActiveBtn = bottomSlider.querySelector('.active-time');
+                const bottomActiveBtn = bottomSlider.querySelector('.active-time') as HTMLElement;
                 const scrollPos = bottomActiveBtn.offsetLeft - (bottomSlider.offsetWidth / 2) + (bottomActiveBtn.offsetWidth / 2);
                 bottomSlider.scrollTo({left: scrollPos, behavior: 'smooth'});
             }
         });
     }
 
-    navigateToForm() {
+    navigateToForm(): void {
         this.clearMessages();
         if (this.pageManager) {
             this.pageManager.navigateToForm();
@@ -2859,9 +2979,9 @@ export default class DianaWidget {
     }
 
 
-    setLoadingState(isLoading, isFullScreen = false) {
+    setLoadingState(isLoading: boolean, isFullScreen: boolean = false): void {
         if (isFullScreen) {
-            let loader = this.dianaWidgetRootContainer.querySelector('.full-screen-loader');
+            let loader = this.dianaWidgetRootContainer?.querySelector('.full-screen-loader') as HTMLElement | null;
             if (isLoading) {
                 if (!loader) {
                     loader = document.createElement('div');
@@ -2870,7 +2990,7 @@ export default class DianaWidget {
                         <div class="loading-spinner"></div>
                         <span>${this.t("loadingStateSearching")}</span>
                     `;
-                    this.dianaWidgetRootContainer.appendChild(loader);
+                    this.dianaWidgetRootContainer?.appendChild(loader);
                 }
                 loader.style.display = 'flex';
             } else {
@@ -3004,11 +3124,12 @@ export default class DianaWidget {
                         <div class="debug-content" style="display:none;">
                             <pre>${JSON.stringify(json, null, 2)}</pre>
                         </div>`;
-                    debugContainer.querySelector('.debug-toggle').addEventListener('click', (e) => {
-                        const content = e.target.nextElementSibling;
+                    debugContainer.querySelector('.debug-toggle')?.addEventListener('click', (e) => {
+                        const target = e.target as HTMLElement;
+                        const content = target.nextElementSibling as HTMLElement;
                         const isVisible = content.style.display === 'block';
                         content.style.display = isVisible ? 'none' : 'block';
-                        e.target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
+                        target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
                     });
                 }).catch(() => {
                     clonedError.text().then(text => {
@@ -3017,11 +3138,12 @@ export default class DianaWidget {
                         <div class="debug-content" style="display:none;">
                             <pre>${text}</pre>
                         </div>`;
-                        debugContainer.querySelector('.debug-toggle').addEventListener('click', (e) => {
-                            const content = e.target.nextElementSibling;
+                        debugContainer.querySelector('.debug-toggle')?.addEventListener('click', (e) => {
+                            const target = e.target as HTMLElement;
+                            const content = target.nextElementSibling as HTMLElement;
                             const isVisible = content.style.display === 'block';
                             content.style.display = isVisible ? 'none' : 'block';
-                            e.target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
+                            target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
                         });
                     });
                 });
@@ -3120,7 +3242,8 @@ export default class DianaWidget {
             }
             if (this.elements.activityDateStart) {
                 this.elements.activityDateStart.addEventListener('change', (e) => {
-                    const [y, m, d] = e.target.value.split('-').map(Number);
+                    const target = e.target as HTMLInputElement;
+                    const [y, m, d] = target.value.split('-').map(Number);
                     const nSD = new Date(Date.UTC(y, m - 1, d));
                     this.state.selectedDate = nSD;
                     this.updateDateDisplay(nSD, 'dateDisplayStart');
@@ -3139,7 +3262,8 @@ export default class DianaWidget {
             if (this.elements.activityDateEnd) {
                 this.elements.activityDateEnd.addEventListener('change', (e) => {
                     if (this.config.activityDurationDaysFixed) return; // End date is fixed relative to start
-                    const [y, m, d] = e.target.value.split('-').map(Number);
+                    const target = e.target as HTMLInputElement;
+                    const [y, m, d] = target.value.split('-').map(Number);
                     const nED = new Date(Date.UTC(y, m - 1, d));
                     this.state.selectedEndDate = nED;
                     this.updateDateDisplay(nED, 'dateDisplayEnd');
@@ -3219,8 +3343,9 @@ export default class DianaWidget {
 
                 if (this.elements.activityDate) {
                     this.elements.activityDate.addEventListener('change', (e) => {
-                        if (e.target.value) {
-                            const [year, month, day] = e.target.value.split('-').map(Number);
+                        const target = e.target as HTMLInputElement;
+                        if (target.value) {
+                            const [year, month, day] = target.value.split('-').map(Number);
                             const newSelectedDate = new Date(Date.UTC(year, month - 1, day));
                             this.onDateSelectedByButton(newSelectedDate);
 

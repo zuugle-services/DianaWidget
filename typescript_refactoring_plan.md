@@ -6,15 +6,23 @@
 - **Phase 1:** Project Setup & Configuration (TypeScript, ts-loader, tsconfig.json, webpack, Jest)
 - **Phase 2:** Type Definitions & Interfaces (src/types/ directory with all core types)
 - **Phase 3.1-3.4:** File Migrations (utils.ts, datetimeUtils.ts, translations.ts, all templates, components)
+- **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines)
 - **Phase 3.6:** Entry point (index.ts)
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320 lines - largest file)
+- **Phase 4:** Code Cleanup & Refactoring - Extract large methods, improve module organization
 
 ### 📝 NOTES:
 - tsconfig.json uses lenient settings (strict: false, noImplicitAny: false, strictNullChecks: false) for gradual migration
 - Build passes successfully with `npm run build`
 - Dynamic imports in UIManager use `.js` extension which webpack resolves correctly at build time
+- widget.ts migration includes:
+  - Class property declarations with types
+  - Constructor parameter types
+  - Method return type annotations where critical
+  - Type assertions for API responses (using `any` where types don't match actual API structure)
+  - Custom interfaces: WidgetElements, ApiError, FetchOptions
+  - Event handler type casting for DOM events
 
 ---
 
@@ -159,15 +167,15 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
     - Typed all public methods with return types
 
 ### 3.5 Migrate Core Widget File
-**STATUS: NOT STARTED - Next step for continuation**
-- [ ] Rename `src/core/widget.js` → `src/core/widget.ts`
-    - Define class properties with types
-    - Type constructor parameters (`config`, `containerId`)
-    - Type all class methods
-    - Type event handlers and callbacks
-    - Type API response handling
-    - Add proper DOM typing for Shadow DOM operations
-    - Type the translation function `t()`
+**STATUS: COMPLETED**
+- [x] Rename `src/core/widget.js` → `src/core/widget.ts`
+    - [x] Define class properties with types (WidgetElements interface, config, state, etc.)
+    - [x] Type constructor parameters (`config: PartialWidgetConfig`, `containerId: string`)
+    - [x] Type critical class methods with return types
+    - [x] Type event handlers and callbacks with proper DOM event casting
+    - [x] Type API response handling with ApiError and FetchOptions interfaces
+    - [x] Add proper DOM typing for Shadow DOM operations
+    - [x] Type the translation function `t()` with proper return type
 
 ### 3.6 Migrate Entry Point
 - [x] Renamed `src/index.js` → `src/index.ts` (completed)
