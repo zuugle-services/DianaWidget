@@ -212,7 +212,7 @@ export default class DianaWidget {
                     const startDt = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'});
                     initialSelectedStartDate = startDt.toJSDate();
                     initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                } else if (this.config.activityLatestEndTime) {
+                } else if (this.config.activityLatestEndTime && this.config.activityDurationMinutes !== undefined) {
                     initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
                     initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 }
@@ -221,7 +221,7 @@ export default class DianaWidget {
             if (!initialSelectedStartDate) {
                 if (this.config.overrideActivityStartDate) {
                     initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate();
-                } else if (this.config.activityLatestEndTime) {
+                } else if (this.config.activityLatestEndTime && this.config.activityDurationMinutes !== undefined) {
                     initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
                 }
             }
@@ -278,7 +278,7 @@ export default class DianaWidget {
 
         themableProperties.forEach(prop => {
             const value = hostStyles.getPropertyValue(prop).trim();
-            if (value) {
+            if (value && this.dianaWidgetRootContainer) {
                 this.dianaWidgetRootContainer.style.setProperty(prop, value);
             }
         });
@@ -337,6 +337,7 @@ export default class DianaWidget {
         this.uiManager = new UIManager();
         let dianaWidgetRootContainer = document.createElement('div');
         dianaWidgetRootContainer.className = 'diana-container';
+        if (!this.shadowRoot) return;
         this.shadowRoot.innerHTML = '';
 
         const styleTag = document.createElement('style');
@@ -592,6 +593,10 @@ export default class DianaWidget {
     }
 
     cacheDOMElements() {
+        if (!this.shadowRoot) {
+            this.elements = {} as WidgetElements;
+            return;
+        }
         this.elements = {
             modal: this.shadowRoot.querySelector("#activityModal"),
             innerContainer: this.shadowRoot.querySelector("#innerContainer"),
@@ -721,6 +726,7 @@ export default class DianaWidget {
             if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
 
             if (this.elements.clearInputBtn) this.elements.clearInputBtn.addEventListener('click', () => {
+                if (!this.elements.originInput) return;
                 this.elements.originInput.value = '';
                 this.elements.originInput.removeAttribute("data-lat");
                 this.elements.originInput.removeAttribute("data-lon");
@@ -968,9 +974,11 @@ export default class DianaWidget {
             const data = await response.json();
             if (data.features && data.features.length > 0 && data.features[0].diana_properties && data.features[0].diana_properties.display_name) {
                 const displayName = data.features[0].diana_properties.display_name;
-                this.elements.originInput.value = displayName;
-                this.elements.originInput.setAttribute('data-lat', latitude.toString());
-                this.elements.originInput.setAttribute('data-lon', longitude.toString());
+                if (this.elements.originInput) {
+                    this.elements.originInput.value = displayName;
+                    this.elements.originInput.setAttribute('data-lat', latitude.toString());
+                    this.elements.originInput.setAttribute('data-lon', longitude.toString());
+                }
                 this.state.suggestions = [];
                 this.renderSuggestions();
                 this.clearMessages();
@@ -1024,6 +1032,7 @@ export default class DianaWidget {
     }
 
     handleSuggestionSelect(value, lat, lon) {
+        if (!this.elements.originInput) return;
         this.elements.originInput.value = value;
         this.elements.originInput.setAttribute('data-lat', lat);
         this.elements.originInput.setAttribute('data-lon', lon);
@@ -1070,8 +1079,8 @@ export default class DianaWidget {
         const activeItem = this.elements.suggestionsContainer.querySelector('.suggestion-item.active-suggestion') as HTMLElement | null;
         if (activeItem) {
             e.preventDefault(); // Prevent form submission if input is in a form
-            this.handleSuggestionSelect(activeItem.dataset.value, activeItem.dataset.lat, activeItem.dataset.lon);
-        } else if (this.state.suggestions.length > 0 && this.elements.originInput?.value.trim().length >= 2) {
+            this.handleSuggestionSelect(activeItem.dataset.value ?? '', activeItem.dataset.lat ?? '', activeItem.dataset.lon ?? '');
+        } else if (this.state.suggestions.length > 0 && (this.elements.originInput?.value.trim().length ?? 0) >= 2) {
             // If no specific item is active but there are suggestions and input has text,
             // potentially select the first one or trigger search directly.
             // For now, let's assume if Enter is pressed without an active suggestion,
@@ -1209,10 +1218,10 @@ export default class DianaWidget {
             ? this.state.selectedEndDate
             : activityStartDate;
 
-        const utcEarliestStart = convertLocalTimeToUTC(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
-        const utcLatestStart = convertLocalTimeToUTC(this.config.activityLatestStartTime, activityStartDate, this.config.timezone);
-        const utcEarliestEnd = convertLocalTimeToUTC(this.config.activityEarliestEndTime, referenceDateForEndTimes, this.config.timezone);
-        const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime, referenceDateForEndTimes, this.config.timezone);
+        const utcEarliestStart = convertLocalTimeToUTC(this.config.activityEarliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
+        const utcLatestStart = convertLocalTimeToUTC(this.config.activityLatestStartTime ?? '23:59', activityStartDate, this.config.timezone);
+        const utcEarliestEnd = convertLocalTimeToUTC(this.config.activityEarliestEndTime ?? '00:00', referenceDateForEndTimes, this.config.timezone);
+        const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime ?? '23:59', referenceDateForEndTimes, this.config.timezone);
 
         const params: Record<string, string | number | undefined> = {
             date: formatDatetime(activityStartDate, this.config.timezone), // Use timezone for date formatting if it's local
@@ -1355,19 +1364,19 @@ export default class DianaWidget {
 
     renderConnectionResults(): void {
         this.showError(null, 'results');
-        this.elements.topSlider.innerHTML = '';
-        this.elements.bottomSlider.innerHTML = '';
+        if (this.elements.topSlider) this.elements.topSlider.innerHTML = '';
+        if (this.elements.bottomSlider) this.elements.bottomSlider.innerHTML = '';
 
         if (this.elements.collapsibleToActivity) {
-            this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+            this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper')?.innerHTML && (this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper')!.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`);
             this.elements.collapsibleToActivity.classList.remove('has-summary', 'expanded');
         }
         if (this.elements.collapsibleFromActivity) {
-            this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+            this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper')?.innerHTML && (this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper')!.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`);
             this.elements.collapsibleFromActivity.classList.remove('has-summary', 'expanded');
         }
 
-        this.elements.activityTimeBox.innerHTML = this.config.activityName;
+        if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.config.activityName;
 
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
@@ -1377,15 +1386,17 @@ export default class DianaWidget {
             return;
         }
         if (this.state.toConnections.length === 0) {
-            this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
-            this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('errors.api.noToConnectionsFound')}</span>`;
+            if (this.elements.responseBox) this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
+            const toSummary = this.elements.collapsibleToActivity?.querySelector('.summary-content-wrapper');
+            if (toSummary) toSummary.innerHTML = `<span class="summary-placeholder">${this.t('errors.api.noToConnectionsFound')}</span>`;
         } else {
             this.calculateAnytimeConnections(this.state.toConnections, "to");
             this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
         }
         if (this.state.fromConnections.length === 0) {
-            this.elements.responseBoxBottom.innerHTML = this.t('errors.api.noFromConnectionsFound');
-            this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper').innerHTML = `<span class="summary-placeholder">${this.t('errors.api.noFromConnectionsFound')}</span>`;
+            if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.innerHTML = this.t('errors.api.noFromConnectionsFound');
+            const fromSummary = this.elements.collapsibleFromActivity?.querySelector('.summary-content-wrapper');
+            if (fromSummary) fromSummary.innerHTML = `<span class="summary-placeholder">${this.t('errors.api.noFromConnectionsFound')}</span>`;
         } else {
             this.calculateAnytimeConnections(this.state.fromConnections, "from");
             this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
@@ -1476,15 +1487,16 @@ export default class DianaWidget {
                     this.filterConnectionsByTime('from', startTimeLocal, endTimeLocal);
                 }
             }
-            delete this.state.preselectTimes;
+            delete (this.state as { preselectTimes?: typeof this.state.preselectTimes }).preselectTimes;
         }
         this.slideToRecommendedConnections();
     }
 
     renderTimeSlots(sliderId, connections, type) {
         const slider = this.elements[sliderId];
+        if (!slider) return;
         slider.innerHTML = '';
-        let lastDate = null; // To track the date of the last processed connection
+        let lastDate: string | null = null; // To track the date of the last processed connection
 
         connections.forEach((conn, index) => {
             // Determine the date of the current connection in the configured timezone
@@ -1545,14 +1557,16 @@ export default class DianaWidget {
             ? this.state.selectedEndDate
             : this.state.selectedDate;
 
+        if (!activityDateForCalc) return;
+
         connections.forEach(conn => {
             if (conn.connection_anytime && conn.connection_elements && conn.connection_elements.length > 0) {
                 const connectionDuration = conn.connection_elements[0].duration;
                 if (type === "to") {
-                    conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(this.config.activityLatestStartTime, activityDateForCalc, this.config.timezone);
+                    conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(this.config.activityLatestStartTime ?? '23:59', activityDateForCalc, this.config.timezone);
                     conn.connection_start_timestamp = addMinutesToDate(conn.connection_end_timestamp, -connectionDuration);
                 } else {
-                    conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(this.config.activityEarliestEndTime, activityDateForCalc, this.config.timezone);
+                    conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(this.config.activityEarliestEndTime ?? '00:00', activityDateForCalc, this.config.timezone);
                     conn.connection_end_timestamp = addMinutesToDate(conn.connection_start_timestamp, connectionDuration);
                 }
                 conn.connection_elements[0].departure_time = conn.connection_start_timestamp;
@@ -1578,11 +1592,11 @@ export default class DianaWidget {
         let fromLocation, toLocation;
 
         if (type === 'to') {
-            fromLocation = this.elements.originInput.value;
+            fromLocation = this.elements.originInput?.value ?? '';
             toLocation = connection.connection_elements[connection.connection_elements.length - 1].to_location;
         } else { // 'from'
             fromLocation = connection.connection_elements[0].from_location;
-            toLocation = this.elements.originInput.value;
+            toLocation = this.elements.originInput?.value ?? '';
         }
 
         const mainTransportTypes = [...connection.connection_elements
@@ -1622,7 +1636,7 @@ export default class DianaWidget {
 
         if (sourceType === 'to') {
             // Update 'from' slider based on 'to' selection
-            const fromButtons = bottomSlider.querySelectorAll('button');
+            const fromButtons = bottomSlider?.querySelectorAll('button') ?? [];
             if (!selectedToConnection) {
                 fromButtons.forEach(btn => btn.classList.remove('disabled'));
                 this._updateFromConnectionDots(); // Clear dots
@@ -1633,7 +1647,7 @@ export default class DianaWidget {
             // Disable invalid buttons
             fromConnections.forEach((fromConn, index) => {
                 const departureTime = DateTime.fromISO(fromConn.connection_start_timestamp, { zone: 'utc' });
-                const button = bottomSlider.querySelector(`button[data-index="${index}"]`);
+                const button = bottomSlider?.querySelector(`button[data-index="${index}"]`);
                 if (button) {
                     if (departureTime < arrivalTime) {
                         button.classList.add('disabled');
@@ -1656,13 +1670,13 @@ export default class DianaWidget {
                     const summaryWrapper = collapsibleFromActivity?.querySelector('.summary-content-wrapper');
                     if (summaryWrapper) {
                         summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
-                        collapsibleFromActivity.classList.remove('has-summary', 'expanded');
+                        collapsibleFromActivity?.classList.remove('has-summary', 'expanded');
                     }
-                    this.elements.responseBoxBottom.innerHTML = '';
-                    bottomSlider.querySelectorAll('button.active-time').forEach(btn => btn.classList.remove('active-time'));
+                    if (this.elements.responseBoxBottom) this.elements.responseBoxBottom.innerHTML = '';
+                    bottomSlider?.querySelectorAll('button.active-time').forEach(btn => btn.classList.remove('active-time'));
 
                     // Re-render activity box with partial data
-                    this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+                    if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
                 }
             }
             this._updateFromConnectionDots();
@@ -1670,7 +1684,7 @@ export default class DianaWidget {
 
         } else if (sourceType === 'from') {
             // Update 'to' slider based on 'from' selection
-            const toButtons = topSlider.querySelectorAll('button');
+            const toButtons = topSlider?.querySelectorAll('button') ?? [];
             if (!selectedFromConnection) {
                 toButtons.forEach(btn => btn.classList.remove('disabled'));
                 return;
@@ -1680,7 +1694,7 @@ export default class DianaWidget {
             // Disable invalid buttons
             toConnections.forEach((toConn, index) => {
                 const arrivalTime = DateTime.fromISO(toConn.connection_end_timestamp, { zone: 'utc' });
-                const button = topSlider.querySelector(`button[data-index="${index}"]`);
+                const button = topSlider?.querySelector(`button[data-index="${index}"]`);
                 if (button) {
                     if (arrivalTime > departureTime) {
                         button.classList.add('disabled');
@@ -1703,13 +1717,13 @@ export default class DianaWidget {
                     const summaryWrapper = collapsibleToActivity?.querySelector('.summary-content-wrapper');
                     if (summaryWrapper) {
                         summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
-                        collapsibleToActivity.classList.remove('has-summary', 'expanded');
+                        collapsibleToActivity?.classList.remove('has-summary', 'expanded');
                     }
-                    this.elements.responseBox.innerHTML = '';
-                    topSlider.querySelectorAll('button.active-time').forEach(btn => btn.classList.remove('active-time'));
+                    if (this.elements.responseBox) this.elements.responseBox.innerHTML = '';
+                    topSlider?.querySelectorAll('button.active-time').forEach(btn => btn.classList.remove('active-time'));
 
                     // Re-render activity box with partial data
-                    this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+                    if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
                     this._updateFromConnectionDots(); // Clear dots
                 }
             }
@@ -1724,10 +1738,11 @@ export default class DianaWidget {
         const summaryWrapper = container?.querySelector('.summary-content-wrapper');
 
         const slider = this.elements[sliderId];
+        if (!slider) return;
         slider.querySelectorAll('button').forEach(btn => {
             btn.classList.remove('active-time');
             const timeDiv = btn.querySelector('div > div:first-child');
-            if (timeDiv && timeDiv.textContent.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
+            if (timeDiv && timeDiv.textContent?.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
                 btn.classList.add('active-time');
             }
         });
@@ -1739,7 +1754,7 @@ export default class DianaWidget {
         if (filtered.length > 0) {
             const selectedConnection = filtered[0];
             this.updateActivityTimeBox(selectedConnection, type);
-            targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
+            if (targetBox) targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
 
             if (summaryWrapper && container) {
                 summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
@@ -1761,7 +1776,7 @@ export default class DianaWidget {
             }
             this._updateOppositeSlider(type);
         } else {
-            targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
+            if (targetBox) targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
             if (summaryWrapper && container) {
                 summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('noConnectionDetails')}</span>`;
                 container.classList.remove('has-summary', 'expanded');
@@ -1788,7 +1803,7 @@ export default class DianaWidget {
         const arrivalTimeToActivity = DateTime.fromISO(this.state.selectedToConnection.connection_end_timestamp, { zone: 'utc' }).setZone(this.config.timezone);
 
         this.state.fromConnections.forEach((fromConn, index) => {
-            const button = this.elements.bottomSlider.querySelector(`button[data-index="${index}"]`);
+            const button = this.elements.bottomSlider?.querySelector(`button[data-index="${index}"]`);
             if (!button) return;
 
             const dotElement = button.querySelector('.duration-dot');
@@ -1819,20 +1834,21 @@ export default class DianaWidget {
         try {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
+            if (!activityStartDate || !activityEndDate) return;
 
             // The connection timestamps are pre-adjusted by _processAndFilterConnections, so we use them directly.
             const connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
             const connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
 
             if (type === 'to') {
-                const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime, activityStartDate, this.config.timezone);
+                const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
                 this.state.activityTimes.start = getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal, this.config.timezone);
             } else { // type === 'from'
-                const latestConfigEndLocal = convertConfigTimeToLocalTime(this.config.activityLatestEndTime, activityEndDate, this.config.timezone);
+                const latestConfigEndLocal = convertConfigTimeToLocalTime(this.config.activityLatestEndTime ?? '23:59', activityEndDate, this.config.timezone);
                 this.state.activityTimes.end = getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal, this.config.timezone);
             }
 
-            if (!this.config.multiday && this.state.activityTimes.start && this.state.activityTimes.end) {
+            if (!this.config.multiday && this.state.activityTimes.start && this.state.activityTimes.end && activityStartDate) {
                 const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
                     .set({
                         year: activityStartDate.getFullYear(),
@@ -1851,7 +1867,7 @@ export default class DianaWidget {
                 this.state.activityTimes.warning_duration = false;
             }
 
-            this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
+            if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
 
         } catch (error) {
             console.error("Error updating activity time box:", error);
@@ -1865,6 +1881,7 @@ export default class DianaWidget {
         try {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
+            if (!activityStartDate) return `<div class="activity-time-placeholder">${this.config.activityName}</div>`;
             const recommendedDurationMinutes = parseInt(String(this.config.activityDurationMinutes), 10);
 
             let durationDisplayHtml;
@@ -1873,7 +1890,7 @@ export default class DianaWidget {
             const isMultiDayDisplay = this.config.multiday && activityStartDate && activityEndDate &&
                 DateTime.fromJSDate(activityEndDate).startOf('day') > DateTime.fromJSDate(activityStartDate).startOf('day');
 
-            if (isMultiDayDisplay) {
+            if (isMultiDayDisplay && activityEndDate) {
                 const numDays = Math.round(DateTime.fromJSDate(activityEndDate).diff(DateTime.fromJSDate(activityStartDate), 'days').days) + 1;
                 const numNights = numDays - 1;
                 const daysText = numDays === 1 ? this.t('daySg') : this.t('dayPl');
@@ -1949,8 +1966,9 @@ export default class DianaWidget {
             const startLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
             const endLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
 
+            const endDateForDisplay = activityEndDate ?? activityStartDate;
             const startDateTimeText = this.state.activityTimes.start ? `${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.start}` : '--';
-            const endDateTimeText = this.state.activityTimes.end ? `${formatLegDateForDisplay(activityEndDate.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.end}` : '--';
+            const endDateTimeText = this.state.activityTimes.end ? `${formatLegDateForDisplay(endDateForDisplay.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.end}` : '--';
 
             const startLocationDisplayText = startLocationDisplay ? `${startLocationDisplay}` : '--';
             const endLocationDisplayText = endLocationDisplay ? `${endLocationDisplay}` : '--';
@@ -2158,7 +2176,7 @@ export default class DianaWidget {
                 }).startOf('day');
 
                 let
-                    datesToShow = [];
+                    datesToShow: string[] = [];
                 // Show departure date for the first leg
                 if (index === 0) {
                     datesToShow.push(formatLegDateForDisplay(element.departure_time, this.config.timezone, this.config.language));
@@ -2180,7 +2198,7 @@ export default class DianaWidget {
                     fromLocationDisplay = element.from_location;
                 if (element.isOriginalFirst) {
                     if (type === "to") {
-                        fromLocationDisplay = this.elements.originInput.value;
+                        fromLocationDisplay = this.elements.originInput?.value ?? '';
                     } else { // type === "from"
                         fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
                     }
@@ -2213,7 +2231,7 @@ export default class DianaWidget {
                         if (type === "to") {
                             toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
                         } else { // type === "from"
-                            toLocationDisplay = this.elements.originInput.value;
+                            toLocationDisplay = this.elements.originInput?.value ?? '';
                         }
                     }
 
@@ -2376,7 +2394,7 @@ export default class DianaWidget {
                 }).toFormat('HH:mm');
                 return `${durationText} - ${this.t('anytimeLeaveBy', { time: leaveByTime })}`;
             } else { // type === 'from'
-                const destination = this.elements.originInput.value;
+                const destination = this.elements.originInput?.value ?? '';
                 return `${durationText} - ${this.t('anytimeWalkTo', { destination: destination })}`;
             }
         }
@@ -2516,12 +2534,15 @@ export default class DianaWidget {
         this.clearMessages();
 
         try {
+            if (!this.elements.originInput) throw new Error("Origin input not available");
+            if (!this.state.selectedDate) throw new Error("Selected date not available");
+            
             const dataToShare = {
                 origin: this.elements.originInput.value,
                 origin_lat: this.elements.originInput.dataset.lat || null,
                 origin_lon: this.elements.originInput.dataset.lon || null,
                 date: formatDatetime(this.state.selectedDate, this.config.timezone), // yyyy-MM-dd
-                dateEnd: this.config.multiday ? formatDatetime(this.state.selectedEndDate, this.config.timezone) : null,
+                dateEnd: this.config.multiday && this.state.selectedEndDate ? formatDatetime(this.state.selectedEndDate, this.config.timezone) : null,
                 to_connection_start_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_start_timestamp : null,
                 to_connection_end_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_end_timestamp : null,
                 from_connection_start_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_start_timestamp : null,
@@ -2543,6 +2564,7 @@ export default class DianaWidget {
                 throw new Error(this.t('errors.shareLinkCreateFailed'));
             }
 
+            if (!this.config.shareURLPrefix) throw new Error("Share URL prefix not configured");
             let url = new URL(this.config.shareURLPrefix);
             url.searchParams.set('diana-share', shareId);
 
@@ -2689,7 +2711,7 @@ export default class DianaWidget {
             this.elements.menuModalOverlay.style.display = 'flex';
             // Use requestAnimationFrame to ensure the display property has been applied before adding the class for transition
             requestAnimationFrame(() => {
-                this.elements.menuModalOverlay.classList.add('visible');
+                this.elements.menuModalOverlay?.classList.add('visible');
             });
         }
     }
@@ -2889,19 +2911,23 @@ export default class DianaWidget {
         }
     }
 
-    showError(message, page = 'form', preserveContent = false, rawError = null) {
+    showError(message: string | null, page = 'form', preserveContent = false, rawError: Response | null = null) {
         this.state.error = message;
         const errorContainer = page === 'form' ? this.elements.formErrorContainer : this.elements.resultsErrorContainer;
         const debugContainer = page === 'form' ? this.elements.formDebugContainer : this.elements.resultsDebugContainer;
 
         if (errorContainer) {
-            errorContainer.textContent = message;
+            errorContainer.textContent = message ?? '';
             errorContainer.style.display = message ? "block" : "none";
-            errorContainer.setAttribute('role', message ? 'alert' : null);
+            if (message) {
+                errorContainer.setAttribute('role', 'alert');
+            } else {
+                errorContainer.removeAttribute('role');
+            }
         }
 
         if (debugContainer) {
-            if (this.config.dev && rawError) {
+            if (this.config.dev && rawError && typeof rawError.clone === 'function') {
                 debugContainer.style.display = 'block';
                 const clonedError = rawError.clone();
                 clonedError.json().then(json => {
@@ -2955,9 +2981,13 @@ export default class DianaWidget {
     showInfo(message) {
         this.state.info = message;
         if (this.elements.infoContainer) {
-            this.elements.infoContainer.textContent = message;
+            this.elements.infoContainer.textContent = message ?? '';
             this.elements.infoContainer.style.display = message ? "block" : "none";
-            this.elements.infoContainer.setAttribute('role', message ? 'status' : null);
+            if (message) {
+                this.elements.infoContainer.setAttribute('role', 'status');
+            } else {
+                this.elements.infoContainer.removeAttribute('role');
+            }
         }
         if (message) {
             console.info(`Widget Info: ${message}`);
@@ -2989,7 +3019,7 @@ export default class DianaWidget {
                         if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(endDate);
                         if (this.elements.dateDisplayEnd) this.updateDateDisplay(endDate, 'dateDisplayEnd');
                         this.clearMessages();
-                        if (DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
+                        if (this.state.selectedEndDate && this.state.selectedDate && DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
                     },
                     this.config.overrideActivityStartDate, this.config.overrideActivityEndDate, this.config.activityDurationDaysFixed
                 );
@@ -3006,7 +3036,7 @@ export default class DianaWidget {
                 if (e.target.closest('.date-input-container') && e.target.tagName !== 'INPUT') {
                     e.preventDefault();
                 }
-                this.rangeCalendarModal.show(this.state.selectedDate, this.state.selectedEndDate);
+                this.rangeCalendarModal?.show(this.state.selectedDate, this.state.selectedEndDate);
             };
 
 
@@ -3059,17 +3089,17 @@ export default class DianaWidget {
                         this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
                     }
                     this.clearMessages();
-                    if (DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
+                    if (this.state.selectedEndDate && this.state.selectedDate && DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
                 });
             }
 
 
-            if (this.config.overrideActivityStartDate && this.elements.dateDisplayStart) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-            if (this.config.overrideActivityEndDate && this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+            if (this.config.overrideActivityStartDate && this.elements.dateDisplayStart && this.state.selectedDate) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+            if (this.config.overrideActivityEndDate && this.elements.dateDisplayEnd && this.state.selectedEndDate) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
 
             if (datesFullyDetermined) {
-                if (this.elements.dateDisplayStart) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-                if (this.elements.dateDisplayEnd) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+                if (this.elements.dateDisplayStart && this.state.selectedDate) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+                if (this.elements.dateDisplayEnd && this.state.selectedEndDate) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
             }
 
 
@@ -3097,13 +3127,13 @@ export default class DianaWidget {
 
                 this.elements.dateBtnToday?.addEventListener('click', () => {
                     const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
-                    const today = new Date(today_object.year, today_object.month - 1, today_object.day);
+                    const today = new Date(today_object.year ?? 2025, (today_object.month ?? 1) - 1, today_object.day ?? 1);
                     this.onDateSelectedByButton(today);
                 });
 
                 this.elements.dateBtnTomorrow?.addEventListener('click', () => {
                     const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({days: 1}).startOf('day').toObject();
-                    const tomorrow = new Date(tomorrow_object.year, tomorrow_object.month - 1, tomorrow_object.day);
+                    const tomorrow = new Date(tomorrow_object.year ?? 2025, (tomorrow_object.month ?? 1) - 1, tomorrow_object.day ?? 1);
                     this.onDateSelectedByButton(tomorrow);
                 });
 

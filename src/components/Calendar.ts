@@ -7,7 +7,7 @@ import type { TranslationFunction } from '../types';
 
 // Widget instance interface (minimal for calendar use)
 interface WidgetInstance {
-    container: HTMLElement;
+    container: HTMLElement | null;
     config: {
         language: string;
         timezone: string;
@@ -19,7 +19,7 @@ interface WidgetInstance {
     elements?: {
         otherDateText?: HTMLElement;
     };
-    dianaWidgetRootContainer: HTMLElement;
+    dianaWidgetRootContainer: HTMLElement | null;
     clearMessages: () => void;
 }
 
@@ -104,14 +104,14 @@ export class SingleCalendar {
 
         themableProperties.forEach(prop => {
             const value = hostStyles.getPropertyValue(prop).trim();
-            if (value) {
+            if (value && this.calendarContentWrapper) {
                 this.calendarContentWrapper.style.setProperty(prop, value);
             }
         });
     }
 
     _createCalendarContainer() {
-        const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container.id}`;
+        const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container?.id ?? 'default'}`;
 
         let existingContainer = document.getElementById(calendarContainerId);
         if (existingContainer) existingContainer.remove();
@@ -179,7 +179,9 @@ export class SingleCalendar {
     }
 
     _addCalendarInternalEventListeners() {
-        this.shadowRoot.querySelector(".prev-month").addEventListener("click", (e) => {
+        if (!this.shadowRoot) return;
+
+        this.shadowRoot.querySelector(".prev-month")?.addEventListener("click", (e) => {
             e.stopPropagation();
             this.currentViewMonth--;
             if (this.currentViewMonth < 0) {
@@ -189,7 +191,7 @@ export class SingleCalendar {
             this._render();
         });
 
-        this.shadowRoot.querySelector(".next-month").addEventListener("click", (e) => {
+        this.shadowRoot.querySelector(".next-month")?.addEventListener("click", (e) => {
             e.stopPropagation();
             this.currentViewMonth++;
             if (this.currentViewMonth > 11) {
@@ -199,13 +201,13 @@ export class SingleCalendar {
             this._render();
         });
 
-        this.shadowRoot.querySelector(".calendar-cancel-btn").addEventListener("click", (e) => {
+        this.shadowRoot.querySelector(".calendar-cancel-btn")?.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.hide();
         });
 
-        this.shadowRoot.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
+        this.shadowRoot.querySelector(".calendar-apply-btn")?.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
             this._updateInputElement();
@@ -233,7 +235,7 @@ export class SingleCalendar {
                 return;
             }
             e.stopPropagation();
-            if (this.calendarContainer.style.display !== 'none') {
+            if (this.calendarContainer && this.calendarContainer.style.display !== 'none') {
                 this.hide();
             } else {
                 const currentDateFromWidget = this.widget.state.selectedDate || new Date();
@@ -296,7 +298,9 @@ export class SingleCalendar {
         }
         const anchorRect = this.anchorElement.getBoundingClientRect();
         const desiredCalendarWidth = Math.max(280, anchorRect.width); // Ensure minimum width
-        this.calendarContentWrapper.style.width = `${desiredCalendarWidth}px`;
+        if (this.calendarContentWrapper) {
+            this.calendarContentWrapper.style.width = `${desiredCalendarWidth}px`;
+        }
 
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
@@ -463,7 +467,7 @@ export class RangeCalendarModal {
         this.modalElement.innerHTML = getRangeCalendarModalHTML({ t: this.t });
 
         this.modalOverlay.appendChild(this.modalElement);
-        this.widget.dianaWidgetRootContainer.appendChild(this.modalOverlay);
+        this.widget.dianaWidgetRootContainer?.appendChild(this.modalOverlay);
 
         this.calendarInstance = this.modalElement.querySelector('.range-calendar-instance');
         this._renderCalendar();
@@ -611,9 +615,11 @@ export class RangeCalendarModal {
     }
 
     _attachEventListeners() {
-        this.modalElement.querySelector('.range-calendar-close-btn').addEventListener('click', () => this.hide());
-        this.modalElement.querySelector('.range-calendar-cancel-btn').addEventListener('click', () => this.hide());
-        this.modalElement.querySelector('.range-calendar-apply-btn').addEventListener('click', () => this._handleApply());
+        if (!this.modalElement || !this.modalOverlay) return;
+
+        this.modalElement.querySelector('.range-calendar-close-btn')?.addEventListener('click', () => this.hide());
+        this.modalElement.querySelector('.range-calendar-cancel-btn')?.addEventListener('click', () => this.hide());
+        this.modalElement.querySelector('.range-calendar-apply-btn')?.addEventListener('click', () => this._handleApply());
         this.modalOverlay.addEventListener('click', (e) => {
             if (e.target === this.modalOverlay) {
                 this.hide();
@@ -689,7 +695,9 @@ export class RangeCalendarModal {
         }
 
         this._renderCalendar();
-        this.modalOverlay.style.display = 'flex';
+        if (this.modalOverlay) {
+            this.modalOverlay.style.display = 'flex';
+        }
     }
 
     hide() {
