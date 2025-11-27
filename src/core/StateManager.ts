@@ -322,7 +322,7 @@ export class StateManager {
                 start: '',
                 end: '',
                 duration: '',
-                warning_duration: false
+                warningDuration: false
             }
         });
     }

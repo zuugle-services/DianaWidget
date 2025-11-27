@@ -457,7 +457,7 @@ export class ConnectionRenderer {
     /**
      * Gets the duration string for a connection element
      */
-    getDurationString(index: number, type: string, element: ConnectionElement, duration: string, conn: Connection, elements: RendererElements, activityStartTime: string): string {
+    getDurationString(_index: number, type: string, element: ConnectionElement, duration: string, conn: Connection, elements: RendererElements, activityStartTime: string): string {
         if (conn && conn.connection_anytime && element.type === "WALK" && conn.connection_elements) {
             const durationMinutes = conn.connection_elements[0].duration ?? 0;
             const durationText = getTimeFormatFromMinutes(durationMinutes, (k) => this.t(k));

@@ -32,13 +32,25 @@
   - Updated `WidgetState.availableDates` to use Luxon `DateTime[]` instead of `Date[]`
   - Removed all `as any` type assertions (except one necessary for URLSearchParams)
   - Removed all `: any` type annotations
+- **Phase 4.5:** Clean Up Code Patterns - COMPLETED:
+  - Replaced callback-based patterns with async/await in `showError()` method
+  - Extracted `renderDebugContent()` helper method to reduce code duplication
+  - Updated internal state properties to use camelCase:
+    - `warning_duration` → `warningDuration` in `ActivityTimes` interface
+    - `to_start`, `to_end`, `from_start`, `from_end` → `toStart`, `toEnd`, `fromStart`, `fromEnd` in `PreselectTimes` interface
+  - Fixed naming convention: `fetch_lang` → `fetchLang` in `fetchSuggestions()`
+  - Removed unused `Suggestion` type import from widget.ts
+  - Marked intentionally unused parameter with underscore prefix: `_index` in `getDurationString()`
+  - Build passes with `--noUnusedLocals` and `--noUnusedParameters`
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.5:** Clean Up Code Patterns
-  - Replace callback-based patterns with async/await where appropriate
-  - Use `Map` and `Set` instead of plain objects where appropriate
-  - Ensure consistent naming conventions (camelCase for functions/variables, PascalCase for types/classes)
-  - Remove any dead/unused code detected by TypeScript compiler
+- **Phase 6.1:** Build Verification
+  - Test UMD export works (`window.DianaWidget`)
+- **Phase 6.2:** Functional Testing
+  - Test widget initialization with various configurations
+  - Test address autocomplete functionality
+  - Test calendar interactions (both single and range)
+  - Test connection search and results display
 
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
@@ -66,6 +78,10 @@
   - `ConnectionElement` interface added for connection leg/segment data
   - `Suggestion` interface matches actual GeoJSON-like API response structure
   - All `as any` type assertions removed from widget.ts (only `Record<string, string>` for URLSearchParams remains)
+- Code pattern cleanup (Phase 4.5):
+  - Internal state interfaces now use camelCase (`warningDuration`, `toStart`, `toEnd`, `fromStart`, `fromEnd`)
+  - Helper method `renderDebugContent()` extracted to reduce code duplication
+  - All unused imports and parameters addressed (build passes with `--noUnusedLocals` and `--noUnusedParameters`)
 
 ---
 
@@ -267,10 +283,18 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [ ] Use `readonly` for immutable properties
 
 ### 4.5 Clean Up Code Patterns
-- [ ] Replace callback-based patterns with async/await where appropriate
-- [ ] Use `Map` and `Set` instead of plain objects where appropriate
-- [ ] Ensure consistent naming conventions (camelCase for functions/variables, PascalCase for types/classes)
-- [ ] Remove any dead/unused code detected by TypeScript compiler
+- [x] Replace callback-based patterns with async/await where appropriate
+  - Refactored `showError()` method to use async IIFE instead of `.then().catch()` chains
+  - Extracted `renderDebugContent()` helper method to reduce code duplication
+- [x] Ensure consistent naming conventions (camelCase for functions/variables, PascalCase for types/classes)
+  - Fixed `fetch_lang` → `fetchLang` in `fetchSuggestions()`
+  - Updated `ActivityTimes.warning_duration` → `ActivityTimes.warningDuration`
+  - Updated `PreselectTimes` properties: `to_start`/`to_end`/`from_start`/`from_end` → `toStart`/`toEnd`/`fromStart`/`fromEnd`
+- [x] Remove any dead/unused code detected by TypeScript compiler
+  - Removed unused `Suggestion` import from widget.ts
+  - Prefixed intentionally unused `index` parameter with underscore in `getDurationString()`
+  - Build passes with `--noUnusedLocals` and `--noUnusedParameters` flags
+- Note: `Map` and `Set` usage was evaluated but plain objects are appropriate for current use cases (API params, translation lookups)
 
 ---
 

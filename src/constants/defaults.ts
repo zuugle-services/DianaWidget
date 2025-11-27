@@ -155,7 +155,7 @@ export const DEFAULT_STATE: WidgetState = {
         start: '',
         end: '',
         duration: '',
-        warning_duration: false,
+        warningDuration: false,
     },
     currentContentKey: null,
     preselectTimes: null
