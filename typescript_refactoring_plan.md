@@ -26,12 +26,16 @@
   - Updated WidgetInstance interface to allow null for container and dianaWidgetRootContainer
   - Fixed all Date handling to handle null/undefined cases
 - **Phase 4.4:** Improve type safety (replace `any` types) - COMPLETED:
-  - Added `ConnectionElement` interface with all required properties
+  - Added `ConnectionElement` interface with all required properties and `readonly` modifiers
+  - Added `ConnectionElementType` type alias ('WALK' | 'TRSF' | 'JNY')
+  - Added type guard functions: `isJourneyElement()`, `isWalkElement()`, `isTransferElement()`
   - Updated `Connection` interface with `connection_id`, `connection_anytime`, `connection_elements`, `connection_transfers`, `connection_ticketshop_provider`
   - Updated `Suggestion` interface to match GeoJSON-like API response with `diana_properties` and `geometry`
   - Updated `WidgetState.availableDates` to use Luxon `DateTime[]` instead of `Date[]`
   - Removed all `as any` type assertions (except one necessary for URLSearchParams)
   - Removed all `: any` type annotations
+  - Added `readonly` to all API response interfaces for immutability
+  - Added typed return values to all ApiService methods (AddressSuggestionsResponse, ReverseGeocodeResponse, ConnectionSearchResponse, TicketshopLinkResponse, CreateShareResponse, ShareDataResponse)
 - **Phase 4.5:** Clean Up Code Patterns - COMPLETED:
   - Replaced callback-based patterns with async/await in `showError()` method
   - Extracted `renderDebugContent()` helper method to reduce code duplication
@@ -52,10 +56,11 @@
 - **Phase 6.3:** Visual Regression Testing
   - Compare widget appearance before and after migration
   - Test on multiple browsers
-- **Phase 7.2:** Add TSDoc Comments
-  - Add TSDoc comments to exported functions in utils.ts and datetimeUtils.ts
 - **Phase 7.1:** Document Type Exports
-  - Document new type exports for external consumers
+  - Document new type exports for external consumers (type guards, new response types)
+- **Phase 7.3:** Final Cleanup
+  - Review unused dependencies from package.json (`js-base64` is not used in source code)
+  - Update `.gitignore` if needed
 
 ### 💡 FUTURE CONSIDERATIONS:
 - **CI/CD Automated Testing:** Token generation via `/o/token/` endpoint is possible for automated testing, but client ID/secret would need to be secured via GitHub Secrets since this is a public repository. The widget currently works without a token for rough testing (shows configuration validation errors gracefully).
@@ -84,9 +89,12 @@
   - Private helper methods for waiting blocks and element rendering
 - Type safety improvements:
   - `Connection` now has proper types for all properties used in widget.ts
-  - `ConnectionElement` interface added for connection leg/segment data
+  - `ConnectionElement` interface added for connection leg/segment data with `readonly` properties
+  - `ConnectionElementType` type alias for 'WALK' | 'TRSF' | 'JNY'
+  - Type guard functions exported: `isJourneyElement()`, `isWalkElement()`, `isTransferElement()`
   - `Suggestion` interface matches actual GeoJSON-like API response structure
   - All `as any` type assertions removed from widget.ts (only `Record<string, string>` for URLSearchParams remains)
+  - API response interfaces use `readonly` for immutability safety
 - Code pattern cleanup (Phase 4.5):
   - Internal state interfaces now use camelCase (`warningDuration`, `toStart`, `toEnd`, `fromStart`, `fromEnd`)
   - Helper method `renderDebugContent()` extracted to reduce code duplication
@@ -296,9 +304,27 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
   - Updated `Suggestion` interface to match GeoJSON-like API response
   - Updated `WidgetState.availableDates` to use Luxon `DateTime[]`
   - Removed all `as any` type assertions (only `Record<string, string>` for URLSearchParams remains)
-- [ ] Use discriminated unions for different connection types
-- [ ] Add generic types where reusable patterns exist
-- [ ] Use `readonly` for immutable properties
+- [x] Use discriminated unions for different connection types
+  - Added `ConnectionElementType` type alias for 'WALK' | 'TRSF' | 'JNY'
+  - Added type guard functions: `isJourneyElement()`, `isWalkElement()`, `isTransferElement()`
+  - These allow type-safe access to element-specific properties when checking element types
+- [x] Add generic types where reusable patterns exist
+  - ApiService now uses proper typed return values for all API methods:
+    - `fetchAddressSuggestions()` returns `AddressSuggestionsResponse`
+    - `fetchReverseGeocode()` returns `ReverseGeocodeResponse`
+    - `fetchConnections()` returns `ConnectionSearchResponse`
+    - `generateTicketshopLink()` returns `TicketshopLinkResponse`
+    - `createShare()` returns `CreateShareResponse`
+    - `fetchShare()` returns `ShareDataResponse`
+  - Note: Generic fetch method not added as specific types provide better type safety
+- [x] Use `readonly` for immutable properties
+  - Added `readonly` to all API response interface properties that shouldn't be modified:
+    - `ConnectionElement` properties (departure_time, arrival_time, vehicle_type, etc.)
+    - `Connection` properties (id, connection_id, timestamps, etc.)
+    - `TransportLeg` properties
+    - `TransportAlert` properties
+    - `Suggestion`, `SuggestionProperties`, `SuggestionGeometry` properties
+    - `ConnectionSearchResponse`, `AutocompleteResponse`, `ShareDataResponse`, `ApiErrorResponse` properties
 
 ### 4.5 Clean Up Code Patterns
 - [x] Replace callback-based patterns with async/await where appropriate

@@ -3,57 +3,118 @@
  */
 
 /**
- * Connection element representing a single leg/segment of a journey
- * This is the structure used internally by the widget
+ * Connection element types
+ * - 'WALK': Walking segment
+ * - 'TRSF': Transfer between stations
+ * - 'JNY': Journey on a vehicle (train, bus, etc.)
+ */
+export type ConnectionElementType = 'WALK' | 'TRSF' | 'JNY';
+
+/**
+ * Connection element representing a single leg/segment of a journey.
+ * The 'type' field indicates the kind of element:
+ * - 'WALK': Walking segment
+ * - 'TRSF': Transfer between stations  
+ * - 'JNY': Journey on a vehicle (train, bus, etc.)
+ * 
+ * Note: The 'type' property uses `string` instead of `ConnectionElementType` to allow
+ * for unknown element types that may be returned by the API in the future.
+ * Use the type guard functions (isJourneyElement, isWalkElement, isTransferElement)
+ * for type-safe access to specific element properties.
  */
 export interface ConnectionElement {
-    /** Element type (e.g., 'WALK', 'TRSF', 'JNY') */
-    type: string;
+    /** Element type (e.g., 'WALK', 'TRSF', 'JNY') - uses string for API compatibility */
+    readonly type: string;
     
     /** Departure time (ISO 8601) */
-    departure_time: string;
+    readonly departure_time: string;
     
     /** Arrival time (ISO 8601) */
-    arrival_time: string;
+    readonly arrival_time: string;
     
     /** Duration in minutes */
-    duration?: number;
+    readonly duration?: number;
     
     /** Origin location name */
-    from_location?: string;
+    readonly from_location?: string;
     
     /** Destination location name */
-    to_location?: string;
+    readonly to_location?: string;
     
     /** Vehicle type for journey legs */
-    vehicle_type?: string;
+    readonly vehicle_type?: string;
     
     /** Vehicle name/line name */
-    vehicle_name?: string;
+    readonly vehicle_name?: string;
     
     /** Direction/destination of the vehicle */
-    direction?: string;
+    readonly direction?: string;
     
     /** Platform at origin */
-    platform_orig?: string;
+    readonly platform_orig?: string;
     
     /** Platform at destination */
-    platform_dest?: string;
+    readonly platform_dest?: string;
     
     /** Number of intermediate stops */
-    n_intermediate_stops?: number;
+    readonly n_intermediate_stops?: number;
     
     /** Data provider (e.g., 'live') */
-    provider?: string;
+    readonly provider?: string;
     
     /** Alerts/warnings for this element */
-    alerts?: TransportAlert[];
+    readonly alerts?: readonly TransportAlert[];
     
-    /** Whether this is the first element in the original connection (set internally) */
+    /** 
+     * Whether this is the first element in the original connection.
+     * This is an internal mutable flag set by the widget during processing.
+     */
     isOriginalFirst?: boolean;
     
-    /** Whether this is the last element in the original connection (set internally) */
+    /** 
+     * Whether this is the last element in the original connection.
+     * This is an internal mutable flag set by the widget during processing.
+     */
     isOriginalLast?: boolean;
+}
+
+/**
+ * Type guard to check if an element is a Journey element (JNY).
+ * Use this to access journey-specific properties like vehicle_name, direction, etc.
+ * 
+ * @param element - The connection element to check
+ * @returns True if the element is a Journey element
+ * 
+ * @example
+ * ```typescript
+ * if (isJourneyElement(element)) {
+ *   console.log(element.vehicle_name);
+ *   console.log(element.direction);
+ * }
+ * ```
+ */
+export function isJourneyElement(element: ConnectionElement): element is ConnectionElement & { readonly type: 'JNY' } {
+    return element.type === 'JNY';
+}
+
+/**
+ * Type guard to check if an element is a Walk element.
+ * 
+ * @param element - The connection element to check
+ * @returns True if the element is a Walk element
+ */
+export function isWalkElement(element: ConnectionElement): element is ConnectionElement & { readonly type: 'WALK' } {
+    return element.type === 'WALK';
+}
+
+/**
+ * Type guard to check if an element is a Transfer element.
+ * 
+ * @param element - The connection element to check
+ * @returns True if the element is a Transfer element
+ */
+export function isTransferElement(element: ConnectionElement): element is ConnectionElement & { readonly type: 'TRSF' } {
+    return element.type === 'TRSF';
 }
 
 /**
@@ -62,52 +123,52 @@ export interface ConnectionElement {
  */
 export interface TransportLeg {
     /** Leg type (e.g., 'WALK', 'TRSF', or vehicle type number) */
-    type: string | number;
+    readonly type: string | number;
     
     /** Start timestamp (ISO 8601) */
-    start_timestamp: string;
+    readonly start_timestamp: string;
     
     /** End timestamp (ISO 8601) */
-    end_timestamp: string;
+    readonly end_timestamp: string;
     
     /** Start location name */
-    start_location?: string;
+    readonly start_location?: string;
     
     /** End location name */
-    end_location?: string;
+    readonly end_location?: string;
     
     /** Line/route name */
-    line_name?: string;
+    readonly line_name?: string;
     
     /** Direction/destination */
-    direction?: string;
+    readonly direction?: string;
     
     /** Platform at start */
-    platform_start?: string;
+    readonly platform_start?: string;
     
     /** Platform at end */
-    platform_end?: string;
+    readonly platform_end?: string;
     
     /** Number of stops */
-    stops?: number;
+    readonly stops?: number;
     
     /** Duration in minutes */
-    duration_minutes?: number;
+    readonly duration_minutes?: number;
     
     /** Whether this is a realtime connection */
-    is_realtime?: boolean;
+    readonly is_realtime?: boolean;
     
     /** Realtime start timestamp if different from scheduled */
-    realtime_start_timestamp?: string;
+    readonly realtime_start_timestamp?: string;
     
     /** Realtime end timestamp if different from scheduled */
-    realtime_end_timestamp?: string;
+    readonly realtime_end_timestamp?: string;
     
     /** Alerts/warnings for this leg */
-    alerts?: TransportAlert[];
+    readonly alerts?: readonly TransportAlert[];
     
     /** Ticket purchase URL */
-    ticket_url?: string;
+    readonly ticket_url?: string;
 }
 
 /**
@@ -115,13 +176,13 @@ export interface TransportLeg {
  */
 export interface TransportAlert {
     /** Alert title */
-    title?: string;
+    readonly title?: string;
     
     /** Alert description */
-    description?: string;
+    readonly description?: string;
     
     /** Alert severity */
-    severity?: 'info' | 'warning' | 'error';
+    readonly severity?: 'info' | 'warning' | 'error';
 }
 
 /**
@@ -129,31 +190,31 @@ export interface TransportAlert {
  */
 export interface Connection {
     /** Unique identifier */
-    id?: string;
+    readonly id?: string;
     
     /** Connection ID from API */
-    connection_id?: string | number;
+    readonly connection_id?: string | number;
     
     /** Connection start timestamp (ISO 8601) */
-    connection_start_timestamp: string;
+    readonly connection_start_timestamp: string;
     
     /** Connection end timestamp (ISO 8601) */
-    connection_end_timestamp: string;
+    readonly connection_end_timestamp: string;
     
     /** Start location name */
-    start_location?: string;
+    readonly start_location?: string;
     
     /** End location name */
-    end_location?: string;
+    readonly end_location?: string;
     
     /** Total duration in minutes */
-    duration_minutes?: number;
+    readonly duration_minutes?: number;
     
     /** Number of transfers */
-    transfers?: number;
+    readonly transfers?: number;
     
     /** Number of transfers (API field name) */
-    connection_transfers?: number;
+    readonly connection_transfers?: number;
     
     /** Individual elements/legs of the connection */
     connection_elements?: ConnectionElement[];
@@ -162,19 +223,19 @@ export interface Connection {
     legs?: TransportLeg[];
     
     /** Score for ranking */
-    score?: number;
+    readonly score?: number;
     
     /** Whether this is a recommended connection */
-    is_recommended?: boolean;
+    readonly is_recommended?: boolean;
     
     /** Whether this connection has realtime data */
-    has_realtime?: boolean;
+    readonly has_realtime?: boolean;
     
     /** Whether this is an "anytime" connection (flexible timing) */
-    connection_anytime?: boolean;
+    readonly connection_anytime?: boolean;
     
     /** Ticketshop provider name if available */
-    connection_ticketshop_provider?: string;
+    readonly connection_ticketshop_provider?: string;
 }
 
 /**
@@ -182,10 +243,10 @@ export interface Connection {
  */
 export interface SuggestionProperties {
     /** Display name */
-    display_name: string;
+    readonly display_name: string;
     
     /** Location type */
-    location_type?: string;
+    readonly location_type?: string;
 }
 
 /**
@@ -193,10 +254,10 @@ export interface SuggestionProperties {
  */
 export interface SuggestionGeometry {
     /** Geometry type */
-    type?: string;
+    readonly type?: string;
     
     /** Coordinates [lon, lat] */
-    coordinates: [number, number];
+    readonly coordinates: [number, number];
 }
 
 /**
@@ -204,22 +265,22 @@ export interface SuggestionGeometry {
  */
 export interface Suggestion {
     /** Feature type */
-    type?: string;
+    readonly type?: string;
     
     /** Diana-specific properties */
-    diana_properties: SuggestionProperties;
+    readonly diana_properties: SuggestionProperties;
     
     /** Geometry with coordinates */
-    geometry: SuggestionGeometry;
+    readonly geometry: SuggestionGeometry;
     
     /** Legacy: Display name */
-    name?: string;
+    readonly name?: string;
     
     /** Legacy: Latitude */
-    lat?: string | number;
+    readonly lat?: string | number;
     
     /** Legacy: Longitude */
-    lon?: string | number;
+    readonly lon?: string | number;
 }
 
 /**
@@ -227,22 +288,22 @@ export interface Suggestion {
  */
 export interface ConnectionSearchResponse {
     /** Connections to the activity */
-    to_connections?: Connection[];
+    readonly to_connections?: readonly Connection[];
     
     /** Connections from the activity */
-    from_connections?: Connection[];
+    readonly from_connections?: readonly Connection[];
     
     /** Recommended to-connection index */
-    recommended_to_index?: number;
+    readonly recommended_to_index?: number;
     
     /** Recommended from-connection index */
-    recommended_from_index?: number;
+    readonly recommended_from_index?: number;
     
     /** Error code if any */
-    error_code?: string | number;
+    readonly error_code?: string | number;
     
     /** Error message if any */
-    error_message?: string;
+    readonly error_message?: string;
 }
 
 /**
@@ -250,13 +311,13 @@ export interface ConnectionSearchResponse {
  */
 export interface AutocompleteResponse {
     /** List of suggestions */
-    results?: Suggestion[];
+    readonly results?: readonly Suggestion[];
     
     /** Error code if any */
-    error_code?: string | number;
+    readonly error_code?: string | number;
     
     /** Error message if any */
-    error_message?: string;
+    readonly error_message?: string;
 }
 
 /**
@@ -264,31 +325,31 @@ export interface AutocompleteResponse {
  */
 export interface ShareDataResponse {
     /** Origin location */
-    origin: string;
+    readonly origin: string;
     
     /** Origin latitude */
-    origin_lat?: string | number;
+    readonly origin_lat?: string | number;
     
     /** Origin longitude */
-    origin_lon?: string | number;
+    readonly origin_lon?: string | number;
     
     /** Selected date (YYYY-MM-DD) */
-    date: string;
+    readonly date: string;
     
     /** Selected end date for multiday (YYYY-MM-DD) */
-    dateEnd?: string | null;
+    readonly dateEnd?: string | null;
     
     /** To connection start timestamp */
-    to_connection_start_time?: string | null;
+    readonly to_connection_start_time?: string | null;
     
     /** To connection end timestamp */
-    to_connection_end_time?: string | null;
+    readonly to_connection_end_time?: string | null;
     
     /** From connection start timestamp */
-    from_connection_start_time?: string | null;
+    readonly from_connection_start_time?: string | null;
     
     /** From connection end timestamp */
-    from_connection_end_time?: string | null;
+    readonly from_connection_end_time?: string | null;
 }
 
 /**
@@ -296,7 +357,7 @@ export interface ShareDataResponse {
  */
 export interface CreateShareResponse {
     /** Created share ID */
-    shareId: string;
+    readonly shareId: string;
 }
 
 /**
@@ -304,11 +365,11 @@ export interface CreateShareResponse {
  */
 export interface ApiErrorResponse {
     /** Error code */
-    error_code?: string | number;
+    readonly error_code?: string | number;
     
     /** Error message */
-    error_message?: string;
+    readonly error_message?: string;
     
     /** Detail message */
-    detail?: string;
+    readonly detail?: string;
 }

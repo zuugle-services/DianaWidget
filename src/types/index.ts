@@ -21,6 +21,7 @@ export type {
 export type { 
     Connection, 
     ConnectionElement,
+    ConnectionElementType,
     TransportLeg, 
     TransportAlert,
     Suggestion,
@@ -31,6 +32,13 @@ export type {
     ShareDataResponse,
     CreateShareResponse,
     ApiErrorResponse
+} from './api';
+
+// API type guards
+export {
+    isJourneyElement,
+    isWalkElement,
+    isTransferElement
 } from './api';
 
 // Translation types
