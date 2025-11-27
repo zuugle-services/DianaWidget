@@ -87,6 +87,7 @@ export function throttle<T extends (...args: unknown[]) => void>(func: T, _delay
 
     return function (this: unknown, ...args: Parameters<T>): void {
         lastArgs = args;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         lastContext = this;
 
         if (!isScheduled) {
@@ -109,6 +110,7 @@ export function throttle<T extends (...args: unknown[]) => void>(func: T, _delay
 export function debounce<T extends (...args: unknown[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
     let timeout: ReturnType<typeof setTimeout> | null = null;
     return function executedFunction(this: unknown, ...args: Parameters<T>): void {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
         const context = this;
         const later = function (): void {
             timeout = null;

@@ -132,7 +132,7 @@ function validateTimeLogic(config: WidgetConfig, errors: string[]): void {
         if (latestEnd < earliestEnd) {
             errors.push(`activityLatestEndTime (${config.activityLatestEndTime}) cannot be before activityEarliestEndTime (${config.activityEarliestEndTime}).`);
         }
-    } catch (e) {
+    } catch (_e) {
         errors.push("There was an issue parsing activity time configurations for logical validation.");
     }
 }

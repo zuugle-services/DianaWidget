@@ -189,8 +189,8 @@ export default class DianaWidget {
 
             if (this.config.displayStartDate || this.config.displayEndDate) {
                 const now = DateTime.now().startOf('day');
-                let startDate = this.config.displayStartDate ? DateTime.fromISO(this.config.displayStartDate).startOf('day') : null;
-                let endDate = this.config.displayEndDate ? DateTime.fromISO(this.config.displayEndDate).startOf('day') : null;
+                const startDate = this.config.displayStartDate ? DateTime.fromISO(this.config.displayStartDate).startOf('day') : null;
+                const endDate = this.config.displayEndDate ? DateTime.fromISO(this.config.displayEndDate).startOf('day') : null;
                 let shouldDisplay = true;
                 if (startDate && now < startDate) shouldDisplay = false;
                 if (endDate && now > endDate) shouldDisplay = false;
@@ -203,7 +203,7 @@ export default class DianaWidget {
 
             this.CACHE_KEY_USER_START_LOCATION = containerId + '_userStartLocation';
 
-            let style = document.createElement('style');
+            const style = document.createElement('style');
             style.innerHTML = `
               #${containerId} {
                 max-height: 790px;
@@ -345,7 +345,7 @@ export default class DianaWidget {
 
     async initDOM() {
         this.uiManager = new UIManager();
-        let dianaWidgetRootContainer = document.createElement('div');
+        const dianaWidgetRootContainer = document.createElement('div');
         dianaWidgetRootContainer.className = 'diana-container';
         if (!this.shadowRoot) return;
         this.shadowRoot.innerHTML = '';
@@ -1184,7 +1184,7 @@ export default class DianaWidget {
                     const errorBody = await error.response.json();
                     if (errorBody && errorBody.code) errorMessage = this.t(getApiErrorTranslationKey(errorBody.code));
                     else if (errorBody && errorBody.error) errorMessage = this.t('errors.api.unknown');
-                } catch (parseError) {
+                } catch (_parseError) {
                     errorMessage = this.t('errors.api.unknown');
                 }
             } else if (error.message) {
@@ -1220,7 +1220,7 @@ export default class DianaWidget {
         }
     }
 
-    async fetchActivityData(): Promise<any> {
+    async fetchActivityData(): Promise<void> {
         const activityStartDate = this.state.selectedDate;
         if (!activityStartDate) throw new Error("Activity start date is not available.");
 
@@ -1372,19 +1372,25 @@ export default class DianaWidget {
         this.elements.originInput.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
     }
 
+    /**
+     * Resets a collapsible summary element to its placeholder state
+     */
+    _resetCollapsibleSummary(collapsible: HTMLElement | null | undefined): void {
+        if (!collapsible) return;
+        const wrapper = collapsible.querySelector('.summary-content-wrapper');
+        if (wrapper) {
+            wrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+        }
+        collapsible.classList.remove('has-summary', 'expanded');
+    }
+
     renderConnectionResults(): void {
         this.showError(null, 'results');
         if (this.elements.topSlider) this.elements.topSlider.innerHTML = '';
         if (this.elements.bottomSlider) this.elements.bottomSlider.innerHTML = '';
 
-        if (this.elements.collapsibleToActivity) {
-            this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper')?.innerHTML && (this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper')!.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`);
-            this.elements.collapsibleToActivity.classList.remove('has-summary', 'expanded');
-        }
-        if (this.elements.collapsibleFromActivity) {
-            this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper')?.innerHTML && (this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper')!.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`);
-            this.elements.collapsibleFromActivity.classList.remove('has-summary', 'expanded');
-        }
+        this._resetCollapsibleSummary(this.elements.collapsibleToActivity);
+        this._resetCollapsibleSummary(this.elements.collapsibleFromActivity);
 
         if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.config.activityName;
 
@@ -2222,7 +2228,7 @@ export default class DianaWidget {
             }
 
             if (!this.config.shareURLPrefix) throw new Error("Share URL prefix not configured");
-            let url = new URL(this.config.shareURLPrefix);
+            const url = new URL(this.config.shareURLPrefix);
             url.searchParams.set('diana-share', shareId);
 
             if (navigator.share) {

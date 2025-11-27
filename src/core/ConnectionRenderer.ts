@@ -481,7 +481,7 @@ export class ConnectionRenderer {
 
         let durationString = "";
         if (element.vehicle_name && element.type === "JNY") {
-            let n_intermediate_stops = (element.n_intermediate_stops ?? -1) + 1; // n_intermediate_stops seems to be exclusive of final stop
+            const n_intermediate_stops = (element.n_intermediate_stops ?? -1) + 1; // n_intermediate_stops seems to be exclusive of final stop
             const stopString = n_intermediate_stops !== 1 ? `, ${n_intermediate_stops} ${this.t("stopPl")})` : `, ${n_intermediate_stops} ${this.t("stopSg")})`;
             durationString = `${element.vehicle_name} -> ${element.direction} (${duration}`;
             durationString += (n_intermediate_stops > 0) ? `${stopString}` : `)`; // Only add stop string if stops > 0
