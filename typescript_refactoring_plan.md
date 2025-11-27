@@ -3,7 +3,7 @@
 ## Current Progress (Last Updated: 2025-11-27)
 
 ### ✅ COMPLETED:
-- **Phase 1:** Project Setup & Configuration (TypeScript, ts-loader, tsconfig.json, webpack, Jest)
+- **Phase 1:** Project Setup & Configuration (TypeScript, ts-loader, tsconfig.json, webpack, Jest, ESLint)
 - **Phase 2:** Type Definitions & Interfaces (src/types/ directory with all core types)
 - **Phase 3.1-3.4:** File Migrations (utils.ts, datetimeUtils.ts, translations.ts, all templates, components)
 - **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines → 2924 lines after extractions)
@@ -55,6 +55,7 @@
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
 - Build passes successfully with `npm run build` (bundle size: ~655 KiB)
+- ESLint is configured via `eslint.config.mjs` using flat config format. Run `npm run lint` to check code quality. Current linting shows some issues to be fixed in future cleanup.
 - Dynamic imports in UIManager use `.js` extension which webpack resolves correctly at build time
 - widget.ts migration includes:
   - Class property declarations with types
@@ -147,6 +148,15 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
   npm install --save-dev ts-jest @types/jest
   ```
 - [x] Update `jest.config.js` for TypeScript support
+
+### 1.6 Setup ESLint for TypeScript
+- [x] Install ESLint with TypeScript support:
+  ```bash
+  npm install --save-dev eslint @eslint/js typescript-eslint
+  ```
+- [x] Create `eslint.config.mjs` with TypeScript-specific rules
+- [x] Add `npm run lint` script to package.json
+- Note: ESLint is configured with recommended rules plus TypeScript-specific rules. Run `npm run lint` to check for issues.
 
 ---
 
@@ -358,7 +368,8 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Remove any remaining `.js` files from `src/` (confirmed: no .js files remaining)
 - [ ] Remove unused dependencies from `package.json`
 - [ ] Update `.gitignore` if needed
-- [ ] Run final linting pass
+- [ ] Run final linting pass (`npm run lint`) and fix all issues
+- [ ] Fix ESLint issues identified (12 errors, 4 warnings as of 2025-11-27)
 
 ---
 
@@ -407,6 +418,7 @@ DianaWidget/
 │           ├── _widgetHeader.ts
 │           └── _menuDropdown.ts
 ├── tsconfig.json                # TypeScript configuration
+├── eslint.config.mjs            # ESLint configuration (flat config)
 ├── webpack.config.js            # Updated for TypeScript
 ├── package.json                 # Updated dependencies
 └── ... 
