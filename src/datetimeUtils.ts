@@ -49,10 +49,13 @@ export function calculateInitialStartDate(
         } else {
             dateObj = now.startOf('day').toObject();
         }
-        initialDate = new Date(dateObj.year!, dateObj.month! - 1, dateObj.day!);
+        // Create date at UTC midnight to ensure consistent handling across timezones
+        initialDate = new Date(Date.UTC(dateObj.year!, dateObj.month! - 1, dateObj.day!));
     } catch (error) {
         console.error("Error calculating initial start date, defaulting to today:", error);
-        initialDate = new Date(); // Fallback to current date
+        // Fallback to UTC midnight of today
+        const today = DateTime.now().setZone(timezone).startOf('day').toObject();
+        initialDate = new Date(Date.UTC(today.year!, today.month! - 1, today.day!));
     }
     return initialDate;
 }

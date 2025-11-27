@@ -224,7 +224,12 @@ export default class DianaWidget {
                     initialSelectedEndDate = startDt.plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 } else if (this.config.activityLatestEndTime && this.config.activityDurationMinutes !== undefined) {
                     initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
-                    initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
+                    initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate, {zone: 'utc'}).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
+                } else {
+                    // Fallback: use today in widget timezone as start date when no other config is available
+                    const todayInZone = DateTime.now().setZone(this.config.timezone).startOf('day');
+                    initialSelectedStartDate = new Date(Date.UTC(todayInZone.year, todayInZone.month - 1, todayInZone.day));
+                    initialSelectedEndDate = DateTime.fromJSDate(initialSelectedStartDate, {zone: 'utc'}).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
                 }
             }
 
@@ -233,14 +238,18 @@ export default class DianaWidget {
                     initialSelectedStartDate = DateTime.fromISO(this.config.overrideActivityStartDate, {zone: 'utc'}).toJSDate();
                 } else if (this.config.activityLatestEndTime && this.config.activityDurationMinutes !== undefined) {
                     initialSelectedStartDate = calculateInitialStartDate(this.config.timezone, this.config.activityLatestEndTime, this.config.activityDurationMinutes);
+                } else if (this.config.multiday) {
+                    // Fallback for multiday: use today in widget timezone as start date
+                    const todayInZone = DateTime.now().setZone(this.config.timezone).startOf('day');
+                    initialSelectedStartDate = new Date(Date.UTC(todayInZone.year, todayInZone.month - 1, todayInZone.day));
                 }
             }
             if (this.config.multiday && !initialSelectedEndDate && initialSelectedStartDate) {
                 initialSelectedEndDate = this.config.overrideActivityEndDate
                     ? DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'}).toJSDate()
-                    : DateTime.fromJSDate(initialSelectedStartDate).plus({days: 1}).toJSDate();
+                    : DateTime.fromJSDate(initialSelectedStartDate, {zone: 'utc'}).plus({days: this.config.activityDurationDaysFixed || 1}).toJSDate();
             }
-            if (this.config.multiday && initialSelectedStartDate && initialSelectedEndDate && DateTime.fromJSDate(initialSelectedEndDate) < DateTime.fromJSDate(initialSelectedStartDate)) {
+            if (this.config.multiday && initialSelectedStartDate && initialSelectedEndDate && DateTime.fromJSDate(initialSelectedEndDate, {zone: 'utc'}) < DateTime.fromJSDate(initialSelectedStartDate, {zone: 'utc'})) {
                 initialSelectedEndDate = new Date(initialSelectedStartDate.valueOf());
             }
 
