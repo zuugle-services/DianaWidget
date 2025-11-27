@@ -3021,7 +3021,7 @@ export default class DianaWidget {
                         this.clearMessages();
                         if (this.state.selectedEndDate && this.state.selectedDate && DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
                     },
-                    this.config.overrideActivityStartDate, this.config.overrideActivityEndDate, this.config.activityDurationDaysFixed
+                    this.config.overrideActivityStartDate ?? null, this.config.overrideActivityEndDate ?? null, this.config.activityDurationDaysFixed ?? null
                 );
             }
 
@@ -3065,8 +3065,8 @@ export default class DianaWidget {
                     this.updateDateDisplay(nSD, 'dateDisplayStart');
                     if (this.config.activityDurationDaysFixed) {
                         this.state.selectedEndDate = DateTime.fromJSDate(nSD).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                        if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
-                        this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+                        if (this.elements.activityDateEnd && this.state.selectedEndDate) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
+                        if (this.state.selectedEndDate) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
                     } else if (this.state.selectedEndDate && nSD > this.state.selectedEndDate) {
                         this.state.selectedEndDate = new Date(nSD.valueOf());
                         if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
@@ -3127,13 +3127,13 @@ export default class DianaWidget {
 
                 this.elements.dateBtnToday?.addEventListener('click', () => {
                     const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
-                    const today = new Date(today_object.year ?? 2025, (today_object.month ?? 1) - 1, today_object.day ?? 1);
+                    const today = new Date(today_object.year ?? new Date().getFullYear(), (today_object.month ?? 1) - 1, today_object.day ?? 1);
                     this.onDateSelectedByButton(today);
                 });
 
                 this.elements.dateBtnTomorrow?.addEventListener('click', () => {
                     const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({days: 1}).startOf('day').toObject();
-                    const tomorrow = new Date(tomorrow_object.year ?? 2025, (tomorrow_object.month ?? 1) - 1, tomorrow_object.day ?? 1);
+                    const tomorrow = new Date(tomorrow_object.year ?? new Date().getFullYear(), (tomorrow_object.month ?? 1) - 1, tomorrow_object.day ?? 1);
                     this.onDateSelectedByButton(tomorrow);
                 });
 
@@ -3210,7 +3210,9 @@ export default class DianaWidget {
         if (typeof this.config.onDateChange === 'function') {
             try {
                 const isoDate = DateTime.fromJSDate(date).toISODate();
-                this.config.onDateChange(isoDate);
+                if (isoDate) {
+                    this.config.onDateChange(isoDate);
+                }
             } catch (e) {
                 console.error("Error executing onDateChange callback:", e);
             }
@@ -3222,12 +3224,13 @@ export default class DianaWidget {
             return; // Not applicable for multiday or if elements are missing
         }
 
+        const currentYear = new Date().getFullYear();
         const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
-        const today = new Date(today_object["year"], today_object["month"] - 1, today_object["day"]);
+        const today = new Date(today_object.year ?? currentYear, (today_object.month ?? 1) - 1, today_object.day ?? 1);
         const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({days: 1}).startOf('day').toObject();
-        const tomorrow = new Date(tomorrow_object["year"], tomorrow_object["month"] - 1, tomorrow_object["day"]);
+        const tomorrow = new Date(tomorrow_object.year ?? currentYear, (tomorrow_object.month ?? 1) - 1, tomorrow_object.day ?? 1);
         const selected_object = this.state.selectedDate ? DateTime.fromJSDate(this.state.selectedDate).setZone(this.config.timezone).startOf('day').toObject() : null;
-        const selected = selected_object ? new Date(selected_object["year"], selected_object["month"] - 1, selected_object["day"]) : null;
+        const selected = selected_object ? new Date(selected_object.year ?? currentYear, (selected_object.month ?? 1) - 1, selected_object.day ?? 1) : null;
 
         this.elements.dateBtnToday.classList.remove('active');
         this.elements.dateBtnTomorrow.classList.remove('active');

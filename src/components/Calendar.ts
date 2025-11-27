@@ -17,7 +17,7 @@ interface WidgetInstance {
         selectedDate: Date | null;
     };
     elements?: {
-        otherDateText?: HTMLElement;
+        otherDateText?: HTMLElement | null;
     };
     dianaWidgetRootContainer: HTMLElement | null;
     clearMessages: () => void;
