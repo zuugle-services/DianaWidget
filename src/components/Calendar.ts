@@ -1,11 +1,55 @@
 import {DateTime} from 'luxon';
 import {formatDateForDisplay, getMonthName, getShortDayName, throttle} from "../utils";
 import {convertToUTCMidnightJSDate, formatDatetime} from "../datetimeUtils";
-import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate.js';
-import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate.js';
+import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate';
+import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate';
+import type { TranslationFunction } from '../types';
+
+// Widget instance interface (minimal for calendar use)
+interface WidgetInstance {
+    container: HTMLElement | null;
+    config: {
+        language: string;
+        timezone: string;
+    };
+    t: TranslationFunction;
+    state: {
+        selectedDate: Date | null;
+    };
+    elements?: {
+        otherDateText?: HTMLElement | null;
+    };
+    dianaWidgetRootContainer: HTMLElement | null;
+    clearMessages: () => void;
+}
 
 export class SingleCalendar {
-    constructor(inputElement, displayElement, initialDate, widgetInstance, onDateSelectCallback, triggerElement, anchorElement, styles) {
+    inputElement: HTMLInputElement | null;
+    displayElement: HTMLElement | null;
+    widget: WidgetInstance;
+    config: WidgetInstance['config'];
+    t: TranslationFunction;
+    onDateSelectCallback: ((date: Date) => void) | null;
+    styles: string;
+    triggerElement: HTMLElement | null;
+    anchorElement: HTMLElement | null;
+    selectedDate: Date;
+    currentViewMonth: number;
+    currentViewYear: number;
+    calendarContainer: HTMLDivElement | null;
+    shadowRoot: ShadowRoot | null;
+    calendarContentWrapper: HTMLDivElement | null;
+
+    constructor(
+        inputElement: HTMLInputElement | null, 
+        displayElement: HTMLElement | null, 
+        initialDate: Date | null, 
+        widgetInstance: WidgetInstance, 
+        onDateSelectCallback: ((date: Date) => void) | null, 
+        triggerElement: HTMLElement | null, 
+        anchorElement: HTMLElement | null, 
+        styles: string
+    ) {
         this.inputElement = inputElement; // Hidden input for date value
         this.displayElement = displayElement; // Span inside "Other Date" button for text
         this.widget = widgetInstance;
@@ -60,16 +104,16 @@ export class SingleCalendar {
 
         themableProperties.forEach(prop => {
             const value = hostStyles.getPropertyValue(prop).trim();
-            if (value) {
+            if (value && this.calendarContentWrapper) {
                 this.calendarContentWrapper.style.setProperty(prop, value);
             }
         });
     }
 
     _createCalendarContainer() {
-        const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container.id}`;
+        const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container?.id ?? 'default'}`;
 
-        let existingContainer = document.getElementById(calendarContainerId);
+        const existingContainer = document.getElementById(calendarContainerId);
         if (existingContainer) existingContainer.remove();
 
         this.calendarContainer = document.createElement("div");
@@ -127,7 +171,7 @@ export class SingleCalendar {
                 : null;
 
             const isSelected = selectedDateUTC && date.getTime() === selectedDateUTC.getTime();
-            let isDisabled = date < today;
+            const isDisabled = date < today;
 
             html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}${isDisabled ? " disabled" : ""}" data-day="${day}">${day}</div>`;
         }
@@ -135,7 +179,9 @@ export class SingleCalendar {
     }
 
     _addCalendarInternalEventListeners() {
-        this.shadowRoot.querySelector(".prev-month").addEventListener("click", (e) => {
+        if (!this.shadowRoot) return;
+
+        this.shadowRoot.querySelector(".prev-month")?.addEventListener("click", (e) => {
             e.stopPropagation();
             this.currentViewMonth--;
             if (this.currentViewMonth < 0) {
@@ -145,7 +191,7 @@ export class SingleCalendar {
             this._render();
         });
 
-        this.shadowRoot.querySelector(".next-month").addEventListener("click", (e) => {
+        this.shadowRoot.querySelector(".next-month")?.addEventListener("click", (e) => {
             e.stopPropagation();
             this.currentViewMonth++;
             if (this.currentViewMonth > 11) {
@@ -155,13 +201,13 @@ export class SingleCalendar {
             this._render();
         });
 
-        this.shadowRoot.querySelector(".calendar-cancel-btn").addEventListener("click", (e) => {
+        this.shadowRoot.querySelector(".calendar-cancel-btn")?.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
             this.hide();
         });
 
-        this.shadowRoot.querySelector(".calendar-apply-btn").addEventListener("click", (e) => {
+        this.shadowRoot.querySelector(".calendar-apply-btn")?.addEventListener("click", (e) => {
             e.preventDefault();
             e.stopPropagation();
             this._updateInputElement();
@@ -175,7 +221,7 @@ export class SingleCalendar {
         this.shadowRoot.querySelectorAll(".calendar-day:not(.empty):not(.disabled)").forEach(dayElement => {
             dayElement.addEventListener("click", (e) => {
                 e.stopPropagation();
-                this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt(dayElement.dataset.day)));
+                this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt((dayElement as HTMLElement).dataset.day || '1')));
                 this._render();
             });
         });
@@ -189,7 +235,7 @@ export class SingleCalendar {
                 return;
             }
             e.stopPropagation();
-            if (this.calendarContainer.style.display !== 'none') {
+            if (this.calendarContainer && this.calendarContainer.style.display !== 'none') {
                 this.hide();
             } else {
                 const currentDateFromWidget = this.widget.state.selectedDate || new Date();
@@ -230,7 +276,7 @@ export class SingleCalendar {
                     this.displayElement.classList.remove("placeholder");
                 }
             } else {
-                this.displayElement.textContent = this.t('otherDate');
+                this.displayElement.textContent = String(this.t('otherDate'));
                 this.displayElement.classList.add("placeholder");
             }
         }
@@ -252,7 +298,9 @@ export class SingleCalendar {
         }
         const anchorRect = this.anchorElement.getBoundingClientRect();
         const desiredCalendarWidth = Math.max(280, anchorRect.width); // Ensure minimum width
-        this.calendarContentWrapper.style.width = `${desiredCalendarWidth}px`;
+        if (this.calendarContentWrapper) {
+            this.calendarContentWrapper.style.width = `${desiredCalendarWidth}px`;
+        }
 
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
@@ -302,7 +350,7 @@ export class SingleCalendar {
         this.calendarContainer.style.display = 'none';
     }
 
-    setSelectedDate(date, triggerCallback = true) {
+    setSelectedDate(date: Date, triggerCallback: boolean = true): void {
         this.selectedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 
         if (!isNaN(this.selectedDate.getTime())) {
@@ -322,12 +370,36 @@ export class SingleCalendar {
 }
 
 export class RangeCalendarModal {
-    constructor(initialStartDate, initialEndDate, widgetInstance, onRangeSelectCallback, overrideStartDateStr, overrideEndDateStr, activityDurationDaysFixed) {
+    widget: WidgetInstance;
+    config: WidgetInstance['config'];
+    t: TranslationFunction;
+    onRangeSelectCallback: ((startDate: Date, endDate: Date) => void) | null;
+    activityDurationDaysFixed: number | null;
+    fixedStartDate: Date | null;
+    fixedEndDate: Date | null;
+    tempStartDate: Date;
+    tempEndDate: Date;
+    currentViewMonth: number;
+    currentViewYear: number;
+    selectingStartDate: boolean;
+    modalOverlay: HTMLDivElement | null;
+    modalElement: HTMLDivElement | null;
+    calendarInstance: HTMLElement | null;
+
+    constructor(
+        initialStartDate: Date | null, 
+        initialEndDate: Date | null, 
+        widgetInstance: WidgetInstance, 
+        onRangeSelectCallback: ((startDate: Date, endDate: Date) => void) | null, 
+        overrideStartDateStr: string | null, 
+        overrideEndDateStr: string | null, 
+        activityDurationDaysFixed: number | string | null
+    ) {
         this.widget = widgetInstance;
         this.config = widgetInstance.config;
         this.t = widgetInstance.t.bind(widgetInstance);
         this.onRangeSelectCallback = onRangeSelectCallback;
-        this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(activityDurationDaysFixed, 10) : null;
+        this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(String(activityDurationDaysFixed), 10) : null;
 
         this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, {zone: 'utc'}).startOf('day').toJSDate() : null;
         if (this.fixedStartDate && isNaN(this.fixedStartDate.getTime())) this.fixedStartDate = null;
@@ -395,7 +467,7 @@ export class RangeCalendarModal {
         this.modalElement.innerHTML = getRangeCalendarModalHTML({ t: this.t });
 
         this.modalOverlay.appendChild(this.modalElement);
-        this.widget.dianaWidgetRootContainer.appendChild(this.modalOverlay);
+        this.widget.dianaWidgetRootContainer?.appendChild(this.modalOverlay);
 
         this.calendarInstance = this.modalElement.querySelector('.range-calendar-instance');
         this._renderCalendar();
@@ -543,9 +615,11 @@ export class RangeCalendarModal {
     }
 
     _attachEventListeners() {
-        this.modalElement.querySelector('.range-calendar-close-btn').addEventListener('click', () => this.hide());
-        this.modalElement.querySelector('.range-calendar-cancel-btn').addEventListener('click', () => this.hide());
-        this.modalElement.querySelector('.range-calendar-apply-btn').addEventListener('click', () => this._handleApply());
+        if (!this.modalElement || !this.modalOverlay) return;
+
+        this.modalElement.querySelector('.range-calendar-close-btn')?.addEventListener('click', () => this.hide());
+        this.modalElement.querySelector('.range-calendar-cancel-btn')?.addEventListener('click', () => this.hide());
+        this.modalElement.querySelector('.range-calendar-apply-btn')?.addEventListener('click', () => this._handleApply());
         this.modalOverlay.addEventListener('click', (e) => {
             if (e.target === this.modalOverlay) {
                 this.hide();
@@ -621,7 +695,9 @@ export class RangeCalendarModal {
         }
 
         this._renderCalendar();
-        this.modalOverlay.style.display = 'flex';
+        if (this.modalOverlay) {
+            this.modalOverlay.style.display = 'flex';
+        }
     }
 
     hide() {

@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "ESNext",
+        "strict": false,
+        "esModuleInterop": true,
+        "declaration": false,
+        "sourceMap": true,
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "allowJs": true,
+        "checkJs": false,
+        "noImplicitAny": false,
+        "strictNullChecks": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
+}

@@ -2,26 +2,42 @@
  * Manages the navigation between different pages within the widget.
  */
 export class PageManager {
+    /** DOM element for the form page */
+    formPage: HTMLElement | null;
+    /** DOM element for the results page */
+    resultsPage: HTMLElement | null;
+    /** DOM element for the inner container holding the pages */
+    innerContainer: HTMLElement | null;
+    /** DOM element for the content page */
+    contentPage: HTMLElement | null;
+    /** Currently active main page (form or results) */
+    activePage: HTMLElement | null;
+
     /**
      * Initializes the PageManager.
-     * @param {HTMLElement} formPageElement - The DOM element for the form page.
-     * @param {HTMLElement} resultsPageElement - The DOM element for the results page.
-     * @param {HTMLElement} innerContainerElement - The DOM element for the inner container holding the pages.
-     * @param {HTMLElement} contentPageElement - The DOM element for the content page.
+     * @param formPageElement - The DOM element for the form page.
+     * @param resultsPageElement - The DOM element for the results page.
+     * @param innerContainerElement - The DOM element for the inner container holding the pages.
+     * @param contentPageElement - The DOM element for the content page.
      */
-    constructor(formPageElement, resultsPageElement, innerContainerElement, contentPageElement) {
+    constructor(
+        formPageElement: HTMLElement | null, 
+        resultsPageElement: HTMLElement | null, 
+        innerContainerElement: HTMLElement | null, 
+        contentPageElement: HTMLElement | null
+    ) {
         this.formPage = formPageElement;
         this.resultsPage = resultsPageElement;
         this.innerContainer = innerContainerElement;
-        this.contentPage = contentPageElement; // Added content page
-        this.activePage = null; // To keep track of the currently active main page (form or results)
+        this.contentPage = contentPageElement;
+        this.activePage = null;
 
         if (!this.formPage || !this.resultsPage || !this.innerContainer || !this.contentPage) {
             console.error("PageManager: One or more page elements are missing. Navigation might not work correctly.");
         }
     }
 
-    _hideAllPages() {
+    private _hideAllPages(): void {
         if (this.formPage) this.formPage.classList.remove("active");
         if (this.resultsPage) this.resultsPage.classList.remove("active");
         if (this.contentPage) this.contentPage.classList.remove("active");
@@ -30,7 +46,7 @@ export class PageManager {
     /**
      * Navigates to the form page.
      */
-    navigateToForm() {
+    navigateToForm(): void {
         this._hideAllPages();
         if (this.formPage) this.formPage.classList.add("active");
         this.activePage = this.formPage;
@@ -43,7 +59,7 @@ export class PageManager {
     /**
      * Navigates to the results page.
      */
-    navigateToResults() {
+    navigateToResults(): void {
         this._hideAllPages();
         if (this.resultsPage) this.resultsPage.classList.add("active");
         this.activePage = this.resultsPage;
@@ -57,7 +73,7 @@ export class PageManager {
     /**
      * Navigates to the content page.
      */
-    navigateToContentPage() {
+    navigateToContentPage(): void {
         this._hideAllPages();
         if (this.contentPage) this.contentPage.classList.add("active");
         if (this.innerContainer) {
@@ -69,7 +85,7 @@ export class PageManager {
      * Returns to the previously active main page (form or results).
      * If no specific active page was tracked, defaults to form page.
      */
-    returnToActivePage() {
+    returnToActivePage(): void {
         this._hideAllPages();
         if (this.activePage === this.resultsPage) {
             this.navigateToResults();

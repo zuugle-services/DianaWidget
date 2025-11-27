@@ -1,7 +1,11 @@
 export default {
-  transform: {},
+  preset: 'ts-jest',
+  transform: {
+    '^.+\\.tsx?$': 'ts-jest',
+  },
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1'
   },
-  testEnvironment: 'node'
+  testEnvironment: 'node',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
 };

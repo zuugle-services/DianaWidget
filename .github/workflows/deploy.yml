@@ -19,12 +19,15 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: 📦 Install dependencies
         run: npm ci
+
+      - name: 🔍 Run linting
+        run: npm run lint
 
       - name: 🧪 Run tests
         run: npm test
@@ -102,12 +105,18 @@ jobs:
         uses: actions/checkout@v4
 
       - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 20
 
       - name: 📦 Install dependencies
         run: npm ci
+
+      - name: 🔍 Run linting
+        run: npm run lint
+
+      - name: 🧪 Run tests
+        run: npm test
 
       - name: 🔨 Build development bundle
         run: npm run build

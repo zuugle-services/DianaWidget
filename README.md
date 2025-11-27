@@ -25,7 +25,7 @@
 
 ## Project Overview
 
-A modular JavaScript widget that helps users plan transit connections for activities between specified locations. Key capabilities:
+A modular TypeScript widget that helps users plan transit connections for activities between specified locations. Key capabilities:
 
 * Location autocomplete with suggestions
 * Date/time selection with adaptive calendar
@@ -48,6 +48,7 @@ Designed for integration in web applications requiring activity transit planning
 
 **Technical Highlights**
 
+* Written in TypeScript with full type definitions
 * CSS Modules with PostCSS processing
 * Webpack-based build pipeline
 * Accessibility-first implementation
@@ -165,6 +166,8 @@ window.dianaActivityConfig = {
 npm run dev     # Start dev server with hot-reload
 npm run build   # Create production bundle
 npm run analyze # Analyze bundle size
+npm run test    # Run unit tests
+npm run lint    # Run ESLint
 ```
 
 ### Key Development Patterns
@@ -209,9 +212,9 @@ new window.DianaWidget(window.dianaActivityConfig, "dianaWidgetContainer");
 If you use a custom container ID, ensure you pass it as the second argument to the `DianaWidget` constructor.
 
 2.  **Component Structure**
-   * `src/core/widget.js`: Main widget class
-   * `src/core/styles/widget.css`: Component styles
-   * `src/index.js`: DOM initialization
+   * `src/core/widget.ts`: Main widget class
+   * `src/core/styles/widget.scss`: Component styles
+   * `src/index.ts`: DOM initialization
 
 3.  **State Management**
     Internal state machine tracks:
@@ -580,25 +583,46 @@ You can even set more complex styles to the outermost container, e.g.:
 ├── dist/                   # Built assets
 ├── src/
 │   ├── core/
-│   │   ├── widget.js       # Main widget logic
-│   │   ├── Calendar.js     # Calendar logic 
-│   │   └── styles/         # Component styles (CSS)
-│   ├── translations.js     # Language file
-│   ├── utils.js            # Utility functions
-│   ├── datetimeUtils.js    # Datetime utility functions
-│   └── index.js            # Initialization entry point
+│   │   ├── widget.ts           # Main widget class (~2900 lines)
+│   │   ├── StateManager.ts     # State management
+│   │   ├── EventManager.ts     # Event handling
+│   │   ├── Validator.ts        # Configuration validation
+│   │   ├── ConnectionRenderer.ts # Connection rendering
+│   │   └── styles/             # Component styles (SCSS)
+│   ├── components/
+│   │   ├── Calendar.ts         # Calendar components
+│   │   ├── PageManager.ts      # Page navigation
+│   │   └── UIManager.ts        # UI template management
+│   ├── services/
+│   │   └── ApiService.ts       # API communication
+│   ├── constants/
+│   │   └── defaults.ts         # Default values and constants
+│   ├── types/
+│   │   ├── index.ts            # Type exports
+│   │   ├── config.ts           # Configuration types
+│   │   ├── state.ts            # State types
+│   │   ├── api.ts              # API response types
+│   │   └── translations.ts     # Translation types
+│   ├── templates/              # UI templates
+│   ├── translations.ts         # Language file
+│   ├── utils.ts                # Utility functions
+│   ├── datetimeUtils.ts        # Datetime utility functions
+│   └── index.ts                # Initialization entry point
+├── tsconfig.json           # TypeScript configuration
+├── eslint.config.mjs       # ESLint configuration
 ├── webpack.config.js       # Build configuration
 └── postcss.config.js       # CSS processing configuration
 ```
 
 **Key Modules**
 
-1.  **Widget Core** (`widget.js`)
-   * Configuration validation
+1.  **Widget Core** (`widget.ts`)
+   * Configuration validation (via `Validator.ts`)
    * DOM injection & manipulation
-   * API communication (address autocomplete, connections)
-   * State management (selected date, connections, loading, errors)
-   * Calendar logic (custom and native handling)
+   * API communication (via `ApiService.ts`)
+   * State management (via `StateManager.ts`)
+   * Event handling (via `EventManager.ts`)
+   * Connection rendering (via `ConnectionRenderer.ts`)
    * Time conversions and calculations (using Luxon)
 
 2.  **Styling System**
@@ -608,9 +632,73 @@ You can even set more complex styles to the outermost container, e.g.:
       * Minification (`cssnano`)
 
 3.  **Build System**
-   * Webpack 5 bundling the JavaScript and injecting CSS
+   * Webpack 5 bundling TypeScript and injecting CSS
+   * TypeScript compilation via `ts-loader`
    * UMD output for compatibility
    * Development server with hot module replacement
+
+## TypeScript Types
+
+The widget is written in TypeScript and exports type definitions for consumers who want type-safe integration.
+
+### Available Types
+
+All types are exported from `src/types/index.ts`:
+
+**Configuration Types**
+* `WidgetConfig` - Complete widget configuration interface
+* `PartialWidgetConfig` - Partial configuration (for optional fields)
+* `LocationType` - Valid location types (`'coordinates' | 'coord' | 'coords' | 'address' | 'station'`)
+* `Language` - Supported languages (`'EN' | 'DE' | 'FR' | 'IT' | 'TH' | 'ES'`)
+
+**State Types**
+* `WidgetState` - Internal widget state interface
+* `ActivityTimes` - Activity time window configuration
+* `PreselectTimes` - Preselected time values
+
+**API Response Types**
+* `Connection` - A transit connection with legs/elements
+* `ConnectionElement` - Individual segment of a journey (walk, transfer, or vehicle)
+* `ConnectionElementType` - Type of connection element (`'WALK' | 'TRSF' | 'JNY'`)
+* `TransportLeg` - Legacy transport leg interface (deprecated, use `ConnectionElement`)
+* `TransportAlert` - Alert/warning for a connection segment
+* `Suggestion` - Address autocomplete suggestion (GeoJSON Feature)
+* `SuggestionProperties` - Properties of a suggestion
+* `SuggestionGeometry` - Geometry of a suggestion
+* `ConnectionSearchResponse` - API response for connection search
+* `AutocompleteResponse` - API response for address autocomplete
+* `ShareDataResponse` - API response for share data
+* `CreateShareResponse` - API response for creating a share link
+* `ApiErrorResponse` - API error response structure
+
+**Translation Types**
+* `Translations` - Complete translation object
+* `LanguageTranslations` - Translations for a single language
+* `TranslationFunction` - Function signature for translation lookup
+
+### Type Guards
+
+The following type guard functions are exported for type-safe checking of connection elements:
+
+```typescript
+import { isJourneyElement, isWalkElement, isTransferElement } from './types';
+
+// Check if element is a journey (train, bus, etc.)
+if (isJourneyElement(element)) {
+  console.log(element.vehicle_name);
+  console.log(element.direction);
+}
+
+// Check if element is a walking segment
+if (isWalkElement(element)) {
+  console.log('Walking segment');
+}
+
+// Check if element is a transfer
+if (isTransferElement(element)) {
+  console.log('Transfer between platforms');
+}
+```
 
 ## Deployment
 
