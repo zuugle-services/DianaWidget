@@ -16,9 +16,14 @@ export type ConnectionElementType = 'WALK' | 'TRSF' | 'JNY';
  * - 'WALK': Walking segment
  * - 'TRSF': Transfer between stations  
  * - 'JNY': Journey on a vehicle (train, bus, etc.)
+ * 
+ * Note: The 'type' property uses `string` instead of `ConnectionElementType` to allow
+ * for unknown element types that may be returned by the API in the future.
+ * Use the type guard functions (isJourneyElement, isWalkElement, isTransferElement)
+ * for type-safe access to specific element properties.
  */
 export interface ConnectionElement {
-    /** Element type (e.g., 'WALK', 'TRSF', 'JNY') */
+    /** Element type (e.g., 'WALK', 'TRSF', 'JNY') - uses string for API compatibility */
     readonly type: string;
     
     /** Departure time (ISO 8601) */
@@ -60,10 +65,16 @@ export interface ConnectionElement {
     /** Alerts/warnings for this element */
     readonly alerts?: readonly TransportAlert[];
     
-    /** Whether this is the first element in the original connection (set internally) */
+    /** 
+     * Whether this is the first element in the original connection.
+     * This is an internal mutable flag set by the widget during processing.
+     */
     isOriginalFirst?: boolean;
     
-    /** Whether this is the last element in the original connection (set internally) */
+    /** 
+     * Whether this is the last element in the original connection.
+     * This is an internal mutable flag set by the widget during processing.
+     */
     isOriginalLast?: boolean;
 }
 
@@ -246,7 +257,7 @@ export interface SuggestionGeometry {
     readonly type?: string;
     
     /** Coordinates [lon, lat] */
-    readonly coordinates: readonly [number, number];
+    readonly coordinates: [number, number];
 }
 
 /**
