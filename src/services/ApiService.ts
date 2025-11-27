@@ -104,7 +104,7 @@ export class ApiService {
         error.response = response;
         try {
             error.body = await response.clone().json();
-        } catch (e) {
+        } catch (_e) {
             error.body = await response.clone().text();
         }
         throw error;

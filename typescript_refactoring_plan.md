@@ -44,18 +44,20 @@
   - Build passes with `--noUnusedLocals` and `--noUnusedParameters`
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 6.1:** Build Verification
-  - Test UMD export works (`window.DianaWidget`)
 - **Phase 6.2:** Functional Testing
   - Test widget initialization with various configurations
   - Test address autocomplete functionality
   - Test calendar interactions (both single and range)
   - Test connection search and results display
+- **Phase 7.1:** Update Documentation
+  - Update README.md with TypeScript information
+- **Phase 7.2:** Add JSDoc/TSDoc Comments
+  - Add TSDoc comments to public interfaces and functions
 
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
-- Build passes successfully with `npm run build` (bundle size: ~655 KiB)
-- ESLint is configured via `eslint.config.mjs` using flat config format. Run `npm run lint` to check code quality. Current linting shows some issues to be fixed in future cleanup.
+- Build passes successfully with `npm run build` (bundle size: ~675 KiB)
+- ESLint passes with 0 errors and 3 warnings (intentionally unused catch variables). Run `npm run lint` to check code quality.
 - Dynamic imports in UIManager use `.js` extension which webpack resolves correctly at build time
 - widget.ts migration includes:
   - Class property declarations with types
@@ -325,9 +327,9 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 
 ### 6.1 Build Verification
 - [x] Run `npm run build` and verify single bundle output
-- [x] Compare bundle size before and after migration (~652 KiB)
+- [x] Compare bundle size before and after migration (~675 KiB)
 - [x] Verify `dist/DianaWidget.bundle.js` is generated correctly
-- [ ] Test UMD export works (`window.DianaWidget`)
+- [x] Test UMD export works (`window.DianaWidget`) - Verified via browser test: `typeof window.DianaWidget === "function"`
 
 ### 6. 2 Functional Testing
 - [ ] Test widget initialization with various configurations
@@ -368,8 +370,14 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Remove any remaining `.js` files from `src/` (confirmed: no .js files remaining)
 - [ ] Remove unused dependencies from `package.json`
 - [ ] Update `.gitignore` if needed
-- [ ] Run final linting pass (`npm run lint`) and fix all issues
-- [ ] Fix ESLint issues identified (12 errors, 4 warnings as of 2025-11-27)
+- [x] Run final linting pass (`npm run lint`) and fix all issues
+- [x] Fix ESLint issues - Fixed all 12 errors (2025-11-27):
+  - Fixed `prefer-const` errors by auto-fix
+  - Fixed `@typescript-eslint/no-unused-expressions` in widget.ts by converting `&&` expressions to proper if statements
+  - Fixed `@typescript-eslint/no-unused-vars` by prefixing unused catch variables with underscore
+  - Fixed `@typescript-eslint/no-explicit-any` in `fetchActivityData()` by changing return type from `Promise<any>` to `Promise<void>`
+  - Fixed `@typescript-eslint/no-this-alias` in utils.ts by adding eslint-disable comments (legitimate use case for context preservation)
+  - Remaining 3 warnings are for intentionally unused catch variables (accepted pattern)
 
 ---
 

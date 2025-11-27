@@ -113,7 +113,7 @@ export class SingleCalendar {
     _createCalendarContainer() {
         const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container?.id ?? 'default'}`;
 
-        let existingContainer = document.getElementById(calendarContainerId);
+        const existingContainer = document.getElementById(calendarContainerId);
         if (existingContainer) existingContainer.remove();
 
         this.calendarContainer = document.createElement("div");
@@ -171,7 +171,7 @@ export class SingleCalendar {
                 : null;
 
             const isSelected = selectedDateUTC && date.getTime() === selectedDateUTC.getTime();
-            let isDisabled = date < today;
+            const isDisabled = date < today;
 
             html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}${isDisabled ? " disabled" : ""}" data-day="${day}">${day}</div>`;
         }
