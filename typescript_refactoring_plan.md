@@ -35,6 +35,7 @@
   - Removed all `as any` type assertions (except one necessary for URLSearchParams)
   - Removed all `: any` type annotations
   - Added `readonly` to all API response interfaces for immutability
+  - Added typed return values to all ApiService methods (AddressSuggestionsResponse, ReverseGeocodeResponse, ConnectionSearchResponse, TicketshopLinkResponse, CreateShareResponse, ShareDataResponse)
 - **Phase 4.5:** Clean Up Code Patterns - COMPLETED:
   - Replaced callback-based patterns with async/await in `showError()` method
   - Extracted `renderDebugContent()` helper method to reduce code duplication
@@ -47,7 +48,6 @@
   - Build passes with `--noUnusedLocals` and `--noUnusedParameters`
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.4 (remaining):** Add generic types where reusable patterns exist
 - **Phase 6.2:** Functional Testing (Widget-level)
   - Test widget initialization with various configurations (requires API credentials)
   - Test address autocomplete functionality
@@ -56,10 +56,11 @@
 - **Phase 6.3:** Visual Regression Testing
   - Compare widget appearance before and after migration
   - Test on multiple browsers
-- **Phase 7.2:** Add TSDoc Comments
-  - Add TSDoc comments to exported functions in utils.ts and datetimeUtils.ts
 - **Phase 7.1:** Document Type Exports
-  - Document new type exports for external consumers
+  - Document new type exports for external consumers (type guards, new response types)
+- **Phase 7.3:** Final Cleanup
+  - Review unused dependencies from package.json (`js-base64` is not used in source code)
+  - Update `.gitignore` if needed
 
 ### 💡 FUTURE CONSIDERATIONS:
 - **CI/CD Automated Testing:** Token generation via `/o/token/` endpoint is possible for automated testing, but client ID/secret would need to be secured via GitHub Secrets since this is a public repository. The widget currently works without a token for rough testing (shows configuration validation errors gracefully).
@@ -307,7 +308,15 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
   - Added `ConnectionElementType` type alias for 'WALK' | 'TRSF' | 'JNY'
   - Added type guard functions: `isJourneyElement()`, `isWalkElement()`, `isTransferElement()`
   - These allow type-safe access to element-specific properties when checking element types
-- [ ] Add generic types where reusable patterns exist
+- [x] Add generic types where reusable patterns exist
+  - ApiService now uses proper typed return values for all API methods:
+    - `fetchAddressSuggestions()` returns `AddressSuggestionsResponse`
+    - `fetchReverseGeocode()` returns `ReverseGeocodeResponse`
+    - `fetchConnections()` returns `ConnectionSearchResponse`
+    - `generateTicketshopLink()` returns `TicketshopLinkResponse`
+    - `createShare()` returns `CreateShareResponse`
+    - `fetchShare()` returns `ShareDataResponse`
+  - Note: Generic fetch method not added as specific types provide better type safety
 - [x] Use `readonly` for immutable properties
   - Added `readonly` to all API response interface properties that shouldn't be modified:
     - `ConnectionElement` properties (departure_time, arrival_time, vehicle_type, etc.)

@@ -4,7 +4,13 @@
  * Handles all HTTP communication with the backend API.
  */
 
-import type { WidgetConfig } from '../types';
+import type { 
+    WidgetConfig,
+    ConnectionSearchResponse,
+    ShareDataResponse,
+    CreateShareResponse,
+    Suggestion
+} from '../types';
 
 /**
  * Extended Error interface for API errors
@@ -31,6 +37,36 @@ export type SessionExpiredHandler = () => void;
  * Callback type for token refresh
  */
 export type TokenRefreshCallback = () => Promise<string | void>;
+
+/**
+ * Response type for address autocomplete endpoint
+ */
+export interface AddressSuggestionsResponse {
+    /** List of suggestions as GeoJSON Features */
+    readonly features: readonly Suggestion[];
+}
+
+/**
+ * Response type for reverse geocode endpoint
+ */
+export interface ReverseGeocodeResponse {
+    /** Display name of the location */
+    readonly display_name?: string;
+    /** Latitude */
+    readonly lat?: string | number;
+    /** Longitude */
+    readonly lon?: string | number;
+}
+
+/**
+ * Response type for ticketshop link generation
+ */
+export interface TicketshopLinkResponse {
+    /** The generated ticketshop URL */
+    readonly url?: string;
+    /** Error message if generation failed */
+    readonly error?: string;
+};
 
 /**
  * API Service class for handling HTTP requests
@@ -142,7 +178,7 @@ export class ApiService {
      * @param query - Search query
      * @returns Promise resolving to suggestion data
      */
-    async fetchAddressSuggestions(query: string): Promise<{ features: unknown[] }> {
+    async fetchAddressSuggestions(query: string): Promise<AddressSuggestionsResponse> {
         const fetchLang = navigator.language.split("-")[0];
         const response = await this.fetch(
             `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}&lang=${fetchLang}`
@@ -156,7 +192,7 @@ export class ApiService {
      * @param longitude - Longitude coordinate
      * @returns Promise resolving to geocode data
      */
-    async fetchReverseGeocode(latitude: number, longitude: number): Promise<unknown> {
+    async fetchReverseGeocode(latitude: number, longitude: number): Promise<ReverseGeocodeResponse> {
         const response = await this.fetch(
             `${this.config.apiBaseUrl}/reverse-geocode?lat=${latitude}&lon=${longitude}`
         );
@@ -168,7 +204,7 @@ export class ApiService {
      * @param params - Query parameters for the connections endpoint
      * @returns Promise resolving to connection data
      */
-    async fetchConnections(params: Record<string, string | number | undefined>): Promise<unknown> {
+    async fetchConnections(params: Record<string, string | number | undefined>): Promise<ConnectionSearchResponse> {
         // Filter out undefined values and convert numbers to strings
         const cleanParams: Record<string, string> = {};
         for (const [key, value] of Object.entries(params)) {
@@ -188,7 +224,7 @@ export class ApiService {
      * @param data - Data to send for link generation
      * @returns Promise resolving to the ticketshop link response
      */
-    async generateTicketshopLink(data: unknown): Promise<unknown> {
+    async generateTicketshopLink(data: unknown): Promise<TicketshopLinkResponse> {
         const response = await this.fetch(`${this.config.apiBaseUrl}/generate-ticketshop-link`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -202,7 +238,7 @@ export class ApiService {
      * @param data - Data to share
      * @returns Promise resolving to the share response
      */
-    async createShare(data: unknown): Promise<unknown> {
+    async createShare(data: unknown): Promise<CreateShareResponse> {
         const response = await this.fetch(`${this.config.apiBaseUrl}/share/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -216,7 +252,7 @@ export class ApiService {
      * @param shareId - ID of the shared data
      * @returns Promise resolving to the shared data
      */
-    async fetchShare(shareId: string): Promise<unknown> {
+    async fetchShare(shareId: string): Promise<ShareDataResponse> {
         const response = await this.fetch(`${this.config.apiBaseUrl}/share/${shareId}/`);
         return await response.json();
     }
