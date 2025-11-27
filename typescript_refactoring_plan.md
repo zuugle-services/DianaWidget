@@ -1,6 +1,6 @@
 # DianaWidget TypeScript Refactoring Plan
 
-## Current Progress (Last Updated: 2025-11-26)
+## Current Progress (Last Updated: 2025-11-27)
 
 ### ✅ COMPLETED:
 - **Phase 1:** Project Setup & Configuration (TypeScript, ts-loader, tsconfig.json, webpack, Jest)
@@ -13,6 +13,12 @@
   - Created and integrated `src/services/ApiService.ts` (~260 lines)
   - Created `src/core/StateManager.ts` (~280 lines) - state management class with getter/setter properties
   - Created `src/core/EventManager.ts` (~250 lines) - event binding and cleanup management
+- **Phase 4.3:** Add strict null checks - COMPLETED:
+  - Enabled `strictNullChecks: true` in tsconfig.json
+  - Fixed ~201 TypeScript errors across Calendar.ts, widget.ts, and other files
+  - Added null guards for DOM elements with optional chaining (`?.`) and nullish coalescing (`??`)
+  - Updated WidgetInstance interface to allow null for container and dianaWidgetRootContainer
+  - Fixed all Date handling to handle null/undefined cases
 - **Phase 4.4:** Improve type safety (replace `any` types) - COMPLETED:
   - Added `ConnectionElement` interface with all required properties
   - Updated `Connection` interface with `connection_id`, `connection_anytime`, `connection_elements`, `connection_transfers`, `connection_ticketshop_provider`
@@ -22,17 +28,15 @@
   - Removed all `: any` type annotations
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 4.3:** Add strict null checks (~201 TypeScript errors to fix when enabled)
-  - Fixed: Validator.ts null checks for optional time configuration fields
-  - Fixed: widget.ts initialSelectedStartDate/initialSelectedEndDate variable typing
-  - Remaining: ~201 errors in Calendar.ts, widget.ts
-  - Requires adding null guards where DOM elements are accessed
-  - Requires optional chaining (`?.`) and nullish coalescing (`??`) in many places
-  - Consider doing incrementally by file
+- **Phase 4.5:** Clean Up Code Patterns
+  - Replace callback-based patterns with async/await where appropriate
+  - Use `Map` and `Set` instead of plain objects where appropriate
+  - Ensure consistent naming conventions (camelCase for functions/variables, PascalCase for types/classes)
+  - Remove any dead/unused code detected by TypeScript compiler
 
 ### 📝 NOTES:
-- tsconfig.json uses lenient settings (strict: false, noImplicitAny: false, strictNullChecks: false) for gradual migration
-- Build passes successfully with `npm run build`
+- tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
+- Build passes successfully with `npm run build` (bundle size: ~654 KiB)
 - Dynamic imports in UIManager use `.js` extension which webpack resolves correctly at build time
 - widget.ts migration includes:
   - Class property declarations with types
