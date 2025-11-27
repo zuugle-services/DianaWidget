@@ -172,7 +172,7 @@ export class ConnectionRenderer {
             }
 
             filteredElements.forEach((element, index) => {
-                html += this._renderConnectionElement(element, index, filteredElements, type, conn, elements);
+                html += this._renderConnectionElement(element, index, filteredElements, type, conn, elements, state.activityTimes.start);
             });
 
             // Display waiting time before activity starts (for 'to' connections)
@@ -194,7 +194,8 @@ export class ConnectionRenderer {
         filteredElements: ConnectionElement[],
         type: string,
         conn: Connection,
-        elements: RendererElements
+        elements: RendererElements,
+        activityStartTime: string
     ): string {
         const departureTime = convertUTCToLocalTime(element.departure_time, this.config.timezone);
         const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
@@ -251,7 +252,7 @@ export class ConnectionRenderer {
               <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
                 <div class="element-circle"></div>
                 <span class="element-icon" title="${transportName}" alt="${transportName}">${icon}</span>
-                <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn, elements)}</span>
+                <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn, elements, activityStartTime)}</span>
               </div>
               ${dateDisplay}
             </div>
@@ -456,13 +457,21 @@ export class ConnectionRenderer {
     /**
      * Gets the duration string for a connection element
      */
-    getDurationString(index: number, type: string, element: ConnectionElement, duration: string, conn: Connection, elements: RendererElements): string {
+    getDurationString(index: number, type: string, element: ConnectionElement, duration: string, conn: Connection, elements: RendererElements, activityStartTime: string): string {
         if (conn && conn.connection_anytime && element.type === "WALK" && conn.connection_elements) {
             const durationMinutes = conn.connection_elements[0].duration ?? 0;
             const durationText = getTimeFormatFromMinutes(durationMinutes, (k) => this.t(k));
             if (type === 'to') {
-                // Note: This requires state.activityTimes.start which we don't have access to here
-                // The widget will need to pass this or we return a simpler string
+                if (activityStartTime) {
+                    const leaveByTime = DateTime.fromFormat(
+                        activityStartTime,
+                        'HH:mm',
+                        {zone: this.config.timezone}
+                    ).minus({
+                        minutes: durationMinutes
+                    }).toFormat('HH:mm');
+                    return `${durationText} - ${this.t('anytimeLeaveBy', { time: leaveByTime })}`;
+                }
                 return `${durationText}`;
             } else { // type === 'from'
                 const destination = elements.originInput?.value ?? '';
@@ -482,39 +491,5 @@ export class ConnectionRenderer {
         }
         if (element.type === "TRSF") durationString += ` ${this.t("durationTransferTime")}`;
         return durationString;
-    }
-
-    /**
-     * Gets the duration string for anytime connections with activity time context
-     * This is used when we have access to activityTimes.start
-     */
-    getDurationStringWithActivityTime(
-        index: number,
-        type: string,
-        element: ConnectionElement,
-        duration: string,
-        conn: Connection,
-        elements: RendererElements,
-        activityStartTime: string
-    ): string {
-        if (conn && conn.connection_anytime && element.type === "WALK" && conn.connection_elements) {
-            const durationMinutes = conn.connection_elements[0].duration ?? 0;
-            const durationText = getTimeFormatFromMinutes(durationMinutes, (k) => this.t(k));
-            if (type === 'to') {
-                const leaveByTime = DateTime.fromFormat(
-                    activityStartTime,
-                    'HH:mm',
-                    {zone: this.config.timezone}
-                ).minus({
-                    minutes: durationMinutes
-                }).toFormat('HH:mm');
-                return `${durationText} - ${this.t('anytimeLeaveBy', { time: leaveByTime })}`;
-            } else { // type === 'from'
-                const destination = elements.originInput?.value ?? '';
-                return `${durationText} - ${this.t('anytimeWalkTo', { destination: destination })}`;
-            }
-        }
-
-        return this.getDurationString(index, type, element, duration, conn, elements);
     }
 }
