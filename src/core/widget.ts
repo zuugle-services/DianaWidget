@@ -1372,25 +1372,25 @@ export default class DianaWidget {
         this.elements.originInput.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
     }
 
+    /**
+     * Resets a collapsible summary element to its placeholder state
+     */
+    _resetCollapsibleSummary(collapsible: HTMLElement | null | undefined): void {
+        if (!collapsible) return;
+        const wrapper = collapsible.querySelector('.summary-content-wrapper');
+        if (wrapper) {
+            wrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
+        }
+        collapsible.classList.remove('has-summary', 'expanded');
+    }
+
     renderConnectionResults(): void {
         this.showError(null, 'results');
         if (this.elements.topSlider) this.elements.topSlider.innerHTML = '';
         if (this.elements.bottomSlider) this.elements.bottomSlider.innerHTML = '';
 
-        if (this.elements.collapsibleToActivity) {
-            const wrapper = this.elements.collapsibleToActivity.querySelector('.summary-content-wrapper');
-            if (wrapper) {
-                wrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
-            }
-            this.elements.collapsibleToActivity.classList.remove('has-summary', 'expanded');
-        }
-        if (this.elements.collapsibleFromActivity) {
-            const wrapper = this.elements.collapsibleFromActivity.querySelector('.summary-content-wrapper');
-            if (wrapper) {
-                wrapper.innerHTML = `<span class="summary-placeholder">${this.t('selectTimeSlotForSummary')}</span>`;
-            }
-            this.elements.collapsibleFromActivity.classList.remove('has-summary', 'expanded');
-        }
+        this._resetCollapsibleSummary(this.elements.collapsibleToActivity);
+        this._resetCollapsibleSummary(this.elements.collapsibleFromActivity);
 
         if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.config.activityName;
 

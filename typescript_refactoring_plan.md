@@ -54,6 +54,9 @@
 - **Phase 7.2:** Add JSDoc/TSDoc Comments
   - Add TSDoc comments to public interfaces and functions
 
+### 💡 FUTURE CONSIDERATIONS:
+- **CI/CD Automated Testing:** Token generation via `/o/token/` endpoint is possible for automated testing, but client ID/secret would need to be secured via GitHub Secrets since this is a public repository. The widget currently works without a token for rough testing (shows configuration validation errors gracefully).
+
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
 - Build passes successfully with `npm run build` (bundle size: ~675 KiB)
