@@ -44,15 +44,18 @@
   - Build passes with `--noUnusedLocals` and `--noUnusedParameters`
 
 ### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 6.2:** Functional Testing
-  - Test widget initialization with various configurations
+- **Phase 6.2:** Functional Testing (Widget-level)
+  - Test widget initialization with various configurations (requires API credentials)
   - Test address autocomplete functionality
   - Test calendar interactions (both single and range)
   - Test connection search and results display
-- **Phase 7.1:** Update Documentation
-  - Update README.md with TypeScript information
-- **Phase 7.2:** Add JSDoc/TSDoc Comments
-  - Add TSDoc comments to public interfaces and functions
+- **Phase 6.3:** Visual Regression Testing
+  - Compare widget appearance before and after migration
+  - Test on multiple browsers
+- **Phase 7.2:** Add TSDoc Comments
+  - Add TSDoc comments to exported functions in utils.ts and datetimeUtils.ts
+- **Phase 7.1:** Document Type Exports
+  - Document new type exports for external consumers
 
 ### 💡 FUTURE CONSIDERATIONS:
 - **CI/CD Automated Testing:** Token generation via `/o/token/` endpoint is possible for automated testing, but client ID/secret would need to be secured via GitHub Secrets since this is a public repository. The widget currently works without a token for rough testing (shows configuration validation errors gracefully).
@@ -280,11 +283,11 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Create barrel exports (`index.ts`) in each directory
 
 ### 4.3 Add Strict Null Checks
-- [ ] Enable `strictNullChecks` in `tsconfig.json`
-- [ ] Add null guards where DOM elements are accessed
-- [ ] Handle potential undefined values from API responses
-- [ ] Add optional chaining (`?.`) and nullish coalescing (`??`) where appropriate
-- **Note:** 214+ TypeScript errors to fix when strictNullChecks is enabled
+- [x] Enable `strictNullChecks` in `tsconfig.json`
+- [x] Add null guards where DOM elements are accessed
+- [x] Handle potential undefined values from API responses
+- [x] Add optional chaining (`?.`) and nullish coalescing (`??`) where appropriate
+- **Note:** All 201 TypeScript errors were fixed when strictNullChecks was enabled
 
 ### 4.4 Improve Type Safety
 - [x] Replace `any` types with specific types (aim for zero `any` usage)
@@ -335,6 +338,10 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Test UMD export works (`window.DianaWidget`) - Verified via browser test: `typeof window.DianaWidget === "function"`
 
 ### 6. 2 Functional Testing
+- [x] Unit tests for utility functions (`utils.ts`, `datetimeUtils.ts`)
+  - Created `src/__tests__/utils.test.ts` with 17 tests
+  - Created `src/__tests__/datetimeUtils.test.ts` with 27 tests
+  - All 44 tests passing
 - [ ] Test widget initialization with various configurations
 - [ ] Test address autocomplete functionality
 - [ ] Test calendar interactions (both single and range)
@@ -343,6 +350,7 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [ ] Test error handling and display
 - [ ] Test mobile/responsive behavior
 - [ ] Test accessibility features
+- **Note:** Full functional testing requires API credentials and is better suited for manual testing or CI/CD with secrets
 
 ### 6.3 Visual Regression Testing
 - [ ] Compare widget appearance before and after migration
@@ -360,13 +368,24 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 ## Phase 7: Documentation & Cleanup
 
 ### 7. 1 Update Documentation
-- [ ] Update README.md with TypeScript information
+- [x] Update README.md with TypeScript information
+  - Updated project overview to mention TypeScript
+  - Added TypeScript to technical highlights
+  - Updated scripts section with `npm run test` and `npm run lint`
+  - Updated component structure with `.ts` extensions
+  - Updated architecture section with full TypeScript directory structure
+  - Updated Key Modules to reference TypeScript modules
+  - Updated Build System to mention TypeScript compilation
 - [ ] Document new type exports for external consumers
 - [ ] Update development instructions
 
 ### 7.2 Add JSDoc/TSDoc Comments
-- [ ] Add TSDoc comments to all public interfaces
-- [ ] Add TSDoc comments to all exported functions
+- [x] Add TSDoc comments to all public interfaces
+  - All interfaces in `src/types/` have TSDoc comments
+  - `WidgetConfig`, `WidgetState`, `Connection`, `ConnectionElement`, `Suggestion`, etc.
+- [x] Add TSDoc comments to all exported functions
+  - All exported functions in `utils.ts` and `datetimeUtils.ts` have TSDoc comments
+  - All functions include `@param` and `@returns` annotations
 - [ ] Document complex type unions and generics
 
 ### 7.3 Final Cleanup
