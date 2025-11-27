@@ -46,6 +46,10 @@
   - Removed unused `Suggestion` type import from widget.ts
   - Marked intentionally unused parameter with underscore prefix: `_index` in `getDurationString()`
   - Build passes with `--noUnusedLocals` and `--noUnusedParameters`
+- **Phase 7.3:** Final Cleanup - COMPLETED:
+  - Removed unused `js-base64` dependency from package.json
+  - All lint issues fixed (0 errors, 3 warnings for intentionally unused catch variables)
+  - `.gitignore` reviewed - no changes needed
 
 ### ⏭️ NEXT STEP TO CONTINUE:
 - **Phase 6.2:** Functional Testing (Widget-level)
@@ -56,11 +60,11 @@
 - **Phase 6.3:** Visual Regression Testing
   - Compare widget appearance before and after migration
   - Test on multiple browsers
-- **Phase 7.1:** Document Type Exports
-  - Document new type exports for external consumers (type guards, new response types)
-- **Phase 7.3:** Final Cleanup
-  - Review unused dependencies from package.json (`js-base64` is not used in source code)
-  - Update `.gitignore` if needed
+
+### ✅ RECENTLY COMPLETED (Phase 7):
+- **Phase 7.1:** Document Type Exports - Added "TypeScript Types" section to README.md with all type exports and type guards
+- **Phase 7.2:** JSDoc/TSDoc Comments - All public interfaces and exported functions documented
+- **Phase 7.3:** Final Cleanup - Removed unused `js-base64`, lint issues fixed, .gitignore reviewed
 
 ### 💡 FUTURE CONSIDERATIONS:
 - **CI/CD Automated Testing:** Token generation via `/o/token/` endpoint is possible for automated testing, but client ID/secret would need to be secured via GitHub Secrets since this is a public repository. The widget currently works without a token for rough testing (shows configuration validation errors gracefully).
@@ -402,8 +406,12 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
   - Updated architecture section with full TypeScript directory structure
   - Updated Key Modules to reference TypeScript modules
   - Updated Build System to mention TypeScript compilation
-- [ ] Document new type exports for external consumers
-- [ ] Update development instructions
+- [x] Document new type exports for external consumers - Added "TypeScript Types" section to README.md (2025-11-27)
+  - Documented all configuration types (WidgetConfig, PartialWidgetConfig, LocationType, Language)
+  - Documented all state types (WidgetState, ActivityTimes, PreselectTimes)
+  - Documented all API response types (Connection, ConnectionElement, Suggestion, etc.)
+  - Documented type guard functions (isJourneyElement, isWalkElement, isTransferElement)
+- [x] Update development instructions - README.md already contains comprehensive development instructions
 
 ### 7.2 Add JSDoc/TSDoc Comments
 - [x] Add TSDoc comments to all public interfaces
@@ -412,12 +420,12 @@ This plan outlines the migration of DianaWidget from JavaScript to TypeScript wh
 - [x] Add TSDoc comments to all exported functions
   - All exported functions in `utils.ts` and `datetimeUtils.ts` have TSDoc comments
   - All functions include `@param` and `@returns` annotations
-- [ ] Document complex type unions and generics
+- [x] Document complex type unions and generics - Documented in README.md TypeScript Types section
 
 ### 7.3 Final Cleanup
 - [x] Remove any remaining `.js` files from `src/` (confirmed: no .js files remaining)
-- [ ] Remove unused dependencies from `package.json`
-- [ ] Update `.gitignore` if needed
+- [x] Remove unused dependencies from `package.json` - Removed `js-base64` (2025-11-27)
+- [x] Update `.gitignore` if needed - No changes needed
 - [x] Run final linting pass (`npm run lint`) and fix all issues
 - [x] Fix ESLint issues - Fixed all 12 errors (2025-11-27):
   - Fixed `prefer-const` errors by auto-fix

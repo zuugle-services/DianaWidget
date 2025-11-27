@@ -637,6 +637,69 @@ You can even set more complex styles to the outermost container, e.g.:
    * UMD output for compatibility
    * Development server with hot module replacement
 
+## TypeScript Types
+
+The widget is written in TypeScript and exports type definitions for consumers who want type-safe integration.
+
+### Available Types
+
+All types are exported from `src/types/index.ts`:
+
+**Configuration Types**
+* `WidgetConfig` - Complete widget configuration interface
+* `PartialWidgetConfig` - Partial configuration (for optional fields)
+* `LocationType` - Valid location types (`'coordinates' | 'coord' | 'coords' | 'address' | 'station'`)
+* `Language` - Supported languages (`'EN' | 'DE' | 'FR' | 'IT' | 'TH' | 'ES'`)
+
+**State Types**
+* `WidgetState` - Internal widget state interface
+* `ActivityTimes` - Activity time window configuration
+* `PreselectTimes` - Preselected time values
+
+**API Response Types**
+* `Connection` - A transit connection with legs/elements
+* `ConnectionElement` - Individual segment of a journey (walk, transfer, or vehicle)
+* `ConnectionElementType` - Type of connection element (`'WALK' | 'TRSF' | 'JNY'`)
+* `TransportLeg` - Legacy transport leg interface (deprecated, use `ConnectionElement`)
+* `TransportAlert` - Alert/warning for a connection segment
+* `Suggestion` - Address autocomplete suggestion (GeoJSON Feature)
+* `SuggestionProperties` - Properties of a suggestion
+* `SuggestionGeometry` - Geometry of a suggestion
+* `ConnectionSearchResponse` - API response for connection search
+* `AutocompleteResponse` - API response for address autocomplete
+* `ShareDataResponse` - API response for share data
+* `CreateShareResponse` - API response for creating a share link
+* `ApiErrorResponse` - API error response structure
+
+**Translation Types**
+* `Translations` - Complete translation object
+* `LanguageTranslations` - Translations for a single language
+* `TranslationFunction` - Function signature for translation lookup
+
+### Type Guards
+
+The following type guard functions are exported for type-safe checking of connection elements:
+
+```typescript
+import { isJourneyElement, isWalkElement, isTransferElement } from './types';
+
+// Check if element is a journey (train, bus, etc.)
+if (isJourneyElement(element)) {
+  console.log(element.vehicle_name);
+  console.log(element.direction);
+}
+
+// Check if element is a walking segment
+if (isWalkElement(element)) {
+  console.log('Walking segment');
+}
+
+// Check if element is a transfer
+if (isTransferElement(element)) {
+  console.log('Transfer between platforms');
+}
+```
+
 ## Deployment
 
 **CI/CD Pipeline** (`.github/workflows/deploy.yml`)
