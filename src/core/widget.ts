@@ -42,8 +42,7 @@ import type {
     WidgetConfig,
     PartialWidgetConfig,
     WidgetState,
-    Connection,
-    Suggestion
+    Connection
 } from '../types';
 
 /** 
@@ -1200,9 +1199,9 @@ export default class DianaWidget {
 
     async fetchSuggestions(query) {
         try {
-            const fetch_lang = navigator.language.split("-")[0];
+            const fetchLang = navigator.language.split("-")[0];
             const response = await this._fetchApi(
-                `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}&lang=${fetch_lang}`
+                `${this.config.apiBaseUrl}/address-autocomplete?q=${encodeURIComponent(query)}&lang=${fetchLang}`
             );
             return await response.json();
         } catch (error) {
@@ -1471,15 +1470,15 @@ export default class DianaWidget {
 
         if (this.state.preselectTimes) {
             const {
-                to_start,
-                to_end,
-                from_start,
-                from_end
+                toStart,
+                toEnd,
+                fromStart,
+                fromEnd
             } = this.state.preselectTimes;
 
-            if (to_start && to_end && this.state.toConnections.length > 0) {
+            if (toStart && toEnd && this.state.toConnections.length > 0) {
                 const toConn = this.state.toConnections.find(c =>
-                    c.connection_start_timestamp === to_start && c.connection_end_timestamp === to_end
+                    c.connection_start_timestamp === toStart && c.connection_end_timestamp === toEnd
                 );
                 if (toConn) {
                     const startTimeLocal = convertUTCToLocalTime(toConn.connection_start_timestamp, this.config.timezone);
@@ -1488,9 +1487,9 @@ export default class DianaWidget {
                 }
             }
 
-            if (from_start && from_end && this.state.fromConnections.length > 0) {
+            if (fromStart && fromEnd && this.state.fromConnections.length > 0) {
                 const fromConn = this.state.fromConnections.find(c =>
-                    c.connection_start_timestamp === from_start && c.connection_end_timestamp === from_end
+                    c.connection_start_timestamp === fromStart && c.connection_end_timestamp === fromEnd
                 );
                 if (fromConn) {
                     const startTimeLocal = convertUTCToLocalTime(fromConn.connection_start_timestamp, this.config.timezone);
@@ -1835,9 +1834,9 @@ export default class DianaWidget {
                         day: activityStartDate.getDate()
                     });
                 const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key: string) => this.t(key));
-                this.state.activityTimes.warning_duration = durationResult.totalMinutes < parseInt(String(this.config.activityDurationMinutes), 10);
+                this.state.activityTimes.warningDuration = durationResult.totalMinutes < parseInt(String(this.config.activityDurationMinutes), 10);
             } else {
-                this.state.activityTimes.warning_duration = false;
+                this.state.activityTimes.warningDuration = false;
             }
 
             if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
@@ -2181,7 +2180,7 @@ export default class DianaWidget {
         }
         this.state.toConnections = [];
         this.state.fromConnections = [];
-        this.state.activityTimes = {start: '', end: '', duration: '', warning_duration: false};
+        this.state.activityTimes = {start: '', end: '', duration: '', warningDuration: false};
 
         // Reset collapsible states when going back to form
         if (this.elements.collapsibleToActivity) this.elements.collapsibleToActivity.classList.remove('expanded');
@@ -2346,10 +2345,10 @@ export default class DianaWidget {
             }
 
             this.state.preselectTimes = {
-                to_start: data.to_connection_start_time,
-                to_end: data.to_connection_end_time,
-                from_start: data.from_connection_start_time,
-                from_end: data.from_connection_end_time,
+                toStart: data.to_connection_start_time,
+                toEnd: data.to_connection_end_time,
+                fromStart: data.from_connection_start_time,
+                fromEnd: data.from_connection_end_time,
             };
 
             this.setLoadingState(false, true);
@@ -2587,36 +2586,18 @@ export default class DianaWidget {
         if (debugContainer) {
             if (this.config.dev && rawError && typeof rawError.clone === 'function') {
                 debugContainer.style.display = 'block';
-                const clonedError = rawError.clone();
-                clonedError.json().then(json => {
-                    debugContainer.innerHTML = `
-                        <div class="debug-toggle">${this.t('debug.showDetails')}</div>
-                        <div class="debug-content" style="display:none;">
-                            <pre>${JSON.stringify(json, null, 2)}</pre>
-                        </div>`;
-                    debugContainer.querySelector('.debug-toggle')?.addEventListener('click', (e) => {
-                        const target = e.target as HTMLElement;
-                        const content = target.nextElementSibling as HTMLElement;
-                        const isVisible = content.style.display === 'block';
-                        content.style.display = isVisible ? 'none' : 'block';
-                        target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
-                    });
-                }).catch(() => {
-                    clonedError.text().then(text => {
-                        debugContainer.innerHTML = `
-                        <div class="debug-toggle">${this.t('debug.showDetails')}</div>
-                        <div class="debug-content" style="display:none;">
-                            <pre>${text}</pre>
-                        </div>`;
-                        debugContainer.querySelector('.debug-toggle')?.addEventListener('click', (e) => {
-                            const target = e.target as HTMLElement;
-                            const content = target.nextElementSibling as HTMLElement;
-                            const isVisible = content.style.display === 'block';
-                            content.style.display = isVisible ? 'none' : 'block';
-                            target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
-                        });
-                    });
-                });
+                // Use async IIFE for cleaner async handling
+                (async () => {
+                    const clonedError = rawError.clone();
+                    let content: string;
+                    try {
+                        const json = await clonedError.json();
+                        content = JSON.stringify(json, null, 2);
+                    } catch {
+                        content = await clonedError.text();
+                    }
+                    this.renderDebugContent(debugContainer, content);
+                })();
             } else {
                 debugContainer.innerHTML = '';
                 debugContainer.style.display = 'none';
@@ -2634,6 +2615,26 @@ export default class DianaWidget {
                 if (this.elements.bottomSlider) this.elements.bottomSlider.innerHTML = '';
             }
         }
+    }
+
+    /**
+     * Renders debug content with toggle functionality
+     * @param container - The container element for debug content
+     * @param content - The content to display
+     */
+    private renderDebugContent(container: HTMLElement, content: string): void {
+        container.innerHTML = `
+            <div class="debug-toggle">${this.t('debug.showDetails')}</div>
+            <div class="debug-content" style="display:none;">
+                <pre>${content}</pre>
+            </div>`;
+        container.querySelector('.debug-toggle')?.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            const contentEl = target.nextElementSibling as HTMLElement;
+            const isVisible = contentEl.style.display === 'block';
+            contentEl.style.display = isVisible ? 'none' : 'block';
+            target.textContent = isVisible ? this.t('debug.showDetails') : this.t('debug.hideDetails');
+        });
     }
 
     showInfo(message) {

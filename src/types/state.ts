@@ -16,7 +16,7 @@ export interface ActivityTimes {
     /** Duration string */
     duration: string;
     /** Whether duration is below recommended */
-    warning_duration: boolean;
+    warningDuration: boolean;
 }
 
 /**
@@ -24,13 +24,13 @@ export interface ActivityTimes {
  */
 export interface PreselectTimes {
     /** To connection start time */
-    to_start: string | null;
+    toStart: string | null;
     /** To connection end time */
-    to_end: string | null;
+    toEnd: string | null;
     /** From connection start time */
-    from_start: string | null;
+    fromStart: string | null;
     /** From connection end time */
-    from_end: string | null;
+    fromEnd: string | null;
 }
 
 /**
