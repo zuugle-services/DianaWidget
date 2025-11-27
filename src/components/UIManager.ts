@@ -42,7 +42,8 @@ export class UIManager {
             // Dynamically import the template module.
             // The path is relative to UIManager.ts (components/UIManager.ts)
             // going up to the parent and then into templates/
-            const module: TemplateModule = await import(`../templates/${templateFileName}.js`);
+            // Note: We omit the extension so webpack can resolve .ts files via resolve.extensions
+            const module: TemplateModule = await import(`../templates/${templateFileName}`);
 
             if (module && typeof module[functionName] === 'function') {
                 // Call the template function with the provided arguments

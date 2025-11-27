@@ -42,8 +42,8 @@
 
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
-- Build passes successfully with `npm run build` (bundle size: ~655 KiB)
-- Dynamic imports in UIManager use `.js` extension which webpack resolves correctly at build time
+- Build passes successfully with `npm run build` (bundle size: ~676 KiB)
+- Dynamic imports in UIManager now omit file extension so webpack can resolve .ts files via resolve.extensions
 - widget.ts migration includes:
   - Class property declarations with types
   - Constructor parameter types
