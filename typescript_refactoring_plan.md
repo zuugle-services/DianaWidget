@@ -50,24 +50,29 @@
   - Removed unused `js-base64` dependency from package.json
   - All lint issues fixed (0 errors, 3 warnings for intentionally unused catch variables)
   - `.gitignore` reviewed - no changes needed
-
-### ⏭️ NEXT STEP TO CONTINUE:
-- **Phase 6.2:** Functional Testing (Widget-level)
-  - Test widget initialization with various configurations (requires API credentials)
-  - Test address autocomplete functionality
-  - Test calendar interactions (both single and range)
-  - Test connection search and results display
-- **Phase 6.3:** Visual Regression Testing
-  - Compare widget appearance before and after migration
-  - Test on multiple browsers
+- **Phase 8:** CI/CD Improvements - COMPLETED (2025-11-27):
+  - Created `.github/workflows/ci.yml` - runs lint, test, and build on PRs to main/dev branches
+  - Updated `.github/workflows/deploy.yml`:
+    - Added linting step to both deploy-release and deploy-dev jobs
+    - Added testing step to deploy-dev job (was missing)
+  - CI now includes bundle size reporting in job summary
 
 ### ✅ RECENTLY COMPLETED (Phase 7):
 - **Phase 7.1:** Document Type Exports - Added "TypeScript Types" section to README.md with all type exports and type guards
 - **Phase 7.2:** JSDoc/TSDoc Comments - All public interfaces and exported functions documented
 - **Phase 7.3:** Final Cleanup - Removed unused `js-base64`, lint issues fixed, .gitignore reviewed
 
-### 💡 FUTURE CONSIDERATIONS:
-- **CI/CD Automated Testing:** Token generation via `/o/token/` endpoint is possible for automated testing, but client ID/secret would need to be secured via GitHub Secrets since this is a public repository. The widget currently works without a token for rough testing (shows configuration validation errors gracefully).
+### 📋 DEFERRED (Not blocking refactoring completion):
+- **Phase 6.2:** Functional Testing (Widget-level) - Requires API credentials
+  - Test widget initialization with various configurations
+  - Test address autocomplete functionality
+  - Test calendar interactions (both single and range)
+  - Test connection search and results display
+  - **Note:** Best suited for manual testing or CI/CD with secrets. Unit tests for utilities are complete (44 tests passing).
+- **Phase 6.3:** Visual Regression Testing
+  - Compare widget appearance before and after migration
+  - Test on multiple browsers (Chrome, Firefox, Safari, Edge)
+  - **Note:** Manual testing recommended before releases.
 
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
