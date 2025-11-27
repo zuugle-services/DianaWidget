@@ -33,6 +33,7 @@ import {
 } from '../constants';
 
 import { validateConfig } from './Validator';
+import { ConnectionRenderer } from './ConnectionRenderer';
 
 import { ApiService } from '../services';
 import type { ApiError, FetchOptions } from '../services';
@@ -118,6 +119,7 @@ export default class DianaWidget {
     debouncedHandleAddressInput: (query: string) => void;
     lastQuery: string;
     private apiService: ApiService | null;
+    private connectionRenderer: ConnectionRenderer | null;
 
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
         // Initialize default config using imported constant
@@ -139,6 +141,7 @@ export default class DianaWidget {
         this.lastQuery = '';
         this.state = { ...DEFAULT_STATE };
         this.apiService = null;
+        this.connectionRenderer = null;
         this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const validationResult = validateConfig(this.config);
@@ -151,6 +154,14 @@ export default class DianaWidget {
             () => this._handleSessionExpired(),
             (key: string) => this.t(key)
         );
+
+        // Initialize connection renderer after config validation
+        this.connectionRenderer = new ConnectionRenderer({
+            config: this.config,
+            t: (key: string, replacements?: Record<string, string>) => this.t(key, replacements),
+            getTransportIcon: (type: string | number) => this.getTransportIcon(type),
+            getTransportName: (type: string | number) => this.getTransportName(type)
+        });
 
         this.container = document.getElementById(containerId);
         if (this.container?.shadowRoot) {
@@ -1581,53 +1592,15 @@ export default class DianaWidget {
      * @param {string} type - 'to' or 'from'.
      * @returns {string} HTML string for the summary.
      */
-    _renderConnectionSummary(connection, type) {
-        if (!connection || !connection.connection_elements || connection.connection_elements.length === 0) return '';
-
-        const startTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
-        const endTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
-        const duration = calculateTimeDifference(connection.connection_start_timestamp, connection.connection_end_timestamp, (key) => this.t(key));
-        const transfers = connection.connection_transfers;
-
-        let fromLocation, toLocation;
-
-        if (type === 'to') {
-            fromLocation = this.elements.originInput?.value ?? '';
-            toLocation = connection.connection_elements[connection.connection_elements.length - 1].to_location;
-        } else { // 'from'
-            fromLocation = connection.connection_elements[0].from_location;
-            toLocation = this.elements.originInput?.value ?? '';
+    _renderConnectionSummary(connection: Connection, type: string): string {
+        if (!this.connectionRenderer) {
+            return '';
         }
-
-        const mainTransportTypes = [...connection.connection_elements
-            .filter(el => el.type === 'JNY')
-            .map(el => el.vehicle_type)
-        ];
-
-        if (connection.connection_anytime || (connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.type === 'WALK'))) {
-            if (!mainTransportTypes.includes('WALK')) {
-                mainTransportTypes.unshift('WALK');
-            }
-        }
-
-        const iconsHTML = mainTransportTypes.slice(0, 4).map(t => `<span title="${this.getTransportName(t)}" alt="${this.getTransportName(t)}">${this.getTransportIcon(t)}</span>`).join('');
-
-        const isLive = connection.connection_elements && connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.provider === 'live');
-        const liveIndicatorHTML = isLive ? `<span class="live-indicator">${this.t('live')}</span>` : '';
-
-        return `
-            <div class="summary-line-1">
-                <strong>${type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal} - ${endTimeLocal}</strong>
-                <div class="summary-icons">${iconsHTML}</div>
-            </div>
-            <div class="summary-line-2">
-                ${fromLocation} - ${toLocation}
-            </div>
-            <div class="summary-line-3">
-                <span>${duration} &bull; ${transfers} ${this.t('transfers')}</span>
-                ${liveIndicatorHTML}
-            </div>
-        `;
+        return this.connectionRenderer.renderConnectionSummary(
+            connection,
+            type,
+            { originInput: this.elements.originInput }
+        );
     }
 
     _updateOppositeSlider(sourceType) {
@@ -2074,298 +2047,16 @@ export default class DianaWidget {
         expandables.forEach(el => el.classList.toggle('expanded'));
     }
 
-    renderConnectionDetails(connections, type) {
-        if (!connections || connections.length === 0) {
+    renderConnectionDetails(connections: Connection[], type: string): string {
+        if (!this.connectionRenderer) {
             return `<div>${this.t('noConnectionDetails')}</div>`;
         }
-
-        return connections.map(conn => {
-            if (!conn.connection_elements || conn.connection_elements.length === 0) {
-                return `<div>${this.t('noConnectionElements')}</div>`;
-            }
-
-            // The connection_elements array is now pre-filtered by _processAndFilterConnections.
-            const filteredElements = conn.connection_elements;
-
-            if (filteredElements.length === 0) { // If filtering removed all elements (edge case)
-                return `<div>${this.t('noConnectionElements')}</div>`;
-            }
-
-            const isLive = conn.connection_elements && conn.connection_elements.length > 0 && conn.connection_elements.every(el => el.provider === 'live');
-            const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
-
-            const ticketButtonHTML = conn.connection_ticketshop_provider ? `
-            <button class="ticket-button" data-conn-type="${type}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
-                ${this.t('buyTicket')} (${conn.connection_ticketshop_provider})
-            </button>
-            ` : '';
-
-            const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML) ? `
-            <div class="connection-details-header">
-                ${liveIndicatorHTML}
-                ${ticketButtonHTML}
-            </div>
-            ` : '';
-
-            let
-                html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
-
-            // Display waiting time after activity ends (for 'from' connections)
-            if (type === 'from' && this.state.activityTimes.end && filteredElements.length > 0) {
-                const firstEffectiveLegDepartureISO = filteredElements[0].departure_time;
-                const firstLegDepartureDateTime = DateTime.fromISO(firstEffectiveLegDepartureISO, {
-                    zone: 'utc'
-                }).setZone(this.config.timezone);
-
-                // Construct activity end time, assuming it's on the same day as the return journey starts
-                let
-                    activityEndDateTime = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {
-                        zone: this.config.timezone
-                    })
-                        .set({
-                            year: firstLegDepartureDateTime.year,
-                            month: firstLegDepartureDateTime.month,
-                            day: firstLegDepartureDateTime.day
-                        });
-
-                if (activityEndDateTime > firstLegDepartureDateTime) {
-                    activityEndDateTime = activityEndDateTime.minus({
-                        days: 1
-                    });
-                }
-
-                if (activityEndDateTime.isValid && firstLegDepartureDateTime.isValid && firstLegDepartureDateTime > activityEndDateTime) {
-                    const waitDuration = calculateDurationLocalWithDates(activityEndDateTime, firstLegDepartureDateTime, (key) => this.t(key));
-                    if (waitDuration.totalMinutes > 0) {
-                        html += `
-                      <div class="connection-element waiting-block">
-                          <div class="element-time">
-                          <span>${this.state.activityTimes.end}</span>
-                          ${this.t('waiting.afterActivity')}
-                          </div>
-                          <div id="eleCont">
-                          <span class="element-icon" title="${this.t('waiting.title')}" alt="${this.t('waiting.title')}">${this.getTransportIcon('WAIT')}</span>
-                          <span class="element-duration">
-                              ${waitDuration.text}
-                          </span>
-                          </div>
-                      </div>`;
-                    }
-                }
-            }
-
-
-            filteredElements.forEach((element, index) => {
-                const departureTime = convertUTCToLocalTime(element.departure_time, this.config.timezone);
-                const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
-                const durationDisplayString = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
-
-                const vehicleType = (element.type !== 'JNY') ? (element.type || 'DEFAULT') : (element.vehicle_type || 'DEFAULT');
-                const icon = this.getTransportIcon(vehicleType);
-                const transportName = this.getTransportName(vehicleType);
-
-                // Date display logic
-                let
-                    dateDisplay = '';
-                const departureDate = DateTime.fromISO(element.departure_time, {
-                    zone: this.config.timezone
-                }).startOf('day');
-                const arrivalDate = DateTime.fromISO(element.arrival_time, {
-                    zone: this.config.timezone
-                }).startOf('day');
-
-                let
-                    datesToShow: string[] = [];
-                // Show departure date for the first leg
-                if (index === 0) {
-                    datesToShow.push(formatLegDateForDisplay(element.departure_time, this.config.timezone, this.config.language));
-                }
-                // Show arrival date if it's on a new day
-                if (arrivalDate > departureDate) {
-                    const arrivalDateStr = formatLegDateForDisplay(element.arrival_time, this.config.timezone, this.config.language);
-                    // Prevent showing the same date twice
-                    if (!datesToShow.includes(arrivalDateStr)) {
-                        datesToShow.push(arrivalDateStr);
-                    }
-                }
-
-                if (datesToShow.length > 0) {
-                    dateDisplay = `<span class="connection-leg-date-display">${datesToShow.join('<br>')}</span>`;
-                }
-
-                let
-                    fromLocationDisplay = element.from_location;
-                if (element.isOriginalFirst) {
-                    if (type === "to") {
-                        fromLocationDisplay = this.elements.originInput?.value ?? '';
-                    } else { // type === "from"
-                        fromLocationDisplay = this.config.activityEndLocationDisplayName || this.config.activityEndLocation;
-                    }
-                }
-
-                html += `
-              <div class="connection-element">
-                <div class="connection-element-content">
-                  <div class="element-time-location-group">
-                      <span class="element-time">${departureTime}</span>
-                      <span class="element-location">${fromLocationDisplay}</span>
-                      ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
-                  </div>
-                  <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
-                    <div class="element-circle"></div>
-                    <span class="element-icon" title="${transportName}" alt="${transportName}">${icon}</span>
-                    <span class="element-duration">${this.getDurationString(index, type, element, durationDisplayString, conn)}</span>
-                  </div>
-                  ${dateDisplay}
-                </div>
-                ${this.renderAlert(element)}
-              </div>
-            `;
-
-                // After the last leg, display the final arrival.
-                if (index === filteredElements.length - 1) {
-                    let
-                        toLocationDisplay = element.to_location;
-                    if (element.isOriginalLast) {
-                        if (type === "to") {
-                            toLocationDisplay = this.config.activityStartLocationDisplayName || this.config.activityStartLocation;
-                        } else { // type === "from"
-                            toLocationDisplay = this.elements.originInput?.value ?? '';
-                        }
-                    }
-
-                    html += `
-                <div class="connection-element">
-                  <div class="connection-element-content">
-                    <div class="element-time-location-group">
-                      <span class="element-time">${arrivalTime}</span>
-                      <span class="element-location">${toLocationDisplay}</span>
-                      ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
-                    </div>
-                    <div class="element-circle-wrapper">
-                      <div class="element-circle"></div>
-                    </div>
-                  </div>
-                </div>
-              `;
-                }
-            });
-
-            // Display waiting time before activity starts (for 'to' connections)
-            if (type === 'to' && this.state.activityTimes.start && filteredElements.length > 0) {
-                const lastLegArrivalTimeISO = filteredElements[filteredElements.length - 1].arrival_time;
-
-                if (lastLegArrivalTimeISO) { // Ensure lastLegArrivalTimeISO is valid
-                    const connectionEndDateTime = DateTime.fromISO(lastLegArrivalTimeISO, {zone: 'utc'}).setZone(this.config.timezone);
-                    // Ensure activityActualStartDateTime is on the same day as connectionEndDateTime for correct diff
-                    let activityActualStartDateTime = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
-                        .set({
-                            year: connectionEndDateTime.year,
-                            month: connectionEndDateTime.month,
-                            day: connectionEndDateTime.day
-                        });
-
-                    if (activityActualStartDateTime < connectionEndDateTime) {
-                        activityActualStartDateTime = activityActualStartDateTime.plus({days: 1});
-                    }
-
-                    if (connectionEndDateTime.isValid && activityActualStartDateTime.isValid && activityActualStartDateTime > connectionEndDateTime) {
-                        const waitDuration = calculateDurationLocalWithDates(connectionEndDateTime, activityActualStartDateTime, (key) => this.t(key));
-                        if (waitDuration.totalMinutes > 0) { // Only show if there's actual waiting time
-                            html += `
-                          <div class="connection-element waiting-block">
-                              <div class="element-time">
-                              <span>${convertUTCToLocalTime(lastLegArrivalTimeISO, this.config.timezone)}</span>
-                              ${this.t('waiting.beforeActivity')}
-                              </div>
-                              <div id="eleCont">
-                              <span class="element-icon" title="${this.t('waiting.title')}" alt="${this.t('waiting.title')}">${this.getTransportIcon('WAIT')}</span>
-                              <span class="element-duration">
-                                  ${waitDuration.text}
-                              </span>
-                              </div>
-                          </div>`;
-                        }
-                    }
-                }
-            }
-
-            html += `</div></div>`;
-            return html;
-        }).join('');
-    }
-
-    /**
-     * Renders alert information for a connection element if alerts are present.
-     * @param {object} element - The connection element containing potential alerts.
-     * @returns {string} HTML string for the alert display, or empty string if no alerts.
-     */
-    renderAlert(element) {
-        if (!element.alerts || element.alerts.length === 0) {
-            return '';
-        }
-
-        // Only show the first alert as per requirements
-        const alert = element.alerts[0];
-        
-        const alertIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-
-        // Escape HTML to prevent XSS, but allow links in description
-        const escapeHtml = (text) => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        };
-
-        // Escape for use in HTML attributes (more strict escaping)
-        const escapeAttr = (text) => {
-            if (!text) return '';
-            return text
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        };
-
-        // Convert URLs to clickable links in description
-        const linkifyDescription = (text) => {
-            if (!text) return '';
-            const escaped = escapeHtml(text);
-            // Match URLs and convert to links
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return escaped.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-        };
-
-        const headerText = alert.header_text ? escapeHtml(alert.header_text) : '';
-        const descriptionText = alert.description_text ? linkifyDescription(alert.description_text) : '';
-
-        // Build the alert HTML - using data-expandable class for event delegation
-        // Note: Alerts are expanded by default. To revert to collapsed by default,
-        // remove "expanded" class from "alert-header-text" and "alert-description" elements below.
-        let alertHTML = `
-            <div class="connection-element-alert">
-                <div class="alert-header">
-                    <span class="alert-icon">${alertIcon}</span>
-                    <span>${this.t('alert.label')}</span>
-                </div>`;
-
-        if (headerText) {
-            alertHTML += `
-                <div class="alert-header-text expandable expanded" title="${escapeAttr(alert.header_text)}">${headerText}</div>`;
-        }
-
-        if (descriptionText) {
-            alertHTML += `
-                <div class="alert-description expandable expanded" title="${escapeAttr(alert.description_text)}">${descriptionText}</div>`;
-        }
-
-        alertHTML += `
-            </div>`;
-
-        return alertHTML;
+        return this.connectionRenderer.renderConnectionDetails(
+            connections,
+            type,
+            this.state,
+            { originInput: this.elements.originInput }
+        );
     }
 
     getTransportName(type) {
@@ -2378,39 +2069,6 @@ export default class DianaWidget {
 
         // '20' is 'Miscellaneous' in the API doc.
         return this.t('vehicles.20');
-    }
-
-    getDurationString(index, type, element, duration, conn) {
-        if (conn && conn.connection_anytime && element.type === "WALK") {
-            const durationMinutes = conn.connection_elements[0].duration;
-            const durationText = getTimeFormatFromMinutes(durationMinutes, (k) => this.t(k));
-            if (type === 'to') {
-                const leaveByTime = DateTime.fromFormat(
-                    this.state.activityTimes.start,
-                    'HH:mm',
-                    {zone: this.config.timezone}
-                ).minus({
-                    minutes: durationMinutes
-                }).toFormat('HH:mm');
-                return `${durationText} - ${this.t('anytimeLeaveBy', { time: leaveByTime })}`;
-            } else { // type === 'from'
-                const destination = this.elements.originInput?.value ?? '';
-                return `${durationText} - ${this.t('anytimeWalkTo', { destination: destination })}`;
-            }
-        }
-
-        let durationString = "";
-        if (element.vehicle_name && element.type === "JNY") {
-            let n_intermediate_stops = element.n_intermediate_stops + 1 || 0; // n_intermediate_stops seems to be exclusive of final stop
-            const stopString = n_intermediate_stops !== 1 ? `, ${n_intermediate_stops} ${this.t("stopPl")})` : `, ${n_intermediate_stops} ${this.t("stopSg")})`;
-            durationString = `${element.vehicle_name} -> ${element.direction} (${duration}`;
-            durationString += (n_intermediate_stops > 0) ? `${stopString}` : `)`; // Only add stop string if stops > 0
-            return durationString;
-        } else {
-            durationString = `${duration}`;
-        }
-        if (element.type === "TRSF") durationString += ` ${this.t("durationTransferTime")}`;
-        return durationString;
     }
 
     getTransportIcon(type) {

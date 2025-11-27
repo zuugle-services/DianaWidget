@@ -6,13 +6,19 @@
 - **Phase 1:** Project Setup & Configuration (TypeScript, ts-loader, tsconfig.json, webpack, Jest)
 - **Phase 2:** Type Definitions & Interfaces (src/types/ directory with all core types)
 - **Phase 3.1-3.4:** File Migrations (utils.ts, datetimeUtils.ts, translations.ts, all templates, components)
-- **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines → 3230 lines after extractions)
+- **Phase 3.5:** Migrate `src/core/widget.js` → `src/core/widget.ts` (3320+ lines → 2924 lines after extractions)
 - **Phase 3.6:** Entry point (index.ts)
 - **Phase 4.1:** Extract large methods - COMPLETED:
   - Extracted validation logic into `src/core/Validator.ts` (~200 lines)
   - Created and integrated `src/services/ApiService.ts` (~260 lines)
   - Created `src/core/StateManager.ts` (~280 lines) - state management class with getter/setter properties
   - Created `src/core/EventManager.ts` (~250 lines) - event binding and cleanup management
+  - **NEW:** Created `src/core/ConnectionRenderer.ts` (~520 lines) - connection rendering, summaries, and alerts
+    - Extracted `renderConnectionDetails()` method (~220 lines)
+    - Extracted `_renderConnectionSummary()` method (~50 lines)
+    - Extracted `renderAlert()` method (~65 lines)
+    - Extracted `getDurationString()` method (~30 lines)
+    - Added supporting private methods for waiting blocks and element rendering
 - **Phase 4.3:** Add strict null checks - COMPLETED:
   - Enabled `strictNullChecks: true` in tsconfig.json
   - Fixed ~201 TypeScript errors across Calendar.ts, widget.ts, and other files
@@ -36,7 +42,7 @@
 
 ### 📝 NOTES:
 - tsconfig.json now uses `strictNullChecks: true` while keeping `strict: false` and `noImplicitAny: false` for continued gradual migration
-- Build passes successfully with `npm run build` (bundle size: ~654 KiB)
+- Build passes successfully with `npm run build` (bundle size: ~655 KiB)
 - Dynamic imports in UIManager use `.js` extension which webpack resolves correctly at build time
 - widget.ts migration includes:
   - Class property declarations with types
@@ -49,6 +55,12 @@
 - ApiService.ts: Created API service class with fetch delegation, error handling, and type exports
 - StateManager.ts: Created state management class (~280 lines) with getter/setter properties and helper methods
 - EventManager.ts: Created event manager class (~250 lines) for DOM event binding and cleanup
+- ConnectionRenderer.ts: Created connection rendering class (~520 lines) for connection details and summaries:
+  - `renderConnectionDetails()` - renders detailed connection information with waiting blocks
+  - `renderConnectionSummary()` - renders compact summary for collapsible headers
+  - `renderAlert()` - renders connection element alerts with expandable sections
+  - `getDurationString()` - generates duration strings for connection elements
+  - Private helper methods for waiting blocks and element rendering
 - Type safety improvements:
   - `Connection` now has proper types for all properties used in widget.ts
   - `ConnectionElement` interface added for connection leg/segment data
@@ -345,10 +357,11 @@ DianaWidget/
 │   │   ├── translations.ts      # Translation types
 │   │   └── styles.d. ts          # CSS/SCSS module declarations
 │   ├── core/
-│   │   ├── widget.ts            # Main widget class
-│   │   ├── StateManager.ts      # State management
-│   │   ├── EventManager.ts      # Event handling
-│   │   ├── Validator.ts         # Configuration validation
+│   │   ├── widget.ts            # Main widget class (~2924 lines)
+│   │   ├── StateManager.ts      # State management (~280 lines)
+│   │   ├── EventManager.ts      # Event handling (~250 lines)
+│   │   ├── Validator.ts         # Configuration validation (~200 lines)
+│   │   ├── ConnectionRenderer.ts # Connection rendering (~520 lines)
 │   │   └── styles/
 │   │       └── widget.scss      # Component styles
 │   ├── components/
@@ -356,7 +369,7 @@ DianaWidget/
 │   │   ├── PageManager.ts       # Page navigation
 │   │   └── UIManager.ts         # UI template management
 │   ├── services/
-│   │   └── ApiService.ts        # API communication
+│   │   └── ApiService.ts        # API communication (~260 lines)
 │   ├── constants/
 │   │   └── defaults.ts          # Default values and constants
 │   └── templates/
