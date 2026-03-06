@@ -714,6 +714,150 @@ div#eleCont {
   }
 }
 
+/* --- Multi-Segment Ticket Dropdown --- */
+.ticket-segments-container {
+  position: relative;
+  display: inline-flex;
+}
+
+.ticket-segments-toggle {
+  .ticket-dropdown-arrow {
+    transition: transform 0.2s ease;
+    margin-left: 2px;
+    flex-shrink: 0;
+  }
+}
+
+.ticket-segments-container.open .ticket-segments-toggle .ticket-dropdown-arrow {
+  transform: rotate(180deg);
+}
+
+.ticket-segments-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 260px;
+  max-width: 340px;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px var(--shadow-light), 0 2px 4px rgba(0, 0, 0, 0.06);
+  padding: 6px;
+  overflow: hidden;
+}
+
+.ticket-segments-container.open .ticket-segments-dropdown {
+  display: block;
+  animation: ticketDropdownFadeIn 0.15s ease-out;
+}
+
+@keyframes ticketDropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ticket-segment-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  gap: 10px;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+
+  &:hover:not(.disabled):not(:disabled) {
+    background-color: var(--bg-hover);
+  }
+
+  &:active:not(.disabled):not(:disabled) {
+    background-color: color-mix(in srgb, var(--bg-hover) 80%, var(--primary-color) 20%);
+  }
+
+  &.disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  &.ticket-purchased {
+    background-color: color-mix(in srgb, var(--success-color) 8%, transparent);
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--success-color) 12%, transparent);
+    }
+  }
+
+  + .ticket-segment-button {
+    margin-top: 2px;
+  }
+}
+
+.ticket-segment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ticket-segment-route {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-segment-provider {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.disabled .ticket-segment-provider {
+  font-style: italic;
+}
+
+.ticket-segment-status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.ticket-segment-status .loading-spinner-small {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-primary);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
+  animation: spin 1s ease-in-out infinite;
+}
+
+.ticket-check-icon {
+  color: var(--success-color);
+  width: 18px;
+  height: 18px;
+}
+
 .summary-line-3 {
   display: flex;
   justify-content: space-between;

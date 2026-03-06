@@ -845,6 +845,14 @@ export default class DianaWidget {
                     if (d) d.style.display = 'none';
                 });
             }
+            // Close ticket segment dropdowns if click is outside
+            const clickedInsideTicketDropdown = (target as Element).closest?.('.ticket-segments-container');
+            if (!clickedInsideTicketDropdown) {
+                const root = this.elements.responseBox?.closest('.diana-widget') || document;
+                root.querySelectorAll('.ticket-segments-container.open').forEach((el: Element) => {
+                    el.classList.remove('open');
+                });
+            }
         });
     }
 
@@ -1992,13 +2000,113 @@ export default class DianaWidget {
     }
 
     async handleBuyTicketClick(event) {
+        // Handle dropdown toggle
+        const toggleButton = event.target.closest('.ticket-segments-toggle');
+        if (toggleButton) {
+            event.stopPropagation();
+            const container = toggleButton.closest('.ticket-segments-container');
+            if (container) {
+                const isOpen = container.classList.contains('open');
+                // Close any other open dropdowns first
+                const root = this.elements.responseBox?.closest('.diana-widget') || document;
+                root.querySelectorAll('.ticket-segments-container.open').forEach((el: Element) => {
+                    el.classList.remove('open');
+                });
+                if (!isOpen) {
+                    container.classList.add('open');
+                }
+            }
+            return;
+        }
+
+        // Handle individual segment button click
+        const segmentButton = event.target.closest('.ticket-segment-button:not(.disabled)');
+        if (segmentButton) {
+            event.stopPropagation();
+            this.clearMessages();
+
+            // Already purchased? Just re-open
+            if (segmentButton.classList.contains('ticket-purchased')) {
+                // Do nothing, user already clicked this one
+                return;
+            }
+
+            const connType = segmentButton.dataset.connType;
+            const segmentIndex = segmentButton.dataset.segmentIndex;
+            const connection = connType === 'to' ? this.state.selectedToConnection : this.state.selectedFromConnection;
+
+            if (!connection) {
+                console.error("No selected connection found to generate ticket link.");
+                return;
+            }
+
+            // Show loading state on the segment button
+            const statusEl = segmentButton.querySelector('.ticket-segment-status');
+            const originalStatusHTML = statusEl ? statusEl.innerHTML : '';
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="loading-spinner-small"></span>`;
+            }
+            segmentButton.disabled = true;
+
+            try {
+                const payload: Record<string, unknown> = {
+                    connection_elements: connection.connection_elements
+                };
+                if (segmentIndex !== undefined) {
+                    payload.segment_index = parseInt(segmentIndex, 10);
+                }
+
+                const response = await this._fetchApi(`${this.config.apiBaseUrl}/generate-ticketshop-link`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                // Try to get the URL from the ticketshop_links array first, fall back to ticketshop_url
+                let url: string | null = null;
+                if (result.ticketshop_links && result.ticketshop_links.length > 0) {
+                    const link = result.ticketshop_links.find((l: { url?: string }) => l.url);
+                    if (link) url = link.url;
+                }
+                if (!url && result.ticketshop_url) {
+                    url = result.ticketshop_url;
+                }
+
+                if (url) {
+                    window.open(url, '_blank');
+                    // Mark as purchased with green checkmark
+                    segmentButton.classList.add('ticket-purchased');
+                    if (statusEl) {
+                        statusEl.innerHTML = `<svg class="ticket-check-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+                    }
+                } else {
+                    throw new Error('No ticketshop URL returned from the server.');
+                }
+
+            } catch (error) {
+                const apiError = error as ApiError;
+                if (apiError.isSessionExpired) return;
+                console.error('Error fetching ticketshop link:', error);
+                this.showError(apiError.message || this.t('errors.api.internalError'), 'results', true);
+                if (statusEl) {
+                    statusEl.innerHTML = originalStatusHTML;
+                }
+            } finally {
+                segmentButton.disabled = false;
+            }
+            return;
+        }
+
+        // Handle single ticket button click (legacy / single-segment)
         const button = event.target.closest('.ticket-button');
-        if (!button) return;
+        if (!button || button.classList.contains('ticket-segments-toggle')) return;
 
         event.stopPropagation();
         this.clearMessages();
 
         const connType = button.dataset.connType;
+        const segmentIdx = button.dataset.segmentIndex;
         const connection = connType === 'to' ? this.state.selectedToConnection : this.state.selectedFromConnection;
 
         if (!connection) {
@@ -2011,17 +2119,31 @@ export default class DianaWidget {
         button.disabled = true;
 
         try {
+            const payload: Record<string, unknown> = {
+                connection_elements: connection.connection_elements
+            };
+            if (segmentIdx !== undefined) {
+                payload.segment_index = parseInt(segmentIdx, 10);
+            }
+
             const response = await this._fetchApi(`${this.config.apiBaseUrl}/generate-ticketshop-link`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ connection_elements: connection.connection_elements })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
-            if (result.ticketshop_url) {
-                window.open(result.ticketshop_url, '_blank');
+            let url: string | null = null;
+            if (result.ticketshop_links && result.ticketshop_links.length > 0) {
+                const link = result.ticketshop_links.find((l: { url?: string }) => l.url);
+                if (link) url = link.url;
+            }
+            if (!url && result.ticketshop_url) {
+                url = result.ticketshop_url;
+            }
+
+            if (url) {
+                window.open(url, '_blank');
             } else {
                 throw new Error('No ticketshop URL returned from the server.');
             }

@@ -228,6 +228,10 @@ export interface LanguageTranslations {
     platform: string;
     direction: string;
     buyTicket: string;
+    buyTickets: string;
+    ticketSegmentLabel: string;
+    noTicketAvailable: string;
+    ticketOpened: string;
     menu: MenuTranslations;
     warnings: WarningTranslations;
     infos: InfoTranslations;

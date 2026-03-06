@@ -186,6 +186,20 @@ export interface TransportAlert {
 }
 
 /**
+ * Ticketshop segment defining which provider covers a range of legs
+ */
+export interface TicketshopSegment {
+    /** Inclusive start index of the leg range in connection_elements (0-based) */
+    readonly leg_from: number;
+
+    /** Inclusive end index of the leg range in connection_elements (0-based) */
+    readonly leg_to: number;
+
+    /** Provider name (e.g., "TRAIVELLING", "OEBB"), or null if no provider covers these legs */
+    readonly provider: string | null;
+}
+
+/**
  * Connection object representing a journey
  */
 export interface Connection {
@@ -236,6 +250,9 @@ export interface Connection {
     
     /** Ticketshop provider name if available */
     readonly connection_ticketshop_provider?: string;
+
+    /** Ticketshop segments defining which provider covers which leg ranges */
+    readonly connection_ticketshop_segments?: TicketshopSegment[];
 }
 
 /**

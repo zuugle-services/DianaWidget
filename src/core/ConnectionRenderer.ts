@@ -17,7 +17,8 @@ import type {
     WidgetConfig,
     WidgetState,
     Connection,
-    ConnectionElement
+    ConnectionElement,
+    TicketshopSegment
 } from '../types';
 
 /**
@@ -150,12 +151,7 @@ export class ConnectionRenderer {
             const isLive = conn.connection_elements && conn.connection_elements.length > 0 && conn.connection_elements.every(el => el.provider === 'live');
             const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
 
-            const ticketButtonHTML = conn.connection_ticketshop_provider ? `
-            <button class="ticket-button" data-conn-type="${type}">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
-                ${this.t('buyTicket')} (${conn.connection_ticketshop_provider})
-            </button>
-            ` : '';
+            const ticketButtonHTML = this._renderTicketButtons(conn, type);
 
             const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML) ? `
             <div class="connection-details-header">
@@ -183,6 +179,102 @@ export class ConnectionRenderer {
             html += `</div></div>`;
             return html;
         }).join('');
+    }
+
+    /**
+     * Renders ticket button(s) for a connection.
+     * Single segment: renders a single buy button (backward compatible).
+     * Multiple segments: renders a toggle button that opens a dropdown with per-segment buttons.
+     */
+    private _renderTicketButtons(conn: Connection, type: string): string {
+        const ticketIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>`;
+
+        const segments = conn.connection_ticketshop_segments;
+        const elements = conn.connection_elements;
+
+        // If we have segments info, use it
+        if (segments && segments.length > 0 && elements) {
+            const segmentsWithProvider = segments.filter(s => s.provider !== null);
+
+            // No segments with a provider → no button
+            if (segmentsWithProvider.length === 0) return '';
+
+            // Single segment with provider → simple single button (same as before)
+            if (segmentsWithProvider.length === 1 && segments.length === 1) {
+                const seg = segmentsWithProvider[0];
+                return `
+                <button class="ticket-button" data-conn-type="${type}" data-segment-index="0">
+                    ${ticketIcon}
+                    ${this.t('buyTicket')} (${seg.provider})
+                </button>`;
+            }
+
+            // Multiple segments → dropdown
+            const segmentButtonsHTML = segments.map((seg, idx) => {
+                return this._renderSegmentButton(seg, idx, elements, type);
+            }).join('');
+
+            return `
+            <div class="ticket-segments-container">
+                <button class="ticket-button ticket-segments-toggle" data-conn-type="${type}">
+                    ${ticketIcon}
+                    ${this.t('buyTickets')} (${segmentsWithProvider.length})
+                    <svg class="ticket-dropdown-arrow" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M7 10l5 5 5-5z"/></svg>
+                </button>
+                <div class="ticket-segments-dropdown">
+                    ${segmentButtonsHTML}
+                </div>
+            </div>`;
+        }
+
+        // Fallback: use legacy connection_ticketshop_provider (no segments info)
+        if (conn.connection_ticketshop_provider) {
+            return `
+            <button class="ticket-button" data-conn-type="${type}">
+                ${ticketIcon}
+                ${this.t('buyTicket')} (${conn.connection_ticketshop_provider})
+            </button>`;
+        }
+
+        return '';
+    }
+
+    /**
+     * Renders a single segment button inside the multi-segment dropdown.
+     */
+    private _renderSegmentButton(
+        segment: TicketshopSegment,
+        segmentIndex: number,
+        elements: ConnectionElement[],
+        type: string
+    ): string {
+        const hasProvider = segment.provider !== null;
+
+        // Get from/to location names from the connection elements
+        const fromElement = elements[segment.leg_from];
+        const toElement = elements[segment.leg_to];
+        const fromName = fromElement?.from_location ?? '?';
+        const toName = toElement?.to_location ?? '?';
+
+        if (!hasProvider) {
+            // No provider - show disabled "no ticket available" row
+            return `
+            <div class="ticket-segment-button disabled">
+                <div class="ticket-segment-info">
+                    <span class="ticket-segment-route">${fromName} → ${toName}</span>
+                    <span class="ticket-segment-provider">${this.t('noTicketAvailable')}</span>
+                </div>
+            </div>`;
+        }
+
+        return `
+        <button class="ticket-segment-button" data-conn-type="${type}" data-segment-index="${segmentIndex}">
+            <div class="ticket-segment-info">
+                <span class="ticket-segment-route">${fromName} → ${toName}</span>
+                <span class="ticket-segment-provider">${segment.provider}</span>
+            </div>
+            <span class="ticket-segment-status"></span>
+        </button>`;
     }
 
     /**

@@ -59,11 +59,27 @@ export interface ReverseGeocodeResponse {
 }
 
 /**
+ * A single ticketshop link for a segment
+ */
+export interface TicketshopLink {
+    /** Inclusive start index of the leg range (0-based) */
+    readonly leg_from: number;
+    /** Inclusive end index of the leg range (0-based) */
+    readonly leg_to: number;
+    /** Provider name, or null if no provider covers these legs */
+    readonly provider: string | null;
+    /** The ticket shop URL, or null if no provider */
+    readonly url: string | null;
+}
+
+/**
  * Response type for ticketshop link generation
  */
 export interface TicketshopLinkResponse {
-    /** The generated ticketshop URL */
-    readonly url?: string;
+    /** The primary generated ticketshop URL (backward compatible) */
+    readonly ticketshop_url?: string;
+    /** Array of ticketshop links per segment */
+    readonly ticketshop_links?: TicketshopLink[];
     /** Error message if generation failed */
     readonly error?: string;
 };
