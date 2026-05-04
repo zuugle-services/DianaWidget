@@ -47,15 +47,11 @@ export interface AddressSuggestionsResponse {
 }
 
 /**
- * Response type for reverse geocode endpoint
+ * Response type for reverse geocode endpoint (same GeoJSON FeatureCollection as autocomplete)
  */
 export interface ReverseGeocodeResponse {
-    /** Display name of the location */
-    readonly display_name?: string;
-    /** Latitude */
-    readonly lat?: string | number;
-    /** Longitude */
-    readonly lon?: string | number;
+    /** GeoJSON features array — contains exactly one result */
+    readonly features?: readonly import('../types').Suggestion[];
 }
 
 /**

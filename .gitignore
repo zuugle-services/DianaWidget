@@ -3,6 +3,7 @@
 # Codefetch automated markdown files
 /codefetch
 .junie
+.claude/
 
 # compiled output
 /dist

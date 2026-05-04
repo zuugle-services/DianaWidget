@@ -15,8 +15,7 @@ import {
     formatLegDateForDisplay,
     getEarlierTime,
     getLaterTime,
-    getTimeFormatFromMinutes,
-    parseDurationToMinutes
+    getTimeFormatFromMinutes
 } from '../datetimeUtils';
 
 import {PageManager} from '../components/PageManager';
@@ -1266,9 +1265,12 @@ export default class DianaWidget {
             }
         }
 
+        params["timezone"] = this.config.timezone;
+
         if (this.elements.originInput?.attributes["data-lat"] && this.elements.originInput?.attributes["data-lon"]) {
             params["user_start_location"] = `${(this.elements.originInput.attributes as NamedNodeMap).getNamedItem('data-lat')?.value},${(this.elements.originInput.attributes as NamedNodeMap).getNamedItem('data-lon')?.value}`;
             params["user_start_location_type"] = "coordinates";
+            params["user_start_location_display_name"] = this.elements.originInput.value;
         } else if (this.elements.originInput) {
             params["user_start_location"] = this.elements.originInput.value;
             params["user_start_location_type"] = "address";
@@ -1298,6 +1300,8 @@ export default class DianaWidget {
         this.state.toConnections = result.connections.to_activity;
         this.state.fromConnections = result.connections.from_activity;
 
+        this.state.activity = result.activity ?? null;
+
         // Mark original first and last elements
         this.state.toConnections.forEach((conn) => {
             if (conn.connection_elements && conn.connection_elements.length > 0) {
@@ -1312,10 +1316,6 @@ export default class DianaWidget {
             }
         });
 
-        // Process connections to filter short walks and adjust times
-        this._processAndFilterConnections(this.state.toConnections, 'to');
-        this._processAndFilterConnections(this.state.fromConnections, 'from');
-
         const toIndex = result.connections.recommended_to_activity_connection;
         const fromIndex = result.connections.recommended_from_activity_connection;
         this.state.recommendedToIndex = (typeof toIndex === 'number' && toIndex >= 0 && toIndex < this.state.toConnections.length) ? toIndex : 0;
@@ -1326,45 +1326,6 @@ export default class DianaWidget {
         else if (this.state.fromConnections.length === 0) console.warn("No 'from_activity' connections received.");
 
         this.renderConnectionResults();
-    }
-
-    _getElementDurationMinutes(element) {
-        if (typeof element.duration === 'number') {
-            return element.duration;
-        }
-        // Fallback to calculate from timestamps
-        const durationStr = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
-        return parseDurationToMinutes(durationStr, (key) => this.t(key));
-    }
-
-    _processAndFilterConnections(connections, type) {
-        connections.forEach(conn => {
-            if (!conn.connection_elements || conn.connection_elements.length <= 1) {
-                return; // Nothing to filter if 0 or 1 elements
-            }
-
-            if (type === 'to') {
-                const lastElement = conn.connection_elements[conn.connection_elements.length - 1];
-                const durationLastLegMinutes = this._getElementDurationMinutes(lastElement);
-
-                if (durationLastLegMinutes <= 5 && lastElement.type === "WALK") {
-                    // Filter out the last element
-                    const removedElement = conn.connection_elements.pop();
-                    // Adjust the main connection's end time to the start time of the removed walk
-                    conn.connection_end_timestamp = removedElement.departure_time;
-                }
-            } else if (type === 'from') {
-                const firstElement = conn.connection_elements[0];
-                const durationFirstLegMinutes = this._getElementDurationMinutes(firstElement);
-
-                if (durationFirstLegMinutes <= 5 && firstElement.type === "WALK") {
-                    // Filter out the first element
-                    const removedElement = conn.connection_elements.shift();
-                    // Adjust the main connection's start time to the arrival time of the removed walk
-                    conn.connection_start_timestamp = removedElement.arrival_time;
-                }
-            }
-        });
     }
 
     renderSuggestions(): void {
@@ -2209,8 +2170,10 @@ export default class DianaWidget {
             if (!this.elements.originInput) throw new Error("Origin input not available");
             if (!this.state.selectedDate) throw new Error("Selected date not available");
             
+            const hasCoordinates = !!(this.elements.originInput.dataset.lat && this.elements.originInput.dataset.lon);
             const dataToShare = {
                 origin: this.elements.originInput.value,
+                origin_display_name: hasCoordinates ? this.elements.originInput.value : null,
                 origin_lat: this.elements.originInput.dataset.lat || null,
                 origin_lon: this.elements.originInput.dataset.lon || null,
                 date: formatDatetime(this.state.selectedDate, this.config.timezone), // yyyy-MM-dd
@@ -2219,6 +2182,7 @@ export default class DianaWidget {
                 to_connection_end_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_end_timestamp : null,
                 from_connection_start_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_start_timestamp : null,
                 from_connection_end_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_end_timestamp : null,
+                activity: this.state.activity ?? null,
                 shareURLPrefix: this.config.shareURLPrefix,
             };
 
@@ -2365,6 +2329,9 @@ export default class DianaWidget {
                 fromStart: data.from_connection_start_time,
                 fromEnd: data.from_connection_end_time,
             };
+
+            // Restore activity object if present (null for old share links)
+            this.state.activity = data.activity ?? null;
 
             this.setLoadingState(false, true);
             await this.handleSearch();

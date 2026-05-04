@@ -158,5 +158,6 @@ export const DEFAULT_STATE: WidgetState = {
         warningDuration: false,
     },
     currentContentKey: null,
-    preselectTimes: null
+    preselectTimes: null,
+    activity: null
 };

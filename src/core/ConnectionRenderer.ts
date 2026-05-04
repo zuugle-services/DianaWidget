@@ -421,10 +421,8 @@ export class ConnectionRenderer {
             return escaped.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
         };
 
-        // Access alert properties - alerts may use title/description or header_text/description_text
-        const alertAny = alert as { title?: string; description?: string; header_text?: string; description_text?: string };
-        const headerText = alertAny.header_text ? escapeHtml(alertAny.header_text) : (alertAny.title ? escapeHtml(alertAny.title) : '');
-        const descriptionText = alertAny.description_text ? linkifyDescription(alertAny.description_text) : (alertAny.description ? linkifyDescription(alertAny.description) : '');
+        const headerText = alert.header_text ? escapeHtml(alert.header_text) : '';
+        const descriptionText = linkifyDescription(alert.description_text);
 
         // Build the alert HTML - using data-expandable class for event delegation
         // Note: Alerts are expanded by default. To revert to collapsed by default,
@@ -437,15 +435,13 @@ export class ConnectionRenderer {
                 </div>`;
 
         if (headerText) {
-            const titleForAttr = alertAny.header_text || alertAny.title || '';
             alertHTML += `
-                <div class="alert-header-text expandable expanded" title="${escapeAttr(titleForAttr)}">${headerText}</div>`;
+                <div class="alert-header-text expandable expanded" title="${escapeAttr(alert.header_text ?? '')}">${headerText}</div>`;
         }
 
         if (descriptionText) {
-            const descForAttr = alertAny.description_text || alertAny.description || '';
             alertHTML += `
-                <div class="alert-description expandable expanded" title="${escapeAttr(descForAttr)}">${descriptionText}</div>`;
+                <div class="alert-description expandable expanded" title="${escapeAttr(alert.description_text ?? '')}">${descriptionText}</div>`;
         }
 
         alertHTML += `

@@ -18,15 +18,17 @@ export type {
 } from './state';
 
 // API types
-export type { 
-    Connection, 
+export type {
+    Connection,
     ConnectionElement,
     ConnectionElementType,
-    TransportLeg, 
+    TransportLeg,
     TransportAlert,
+    TicketshopSegment,
     Suggestion,
     SuggestionProperties,
     SuggestionGeometry,
+    ActivityObject,
     ConnectionSearchResponse,
     AutocompleteResponse,
     ShareDataResponse,

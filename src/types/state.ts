@@ -3,7 +3,7 @@
  */
 
 import type { DateTime } from 'luxon';
-import type { Connection, Suggestion } from './api';
+import type { ActivityObject, Connection, Suggestion } from './api';
 
 /**
  * Activity times state
@@ -81,7 +81,10 @@ export interface WidgetState {
     
     /** Preselect times for shared journeys */
     preselectTimes: PreselectTimes | null;
-    
+
+    /** Activity object from last /connections response; null until first successful fetch */
+    activity: ActivityObject | null;
+
     /** Available dates from dateList (computed internally as Luxon DateTime) */
     availableDates?: DateTime[];
 }

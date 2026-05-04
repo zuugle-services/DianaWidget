@@ -35,12 +35,24 @@ export interface ConnectionElement {
     /** Duration in minutes */
     readonly duration?: number;
     
-    /** Origin location name */
+    /** Origin location name (always human-readable) */
     readonly from_location?: string;
-    
-    /** Destination location name */
+
+    /** Coordinates of the departure location */
+    readonly from_location_coordinates?: { readonly lat: number; readonly lon: number };
+
+    /** Destination location name (always human-readable) */
     readonly to_location?: string;
-    
+
+    /** Coordinates of the arrival location */
+    readonly to_location_coordinates?: { readonly lat: number; readonly lon: number };
+
+    /** External ID of the origin stop as returned by the provider */
+    readonly ext_id_orig?: string;
+
+    /** External ID of the destination stop as returned by the provider */
+    readonly ext_id_dest?: string;
+
     /** Vehicle type for journey legs */
     readonly vehicle_type?: string;
     
@@ -172,17 +184,25 @@ export interface TransportLeg {
 }
 
 /**
- * Transport alert/warning
+ * Transport alert/warning (GTFS Realtime-based)
  */
 export interface TransportAlert {
-    /** Alert title */
-    readonly title?: string;
-    
-    /** Alert description */
-    readonly description?: string;
-    
-    /** Alert severity */
-    readonly severity?: 'info' | 'warning' | 'error';
+    readonly cause?: string;
+    readonly effect?: string;
+    readonly header_text?: string;
+    readonly description_text?: string;
+}
+
+/**
+ * Ticketshop segment defining which provider covers a leg range
+ */
+export interface TicketshopSegment {
+    /** Inclusive start index into connection_elements (0-based) */
+    readonly leg_from: number;
+    /** Inclusive end index into connection_elements (0-based) */
+    readonly leg_to: number;
+    /** Provider name (e.g. "OEBB", "TRAIVELLING"), or null if no coverage */
+    readonly provider: string | null;
 }
 
 /**
@@ -233,9 +253,15 @@ export interface Connection {
     
     /** Whether this is an "anytime" connection (flexible timing) */
     readonly connection_anytime?: boolean;
-    
-    /** Ticketshop provider name if available */
-    readonly connection_ticketshop_provider?: string;
+
+    /** Primary ticketshop provider name (first provider from segments), or null */
+    readonly connection_ticketshop_provider?: string | null;
+
+    /** Per-segment ticketshop coverage; present when a provider is available */
+    readonly connection_ticketshop_segments?: readonly TicketshopSegment[];
+
+    /** Suitability score (higher is better) */
+    readonly connection_score?: number;
 }
 
 /**
@@ -284,40 +310,72 @@ export interface Suggestion {
 }
 
 /**
+ * Activity object returned in /connections response.
+ * All time fields are full UTC ISO 8601 datetimes (e.g. "2024-07-15T06:30:00Z").
+ */
+export interface ActivityObject {
+    readonly name?: string;
+    readonly start_location?: string;
+    readonly start_location_type?: string;
+    readonly start_location_display_name?: string;
+    readonly end_location?: string;
+    readonly end_location_type?: string;
+    readonly end_location_display_name?: string;
+    readonly duration_minutes?: number;
+    readonly duration_days?: number;
+    /** UTC ISO 8601 datetime */
+    readonly earliest_start_time?: string;
+    /** UTC ISO 8601 datetime */
+    readonly latest_start_time?: string;
+    /** UTC ISO 8601 datetime */
+    readonly earliest_end_time?: string;
+    /** UTC ISO 8601 datetime */
+    readonly latest_end_time?: string;
+    readonly start_time_label?: string;
+    readonly end_time_label?: string;
+    /** IANA timezone identifier, e.g. "Europe/Vienna" */
+    readonly timezone?: string;
+    /** Activity date YYYY-MM-DD */
+    readonly date?: string;
+    /** Last day of multi-day activity, null for single-day */
+    readonly date_end?: string | null;
+}
+
+/**
  * API response for connection search
  */
 export interface ConnectionSearchResponse {
     /** Connections to the activity */
     readonly to_connections?: readonly Connection[];
-    
+
     /** Connections from the activity */
     readonly from_connections?: readonly Connection[];
-    
+
     /** Recommended to-connection index */
     readonly recommended_to_index?: number;
-    
+
     /** Recommended from-connection index */
     readonly recommended_from_index?: number;
-    
+
+    /** Canonical activity object */
+    readonly activity?: ActivityObject;
+
+    /** Whether a realtime data provider was used */
+    readonly live?: boolean;
+
     /** Error code if any */
     readonly error_code?: string | number;
-    
+
     /** Error message if any */
     readonly error_message?: string;
 }
 
 /**
- * API response for address autocomplete
+ * API response for address autocomplete (GeoJSON FeatureCollection)
  */
 export interface AutocompleteResponse {
-    /** List of suggestions */
-    readonly results?: readonly Suggestion[];
-    
-    /** Error code if any */
-    readonly error_code?: string | number;
-    
-    /** Error message if any */
-    readonly error_message?: string;
+    /** GeoJSON features array */
+    readonly features?: readonly Suggestion[];
 }
 
 /**
@@ -326,30 +384,36 @@ export interface AutocompleteResponse {
 export interface ShareDataResponse {
     /** Origin location */
     readonly origin: string;
-    
+
     /** Origin latitude */
     readonly origin_lat?: string | number;
-    
+
     /** Origin longitude */
     readonly origin_lon?: string | number;
-    
+
+    /** Human-readable display name for the origin; null for old share records */
+    readonly origin_display_name?: string | null;
+
     /** Selected date (YYYY-MM-DD) */
     readonly date: string;
-    
+
     /** Selected end date for multiday (YYYY-MM-DD) */
     readonly dateEnd?: string | null;
-    
+
     /** To connection start timestamp */
     readonly to_connection_start_time?: string | null;
-    
+
     /** To connection end timestamp */
     readonly to_connection_end_time?: string | null;
-    
+
     /** From connection start timestamp */
     readonly from_connection_start_time?: string | null;
-    
+
     /** From connection end timestamp */
     readonly from_connection_end_time?: string | null;
+
+    /** Full canonical activity object; null for shares created before this field was added */
+    readonly activity?: ActivityObject | null;
 }
 
 /**
