@@ -4,6 +4,7 @@
 /codefetch
 .junie
 .claude/
+API_DOCUMENTATION.md
 
 # compiled output
 /dist
