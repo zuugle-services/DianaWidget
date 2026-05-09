@@ -1318,8 +1318,8 @@ export default class DianaWidget {
 
         const toIndex = result.connections.recommended_to_activity_connection;
         const fromIndex = result.connections.recommended_from_activity_connection;
-        this.state.recommendedToIndex = (typeof toIndex === 'number' && toIndex >= 0 && toIndex < this.state.toConnections.length) ? toIndex : 0;
-        this.state.recommendedFromIndex = (typeof fromIndex === 'number' && fromIndex >= 0 && fromIndex < this.state.fromConnections.length) ? fromIndex : 0;
+        this.state.recommendedToIndex = (typeof toIndex === 'number') ? toIndex : 0;
+        this.state.recommendedFromIndex = (typeof fromIndex === 'number') ? fromIndex : 0;
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) console.warn("No connections received.");
         else if (this.state.toConnections.length === 0) console.warn("No 'to_activity' connections received.");
@@ -1371,6 +1371,20 @@ export default class DianaWidget {
             this.showError(this.t('errors.api.noConnectionsFound'), 'form');
             return;
         }
+        // Resolve recommended connection IDs to array indices before rendering slots
+        if (this.state.toConnections.length > 0) {
+            const toIdx = this.state.toConnections.findIndex(c => c.connection_id === this.state.recommendedToIndex);
+            this.state.recommendedToIndex = toIdx !== -1 ? toIdx : 0;
+        } else {
+            this.state.recommendedToIndex = 0;
+        }
+        if (this.state.fromConnections.length > 0) {
+            const fromIdx = this.state.fromConnections.findIndex(c => c.connection_id === this.state.recommendedFromIndex);
+            this.state.recommendedFromIndex = fromIdx !== -1 ? fromIdx : 0;
+        } else {
+            this.state.recommendedFromIndex = 0;
+        }
+
         if (this.state.toConnections.length === 0) {
             if (this.elements.responseBox) this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
             const toSummary = this.elements.collapsibleToActivity?.querySelector('.summary-content-wrapper');
@@ -1388,43 +1402,11 @@ export default class DianaWidget {
             this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
         }
 
-        // Ensure recommended indices are valid after potential filtering or empty arrays
         if (this.state.toConnections.length > 0) {
-            let foundRecommendedTo = false;
-            for (let i = 0; i < this.state.toConnections.length; i++) {
-                if (this.state.toConnections[i].connection_id === this.state.recommendedToIndex) { // Original recommendedToIndex was an ID
-                    this.state.recommendedToIndex = i; // Update to be an array index
-                    foundRecommendedTo = true;
-                    break;
-                }
-            }
-            if (!foundRecommendedTo) this.state.recommendedToIndex = 0; // Default to first if ID not found
-        } else {
-            this.state.recommendedToIndex = 0; // Or handle as no connections
+            this.selectConnectionByIndex('to', this.state.recommendedToIndex);
         }
-
         if (this.state.fromConnections.length > 0) {
-            let foundRecommendedFrom = false;
-            for (let i = 0; i < this.state.fromConnections.length; i++) {
-                if (this.state.fromConnections[i].connection_id === this.state.recommendedFromIndex) { // Original recommendedFromIndex was an ID
-                    this.state.recommendedFromIndex = i; // Update to be an array index
-                    foundRecommendedFrom = true;
-                    break;
-                }
-            }
-            if (!foundRecommendedFrom) this.state.recommendedFromIndex = 0;
-        } else {
-            this.state.recommendedFromIndex = 0;
-        }
-
-
-        if (this.state.toConnections.length > 0 && this.state.recommendedToIndex < this.state.toConnections.length) {
-            const recTo = this.state.toConnections[this.state.recommendedToIndex];
-            this.filterConnectionsByTime('to', convertUTCToLocalTime(recTo.connection_start_timestamp, this.config.timezone), convertUTCToLocalTime(recTo.connection_end_timestamp, this.config.timezone));
-        }
-        if (this.state.fromConnections.length > 0 && this.state.recommendedFromIndex < this.state.fromConnections.length) {
-            const recFrom = this.state.fromConnections[this.state.recommendedFromIndex];
-            this.filterConnectionsByTime('from', convertUTCToLocalTime(recFrom.connection_start_timestamp, this.config.timezone), convertUTCToLocalTime(recFrom.connection_end_timestamp, this.config.timezone));
+            this.selectConnectionByIndex('from', this.state.recommendedFromIndex);
         }
 
 
@@ -1445,33 +1427,20 @@ export default class DianaWidget {
         this.addSwipeBehavior('bottomSlider');
 
         if (this.state.preselectTimes) {
-            const {
-                toStart,
-                toEnd,
-                fromStart,
-                fromEnd
-            } = this.state.preselectTimes;
+            const { toStart, toEnd, fromStart, fromEnd } = this.state.preselectTimes;
 
             if (toStart && toEnd && this.state.toConnections.length > 0) {
-                const toConn = this.state.toConnections.find(c =>
+                const toIdx = this.state.toConnections.findIndex(c =>
                     c.connection_start_timestamp === toStart && c.connection_end_timestamp === toEnd
                 );
-                if (toConn) {
-                    const startTimeLocal = convertUTCToLocalTime(toConn.connection_start_timestamp, this.config.timezone);
-                    const endTimeLocal = convertUTCToLocalTime(toConn.connection_end_timestamp, this.config.timezone);
-                    this.filterConnectionsByTime('to', startTimeLocal, endTimeLocal);
-                }
+                if (toIdx !== -1) this.selectConnectionByIndex('to', toIdx);
             }
 
             if (fromStart && fromEnd && this.state.fromConnections.length > 0) {
-                const fromConn = this.state.fromConnections.find(c =>
+                const fromIdx = this.state.fromConnections.findIndex(c =>
                     c.connection_start_timestamp === fromStart && c.connection_end_timestamp === fromEnd
                 );
-                if (fromConn) {
-                    const startTimeLocal = convertUTCToLocalTime(fromConn.connection_start_timestamp, this.config.timezone);
-                    const endTimeLocal = convertUTCToLocalTime(fromConn.connection_end_timestamp, this.config.timezone);
-                    this.filterConnectionsByTime('from', startTimeLocal, endTimeLocal);
-                }
+                if (fromIdx !== -1) this.selectConnectionByIndex('from', fromIdx);
             }
             delete (this.state as { preselectTimes?: typeof this.state.preselectTimes }).preselectTimes;
         }
@@ -1530,7 +1499,7 @@ export default class DianaWidget {
                   </div>
                 </div>`;
 
-            btn.addEventListener('click', () => this.filterConnectionsByTime(type, startTimeLocal, endTimeLocal));
+            btn.addEventListener('click', () => this.selectConnectionByIndex(type, index));
             const isRecommended = (type === 'to' && index === this.state.recommendedToIndex) || (type === 'from' && index === this.state.recommendedFromIndex);
             if (isRecommended) btn.classList.add('active-time');
             slider.appendChild(btn);
@@ -1678,52 +1647,57 @@ export default class DianaWidget {
         }
     }
 
-    filterConnectionsByTime(type, startTimeLocal, endTimeLocal) {
+    selectConnectionByIndex(type: 'to' | 'from', index: number): void {
         const connections = type === 'from' ? this.state.fromConnections : this.state.toConnections;
         const sliderId = type === 'from' ? 'bottomSlider' : 'topSlider';
         const targetBox = type === 'from' ? this.elements.responseBoxBottom : this.elements.responseBox;
         const container = type === 'to' ? this.elements.collapsibleToActivity : this.elements.collapsibleFromActivity;
         const summaryWrapper = container?.querySelector('.summary-content-wrapper');
-
         const slider = this.elements[sliderId];
-        if (!slider) return;
-        slider.querySelectorAll('button').forEach(btn => {
-            btn.classList.remove('active-time');
-            const timeDiv = btn.querySelector('div > div:first-child');
-            if (timeDiv && timeDiv.textContent?.includes(`${startTimeLocal} - ${endTimeLocal}`)) {
-                btn.classList.add('active-time');
-            }
-        });
-        const filtered = connections.filter(conn =>
+
+        if (index < 0 || index >= connections.length || !slider) return;
+
+        const selectedConnection = connections[index];
+
+        slider.querySelectorAll('button').forEach(btn => btn.classList.remove('active-time'));
+        slider.querySelector(`button[data-index="${index}"]`)?.classList.add('active-time');
+
+        this.updateActivityTimeBox(selectedConnection, type);
+        if (targetBox) targetBox.innerHTML = this.renderConnectionDetails([selectedConnection], type);
+
+        if (summaryWrapper && container) {
+            summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
+            container.classList.add('has-summary');
+        }
+
+        if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime)) {
+            this.elements.collapsibleToActivity.classList.remove('expanded');
+        }
+        if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime)) {
+            this.elements.collapsibleFromActivity.classList.remove('expanded');
+        }
+
+        if (type === 'to') {
+            this.state.selectedToConnection = selectedConnection;
+        } else {
+            this.state.selectedFromConnection = selectedConnection;
+        }
+        this._updateOppositeSlider(type);
+    }
+
+    filterConnectionsByTime(type: 'to' | 'from', startTimeLocal: string, endTimeLocal: string): void {
+        const connections = type === 'from' ? this.state.fromConnections : this.state.toConnections;
+        const matchedIdx = connections.findIndex(conn =>
             convertUTCToLocalTime(conn.connection_start_timestamp, this.config.timezone) === startTimeLocal &&
             convertUTCToLocalTime(conn.connection_end_timestamp, this.config.timezone) === endTimeLocal
         );
 
-        if (filtered.length > 0) {
-            const selectedConnection = filtered[0];
-            this.updateActivityTimeBox(selectedConnection, type);
-            if (targetBox) targetBox.innerHTML = this.renderConnectionDetails(filtered, type);
-
-            if (summaryWrapper && container) {
-                summaryWrapper.innerHTML = this._renderConnectionSummary(selectedConnection, type);
-                container.classList.add('has-summary');
-            }
-
-            // Collapse containers on new selection, unless they are single "anytime" connections.
-            if (this.elements.collapsibleToActivity && !(this.state.toConnections.length === 1 && this.state.toConnections[0].connection_anytime)) {
-                this.elements.collapsibleToActivity.classList.remove('expanded');
-            }
-            if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime)) {
-                this.elements.collapsibleFromActivity.classList.remove('expanded');
-            }
-
-            if (type === 'to') {
-                this.state.selectedToConnection = selectedConnection;
-            } else {
-                this.state.selectedFromConnection = selectedConnection;
-            }
-            this._updateOppositeSlider(type);
+        if (matchedIdx !== -1) {
+            this.selectConnectionByIndex(type, matchedIdx);
         } else {
+            const targetBox = type === 'from' ? this.elements.responseBoxBottom : this.elements.responseBox;
+            const container = type === 'to' ? this.elements.collapsibleToActivity : this.elements.collapsibleFromActivity;
+            const summaryWrapper = container?.querySelector('.summary-content-wrapper');
             if (targetBox) targetBox.innerHTML = `<div>${this.t('noConnectionDetails')}</div>`;
             if (summaryWrapper && container) {
                 summaryWrapper.innerHTML = `<span class="summary-placeholder">${this.t('noConnectionDetails')}</span>`;

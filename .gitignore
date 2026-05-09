@@ -1,9 +1,10 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
 
-# Codefetch automated markdown files
+# AI & Codefetch automated markdown files
 /codefetch
 .junie
 .claude/
+CLAUDE.md
 API_DOCUMENTATION.md
 
 # compiled output
