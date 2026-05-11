@@ -87,4 +87,16 @@ export interface WidgetState {
 
     /** Available dates from dateList (computed internally as Luxon DateTime) */
     availableDates?: DateTime[];
+
+    /** Whether earlier to-connections exist beyond the current batch */
+    hasMoreBeforeToActivity: boolean | null;
+
+    /** Whether later to-connections exist beyond the current batch */
+    hasMoreAfterToActivity: boolean | null;
+
+    /** Whether earlier from-connections exist beyond the current batch */
+    hasMoreBeforeFromActivity: boolean | null;
+
+    /** Whether later from-connections exist beyond the current batch */
+    hasMoreAfterFromActivity: boolean | null;
 }

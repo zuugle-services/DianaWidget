@@ -22,7 +22,17 @@ export function getResultsPageTemplateHTML(args) {
             <div class="slider-wrapper etc">
                 ${headerHTML}
                 <div class="top-slider-wrapper">
+                    <button id="topEarlierBtn" class="slider-scroll-btn" hidden aria-label="${t('ariaLabels.loadEarlier')}">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                     <div class="slider" id="topSlider" role="group" aria-label="${t('ariaLabels.topSlider')}"></div>
+                    <button id="topLaterBtn" class="slider-scroll-btn" hidden aria-label="${t('ariaLabels.loadLater')}">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
 
@@ -61,7 +71,17 @@ export function getResultsPageTemplateHTML(args) {
 
             <!-- Persistent Footer -->
             <div class="slider-wrapper slider-wrap-fixed">
+                <button id="bottomEarlierBtn" class="slider-scroll-btn" hidden aria-label="${t('ariaLabels.loadEarlier')}">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
                 <div class="slider" id="bottomSlider" role="group" aria-label="${t('ariaLabels.bottomSlider')}"></div>
+                <button id="bottomLaterBtn" class="slider-scroll-btn" hidden aria-label="${t('ariaLabels.loadLater')}">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
             </div>
             <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services</a></div>
         </div>

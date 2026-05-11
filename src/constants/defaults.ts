@@ -159,5 +159,9 @@ export const DEFAULT_STATE: WidgetState = {
     },
     currentContentKey: null,
     preselectTimes: null,
-    activity: null
+    activity: null,
+    hasMoreBeforeToActivity: null,
+    hasMoreAfterToActivity: null,
+    hasMoreBeforeFromActivity: null,
+    hasMoreAfterFromActivity: null,
 };
