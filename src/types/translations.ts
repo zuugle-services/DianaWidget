@@ -125,6 +125,8 @@ export interface AriaLabelTranslations {
     menuHeading: string;
     closeButton: string;
     shareButton: string;
+    loadEarlier: string;
+    loadLater: string;
 }
 
 /**

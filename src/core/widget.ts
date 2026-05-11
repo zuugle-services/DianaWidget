@@ -95,6 +95,10 @@ interface WidgetElements {
     contentPageBody: HTMLElement | null;
     menuModalOverlay?: HTMLElement | null;
     dateSelect?: HTMLSelectElement | null;
+    topEarlierBtn: HTMLButtonElement | null;
+    topLaterBtn: HTMLButtonElement | null;
+    bottomEarlierBtn: HTMLButtonElement | null;
+    bottomLaterBtn: HTMLButtonElement | null;
     [key: string]: HTMLElement | null | undefined;
 }
 
@@ -667,6 +671,12 @@ export default class DianaWidget {
             contentPageBackBtn: this.shadowRoot.querySelector("#contentPageBackBtn"),
             contentPageTitle: this.shadowRoot.querySelector("#contentPageTitle"),
             contentPageBody: this.shadowRoot.querySelector("#contentPageBody"),
+
+            // Scroll buttons
+            topEarlierBtn: this.shadowRoot.querySelector("#topEarlierBtn"),
+            topLaterBtn: this.shadowRoot.querySelector("#topLaterBtn"),
+            bottomEarlierBtn: this.shadowRoot.querySelector("#bottomEarlierBtn"),
+            bottomLaterBtn: this.shadowRoot.querySelector("#bottomLaterBtn"),
         };
     }
 
@@ -1228,7 +1238,7 @@ export default class DianaWidget {
         }
     }
 
-    async fetchActivityData(): Promise<void> {
+    _buildActivityParams(): Record<string, string | number | undefined> {
         const activityStartDate = this.state.selectedDate;
         if (!activityStartDate) throw new Error("Activity start date is not available.");
 
@@ -1242,7 +1252,7 @@ export default class DianaWidget {
         const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime ?? '23:59', referenceDateForEndTimes, this.config.timezone);
 
         const params: Record<string, string | number | undefined> = {
-            date: formatDatetime(activityStartDate, this.config.timezone), // Use timezone for date formatting if it's local
+            date: formatDatetime(activityStartDate, this.config.timezone),
             activity_name: this.config.activityName,
             activity_start_location: this.config.activityStartLocation,
             activity_start_location_type: this.config.activityStartLocationType,
@@ -1281,6 +1291,21 @@ export default class DianaWidget {
         if (this.config.activityStartTimeLabel) params.activity_start_time_label = this.config.activityStartTimeLabel;
         if (this.config.activityEndTimeLabel) params.activity_end_time_label = this.config.activityEndTimeLabel;
 
+        return params;
+    }
+
+    _markConnectionElements(connections: Connection[]): void {
+        connections.forEach((conn) => {
+            if (conn.connection_elements && conn.connection_elements.length > 0) {
+                conn.connection_elements[0].isOriginalFirst = true;
+                conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
+            }
+        });
+    }
+
+    async fetchActivityData(): Promise<void> {
+        const params = this._buildActivityParams();
+
         // Type assertion needed as URLSearchParams expects Record<string, string> but params has mixed types
         const queryString = new URLSearchParams(params as Record<string, string>);
         const response = await this._fetchApi(
@@ -1302,30 +1327,177 @@ export default class DianaWidget {
 
         this.state.activity = result.activity ?? null;
 
-        // Mark original first and last elements
-        this.state.toConnections.forEach((conn) => {
-            if (conn.connection_elements && conn.connection_elements.length > 0) {
-                conn.connection_elements[0].isOriginalFirst = true;
-                conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
-            }
-        });
-        this.state.fromConnections.forEach((conn) => {
-            if (conn.connection_elements && conn.connection_elements.length > 0) {
-                conn.connection_elements[0].isOriginalFirst = true;
-                conn.connection_elements[conn.connection_elements.length - 1].isOriginalLast = true;
-            }
-        });
+        this._markConnectionElements(this.state.toConnections);
+        this._markConnectionElements(this.state.fromConnections);
 
         const toIndex = result.connections.recommended_to_activity_connection;
         const fromIndex = result.connections.recommended_from_activity_connection;
         this.state.recommendedToIndex = (typeof toIndex === 'number') ? toIndex : 0;
         this.state.recommendedFromIndex = (typeof fromIndex === 'number') ? fromIndex : 0;
 
+        this.state.hasMoreBeforeToActivity = result.connections.has_more_before_to_activity ?? null;
+        this.state.hasMoreAfterToActivity = result.connections.has_more_after_to_activity ?? null;
+        this.state.hasMoreBeforeFromActivity = result.connections.has_more_before_from_activity ?? null;
+        this.state.hasMoreAfterFromActivity = result.connections.has_more_after_from_activity ?? null;
+
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) console.warn("No connections received.");
         else if (this.state.toConnections.length === 0) console.warn("No 'to_activity' connections received.");
         else if (this.state.fromConnections.length === 0) console.warn("No 'from_activity' connections received.");
 
         this.renderConnectionResults();
+    }
+
+    updateScrollButtons(): void {
+        const show = (btn: HTMLButtonElement | null, visible: boolean) => {
+            if (!btn) return;
+            btn.hidden = !visible;
+        };
+        show(this.elements.topEarlierBtn as HTMLButtonElement, this.state.hasMoreBeforeToActivity === true);
+        show(this.elements.topLaterBtn as HTMLButtonElement, this.state.hasMoreAfterToActivity === true);
+        show(this.elements.bottomEarlierBtn as HTMLButtonElement, this.state.hasMoreBeforeFromActivity === true);
+        show(this.elements.bottomLaterBtn as HTMLButtonElement, this.state.hasMoreAfterFromActivity === true);
+    }
+
+    async fetchScrollConnections(direction: 'to' | 'from', scrollType: 'before' | 'after'): Promise<void> {
+        const currentConnections = direction === 'to' ? this.state.toConnections : this.state.fromConnections;
+        if (!currentConnections.length) return;
+
+        const scrollBtn = direction === 'to'
+            ? (scrollType === 'before' ? this.elements.topEarlierBtn : this.elements.topLaterBtn)
+            : (scrollType === 'before' ? this.elements.bottomEarlierBtn : this.elements.bottomLaterBtn);
+
+        if (scrollBtn) {
+            (scrollBtn as HTMLButtonElement).disabled = true;
+            scrollBtn.classList.add('loading');
+        }
+
+        try {
+            const params = this._buildActivityParams();
+
+            const anchor = scrollType === 'before'
+                ? currentConnections[0].connection_start_timestamp
+                : currentConnections[currentConnections.length - 1].connection_start_timestamp;
+
+            if (direction === 'to') {
+                params[scrollType === 'before' ? 'to_connections_before' : 'to_connections_after'] = anchor;
+            } else {
+                params[scrollType === 'before' ? 'from_connections_before' : 'from_connections_after'] = anchor;
+            }
+
+            const queryString = new URLSearchParams(params as Record<string, string>);
+            const response = await this._fetchApi(`${this.config.apiBaseUrl}/connections?${queryString}`);
+            const result = await response.json();
+
+            if (!result?.connections) return;
+
+            if (direction === 'to' && Array.isArray(result.connections.to_activity)) {
+                const newConns: Connection[] = result.connections.to_activity;
+
+                if (newConns.length === 0) {
+                    if (scrollType === 'before') this.state.hasMoreBeforeToActivity = false;
+                    else this.state.hasMoreAfterToActivity = false;
+                    this.updateScrollButtons();
+                    return;
+                }
+
+                this._markConnectionElements(newConns);
+
+                if (scrollType === 'before') {
+                    const prependCount = newConns.length;
+                    this.state.toConnections = [...newConns, ...this.state.toConnections];
+                    this.state.recommendedToIndex += prependCount;
+                } else {
+                    this.state.toConnections = [...this.state.toConnections, ...newConns];
+                }
+
+                if (result.connections.has_more_before_to_activity !== null) {
+                    this.state.hasMoreBeforeToActivity = result.connections.has_more_before_to_activity;
+                }
+                if (result.connections.has_more_after_to_activity !== null) {
+                    this.state.hasMoreAfterToActivity = result.connections.has_more_after_to_activity;
+                }
+
+                this.calculateAnytimeConnections(this.state.toConnections, 'to');
+                this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
+                this.addSwipeBehavior('topSlider');
+
+                // Re-apply the active selection styling after re-render
+                const selectedConn = this.state.selectedToConnection;
+                if (selectedConn) {
+                    const newIdx = this.state.toConnections.indexOf(selectedConn);
+                    if (newIdx !== -1) {
+                        this.elements.topSlider?.querySelectorAll('button').forEach(btn => btn.classList.remove('active-time'));
+                        this.elements.topSlider?.querySelector(`button[data-index="${newIdx}"]`)?.classList.add('active-time');
+                        this.state.recommendedToIndex = newIdx;
+                    }
+                }
+
+                // Re-apply disabled state driven by the selected from-connection
+                this._updateOppositeSlider('from');
+            } else if (direction === 'from' && Array.isArray(result.connections.from_activity)) {
+                const newConns: Connection[] = result.connections.from_activity;
+
+                if (newConns.length === 0) {
+                    if (scrollType === 'before') this.state.hasMoreBeforeFromActivity = false;
+                    else this.state.hasMoreAfterFromActivity = false;
+                    this.updateScrollButtons();
+                    return;
+                }
+
+                this._markConnectionElements(newConns);
+
+                if (scrollType === 'before') {
+                    const prependCount = newConns.length;
+                    this.state.fromConnections = [...newConns, ...this.state.fromConnections];
+                    this.state.recommendedFromIndex += prependCount;
+                } else {
+                    this.state.fromConnections = [...this.state.fromConnections, ...newConns];
+                }
+
+                if (result.connections.has_more_before_from_activity !== null) {
+                    this.state.hasMoreBeforeFromActivity = result.connections.has_more_before_from_activity;
+                }
+                if (result.connections.has_more_after_from_activity !== null) {
+                    this.state.hasMoreAfterFromActivity = result.connections.has_more_after_from_activity;
+                }
+
+                this.calculateAnytimeConnections(this.state.fromConnections, 'from');
+                this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
+                this.addSwipeBehavior('bottomSlider');
+
+                // Re-apply the active selection styling after re-render
+                const selectedConn = this.state.selectedFromConnection;
+                if (selectedConn) {
+                    const newIdx = this.state.fromConnections.indexOf(selectedConn);
+                    if (newIdx !== -1) {
+                        this.elements.bottomSlider?.querySelectorAll('button').forEach(btn => btn.classList.remove('active-time'));
+                        this.elements.bottomSlider?.querySelector(`button[data-index="${newIdx}"]`)?.classList.add('active-time');
+                        this.state.recommendedFromIndex = newIdx;
+                    }
+                }
+
+                // Re-apply disabled state driven by the selected to-connection
+                this._updateOppositeSlider('to');
+            }
+
+            this.updateScrollButtons();
+        } catch (error) {
+            console.error("Scroll fetch error:", error);
+            // Hide the clicked button on error to avoid repeated failed fetches
+            if (direction === 'to') {
+                if (scrollType === 'before') this.state.hasMoreBeforeToActivity = false;
+                else this.state.hasMoreAfterToActivity = false;
+            } else {
+                if (scrollType === 'before') this.state.hasMoreBeforeFromActivity = false;
+                else this.state.hasMoreAfterFromActivity = false;
+            }
+            this.updateScrollButtons();
+        } finally {
+            if (scrollBtn) {
+                (scrollBtn as HTMLButtonElement).disabled = false;
+                scrollBtn.classList.remove('loading');
+            }
+        }
     }
 
     renderSuggestions(): void {
@@ -1445,12 +1617,29 @@ export default class DianaWidget {
             delete (this.state as { preselectTimes?: typeof this.state.preselectTimes }).preselectTimes;
         }
         this.slideToRecommendedConnections();
+        this.updateScrollButtons();
     }
 
     renderTimeSlots(sliderId, connections, type) {
         const slider = this.elements[sliderId];
         if (!slider) return;
         slider.innerHTML = '';
+
+        // Create "load earlier" button as the first item in the slider
+        const earlierBtn = document.createElement('button');
+        earlierBtn.id = sliderId === 'topSlider' ? 'topEarlierBtn' : 'bottomEarlierBtn';
+        earlierBtn.className = 'slider-load-more-btn';
+        earlierBtn.setAttribute('hidden', '');
+        earlierBtn.setAttribute('aria-label', this.t('ariaLabels.loadEarlier'));
+        earlierBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        earlierBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'before'));
+        slider.appendChild(earlierBtn);
+        if (sliderId === 'topSlider') {
+            this.elements.topEarlierBtn = earlierBtn;
+        } else {
+            this.elements.bottomEarlierBtn = earlierBtn;
+        }
+
         let lastDate: string | null = null; // To track the date of the last processed connection
 
         connections.forEach((conn, index) => {
@@ -1504,6 +1693,21 @@ export default class DianaWidget {
             if (isRecommended) btn.classList.add('active-time');
             slider.appendChild(btn);
         });
+
+        // Create "load later" button as the last item in the slider
+        const laterBtn = document.createElement('button');
+        laterBtn.id = sliderId === 'topSlider' ? 'topLaterBtn' : 'bottomLaterBtn';
+        laterBtn.className = 'slider-load-more-btn';
+        laterBtn.setAttribute('hidden', '');
+        laterBtn.setAttribute('aria-label', this.t('ariaLabels.loadLater'));
+        laterBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        laterBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'after'));
+        slider.appendChild(laterBtn);
+        if (sliderId === 'topSlider') {
+            this.elements.topLaterBtn = laterBtn;
+        } else {
+            this.elements.bottomLaterBtn = laterBtn;
+        }
     }
 
 

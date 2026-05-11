@@ -154,7 +154,9 @@ const translations: Translations = {
             menuButton: "Open menu",
             menuHeading: "Page menu",
             closeButton: "Close",
-            shareButton: "Share Journey"
+            shareButton: "Share Journey",
+            loadEarlier: "Load earlier",
+            loadLater: "Load later"
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",
@@ -337,7 +339,9 @@ const translations: Translations = {
             menuButton: "Menü öffnen",
             menuHeading: "Seitenmenü",
             closeButton: "Schließen",
-            shareButton: "Reise teilen"
+            shareButton: "Reise teilen",
+            loadEarlier: "Frühere laden",
+            loadLater: "Spätere laden"
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
@@ -520,7 +524,9 @@ const translations: Translations = {
             menuButton: "Abrir menú",
             menuHeading: "Menú de la página",
             closeButton: "Cerrar",
-            shareButton: "Compartir viaje"
+            shareButton: "Compartir viaje",
+            loadEarlier: "Cargar anteriores",
+            loadLater: "Cargar posteriores"
         },
         waiting: {
             beforeActivity: "Esperando el inicio de la actividad",
@@ -703,7 +709,9 @@ const translations: Translations = {
             menuButton: "Ouvrir le menu",
             menuHeading: "Menu de la page",
             closeButton: "Fermer",
-            shareButton: "Partager le trajet"
+            shareButton: "Partager le trajet",
+            loadEarlier: "Charger précédents",
+            loadLater: "Charger suivants"
         },
         waiting: {
             beforeActivity: "En attente du début de l'activité",
@@ -886,7 +894,9 @@ const translations: Translations = {
             menuButton: "Apri menu",
             menuHeading: "Menu pagina",
             closeButton: "Chiudi",
-            shareButton: "Condividi viaggio"
+            shareButton: "Condividi viaggio",
+            loadEarlier: "Carica precedenti",
+            loadLater: "Carica successivi"
         },
         waiting: {
             beforeActivity: "In attesa dell'inizio dell'attività",
@@ -1069,7 +1079,9 @@ const translations: Translations = {
             menuButton: "เปิดเมนู",
             menuHeading: "เมนูหน้า",
             closeButton: "ปิด",
-            shareButton: "แชร์การเดินทาง"
+            shareButton: "แชร์การเดินทาง",
+            loadEarlier: "โหลดก่อนหน้า",
+            loadLater: "โหลดถัดไป"
         },
         waiting: {
             beforeActivity: "กำลังรอให้กิจกรรมเริ่มต้น",
