@@ -289,6 +289,8 @@
 .slider {
   font-family: "DM Sans", sans-serif !important;
   -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-width: 0;
   overflow-x: auto;
   padding: 0 10px;
   scroll-behavior: smooth;
@@ -301,6 +303,62 @@
 
 .slider::-webkit-scrollbar {
   display: none;
+}
+
+.slider-load-more-btn {
+  align-items: center;
+  align-self: stretch;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 8px;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  justify-content: center;
+  margin: 5px 2px;
+  padding: 0;
+  position: relative;
+  scroll-snap-align: start;
+  transition: border-color 0.1s ease, background-color 0.1s ease, color 0.1s ease;
+  width: 32px;
+
+  svg {
+    display: block;
+    height: 16px;
+    transition: opacity 0.1s;
+    width: 16px;
+  }
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 8%, transparent);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  &[hidden] {
+    display: none;
+  }
+
+  &.loading svg {
+    opacity: 0;
+  }
+
+  &.loading::after {
+    animation: slider-scroll-spin 0.7s linear infinite;
+    border: 2px solid var(--border-secondary);
+    border-radius: 50%;
+    border-top-color: var(--primary-color);
+    bottom: 0;
+    content: '';
+    height: 12px;
+    left: 0;
+    margin: auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 12px;
+  }
 }
 
 .slider-date-separator {
@@ -322,7 +380,7 @@
 }
 
 
-.slider button {
+.slider button:not(.slider-load-more-btn) {
   background: var(--bg-primary);
   border: 1px solid var(--secondary-color);
   border-radius: 8px;
@@ -347,11 +405,11 @@
   }
 }
 
-.slider button:hover {
+.slider button:not(.slider-load-more-btn):hover {
   border-color: var(--text-tertiary);
 }
 
-.slider button.active-time {
+.slider button:not(.slider-load-more-btn).active-time {
   background: color-mix(in srgb, var(--primary-color), white 88%);
   border-color: var(--primary-color);
   border-width: 2px;
@@ -359,7 +417,7 @@
   color: var(--text-primary);
 }
 
-.slider button.active-time:hover {
+.slider button:not(.slider-load-more-btn).active-time:hover {
   border-color: var(--primary-color);
 }
 

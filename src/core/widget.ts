@@ -773,11 +773,6 @@ export default class DianaWidget {
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
         if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.addEventListener('click', () => this.closeMenuOrContentPage());
 
-        if (this.elements.topEarlierBtn) this.elements.topEarlierBtn.addEventListener('click', () => this.fetchScrollConnections('to', 'before'));
-        if (this.elements.topLaterBtn) this.elements.topLaterBtn.addEventListener('click', () => this.fetchScrollConnections('to', 'after'));
-        if (this.elements.bottomEarlierBtn) this.elements.bottomEarlierBtn.addEventListener('click', () => this.fetchScrollConnections('from', 'before'));
-        if (this.elements.bottomLaterBtn) this.elements.bottomLaterBtn.addEventListener('click', () => this.fetchScrollConnections('from', 'after'));
-
         this.elements.collapsibleToActivity?.addEventListener('click', () => this.toggleCollapsible('to'));
         this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
 
@@ -1629,6 +1624,22 @@ export default class DianaWidget {
         const slider = this.elements[sliderId];
         if (!slider) return;
         slider.innerHTML = '';
+
+        // Create "load earlier" button as the first item in the slider
+        const earlierBtn = document.createElement('button');
+        earlierBtn.id = sliderId === 'topSlider' ? 'topEarlierBtn' : 'bottomEarlierBtn';
+        earlierBtn.className = 'slider-load-more-btn';
+        earlierBtn.setAttribute('hidden', '');
+        earlierBtn.setAttribute('aria-label', this.t('ariaLabels.loadEarlier'));
+        earlierBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        earlierBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'before'));
+        slider.appendChild(earlierBtn);
+        if (sliderId === 'topSlider') {
+            this.elements.topEarlierBtn = earlierBtn;
+        } else {
+            this.elements.bottomEarlierBtn = earlierBtn;
+        }
+
         let lastDate: string | null = null; // To track the date of the last processed connection
 
         connections.forEach((conn, index) => {
@@ -1682,6 +1693,21 @@ export default class DianaWidget {
             if (isRecommended) btn.classList.add('active-time');
             slider.appendChild(btn);
         });
+
+        // Create "load later" button as the last item in the slider
+        const laterBtn = document.createElement('button');
+        laterBtn.id = sliderId === 'topSlider' ? 'topLaterBtn' : 'bottomLaterBtn';
+        laterBtn.className = 'slider-load-more-btn';
+        laterBtn.setAttribute('hidden', '');
+        laterBtn.setAttribute('aria-label', this.t('ariaLabels.loadLater'));
+        laterBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        laterBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'after'));
+        slider.appendChild(laterBtn);
+        if (sliderId === 'topSlider') {
+            this.elements.topLaterBtn = laterBtn;
+        } else {
+            this.elements.bottomLaterBtn = laterBtn;
+        }
     }
 
 
