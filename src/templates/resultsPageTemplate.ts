@@ -64,6 +64,16 @@ export function getResultsPageTemplateHTML(args) {
                 <div class="slider" id="bottomSlider" role="group" aria-label="${t('ariaLabels.bottomSlider')}"></div>
             </div>
             <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services</a></div>
+
+            <!-- Non-blocking toast: additional (flex) connections were added automatically -->
+            <div id="flexPopup" class="flex-popup" hidden role="status" aria-live="polite">
+                <div class="flex-popup-icon" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span id="flexPopupMessage" class="flex-popup-message"></span>
+            </div>
         </div>
       </div>
     `;

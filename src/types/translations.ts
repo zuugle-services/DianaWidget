@@ -130,6 +130,17 @@ export interface AriaLabelTranslations {
 }
 
 /**
+ * Flex-routing toast translations (auto-dismissing confirmation that extra
+ * on-demand connections were added automatically).
+ */
+export interface FlexPopupTranslations {
+    /** Message shown when exactly one additional connection was added */
+    message: string;
+    /** Message shown when multiple additional connections were added (uses {count}) */
+    messagePlural: string;
+}
+
+/**
  * Waiting translations
  */
 export interface WaitingTranslations {
@@ -238,6 +249,7 @@ export interface LanguageTranslations {
     months: string[];
     shortDays: string[];
     ariaLabels: AriaLabelTranslations;
+    flexPopup: FlexPopupTranslations;
     waiting: WaitingTranslations;
     vehicles: VehicleTranslations;
     alert: AlertTranslations;

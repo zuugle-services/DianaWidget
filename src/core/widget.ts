@@ -99,7 +99,28 @@ interface WidgetElements {
     topLaterBtn: HTMLButtonElement | null;
     bottomEarlierBtn: HTMLButtonElement | null;
     bottomLaterBtn: HTMLButtonElement | null;
+    flexPopup: HTMLElement | null;
+    flexPopupMessage: HTMLElement | null;
     [key: string]: HTMLElement | null | undefined;
+}
+
+/**
+ * Holds the new connections discovered by the background flex request that are
+ * not already present in the displayed (normal) results.
+ */
+interface FlexNewConnections {
+    newTo: Connection[];
+    newFrom: Connection[];
+}
+
+/**
+ * Parsed result of a background flex (`use_flex=true`) connections request,
+ * tagged with the search sequence that produced it.
+ */
+interface PendingFlexResult {
+    seq: number;
+    toConnections: Connection[];
+    fromConnections: Connection[];
 }
 
 export default class DianaWidget {
@@ -123,6 +144,17 @@ export default class DianaWidget {
     private apiService: ApiService | null;
     private connectionRenderer: ConnectionRenderer | null;
 
+    /** Monotonic search counter; used to discard stale background flex results. */
+    private _flexSeq: number;
+    /** Sequence of the most recent search whose normal request finished successfully with results. */
+    private _flexNormalDoneSeq: number | null;
+    /** Parsed background flex result, awaiting evaluation against the normal result. */
+    private _flexPending: PendingFlexResult | null;
+    /** New connections (not already shown) that were/are being merged in from the flex result. */
+    private _flexNewConnections: FlexNewConnections | null;
+    /** Pending timer that hides the auto-dismissing flex toast. */
+    private _flexPopupTimeout: ReturnType<typeof setTimeout> | null;
+
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
         // Initialize default config using imported constant
         this.defaultConfig = { ...DEFAULT_CONFIG };
@@ -144,6 +176,11 @@ export default class DianaWidget {
         this.state = { ...DEFAULT_STATE };
         this.apiService = null;
         this.connectionRenderer = null;
+        this._flexSeq = 0;
+        this._flexNormalDoneSeq = null;
+        this._flexPending = null;
+        this._flexNewConnections = null;
+        this._flexPopupTimeout = null;
         this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const validationResult = validateConfig(this.config);
@@ -677,6 +714,10 @@ export default class DianaWidget {
             topLaterBtn: this.shadowRoot.querySelector("#topLaterBtn"),
             bottomEarlierBtn: this.shadowRoot.querySelector("#bottomEarlierBtn"),
             bottomLaterBtn: this.shadowRoot.querySelector("#bottomLaterBtn"),
+
+            // Flex (on-demand) connections notification toast
+            flexPopup: this.shadowRoot.querySelector("#flexPopup"),
+            flexPopupMessage: this.shadowRoot.querySelector("#flexPopupMessage"),
         };
     }
 
@@ -1181,10 +1222,24 @@ export default class DianaWidget {
         }
 
         this.setLoadingState(true);
+
+        // Begin a new search: invalidate any in-flight background flex work and
+        // reset/hide the popup so a stale result can never surface here.
+        const searchSeq = ++this._flexSeq;
+        this._resetFlexState();
+
+        // Fire the flex (use_flex=true) request in parallel and fully in the
+        // background. It must never block or alter the normal result.
+        void this._fetchFlexConnections(searchSeq);
+
         try {
             await this.fetchActivityData();
             this.navigateToResults();
             this.slideToRecommendedConnections();
+            // The normal request returned. Only now is the flex result meaningful;
+            // evaluate it (it may have already arrived, or may arrive later).
+            this._flexNormalDoneSeq = searchSeq;
+            this._maybeApplyFlexConnections(searchSeq);
         } catch (error) {
             if (error.isSessionExpired) {
                 this.setLoadingState(false);
@@ -1347,6 +1402,268 @@ export default class DianaWidget {
         this.renderConnectionResults();
     }
 
+    // ----------------------------------------------------------------------------
+    // Background flex (on-demand transit) routing
+    //
+    // Alongside the normal /connections request, a second request with
+    // `use_flex=true` is fired in parallel. The normal result renders immediately
+    // and unconditionally. If the flex request finds connections the user is not
+    // already seeing, a small non-blocking popup offers to load them.
+    // ----------------------------------------------------------------------------
+
+    /** Clears all pending background-flex coordination state and hides the toast. */
+    private _resetFlexState(): void {
+        this._flexNormalDoneSeq = null;
+        this._flexPending = null;
+        this._flexNewConnections = null;
+        this._hideFlexPopup();
+    }
+
+    /**
+     * Issues the background flex (`use_flex=true`) connections request. Runs fully
+     * detached from the normal flow: any error/empty result is swallowed, and a
+     * result from a superseded search (sequence mismatch) is discarded.
+     */
+    private async _fetchFlexConnections(seq: number): Promise<void> {
+        try {
+            const params = this._buildActivityParams();
+            params.use_flex = 'true';
+
+            const queryString = new URLSearchParams(params as Record<string, string>);
+            const response = await this._fetchApi(`${this.config.apiBaseUrl}/connections?${queryString}`);
+            const result = await response.json();
+
+            // A newer search has started since this request was issued — discard.
+            if (seq !== this._flexSeq) return;
+
+            const toConnections: Connection[] = Array.isArray(result?.connections?.to_activity)
+                ? result.connections.to_activity
+                : [];
+            const fromConnections: Connection[] = Array.isArray(result?.connections?.from_activity)
+                ? result.connections.from_activity
+                : [];
+
+            this._flexPending = { seq, toConnections, fromConnections };
+            // Whichever of the two requests finishes last triggers the evaluation.
+            this._maybeApplyFlexConnections(seq);
+        } catch (error) {
+            // A failed flex request is irrelevant: the normal result is shown regardless.
+            console.warn("Background flex connections request failed (ignored):", error);
+        }
+    }
+
+    /**
+     * Evaluates the flex result against the displayed normal result and, if the flex
+     * request surfaced genuinely new connections, merges them in automatically (no
+     * user interaction) and shows a brief, auto-dismissing confirmation toast. No-ops
+     * unless BOTH the normal request has finished with results AND the flex result
+     * for the same search has arrived.
+     */
+    private _maybeApplyFlexConnections(seq: number): void {
+        if (seq !== this._flexSeq) return;                       // superseded search
+        if (this._flexNormalDoneSeq !== seq) return;             // normal not done yet (or failed)
+        if (!this._flexPending || this._flexPending.seq !== seq) return; // flex not in yet
+
+        // If the normal request produced nothing, the flex result is meaningless.
+        const hasNormalResults = this.state.toConnections.length > 0 || this.state.fromConnections.length > 0;
+        if (!hasNormalResults) return;
+
+        const newConnections = this._computeNewFlexConnections(this._flexPending);
+        const total = newConnections.newTo.length + newConnections.newFrom.length;
+        if (total === 0) return; // flex found nothing the user isn't already seeing
+
+        this._flexNewConnections = newConnections;
+        this._applyFlexConnections();   // merge + re-render automatically
+        this._showFlexPopup(total);     // inform the user; auto-dismisses
+    }
+
+    /**
+     * Builds a content-based identity for a connection, used to tell whether a flex
+     * connection is genuinely new versus already present in the normal result.
+     * `connection_id` is only unique within a single response list, so it cannot be
+     * used to compare across two separate requests.
+     */
+    private _connectionSignature(conn: Connection): string {
+        const legs = (conn.connection_elements ?? [])
+            .map(el => `${el.type}|${el.vehicle_name ?? ''}|${el.from_location ?? ''}|${el.to_location ?? ''}`)
+            .join('>>');
+
+        // "Anytime" connections have synthetic, client-computed timestamps that
+        // differ between requests, so identify them purely by their route structure.
+        if (conn.connection_anytime) {
+            return `anytime::${legs}`;
+        }
+        return `${conn.connection_start_timestamp}::${conn.connection_end_timestamp}::${conn.connection_transfers ?? ''}::${legs}`;
+    }
+
+    /**
+     * Returns the flex connections (to and from) that are not already present in the
+     * currently displayed connections, de-duplicated within the flex result itself.
+     */
+    private _computeNewFlexConnections(flex: PendingFlexResult): FlexNewConnections {
+        const existingTo = new Set(this.state.toConnections.map(c => this._connectionSignature(c)));
+        const existingFrom = new Set(this.state.fromConnections.map(c => this._connectionSignature(c)));
+
+        const pickNew = (candidates: Connection[], existing: Set<string>): Connection[] => {
+            const seen = new Set<string>();
+            const out: Connection[] = [];
+            for (const conn of candidates) {
+                const sig = this._connectionSignature(conn);
+                if (existing.has(sig) || seen.has(sig)) continue;
+                seen.add(sig);
+                out.push(conn);
+            }
+            return out;
+        };
+
+        return {
+            newTo: pickNew(flex.toConnections, existingTo),
+            newFrom: pickNew(flex.fromConnections, existingFrom),
+        };
+    }
+
+    /**
+     * Shows the non-blocking confirmation toast with a count-appropriate message and
+     * schedules it to fade out automatically after 3 seconds.
+     */
+    private _showFlexPopup(count: number): void {
+        const popup = this.elements.flexPopup;
+        const message = this.elements.flexPopupMessage;
+        if (!popup || !message) return;
+
+        message.textContent = count === 1
+            ? this.t('flexPopup.message')
+            : this.t('flexPopup.messagePlural', { count: String(count) });
+
+        if (this._flexPopupTimeout) clearTimeout(this._flexPopupTimeout);
+
+        // Re-trigger the entrance animation if the toast is shown again.
+        popup.classList.remove('flex-popup-hiding');
+        popup.hidden = false;
+
+        this._flexPopupTimeout = setTimeout(() => {
+            const el = this.elements.flexPopup;
+            if (!el || el.hidden) return;
+            // Play the exit animation, then fully hide.
+            el.classList.add('flex-popup-hiding');
+            this._flexPopupTimeout = setTimeout(() => this._hideFlexPopup(), 260);
+        }, 3000);
+    }
+
+    /** Hides the flex toast immediately and cancels any pending auto-dismiss timer. */
+    private _hideFlexPopup(): void {
+        if (this._flexPopupTimeout) {
+            clearTimeout(this._flexPopupTimeout);
+            this._flexPopupTimeout = null;
+        }
+        const popup = this.elements.flexPopup;
+        if (!popup) return;
+        popup.hidden = true;
+        popup.classList.remove('flex-popup-hiding');
+    }
+
+    /** Merges two connection lists and sorts ascending by departure timestamp. */
+    private _mergeAndSortConnections(existing: Connection[], additions: Connection[]): Connection[] {
+        const merged = [...existing, ...additions];
+        merged.sort((a, b) =>
+            DateTime.fromISO(a.connection_start_timestamp, { zone: 'utc' }).toMillis() -
+            DateTime.fromISO(b.connection_start_timestamp, { zone: 'utc' }).toMillis()
+        );
+        return merged;
+    }
+
+    /**
+     * Merges the new flex connections into the displayed lists in the correct
+     * chronological position, re-renders both sliders, and restores the user's
+     * current selection so all downstream logic (summaries, activity-time box,
+     * opposite-slider disabling, duration dots, scroll buttons) is re-applied.
+     * Invoked automatically once the background flex result arrives.
+     */
+    private _applyFlexConnections(): void {
+        const additions = this._flexNewConnections;
+        if (!additions) return;
+
+        const prevSelectedTo = this.state.selectedToConnection;
+        const prevSelectedFrom = this.state.selectedFromConnection;
+
+        // Record where the selected connection currently sits within each slider's
+        // viewport so we can keep it visually anchored after the re-render. Inserting
+        // earlier connections shifts the content right; compensating the scroll keeps
+        // the user's selection in place instead of scrolling the whole view around.
+        const topAnchor = this._captureSliderAnchor('topSlider');
+        const bottomAnchor = this._captureSliderAnchor('bottomSlider');
+
+        if (additions.newTo.length > 0) {
+            this._markConnectionElements(additions.newTo);
+            this.calculateAnytimeConnections(additions.newTo, 'to');
+            this.state.toConnections = this._mergeAndSortConnections(this.state.toConnections, additions.newTo);
+        }
+        if (additions.newFrom.length > 0) {
+            this._markConnectionElements(additions.newFrom);
+            this.calculateAnytimeConnections(additions.newFrom, 'from');
+            this.state.fromConnections = this._mergeAndSortConnections(this.state.fromConnections, additions.newFrom);
+        }
+
+        // Re-render both sliders against the merged lists.
+        this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
+        this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
+        this.addSwipeBehavior('topSlider');
+        this.addSwipeBehavior('bottomSlider');
+
+        // Restore the user's current selection. The original connection objects
+        // survive the merge, so indexOf locates their new positions; re-selecting
+        // re-applies summaries, the activity-time box, opposite-slider disabling and dots.
+        if (this.state.toConnections.length > 0) {
+            let toIdx = prevSelectedTo ? this.state.toConnections.indexOf(prevSelectedTo) : -1;
+            if (toIdx === -1) toIdx = Math.min(Math.max(this.state.recommendedToIndex, 0), this.state.toConnections.length - 1);
+            this.state.recommendedToIndex = toIdx;
+            this.selectConnectionByIndex('to', toIdx);
+        }
+        if (this.state.fromConnections.length > 0) {
+            let fromIdx = prevSelectedFrom ? this.state.fromConnections.indexOf(prevSelectedFrom) : -1;
+            if (fromIdx === -1) fromIdx = Math.min(Math.max(this.state.recommendedFromIndex, 0), this.state.fromConnections.length - 1);
+            this.state.recommendedFromIndex = fromIdx;
+            this.selectConnectionByIndex('from', fromIdx);
+        }
+
+        this.updateScrollButtons();
+
+        // Keep the selected connections visually anchored (horizontal only — no
+        // vertical page scroll), so adding the extra connections doesn't jump the view.
+        requestAnimationFrame(() => {
+            this._restoreSliderAnchor('topSlider', topAnchor);
+            this._restoreSliderAnchor('bottomSlider', bottomAnchor);
+        });
+
+        // Consumed.
+        this._flexNewConnections = null;
+        this._flexPending = null;
+    }
+
+    /**
+     * Captures the on-screen horizontal offset of the active connection button within
+     * a slider's viewport (its `offsetLeft` minus the current `scrollLeft`), or null
+     * if there is no active button. Used to anchor the selection across a re-render.
+     */
+    private _captureSliderAnchor(sliderId: string): number | null {
+        const slider = this.elements[sliderId];
+        const active = slider?.querySelector('.active-time') as HTMLElement | null;
+        if (!slider || !active) return null;
+        return active.offsetLeft - slider.scrollLeft;
+    }
+
+    /**
+     * Restores a slider's scroll position so the (re-rendered) active button sits at
+     * the same on-screen offset captured by {@link _captureSliderAnchor}.
+     */
+    private _restoreSliderAnchor(sliderId: string, onScreenOffset: number | null): void {
+        if (onScreenOffset === null) return;
+        const slider = this.elements[sliderId];
+        const active = slider?.querySelector('.active-time') as HTMLElement | null;
+        if (!slider || !active) return;
+        slider.scrollLeft = Math.max(0, active.offsetLeft - onScreenOffset);
+    }
+
     updateScrollButtons(): void {
         const show = (btn: HTMLButtonElement | null, visible: boolean) => {
             if (!btn) return;
@@ -1373,6 +1690,8 @@ export default class DianaWidget {
 
         try {
             const params = this._buildActivityParams();
+            // Earlier/later batches always include FLEX (on-demand) services.
+            params.use_flex = 'true';
 
             const anchor = scrollType === 'before'
                 ? currentConnections[0].connection_start_timestamp
@@ -2329,6 +2648,10 @@ export default class DianaWidget {
 
     navigateToForm(): void {
         this.clearMessages();
+        // Leaving the results page invalidates any pending background flex result
+        // (bumping the sequence makes an in-flight request bail) and hides the popup.
+        this._flexSeq++;
+        this._resetFlexState();
         if (this.pageManager) {
             this.pageManager.navigateToForm();
         }

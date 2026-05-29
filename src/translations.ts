@@ -158,6 +158,10 @@ const translations: Translations = {
             loadEarlier: "Load earlier",
             loadLater: "Load later"
         },
+        flexPopup: {
+            message: "Added 1 more connection with on-demand transit.",
+            messagePlural: "Added {count} more connections with on-demand transit."
+        },
         waiting: {
             beforeActivity: "Waiting for activity to start",
             afterActivity: "Waiting after activity ends",
@@ -342,6 +346,10 @@ const translations: Translations = {
             shareButton: "Reise teilen",
             loadEarlier: "Frühere laden",
             loadLater: "Spätere laden"
+        },
+        flexPopup: {
+            message: "1 weitere Verbindung mit Bedarfsverkehr hinzugefügt.",
+            messagePlural: "{count} weitere Verbindungen mit Bedarfsverkehr hinzugefügt."
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
@@ -528,6 +536,10 @@ const translations: Translations = {
             loadEarlier: "Cargar anteriores",
             loadLater: "Cargar posteriores"
         },
+        flexPopup: {
+            message: "Se añadió 1 conexión más con transporte a demanda.",
+            messagePlural: "Se añadieron {count} conexiones más con transporte a demanda."
+        },
         waiting: {
             beforeActivity: "Esperando el inicio de la actividad",
             afterActivity: "Esperando después del fin de la actividad",
@@ -712,6 +724,10 @@ const translations: Translations = {
             shareButton: "Partager le trajet",
             loadEarlier: "Charger précédents",
             loadLater: "Charger suivants"
+        },
+        flexPopup: {
+            message: "1 trajet supplémentaire avec transport à la demande ajouté.",
+            messagePlural: "{count} trajets supplémentaires avec transport à la demande ajoutés."
         },
         waiting: {
             beforeActivity: "En attente du début de l'activité",
@@ -898,6 +914,10 @@ const translations: Translations = {
             loadEarlier: "Carica precedenti",
             loadLater: "Carica successivi"
         },
+        flexPopup: {
+            message: "Aggiunta 1 connessione in più con trasporto a chiamata.",
+            messagePlural: "Aggiunte {count} connessioni in più con trasporto a chiamata."
+        },
         waiting: {
             beforeActivity: "In attesa dell'inizio dell'attività",
             afterActivity: "In attesa dopo la fine dell'attività",
@@ -1082,6 +1102,10 @@ const translations: Translations = {
             shareButton: "แชร์การเดินทาง",
             loadEarlier: "โหลดก่อนหน้า",
             loadLater: "โหลดถัดไป"
+        },
+        flexPopup: {
+            message: "เพิ่มการเชื่อมต่ออีก 1 รายการด้วยบริการขนส่งตามความต้องการแล้ว",
+            messagePlural: "เพิ่มการเชื่อมต่ออีก {count} รายการด้วยบริการขนส่งตามความต้องการแล้ว"
         },
         waiting: {
             beforeActivity: "กำลังรอให้กิจกรรมเริ่มต้น",

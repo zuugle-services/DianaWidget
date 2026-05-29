@@ -980,3 +980,85 @@ div#eleCont {
 .alert-description a:hover {
   text-decoration: underline;
 }
+
+/* --- Flex / on-demand connections auto-dismissing toast --- */
+.flex-popup {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100% - 28px);
+  width: max-content;
+  padding: 13px 22px 13px 16px;
+  background-color: var(--primary-color);
+  color: var(--bg-primary);
+  border-radius: 999px;
+  box-shadow: 0 8px 26px color-mix(in srgb, var(--primary-color) 50%, transparent),
+              0 2px 6px var(--shadow-dark);
+  /* Slide/scale in, then a couple of attention pulses to draw the eye. */
+  animation: flex-popup-in 0.32s cubic-bezier(0.22, 1.2, 0.36, 1),
+             flex-popup-attention 1s ease 0.34s 2;
+
+  &[hidden] {
+    display: none;
+  }
+
+  &.flex-popup-hiding {
+    animation: flex-popup-out 0.26s ease forwards;
+  }
+}
+
+.flex-popup-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: color-mix(in srgb, var(--bg-primary) 24%, transparent);
+  color: var(--bg-primary);
+}
+
+.flex-popup-message {
+  color: var(--bg-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+  flex-shrink: 1;
+}
+
+@keyframes flex-popup-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes flex-popup-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.96);
+  }
+}
+
+@keyframes flex-popup-attention {
+  0%, 100% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  50% {
+    transform: translate(-50%, 0) scale(1.045);
+  }
+}
