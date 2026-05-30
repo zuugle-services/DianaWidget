@@ -73,6 +73,7 @@ export function getResultsPageTemplateHTML(args) {
                     </svg>
                 </div>
                 <span id="flexPopupMessage" class="flex-popup-message"></span>
+                <div class="flex-popup-progress" aria-hidden="true"></div>
             </div>
         </div>
       </div>

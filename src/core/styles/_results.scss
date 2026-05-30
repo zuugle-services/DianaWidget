@@ -982,33 +982,42 @@ div#eleCont {
 }
 
 /* --- Flex / on-demand connections auto-dismissing toast --- */
+/* A calm, corner-anchored notification: a clean surface card that stays out of
+   the way of the connection list, using the brand color only as an accent for
+   the icon and the thin auto-dismiss countdown bar. */
 .flex-popup {
   position: absolute;
-  left: 50%;
-  bottom: 22px;
-  transform: translateX(-50%);
+  right: 16px;
+  bottom: 18px;
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 12px;
-  max-width: calc(100% - 28px);
+  gap: 11px;
+  max-width: calc(100% - 32px);
   width: max-content;
-  padding: 13px 22px 13px 16px;
-  background-color: var(--primary-color);
-  color: var(--bg-primary);
-  border-radius: 999px;
-  box-shadow: 0 8px 26px color-mix(in srgb, var(--primary-color) 50%, transparent),
-              0 2px 6px var(--shadow-dark);
-  /* Slide/scale in, then a couple of attention pulses to draw the eye. */
-  animation: flex-popup-in 0.32s cubic-bezier(0.22, 1.2, 0.36, 1),
-             flex-popup-attention 1s ease 0.34s 2;
+  padding: 11px 15px 11px 11px;
+  overflow: hidden; /* clip the countdown bar to the rounded corners */
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-tertiary);
+  border-radius: 14px;
+  box-shadow: 0 6px 22px var(--shadow-dark),
+              0 1px 3px var(--shadow-dark);
+  /* Informational only — never intercept taps meant for the cards beneath. */
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(12px);
 
   &[hidden] {
     display: none;
   }
 
+  &.flex-popup-visible {
+    animation: flex-popup-in 0.34s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
   &.flex-popup-hiding {
-    animation: flex-popup-out 0.26s ease forwards;
+    animation: flex-popup-out 0.24s ease forwards;
   }
 }
 
@@ -1020,45 +1029,95 @@ div#eleCont {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background-color: color-mix(in srgb, var(--bg-primary) 24%, transparent);
-  color: var(--bg-primary);
+  background-color: color-mix(in srgb, var(--primary-color) 12%, transparent);
+  color: var(--primary-color);
+
+  /* A single, subtle pop draws the eye once instead of pulsing the whole toast. */
+  .flex-popup-visible & {
+    animation: flex-popup-icon-pop 0.5s cubic-bezier(0.22, 1.4, 0.4, 1) 0.16s both;
+  }
 }
 
 .flex-popup-message {
-  color: var(--bg-primary);
-  font-size: 14px;
+  color: var(--text-secondary);
+  font-size: 13.5px;
   font-weight: 600;
   line-height: 1.35;
   flex-shrink: 1;
 }
 
+/* Thin bar that depletes over the visible lifetime so the auto-dismiss feels
+   intentional and predictable rather than abrupt. */
+.flex-popup-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  transform-origin: left center;
+  background-color: color-mix(in srgb, var(--primary-color) 55%, transparent);
+
+  .flex-popup-visible & {
+    animation: flex-popup-progress 3s linear forwards;
+  }
+}
+
 @keyframes flex-popup-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 16px) scale(0.94);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes flex-popup-out {
   from {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateY(0);
   }
   to {
     opacity: 0;
-    transform: translate(-50%, 14px) scale(0.96);
+    transform: translateY(8px);
   }
 }
 
-@keyframes flex-popup-attention {
-  0%, 100% {
-    transform: translate(-50%, 0) scale(1);
+@keyframes flex-popup-icon-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
   }
-  50% {
-    transform: translate(-50%, 0) scale(1.045);
+  60% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes flex-popup-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* Respect users who prefer minimal motion: show the toast statically. */
+@media (prefers-reduced-motion: reduce) {
+  .flex-popup,
+  .flex-popup.flex-popup-visible,
+  .flex-popup-icon,
+  .flex-popup-progress {
+    animation: none !important;
+  }
+
+  .flex-popup.flex-popup-visible {
+    opacity: 1;
+    transform: none;
   }
 }

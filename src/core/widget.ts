@@ -1537,16 +1537,21 @@ export default class DianaWidget {
 
         if (this._flexPopupTimeout) clearTimeout(this._flexPopupTimeout);
 
-        // Re-trigger the entrance animation if the toast is shown again.
-        popup.classList.remove('flex-popup-hiding');
+        // Reset state and force a reflow so the entrance, icon pop and countdown
+        // bar animations replay cleanly, even if the toast is still visible from
+        // a previous batch.
+        popup.classList.remove('flex-popup-hiding', 'flex-popup-visible');
         popup.hidden = false;
+        void popup.offsetWidth;
+        popup.classList.add('flex-popup-visible');
 
         this._flexPopupTimeout = setTimeout(() => {
             const el = this.elements.flexPopup;
             if (!el || el.hidden) return;
             // Play the exit animation, then fully hide.
+            el.classList.remove('flex-popup-visible');
             el.classList.add('flex-popup-hiding');
-            this._flexPopupTimeout = setTimeout(() => this._hideFlexPopup(), 260);
+            this._flexPopupTimeout = setTimeout(() => this._hideFlexPopup(), 240);
         }, 3000);
     }
 
@@ -1559,7 +1564,7 @@ export default class DianaWidget {
         const popup = this.elements.flexPopup;
         if (!popup) return;
         popup.hidden = true;
-        popup.classList.remove('flex-popup-hiding');
+        popup.classList.remove('flex-popup-hiding', 'flex-popup-visible');
     }
 
     /** Merges two connection lists and sorts ascending by departure timestamp. */
