@@ -138,6 +138,9 @@ export default class DianaWidget {
     rangeCalendarModal: RangeCalendarModal | null;
     pageManager: PageManager | null;
     uiManager: UIManager | null;
+    // Connection scrolling (earlier/later buttons + swipe-to-load) is intentionally disabled.
+    // Flip this to `true` to restore the feature later.
+    private readonly enableConnectionScrolling = false;
     elements: WidgetElements;
     debouncedHandleAddressInput: (query: string) => void;
     lastQuery: string;
@@ -1670,6 +1673,7 @@ export default class DianaWidget {
     }
 
     updateScrollButtons(): void {
+        if (!this.enableConnectionScrolling) return;
         const show = (btn: HTMLButtonElement | null, visible: boolean) => {
             if (!btn) return;
             btn.hidden = !visible;
@@ -1681,6 +1685,7 @@ export default class DianaWidget {
     }
 
     async fetchScrollConnections(direction: 'to' | 'from', scrollType: 'before' | 'after'): Promise<void> {
+        if (!this.enableConnectionScrolling) return;
         const currentConnections = direction === 'to' ? this.state.toConnections : this.state.fromConnections;
         if (!currentConnections.length) return;
 
@@ -1949,19 +1954,24 @@ export default class DianaWidget {
         if (!slider) return;
         slider.innerHTML = '';
 
-        // Create "load earlier" button as the first item in the slider
-        const earlierBtn = document.createElement('button');
-        earlierBtn.id = sliderId === 'topSlider' ? 'topEarlierBtn' : 'bottomEarlierBtn';
-        earlierBtn.className = 'slider-load-more-btn';
-        earlierBtn.setAttribute('hidden', '');
-        earlierBtn.setAttribute('aria-label', this.t('ariaLabels.loadEarlier'));
-        earlierBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-        earlierBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'before'));
-        slider.appendChild(earlierBtn);
-        if (sliderId === 'topSlider') {
-            this.elements.topEarlierBtn = earlierBtn;
-        } else {
-            this.elements.bottomEarlierBtn = earlierBtn;
+        // Connection scrolling is intentionally disabled here so the earlier/later
+        // buttons stay out of the DOM. Set `enableConnectionScrolling = true` to
+        // restore the button block below without changing the rest of the logic.
+
+        if (this.enableConnectionScrolling) {
+            const earlierBtn = document.createElement('button');
+            earlierBtn.id = sliderId === 'topSlider' ? 'topEarlierBtn' : 'bottomEarlierBtn';
+            earlierBtn.className = 'slider-load-more-btn';
+            earlierBtn.setAttribute('hidden', '');
+            earlierBtn.setAttribute('aria-label', this.t('ariaLabels.loadEarlier'));
+            earlierBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            earlierBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'before'));
+            slider.appendChild(earlierBtn);
+            if (sliderId === 'topSlider') {
+                this.elements.topEarlierBtn = earlierBtn;
+            } else {
+                this.elements.bottomEarlierBtn = earlierBtn;
+            }
         }
 
         let lastDate: string | null = null; // To track the date of the last processed connection
@@ -2018,19 +2028,20 @@ export default class DianaWidget {
             slider.appendChild(btn);
         });
 
-        // Create "load later" button as the last item in the slider
-        const laterBtn = document.createElement('button');
-        laterBtn.id = sliderId === 'topSlider' ? 'topLaterBtn' : 'bottomLaterBtn';
-        laterBtn.className = 'slider-load-more-btn';
-        laterBtn.setAttribute('hidden', '');
-        laterBtn.setAttribute('aria-label', this.t('ariaLabels.loadLater'));
-        laterBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-        laterBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'after'));
-        slider.appendChild(laterBtn);
-        if (sliderId === 'topSlider') {
-            this.elements.topLaterBtn = laterBtn;
-        } else {
-            this.elements.bottomLaterBtn = laterBtn;
+        if (this.enableConnectionScrolling) {
+            const laterBtn = document.createElement('button');
+            laterBtn.id = sliderId === 'topSlider' ? 'topLaterBtn' : 'bottomLaterBtn';
+            laterBtn.className = 'slider-load-more-btn';
+            laterBtn.setAttribute('hidden', '');
+            laterBtn.setAttribute('aria-label', this.t('ariaLabels.loadLater'));
+            laterBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+            laterBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'after'));
+            slider.appendChild(laterBtn);
+            if (sliderId === 'topSlider') {
+                this.elements.topLaterBtn = laterBtn;
+            } else {
+                this.elements.bottomLaterBtn = laterBtn;
+            }
         }
     }
 
@@ -2579,6 +2590,7 @@ export default class DianaWidget {
 
 
     addSwipeBehavior(sliderId) {
+        if (!this.enableConnectionScrolling) return;
         const slider = this.elements[sliderId];
         if (!slider) return;
 
