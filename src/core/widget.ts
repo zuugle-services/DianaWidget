@@ -141,6 +141,10 @@ export default class DianaWidget {
     // Connection scrolling (earlier/later buttons + swipe-to-load) is intentionally disabled.
     // Flip this to `true` to restore the feature later.
     private readonly enableConnectionScrolling = false;
+    // Background loading of additional connections via `use_flex=true` (plus the
+    // toast announcing them) is intentionally disabled.
+    // Flip this to `true` to restore the feature later.
+    private readonly enableFlexConnections = false;
     elements: WidgetElements;
     debouncedHandleAddressInput: (query: string) => void;
     lastQuery: string;
@@ -1233,6 +1237,7 @@ export default class DianaWidget {
 
         // Fire the flex (use_flex=true) request in parallel and fully in the
         // background. It must never block or alter the normal result.
+        // Currently disabled via `enableFlexConnections`.
         void this._fetchFlexConnections(searchSeq);
 
         try {
@@ -1412,6 +1417,10 @@ export default class DianaWidget {
     // `use_flex=true` is fired in parallel. The normal result renders immediately
     // and unconditionally. If the flex request finds connections the user is not
     // already seeing, a small non-blocking popup offers to load them.
+    //
+    // DISABLED: the whole mechanism is gated behind `enableFlexConnections`, which is
+    // currently `false`. No flex request is issued and no toast is ever shown. Flip the
+    // flag to `true` to restore the feature.
     // ----------------------------------------------------------------------------
 
     /** Clears all pending background-flex coordination state and hides the toast. */
@@ -1428,6 +1437,7 @@ export default class DianaWidget {
      * result from a superseded search (sequence mismatch) is discarded.
      */
     private async _fetchFlexConnections(seq: number): Promise<void> {
+        if (!this.enableFlexConnections) return;
         try {
             const params = this._buildActivityParams();
             params.use_flex = 'true';
@@ -1463,6 +1473,7 @@ export default class DianaWidget {
      * for the same search has arrived.
      */
     private _maybeApplyFlexConnections(seq: number): void {
+        if (!this.enableFlexConnections) return;                 // feature disabled
         if (seq !== this._flexSeq) return;                       // superseded search
         if (this._flexNormalDoneSeq !== seq) return;             // normal not done yet (or failed)
         if (!this._flexPending || this._flexPending.seq !== seq) return; // flex not in yet
