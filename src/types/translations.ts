@@ -99,6 +99,7 @@ export interface ErrorTranslations {
     shareLinkInvalidExpired: string;
     shareLinkCreateFailed: string;
     shareLinkErrorTitle: string;
+    shareNoActivityData: string;
     widgetLoadErrorTitle: string;
     api: ApiErrorTranslations;
 }
@@ -130,14 +131,13 @@ export interface AriaLabelTranslations {
 }
 
 /**
- * Flex-routing toast translations (auto-dismissing confirmation that extra
- * on-demand connections were added automatically).
+ * On-demand transit (Bedarfsverkehr) toggle on the form page.
  */
-export interface FlexPopupTranslations {
-    /** Message shown when exactly one additional connection was added */
-    message: string;
-    /** Message shown when multiple additional connections were added (uses {count}) */
-    messagePlural: string;
+export interface UseFlexTranslations {
+    /** Label next to the switch */
+    label: string;
+    /** Explanatory line below the switch */
+    hint: string;
 }
 
 /**
@@ -170,6 +170,29 @@ export interface VehicleTranslations {
     '33': string;
     'WALK': string;
     'TRSF': string;
+}
+
+/**
+ * Share info banner translations
+ */
+export interface ShareInfoTranslations {
+    meetingPoint: string;
+    meetingPointChangedOrigin: string;
+    tourEnd: string;
+    /** Label of the button that leaves share mode and unlocks free planning */
+    exitShareMode: string;
+}
+
+/**
+ * Dialog that lets a share recipient swap the shared departure point for their own.
+ */
+export interface ShareOriginDialogTranslations {
+    /** Dialog heading */
+    title: string;
+    /** Explanatory line above the search field; uses {origin} */
+    hint: string;
+    /** Label of the button in the share info banner that opens the dialog */
+    change: string;
 }
 
 /**
@@ -249,10 +272,12 @@ export interface LanguageTranslations {
     months: string[];
     shortDays: string[];
     ariaLabels: AriaLabelTranslations;
-    flexPopup: FlexPopupTranslations;
+    useFlex: UseFlexTranslations;
     waiting: WaitingTranslations;
     vehicles: VehicleTranslations;
     alert: AlertTranslations;
+    shareInfo: ShareInfoTranslations;
+    shareOriginDialog: ShareOriginDialogTranslations;
 }
 
 /**

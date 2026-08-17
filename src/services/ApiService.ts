@@ -252,6 +252,20 @@ export class ApiService {
         const response = await this.fetch(`${this.config.apiBaseUrl}/share/${shareId}/`);
         return await response.json();
     }
+
+    /**
+     * Fetches bundled shared connection data by share ID
+     * @param shareId - ID of the shared journey
+     * @param extraParams - Additional query parameters to override stored share parameters
+     * @returns Promise resolving to connection data
+     */
+    async fetchSharedConnections(shareId: string, extraParams?: Record<string, string>): Promise<ConnectionSearchResponse> {
+        const queryParams = new URLSearchParams({ share_id: shareId, ...(extraParams || {}) });
+        const response = await this.fetch(
+            `${this.config.apiBaseUrl}/connections?${queryParams}`
+        );
+        return await response.json();
+    }
 }
 
 /**

@@ -133,6 +133,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     dateList: null,
     onDateChange: null,
     onApiTokenExpired: null,
+    shareMode: null,
 };
 
 /**
@@ -160,6 +161,8 @@ export const DEFAULT_STATE: WidgetState = {
     currentContentKey: null,
     preselectTimes: null,
     activity: null,
+    shareContext: null,
+    useFlex: false,
     hasMoreBeforeToActivity: null,
     hasMoreAfterToActivity: null,
     hasMoreBeforeFromActivity: null,

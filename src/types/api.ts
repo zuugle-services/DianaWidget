@@ -313,30 +313,36 @@ export interface Suggestion {
  * Activity object returned in /connections response.
  * All time fields are full UTC ISO 8601 datetimes (e.g. "2024-07-15T06:30:00Z").
  */
+/**
+ * Every field is declared `required=False, allow_null=True` by the backend's
+ * ActivitySerializer, so all of them are optional *and* nullable.
+ */
 export interface ActivityObject {
-    readonly name?: string;
-    readonly start_location?: string;
-    readonly start_location_type?: string;
-    readonly start_location_display_name?: string;
-    readonly end_location?: string;
-    readonly end_location_type?: string;
-    readonly end_location_display_name?: string;
-    readonly duration_minutes?: number;
-    readonly duration_days?: number;
+    readonly name?: string | null;
+    /** Resolved coordinates "lat,lon" once the backend has geocoded the location */
+    readonly start_location?: string | null;
+    readonly start_location_type?: string | null;
+    readonly start_location_display_name?: string | null;
+    readonly end_location?: string | null;
+    readonly end_location_type?: string | null;
+    readonly end_location_display_name?: string | null;
+    readonly duration_minutes?: number | null;
+    /** Number of days; null (not 1) for a single-day activity */
+    readonly duration_days?: number | null;
     /** UTC ISO 8601 datetime */
-    readonly earliest_start_time?: string;
+    readonly earliest_start_time?: string | null;
     /** UTC ISO 8601 datetime */
-    readonly latest_start_time?: string;
+    readonly latest_start_time?: string | null;
     /** UTC ISO 8601 datetime */
-    readonly earliest_end_time?: string;
+    readonly earliest_end_time?: string | null;
     /** UTC ISO 8601 datetime */
-    readonly latest_end_time?: string;
-    readonly start_time_label?: string;
-    readonly end_time_label?: string;
+    readonly latest_end_time?: string | null;
+    readonly start_time_label?: string | null;
+    readonly end_time_label?: string | null;
     /** IANA timezone identifier, e.g. "Europe/Vienna" */
-    readonly timezone?: string;
+    readonly timezone?: string | null;
     /** Activity date YYYY-MM-DD */
-    readonly date?: string;
+    readonly date?: string | null;
     /** Last day of multi-day activity, null for single-day */
     readonly date_end?: string | null;
 }
@@ -368,6 +374,9 @@ export interface ConnectionSearchResponse {
 
     /** Error message if any */
     readonly error_message?: string;
+
+    /** Shared journey block; present only in bundled mode (?share_id=...) */
+    readonly shared_journey?: SharedJourneyBlock | null;
 }
 
 /**
@@ -414,6 +423,15 @@ export interface ShareDataResponse {
 
     /** Full canonical activity object; null for shares created before this field was added */
     readonly activity?: ActivityObject | null;
+
+    /** Client-defined payload object; null for shares created before this field was added */
+    readonly payload?: unknown;
+
+    /** Whether flex connections were used for this share */
+    readonly use_flex?: boolean;
+
+    /** Destination index stored with the share */
+    readonly destinationIndex?: number | null;
 }
 
 /**
@@ -422,6 +440,21 @@ export interface ShareDataResponse {
 export interface CreateShareResponse {
     /** Created share ID */
     readonly shareId: string;
+}
+
+/**
+ * Shared journey block returned in bundled-mode /connections responses.
+ * Present only when share_id query parameter is supplied.
+ */
+export interface SharedJourneyBlock {
+    /** Connection ID of the shared to-activity connection */
+    readonly to_connection_id?: number | null;
+    /** Whether the shared to-activity connection was found in the results */
+    readonly to_connection_found?: boolean | null;
+    /** Connection ID of the shared from-activity connection */
+    readonly from_connection_id?: number | null;
+    /** Whether the shared from-activity connection was found in the results */
+    readonly from_connection_found?: boolean | null;
 }
 
 /**

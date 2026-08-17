@@ -88,6 +88,206 @@
   filter: brightness(90%);
 }
 
+.share-info-banner {
+  background-color: var(--bg-info);
+  border: 1px solid var(--border-info);
+  border-radius: 8px;
+  box-sizing: border-box;
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.45;
+  margin: 12px 20px;
+  padding: 10px 14px;
+  text-align: left;
+
+  strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 6px;
+  }
+}
+
+/* Departure point currently in effect, plus the button that opens the picker. */
+.share-origin-row {
+  align-items: center;
+  border-top: 1px solid var(--border-info);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.share-origin-current {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.share-origin-current-label {
+  color: var(--text-tertiary);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.share-origin-current-value {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-origin-change-btn {
+  background-color: var(--primary-color);
+  border: 0;
+  border-radius: 4px;
+  color: var(--bg-primary);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 13px;
+  padding: 7px 14px;
+  transition: background-color 0.2s ease;
+}
+
+.share-origin-change-btn:hover {
+  background-color: var(--bg-apply-hover);
+}
+
+/* Leaves share mode and returns to free planning. Only shown while a share is open. */
+.share-exit-btn {
+  background-color: transparent;
+  border: 1px solid var(--primary-color);
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 13px;
+  margin: 0 20px 12px;
+  padding: 8px 16px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  width: calc(100% - 40px);
+}
+
+.share-exit-btn:hover {
+  background-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+/* --- Shared departure point dialog --- */
+.share-origin-overlay {
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
+  display: none;
+  height: 100%;
+  justify-content: center;
+  left: 0;
+  padding: 20px;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 2100;
+}
+
+.share-origin-overlay.visible {
+  display: flex;
+}
+
+.share-origin-dialog {
+  background-color: var(--bg-primary);
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  font-family: "DM Sans", sans-serif !important;
+  max-width: 350px;
+  min-width: 280px;
+  width: auto;
+}
+
+.share-origin-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border-tertiary);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 15px;
+}
+
+.share-origin-header h3 {
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.share-origin-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+  padding: 0 5px;
+}
+
+.share-origin-body {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 15px;
+}
+
+.share-origin-hint {
+  margin: 0 0 12px;
+}
+
+/* Anchors the absolutely-positioned suggestions dropdown to the search field. */
+.share-origin-search {
+  position: relative;
+}
+
+.share-origin-status {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  margin: 10px 0 0;
+}
+
+.share-origin-status.is-error {
+  color: var(--text-error);
+}
+
+.share-origin-footer {
+  border-top: 1px solid var(--border-tertiary);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 10px 15px;
+}
+
+.share-origin-btn {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 12px;
+  padding: 8px 15px;
+}
+
+.share-origin-btn:hover {
+  background-color: var(--bg-hover);
+}
+
 .full-screen-loader {
   align-items: center;
   background-color: rgba(255, 255, 255, 0.8);

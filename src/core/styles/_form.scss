@@ -264,6 +264,90 @@ input[type=date].native-date-picker-single {
 }
 
 
+/* --- On-demand transit (Bedarfsverkehr) toggle --- */
+.toggle-section {
+  margin-bottom: 5px;
+}
+
+.toggle-row {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.toggle-label {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.toggle-switch {
+  display: inline-block;
+  flex-shrink: 0;
+  height: 20px;
+  position: relative;
+  width: 36px;
+}
+
+/* The native checkbox stays focusable but invisible; the slider is the visual control. */
+.toggle-switch input[type="checkbox"] {
+  height: 100%;
+  left: 0;
+  margin: 0;
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.toggle-slider {
+  background-color: var(--border-secondary);
+  border-radius: 10px;
+  bottom: 0;
+  display: block;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-slider::before {
+  background-color: var(--bg-primary);
+  border-radius: 50%;
+  box-shadow: 0 1px 2px var(--shadow-light);
+  content: "";
+  height: 16px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 0.2s ease;
+  width: 16px;
+}
+
+.toggle-switch input[type="checkbox"]:checked + .toggle-slider {
+  background-color: var(--primary-color);
+}
+
+.toggle-switch input[type="checkbox"]:checked + .toggle-slider::before {
+  transform: translateX(16px);
+}
+
+.toggle-switch input[type="checkbox"]:focus-visible + .toggle-slider {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.form-section .toggle-hint {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  margin-bottom: 0;
+  margin-top: 4px;
+}
+
 .form-footer {
   display: flex;
   gap: 10px;

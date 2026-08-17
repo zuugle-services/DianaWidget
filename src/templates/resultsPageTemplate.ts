@@ -9,7 +9,7 @@ import { getMenuDropdownHTML } from './partials/_menuDropdown';
 export function getResultsPageTemplateHTML(args) {
     const {config, t} = args;
 
-    const menuDropdownHTML = getMenuDropdownHTML({t, dropdownId: 'resultsMenuDropdown', isShareDisabled: false});
+    const menuDropdownHTML = getMenuDropdownHTML({t, dropdownId: 'resultsMenuDropdown', isShareDisabled: !config.share});
     const headerHTML = getWidgetHeaderHTML({t, title: config.activityName, showBackButton: true, backButtonId: 'backBtn', menuDropdownHTML});
 
     return `
@@ -57,6 +57,9 @@ export function getResultsPageTemplateHTML(args) {
                         <path d="m16.354 5.075-7.855 7.854L.646 5.075l.707-.707 7.145 7.146 7.148-7.147z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
+
+                <div id="shareInfoBanner" class="share-info-banner" style="display:none"></div>
+                <button type="button" id="exitShareModeBtn" class="share-exit-btn" style="display:none">${t('shareInfo.exitShareMode')}</button>
             </div>
 
             <!-- Persistent Footer -->
@@ -64,17 +67,6 @@ export function getResultsPageTemplateHTML(args) {
                 <div class="slider" id="bottomSlider" role="group" aria-label="${t('ariaLabels.bottomSlider')}"></div>
             </div>
             <div class="widget-footer"><a href="https://zuugle-services.com" target="_new">powered by Zuugle Services</a></div>
-
-            <!-- Non-blocking toast: additional (flex) connections were added automatically -->
-            <div id="flexPopup" class="flex-popup" hidden role="status" aria-live="polite">
-                <div class="flex-popup-icon" aria-hidden="true">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
-                <span id="flexPopupMessage" class="flex-popup-message"></span>
-                <div class="flex-popup-progress" aria-hidden="true"></div>
-            </div>
         </div>
       </div>
     `;

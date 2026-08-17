@@ -134,6 +134,9 @@ export interface WidgetConfig {
     
     /** Whether widget is in read-only mode (set internally) */
     readOnly?: boolean;
+    
+    /** Share mode override: 'consumer' (default backend behavior), 'legacy', or null (don't send) */
+    shareMode?: 'consumer' | 'legacy' | null;
 }
 
 /**

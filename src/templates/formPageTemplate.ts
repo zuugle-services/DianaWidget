@@ -149,6 +149,16 @@ export function getFormPageTemplateHTML(args) {
             </div>
           </div>
           ${dateSectionHTML}
+          <div class="form-section toggle-section">
+            <label class="toggle-row" for="useFlexToggle">
+              <span class="toggle-label">${t('useFlex.label')}</span>
+              <span class="toggle-switch">
+                <input type="checkbox" id="useFlexToggle" ${state.useFlex ? 'checked' : ''} aria-describedby="useFlexHint">
+                <span class="toggle-slider" aria-hidden="true"></span>
+              </span>
+            </label>
+            <p class="toggle-hint" id="useFlexHint">${t('useFlex.hint')}</p>
+          </div>
           <div class="form-footer">
             <button type="submit" class="btn apply-btn" id="searchBtn">${t('search')}</button>
           </div>

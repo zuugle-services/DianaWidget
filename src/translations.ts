@@ -98,6 +98,7 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Share link is invalid or expired.",
             shareLinkCreateFailed: "Failed to create share link.",
             shareLinkErrorTitle: "Couldn't Load This Shared Journey.",
+            shareNoActivityData: "No activity data available to create a share link.",
             widgetLoadErrorTitle: "Widget could not be loaded.",
             api: {
                 internalError: "Oops! Something went wrong on our end. Our team has been notified and is working on a solution. Please try again in a few moments.",
@@ -158,9 +159,9 @@ const translations: Translations = {
             loadEarlier: "Load earlier",
             loadLater: "Load later"
         },
-        flexPopup: {
-            message: "Added 1 more connection with on-demand transit.",
-            messagePlural: "Added {count} more connections with on-demand transit."
+        useFlex: {
+            label: "Include on-demand transit",
+            hint: "Also search dial-a-ride, shared taxis and other services that run on request."
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",
@@ -188,6 +189,17 @@ const translations: Translations = {
         },
         alert: {
             label: 'Alert'
+        },
+        shareInfo: {
+            meetingPoint: "Planned start of this tour is \"{location}\" on {date} at {time}.",
+            meetingPointChangedOrigin: "Planned start of this tour is \"{location}\" on {date} at {time}. The connections shown here are the ones for your own departure point.",
+            tourEnd: "Planned end of this tour is \"{location}\" on {date} at {time}.",
+            exitShareMode: "Plan your own journey"
+        },
+        shareOriginDialog: {
+            title: "Change departure point",
+            hint: "This journey was shared with \"{origin}\" as the departure point. Search for your own to see how you get there.",
+            change: "Change"
         }
     },
     DE: {
@@ -287,6 +299,7 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Der geteilte Link ist ungültig oder abgelaufen.",
             shareLinkCreateFailed: "Der Teilen-Link konnte nicht erstellt werden.",
             shareLinkErrorTitle: "Laden der geteilten Daten fehlgeschlagen",
+            shareNoActivityData: "Keine Aktivitätsdaten vorhanden, um einen geteilten Link zu erstellen.",
             widgetLoadErrorTitle: "Das Widget konnte nicht geladen werden.",
             api: {
                 internalError: "Hoppla! Auf unserer Seite ist ein Fehler aufgetreten. Unser Team wurde benachrichtigt und arbeitet an einer Lösung. Bitte versuchen Sie es in ein paar Augenblicken erneut.",
@@ -347,9 +360,9 @@ const translations: Translations = {
             loadEarlier: "Frühere laden",
             loadLater: "Spätere laden"
         },
-        flexPopup: {
-            message: "1 weitere Verbindung mit Bedarfsverkehr hinzugefügt.",
-            messagePlural: "{count} weitere Verbindungen mit Bedarfsverkehr hinzugefügt."
+        useFlex: {
+            label: "Bedarfsverkehr einbeziehen",
+            hint: "Ruf- und Sammeltaxis sowie andere Angebote auf Bestellung werden mitgesucht."
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
@@ -377,6 +390,17 @@ const translations: Translations = {
         },
         alert: {
             label: 'Hinweis'
+        },
+        shareInfo: {
+            meetingPoint: "Geplanter Start für diese Tour ist \"{location}\" am {date} um {time}.",
+            meetingPointChangedOrigin: "Geplanter Start für diese Tour ist \"{location}\" am {date} um {time}. Die hier angezeigten Verbindungen gelten für deinen eigenen Abfahrtsort.",
+            tourEnd: "Geplantes Ende für diese Tour ist \"{location}\" am {date} um {time}.",
+            exitShareMode: "Eigene Planung starten"
+        },
+        shareOriginDialog: {
+            title: "Abfahrtsort ändern",
+            hint: "Diese Reise wurde mit dem Abfahrtsort \"{origin}\" geteilt. Suche deinen eigenen, um zu sehen, wie du hinkommst.",
+            change: "Ändern"
         }
     },
     ES: {
@@ -476,6 +500,7 @@ const translations: Translations = {
             shareLinkInvalidExpired: "El enlace compartido no es válido o ha caducado.",
             shareLinkCreateFailed: "No se pudo crear el enlace para compartir.",
             shareLinkErrorTitle: "No se pudo cargar este viaje compartido.",
+            shareNoActivityData: "No hay datos de actividad disponibles para crear un enlace compartido.",
             widgetLoadErrorTitle: "No se pudo cargar el widget.",
             api: {
                 internalError: "¡Uy! Algo salió mal de nuestro lado. Nuestro equipo ha sido notificado y está trabajando en una solución. Por favor, inténtelo de nuevo en unos momentos.",
@@ -536,9 +561,9 @@ const translations: Translations = {
             loadEarlier: "Cargar anteriores",
             loadLater: "Cargar posteriores"
         },
-        flexPopup: {
-            message: "Se añadió 1 conexión más con transporte a demanda.",
-            messagePlural: "Se añadieron {count} conexiones más con transporte a demanda."
+        useFlex: {
+            label: "Incluir transporte a demanda",
+            hint: "También se buscan taxis compartidos, servicios a la carta y otras ofertas bajo petición."
         },
         waiting: {
             beforeActivity: "Esperando el inicio de la actividad",
@@ -566,6 +591,17 @@ const translations: Translations = {
         },
         alert: {
             label: 'Alerta'
+        },
+        shareInfo: {
+            meetingPoint: "El inicio planificado de este recorrido es \"{location}\" el {date} a las {time}.",
+            meetingPointChangedOrigin: "El inicio planificado de este recorrido es \"{location}\" el {date} a las {time}. Las conexiones que se muestran aquí corresponden a su propio punto de partida.",
+            tourEnd: "El final planificado de este recorrido es \"{location}\" el {date} a las {time}.",
+            exitShareMode: "Planificar mi propio viaje"
+        },
+        shareOriginDialog: {
+            title: "Cambiar punto de partida",
+            hint: "Este viaje se compartió con \"{origin}\" como punto de partida. Busque el suyo para ver cómo llegar.",
+            change: "Cambiar"
         }
     },
     FR: {
@@ -665,6 +701,7 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Le lien partagé est invalide ou a expiré.",
             shareLinkCreateFailed: "Échec de la création du lien de partage.",
             shareLinkErrorTitle: "Échec du chargement de ce trajet partagé",
+            shareNoActivityData: "Aucune donnée d'activité disponible pour créer un lien partagé.",
             widgetLoadErrorTitle: "Le widget n'a pas pu être chargé.",
             api: {
                 internalError: "Oups ! Un problème est survenu de notre côté. Notre équipe a été notifiée et travaille sur une solution. Veuillez réessayer dans quelques instants.",
@@ -725,9 +762,9 @@ const translations: Translations = {
             loadEarlier: "Charger précédents",
             loadLater: "Charger suivants"
         },
-        flexPopup: {
-            message: "1 trajet supplémentaire avec transport à la demande ajouté.",
-            messagePlural: "{count} trajets supplémentaires avec transport à la demande ajoutés."
+        useFlex: {
+            label: "Inclure le transport à la demande",
+            hint: "Les taxis collectifs, services sur réservation et autres offres à la demande sont également recherchés."
         },
         waiting: {
             beforeActivity: "En attente du début de l'activité",
@@ -755,6 +792,17 @@ const translations: Translations = {
         },
         alert: {
             label: 'Alerte'
+        },
+        shareInfo: {
+            meetingPoint: "Le départ prévu pour cette visite est « {location} » le {date} à {time}.",
+            meetingPointChangedOrigin: "Le départ prévu pour cette visite est « {location} » le {date} à {time}. Les correspondances affichées ici correspondent à votre propre point de départ.",
+            tourEnd: "La fin prévue de cette visite est « {location} » le {date} à {time}.",
+            exitShareMode: "Planifier mon propre trajet"
+        },
+        shareOriginDialog: {
+            title: "Changer le point de départ",
+            hint: "Ce trajet a été partagé avec « {origin} » comme point de départ. Recherchez le vôtre pour voir comment vous y rendre.",
+            change: "Changer"
         }
     },
     IT: {
@@ -854,6 +902,7 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Il link condiviso non è valido o è scaduto.",
             shareLinkCreateFailed: "Impossibile creare il link di condivisione.",
             shareLinkErrorTitle: "Caricamento dei dati condivisi fallito",
+            shareNoActivityData: "Nessun dato sull'attività disponibile per creare un link di condivisione.",
             widgetLoadErrorTitle: "Impossibile caricare il widget.",
             api: {
                 internalError: "Ops! Qualcosa è andato storto da parte nostra. Il nostro team è stato avvisato e sta lavorando a una soluzione. Riprova tra qualche istante.",
@@ -914,9 +963,9 @@ const translations: Translations = {
             loadEarlier: "Carica precedenti",
             loadLater: "Carica successivi"
         },
-        flexPopup: {
-            message: "Aggiunta 1 connessione in più con trasporto a chiamata.",
-            messagePlural: "Aggiunte {count} connessioni in più con trasporto a chiamata."
+        useFlex: {
+            label: "Includi il trasporto a chiamata",
+            hint: "Vengono cercati anche taxi collettivi, servizi su prenotazione e altre offerte a richiesta."
         },
         waiting: {
             beforeActivity: "In attesa dell'inizio dell'attività",
@@ -944,6 +993,17 @@ const translations: Translations = {
         },
         alert: {
             label: 'Avviso'
+        },
+        shareInfo: {
+            meetingPoint: "L'inizio previsto per questo tour è \"{location}\" il {date} alle {time}.",
+            meetingPointChangedOrigin: "L'inizio previsto per questo tour è \"{location}\" il {date} alle {time}. I collegamenti mostrati qui valgono per il tuo punto di partenza.",
+            tourEnd: "La fine prevista per questo tour è \"{location}\" il {date} alle {time}.",
+            exitShareMode: "Pianifica il tuo viaggio"
+        },
+        shareOriginDialog: {
+            title: "Cambia punto di partenza",
+            hint: "Questo viaggio è stato condiviso con \"{origin}\" come punto di partenza. Cerca il tuo per vedere come arrivarci.",
+            change: "Cambia"
         }
     },
     TH: {
@@ -1043,6 +1103,7 @@ const translations: Translations = {
             shareLinkInvalidExpired: "ลิงก์ที่แชร์ไม่ถูกต้องหรือหมดอายุแล้ว",
             shareLinkCreateFailed: "ไม่สามารถสร้างลิงก์สำหรับแชร์ได้",
             shareLinkErrorTitle: "โหลดการเดินทางที่แชร์นี้ไม่สำเร็จ",
+            shareNoActivityData: "ไม่มีข้อมูลกิจกรรมสำหรับสร้างลิงก์แชร์",
             widgetLoadErrorTitle: "ไม่สามารถโหลดวิดเจ็ตได้",
             api: {
                 internalError: "อุ๊ย! เกิดข้อผิดพลาดบางอย่างขึ้นจากฝั่งของเรา ทีมงานของเราได้รับแจ้งและกำลังดำเนินการแก้ไข กรุณาลองอีกครั้งในอีกสักครู่",
@@ -1103,9 +1164,9 @@ const translations: Translations = {
             loadEarlier: "โหลดก่อนหน้า",
             loadLater: "โหลดถัดไป"
         },
-        flexPopup: {
-            message: "เพิ่มการเชื่อมต่ออีก 1 รายการด้วยบริการขนส่งตามความต้องการแล้ว",
-            messagePlural: "เพิ่มการเชื่อมต่ออีก {count} รายการด้วยบริการขนส่งตามความต้องการแล้ว"
+        useFlex: {
+            label: "รวมบริการขนส่งตามความต้องการ",
+            hint: "ค้นหารถแท็กซี่ร่วมโดยสารและบริการอื่น ๆ ที่ให้บริการตามการเรียกใช้ด้วย"
         },
         waiting: {
             beforeActivity: "กำลังรอให้กิจกรรมเริ่มต้น",
@@ -1133,6 +1194,17 @@ const translations: Translations = {
         },
         alert: {
             label: 'แจ้งเตือน'
+        },
+        shareInfo: {
+            meetingPoint: "จุดเริ่มต้นที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time}",
+            meetingPointChangedOrigin: "จุดเริ่มต้นที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time} การเชื่อมต่อที่แสดงที่นี่ใช้สำหรับจุดออกเดินทางของคุณเอง",
+            tourEnd: "จุดสิ้นสุดที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time}",
+            exitShareMode: "วางแผนการเดินทางของคุณเอง"
+        },
+        shareOriginDialog: {
+            title: "เปลี่ยนจุดออกเดินทาง",
+            hint: "การเดินทางนี้ถูกแชร์โดยมี \"{origin}\" เป็นจุดออกเดินทาง ค้นหาจุดของคุณเองเพื่อดูว่าคุณจะไปถึงได้อย่างไร",
+            change: "เปลี่ยน"
         }
     }
 };

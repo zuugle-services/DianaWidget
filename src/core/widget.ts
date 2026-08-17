@@ -23,6 +23,7 @@ import {UIManager} from '../components/UIManager';
 import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent';
+import {getShareOriginDialogHTML} from '../templates/partials/_shareOriginDialog';
 
 import {
     DEFAULT_CONFIG,
@@ -33,6 +34,12 @@ import {
 
 import { validateConfig } from './Validator';
 import { ConnectionRenderer } from './ConnectionRenderer';
+import {
+    applySharedActivityToConfig,
+    buildShareUrl,
+    isValidShareId,
+    readShareIdFromUrl
+} from './shareConfig';
 
 import { ApiService } from '../services';
 import type { ApiError, FetchOptions } from '../services';
@@ -43,6 +50,8 @@ import type {
     WidgetState,
     Connection
 } from '../types';
+import type { ShareDataResponse } from '../types/api';
+import type { ShareContext } from '../types/state';
 
 /** 
  * Interface for cached DOM elements
@@ -99,28 +108,18 @@ interface WidgetElements {
     topLaterBtn: HTMLButtonElement | null;
     bottomEarlierBtn: HTMLButtonElement | null;
     bottomLaterBtn: HTMLButtonElement | null;
-    flexPopup: HTMLElement | null;
-    flexPopupMessage: HTMLElement | null;
+    useFlexToggle: HTMLInputElement | null;
+    shareInfoBanner: HTMLElement | null;
+    exitShareModeBtn: HTMLButtonElement | null;
+    shareOriginOverlay: HTMLElement | null;
+    shareOriginText: HTMLElement | null;
+    shareOriginInput: HTMLInputElement | null;
+    shareOriginSuggestions: HTMLElement | null;
+    shareOriginLocationBtn: HTMLElement | null;
+    shareOriginStatus: HTMLElement | null;
+    shareOriginCloseBtn: HTMLButtonElement | null;
+    shareOriginCancelBtn: HTMLButtonElement | null;
     [key: string]: HTMLElement | null | undefined;
-}
-
-/**
- * Holds the new connections discovered by the background flex request that are
- * not already present in the displayed (normal) results.
- */
-interface FlexNewConnections {
-    newTo: Connection[];
-    newFrom: Connection[];
-}
-
-/**
- * Parsed result of a background flex (`use_flex=true`) connections request,
- * tagged with the search sequence that produced it.
- */
-interface PendingFlexResult {
-    seq: number;
-    toConnections: Connection[];
-    fromConnections: Connection[];
 }
 
 export default class DianaWidget {
@@ -138,29 +137,17 @@ export default class DianaWidget {
     rangeCalendarModal: RangeCalendarModal | null;
     pageManager: PageManager | null;
     uiManager: UIManager | null;
-    // Connection scrolling (earlier/later buttons + swipe-to-load) is intentionally disabled.
-    // Flip this to `true` to restore the feature later.
-    private readonly enableConnectionScrolling = false;
-    // Background loading of additional connections via `use_flex=true` (plus the
-    // toast announcing them) is intentionally disabled.
-    // Flip this to `true` to restore the feature later.
-    private readonly enableFlexConnections = false;
     elements: WidgetElements;
     debouncedHandleAddressInput: (query: string) => void;
     lastQuery: string;
     private apiService: ApiService | null;
     private connectionRenderer: ConnectionRenderer | null;
 
-    /** Monotonic search counter; used to discard stale background flex results. */
-    private _flexSeq: number;
-    /** Sequence of the most recent search whose normal request finished successfully with results. */
-    private _flexNormalDoneSeq: number | null;
-    /** Parsed background flex result, awaiting evaluation against the normal result. */
-    private _flexPending: PendingFlexResult | null;
-    /** New connections (not already shown) that were/are being merged in from the flex result. */
-    private _flexNewConnections: FlexNewConnections | null;
-    /** Pending timer that hides the auto-dismissing flex toast. */
-    private _flexPopupTimeout: ReturnType<typeof setTimeout> | null;
+    /**
+     * Memoised share link, so re-opening the share sheet for an unchanged selection
+     * does not POST a second /share/ record. Keyed by connection selection + origin.
+     */
+    private _shareUrlCache: { key: string; shareId: string } | null;
 
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
         // Initialize default config using imported constant
@@ -183,11 +170,7 @@ export default class DianaWidget {
         this.state = { ...DEFAULT_STATE };
         this.apiService = null;
         this.connectionRenderer = null;
-        this._flexSeq = 0;
-        this._flexNormalDoneSeq = null;
-        this._flexPending = null;
-        this._flexNewConnections = null;
-        this._flexPopupTimeout = null;
+        this._shareUrlCache = null;
         this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const validationResult = validateConfig(this.config);
@@ -222,10 +205,9 @@ export default class DianaWidget {
         }
 
         try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shareId = urlParams.get('diana-share');
+            const shareId = readShareIdFromUrl();
             const isShareView = this.config.allowShareView !== false && !!shareId;
-            if (isShareView) this.config.shareId = shareId;
+            if (isShareView) this.config.shareId = shareId as string;
             this.config.readOnly = isShareView;
             if (this.config.shareURLPrefix === null) this.config.shareURLPrefix = window.location.href;
 
@@ -306,8 +288,13 @@ export default class DianaWidget {
 
             // The main initialization logic is now split.
             if (shareId && this.config.allowShareView) {
-                // If a share ID exists and sharing is allowed, load data from the backend first.
-                this._loadFromShareID(shareId);
+                // A share ID is present: fetch the share and overwrite the local config with
+                // its activity data *before* the DOM is built, because the templates bake the
+                // config into HTML strings exactly once.
+                this._loadFromShareID(shareId).catch(error => {
+                    console.error("Error during shared journey initialization:", error);
+                    this._showFatalError(this.t('errors.shareLinkErrorTitle'), error.message, "info", true);
+                });
             } else {
                 // Otherwise, initialize the DOM for the interactive mode.
                 this.initDOM().catch(error => {
@@ -428,6 +415,9 @@ export default class DianaWidget {
         const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
+        // Sibling of the modal rather than a child: `.diana-container` is the positioned,
+        // non-scrolling box, so the overlay covers the widget instead of scrolling away
+        // with `.modal-content`.
         this.dianaWidgetRootContainer.innerHTML = `
           <div id="activityModal" class="modal visible">
             <div id="innerContainer" class="modal-content">
@@ -436,6 +426,7 @@ export default class DianaWidget {
               ${contentPageHTML}
             </div>
           </div>
+          ${getShareOriginDialogHTML({t: (key) => this.t(key)})}
         `;
 
         this.cacheDOMElements();
@@ -722,9 +713,20 @@ export default class DianaWidget {
             bottomEarlierBtn: this.shadowRoot.querySelector("#bottomEarlierBtn"),
             bottomLaterBtn: this.shadowRoot.querySelector("#bottomLaterBtn"),
 
-            // Flex (on-demand) connections notification toast
-            flexPopup: this.shadowRoot.querySelector("#flexPopup"),
-            flexPopupMessage: this.shadowRoot.querySelector("#flexPopupMessage"),
+            // On-demand transit (Bedarfsverkehr) toggle
+            useFlexToggle: this.shadowRoot.querySelector("#useFlexToggle"),
+
+            // Share mode UI
+            shareInfoBanner: this.shadowRoot.querySelector("#shareInfoBanner"),
+            exitShareModeBtn: this.shadowRoot.querySelector("#exitShareModeBtn"),
+            shareOriginOverlay: this.shadowRoot.querySelector("#shareOriginOverlay"),
+            shareOriginText: this.shadowRoot.querySelector("#shareOriginText"),
+            shareOriginInput: this.shadowRoot.querySelector("#shareOriginInput"),
+            shareOriginSuggestions: this.shadowRoot.querySelector("#shareOriginSuggestions"),
+            shareOriginLocationBtn: this.shadowRoot.querySelector("#shareOriginLocationBtn"),
+            shareOriginStatus: this.shadowRoot.querySelector("#shareOriginStatus"),
+            shareOriginCloseBtn: this.shadowRoot.querySelector("#shareOriginCloseBtn"),
+            shareOriginCancelBtn: this.shadowRoot.querySelector("#shareOriginCancelBtn"),
         };
     }
 
@@ -818,6 +820,33 @@ export default class DianaWidget {
             this.handleSearch();
         });
 
+        if (this.elements.useFlexToggle) {
+            this.elements.useFlexToggle.addEventListener('change', (e) => {
+                this.state.useFlex = (e.target as HTMLInputElement).checked;
+                // A different set of connections is a different journey, so any share link
+                // we already minted no longer describes what the user would share.
+                this._shareUrlCache = null;
+            });
+        }
+
+        if (this.elements.exitShareModeBtn) {
+            this.elements.exitShareModeBtn.addEventListener('click', () => {
+                void this._exitShareMode();
+            });
+        }
+
+        // Delegated: the banner's inner HTML is rebuilt on every results render.
+        if (this.elements.shareInfoBanner) {
+            this.elements.shareInfoBanner.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                if (target.closest('[data-action="change-share-origin"]')) {
+                    this._showShareOriginDialog();
+                }
+            });
+        }
+
+        this._setupShareOriginDialogListeners();
+
         if (this.elements.backBtn) this.elements.backBtn.addEventListener('click', () => this.navigateToForm());
         if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.addEventListener('click', () => this.closeMenuOrContentPage());
 
@@ -872,7 +901,7 @@ export default class DianaWidget {
                             e.preventDefault();
                             return; // Do nothing if disabled
                         }
-                        if (menuItem.id === 'shareMenuItem') {
+                        if (menuItem.dataset.action === 'share') {
                             e.preventDefault();
                             this.handleShare();
                         } else if (menuItem.dataset.contentKey) {
@@ -995,11 +1024,15 @@ export default class DianaWidget {
             this.showError(this.t('errors.geolocationNotSupported'), 'form');
             return;
         }
-        if (this.elements.currentLocationBtn) {
-            this.elements.currentLocationBtn.style.pointerEvents = 'none';
-            this.elements.currentLocationBtn.style.opacity = '0.5';
+        const locationBtn = this._isShareOriginDialogOpen()
+            ? this.elements.shareOriginLocationBtn
+            : this.elements.currentLocationBtn;
+        if (locationBtn) {
+            locationBtn.style.pointerEvents = 'none';
+            locationBtn.style.opacity = '0.5';
         }
-        if (this.elements.originInput) this.elements.originInput.disabled = true;
+        const activeInput = this._originSearchTarget().input;
+        if (activeInput) activeInput.disabled = true;
 
         this.showInfo(this.t('infos.fetchingLocation'));
         try {
@@ -1028,11 +1061,11 @@ export default class DianaWidget {
             }
             this.showError(errorMsg, 'form');
         } finally {
-            if (this.elements.currentLocationBtn) {
-                this.elements.currentLocationBtn.style.pointerEvents = 'auto';
-                this.elements.currentLocationBtn.style.opacity = '1';
+            if (locationBtn) {
+                locationBtn.style.pointerEvents = 'auto';
+                locationBtn.style.opacity = '1';
             }
-            if (this.elements.originInput) this.elements.originInput.disabled = false;
+            if (activeInput) activeInput.disabled = false;
             if (this.state.info === this.t('infos.fetchingLocation')) this.showInfo(null);
         }
     }
@@ -1050,18 +1083,19 @@ export default class DianaWidget {
             const data = await response.json();
             if (data.features && data.features.length > 0 && data.features[0].diana_properties && data.features[0].diana_properties.display_name) {
                 const displayName = data.features[0].diana_properties.display_name;
-                if (this.elements.originInput) {
-                    this.elements.originInput.value = displayName;
-                    this.elements.originInput.setAttribute('data-lat', latitude.toString());
-                    this.elements.originInput.setAttribute('data-lon', longitude.toString());
-                }
+                const fromDialog = this._isShareOriginDialogOpen();
+
                 this.state.suggestions = [];
                 this.renderSuggestions();
+
+                this._setOriginInputValue(displayName, latitude, longitude);
                 this.clearMessages();
                 this._setCachedStartLocation(displayName, latitude, longitude);
+                this._shareUrlCache = null;
 
-                if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
-                if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
+                if (fromDialog) this._hideShareOriginDialog();
+
+                this._handleOriginChangedInShareMode();
             } else {
                 throw new Error(this.t('errors.reverseGeocodeNoResults'));
             }
@@ -1109,24 +1143,35 @@ export default class DianaWidget {
 
     handleSuggestionSelect(value, lat, lon) {
         if (!this.elements.originInput) return;
-        this.elements.originInput.value = value;
-        this.elements.originInput.setAttribute('data-lat', lat);
-        this.elements.originInput.setAttribute('data-lon', lon);
+
+        // #originInput stays the canonical origin even when the pick came from the dialog,
+        // because _buildActivityParams and _buildSharePayload both read it.
+        const fromDialog = this._isShareOriginDialogOpen();
+
         this.state.suggestions = [];
         this.renderSuggestions();
-        this.elements.originInput.focus();
+
+        this._setOriginInputValue(value, lat, lon);
         this.clearMessages();
         this._setCachedStartLocation(value, lat, lon);
+        this._shareUrlCache = null;
 
-        if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'block';
-        if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
+        if (fromDialog) {
+            this._hideShareOriginDialog();
+        } else {
+            this.elements.originInput.focus();
+        }
+
+        // In share mode a new origin re-plans the journey from here, under the same share id.
+        this._handleOriginChangedInShareMode();
     }
 
     handleSuggestionNavigation(e) {
-        if (!this.elements.suggestionsContainer || this.state.suggestions.length === 0) return;
+        const {input, suggestions} = this._originSearchTarget();
+        if (!suggestions || this.state.suggestions.length === 0) return;
         e.preventDefault(); // Prevent cursor movement in input
 
-        const items = Array.from(this.elements.suggestionsContainer.querySelectorAll('.suggestion-item'));
+        const items = Array.from(suggestions.querySelectorAll('.suggestion-item'));
         if (items.length === 0) return;
 
         let currentIndex = items.findIndex(item => item.classList.contains('active-suggestion'));
@@ -1145,18 +1190,19 @@ export default class DianaWidget {
             item.focus(); // Make it focusable for screen readers and further interaction
             // Scroll into view if necessary
             item.scrollIntoView({block: 'nearest', inline: 'nearest'});
-            this.elements.originInput?.setAttribute('aria-activedescendant', item.id || `suggestion-item-${currentIndex}`); // Assuming items have IDs
+            input?.setAttribute('aria-activedescendant', item.id || `suggestion-item-${currentIndex}`); // Assuming items have IDs
         }
     }
 
     handleSuggestionEnter(e: KeyboardEvent): void {
-        if (!this.elements.suggestionsContainer || this.state.suggestions.length === 0) return;
+        const {input, suggestions} = this._originSearchTarget();
+        if (!suggestions || this.state.suggestions.length === 0) return;
 
-        const activeItem = this.elements.suggestionsContainer.querySelector('.suggestion-item.active-suggestion') as HTMLElement | null;
+        const activeItem = suggestions.querySelector('.suggestion-item.active-suggestion') as HTMLElement | null;
         if (activeItem) {
             e.preventDefault(); // Prevent form submission if input is in a form
             this.handleSuggestionSelect(activeItem.dataset.value ?? '', activeItem.dataset.lat ?? '', activeItem.dataset.lon ?? '');
-        } else if (this.state.suggestions.length > 0 && (this.elements.originInput?.value.trim().length ?? 0) >= 2) {
+        } else if (this.state.suggestions.length > 0 && (input?.value.trim().length ?? 0) >= 2) {
             // If no specific item is active but there are suggestions and input has text,
             // potentially select the first one or trigger search directly.
             // For now, let's assume if Enter is pressed without an active suggestion,
@@ -1230,24 +1276,10 @@ export default class DianaWidget {
 
         this.setLoadingState(true);
 
-        // Begin a new search: invalidate any in-flight background flex work and
-        // reset/hide the popup so a stale result can never surface here.
-        const searchSeq = ++this._flexSeq;
-        this._resetFlexState();
-
-        // Fire the flex (use_flex=true) request in parallel and fully in the
-        // background. It must never block or alter the normal result.
-        // Currently disabled via `enableFlexConnections`.
-        void this._fetchFlexConnections(searchSeq);
-
         try {
             await this.fetchActivityData();
             this.navigateToResults();
             this.slideToRecommendedConnections();
-            // The normal request returned. Only now is the flex result meaningful;
-            // evaluate it (it may have already arrived, or may arrive later).
-            this._flexNormalDoneSeq = searchSeq;
-            this._maybeApplyFlexConnections(searchSeq);
         } catch (error) {
             if (error.isSessionExpired) {
                 this.setLoadingState(false);
@@ -1354,6 +1386,28 @@ export default class DianaWidget {
         if (this.config.activityStartTimeLabel) params.activity_start_time_label = this.config.activityStartTimeLabel;
         if (this.config.activityEndTimeLabel) params.activity_end_time_label = this.config.activityEndTimeLabel;
 
+        // Bundled mode: when viewing a shared journey, every /connections request carries the
+        // share id. The backend derives its parameters from the stored share, and any param we
+        // send alongside overrides the stored value — which is exactly how the recipient's own
+        // `user_start_location` (read from the DOM above) takes effect while the backend still
+        // uses the *stored* arrival time as the consumer-mode arrive-by target.
+        // Only shares that carry an activity object are replayable; without one the backend
+        // rejects the request with code 5004, so those fall back to a plain search.
+        const isBundledShare = !!(this.state.shareContext?.shareId && this.state.shareContext.activity);
+        if (isBundledShare) {
+            params.share_id = this.state.shareContext!.shareId;
+            if (this.config.shareMode) params.share_mode = this.config.shareMode;
+        }
+
+        // In bundled mode the backend falls back to the `use_flex` stored on the share, so
+        // the param has to be sent in both directions — otherwise switching the toggle off
+        // on a share created with `use_flex: true` would silently keep the stored `true`.
+        if (this.state.useFlex) {
+            params.use_flex = 'true';
+        } else if (isBundledShare) {
+            params.use_flex = 'false';
+        }
+
         return params;
     }
 
@@ -1410,281 +1464,7 @@ export default class DianaWidget {
         this.renderConnectionResults();
     }
 
-    // ----------------------------------------------------------------------------
-    // Background flex (on-demand transit) routing
-    //
-    // Alongside the normal /connections request, a second request with
-    // `use_flex=true` is fired in parallel. The normal result renders immediately
-    // and unconditionally. If the flex request finds connections the user is not
-    // already seeing, a small non-blocking popup offers to load them.
-    //
-    // DISABLED: the whole mechanism is gated behind `enableFlexConnections`, which is
-    // currently `false`. No flex request is issued and no toast is ever shown. Flip the
-    // flag to `true` to restore the feature.
-    // ----------------------------------------------------------------------------
-
-    /** Clears all pending background-flex coordination state and hides the toast. */
-    private _resetFlexState(): void {
-        this._flexNormalDoneSeq = null;
-        this._flexPending = null;
-        this._flexNewConnections = null;
-        this._hideFlexPopup();
-    }
-
-    /**
-     * Issues the background flex (`use_flex=true`) connections request. Runs fully
-     * detached from the normal flow: any error/empty result is swallowed, and a
-     * result from a superseded search (sequence mismatch) is discarded.
-     */
-    private async _fetchFlexConnections(seq: number): Promise<void> {
-        if (!this.enableFlexConnections) return;
-        try {
-            const params = this._buildActivityParams();
-            params.use_flex = 'true';
-
-            const queryString = new URLSearchParams(params as Record<string, string>);
-            const response = await this._fetchApi(`${this.config.apiBaseUrl}/connections?${queryString}`);
-            const result = await response.json();
-
-            // A newer search has started since this request was issued — discard.
-            if (seq !== this._flexSeq) return;
-
-            const toConnections: Connection[] = Array.isArray(result?.connections?.to_activity)
-                ? result.connections.to_activity
-                : [];
-            const fromConnections: Connection[] = Array.isArray(result?.connections?.from_activity)
-                ? result.connections.from_activity
-                : [];
-
-            this._flexPending = { seq, toConnections, fromConnections };
-            // Whichever of the two requests finishes last triggers the evaluation.
-            this._maybeApplyFlexConnections(seq);
-        } catch (error) {
-            // A failed flex request is irrelevant: the normal result is shown regardless.
-            console.warn("Background flex connections request failed (ignored):", error);
-        }
-    }
-
-    /**
-     * Evaluates the flex result against the displayed normal result and, if the flex
-     * request surfaced genuinely new connections, merges them in automatically (no
-     * user interaction) and shows a brief, auto-dismissing confirmation toast. No-ops
-     * unless BOTH the normal request has finished with results AND the flex result
-     * for the same search has arrived.
-     */
-    private _maybeApplyFlexConnections(seq: number): void {
-        if (!this.enableFlexConnections) return;                 // feature disabled
-        if (seq !== this._flexSeq) return;                       // superseded search
-        if (this._flexNormalDoneSeq !== seq) return;             // normal not done yet (or failed)
-        if (!this._flexPending || this._flexPending.seq !== seq) return; // flex not in yet
-
-        // If the normal request produced nothing, the flex result is meaningless.
-        const hasNormalResults = this.state.toConnections.length > 0 || this.state.fromConnections.length > 0;
-        if (!hasNormalResults) return;
-
-        const newConnections = this._computeNewFlexConnections(this._flexPending);
-        const total = newConnections.newTo.length + newConnections.newFrom.length;
-        if (total === 0) return; // flex found nothing the user isn't already seeing
-
-        this._flexNewConnections = newConnections;
-        this._applyFlexConnections();   // merge + re-render automatically
-        this._showFlexPopup(total);     // inform the user; auto-dismisses
-    }
-
-    /**
-     * Builds a content-based identity for a connection, used to tell whether a flex
-     * connection is genuinely new versus already present in the normal result.
-     * `connection_id` is only unique within a single response list, so it cannot be
-     * used to compare across two separate requests.
-     */
-    private _connectionSignature(conn: Connection): string {
-        const legs = (conn.connection_elements ?? [])
-            .map(el => `${el.type}|${el.vehicle_name ?? ''}|${el.from_location ?? ''}|${el.to_location ?? ''}`)
-            .join('>>');
-
-        // "Anytime" connections have synthetic, client-computed timestamps that
-        // differ between requests, so identify them purely by their route structure.
-        if (conn.connection_anytime) {
-            return `anytime::${legs}`;
-        }
-        return `${conn.connection_start_timestamp}::${conn.connection_end_timestamp}::${conn.connection_transfers ?? ''}::${legs}`;
-    }
-
-    /**
-     * Returns the flex connections (to and from) that are not already present in the
-     * currently displayed connections, de-duplicated within the flex result itself.
-     */
-    private _computeNewFlexConnections(flex: PendingFlexResult): FlexNewConnections {
-        const existingTo = new Set(this.state.toConnections.map(c => this._connectionSignature(c)));
-        const existingFrom = new Set(this.state.fromConnections.map(c => this._connectionSignature(c)));
-
-        const pickNew = (candidates: Connection[], existing: Set<string>): Connection[] => {
-            const seen = new Set<string>();
-            const out: Connection[] = [];
-            for (const conn of candidates) {
-                const sig = this._connectionSignature(conn);
-                if (existing.has(sig) || seen.has(sig)) continue;
-                seen.add(sig);
-                out.push(conn);
-            }
-            return out;
-        };
-
-        return {
-            newTo: pickNew(flex.toConnections, existingTo),
-            newFrom: pickNew(flex.fromConnections, existingFrom),
-        };
-    }
-
-    /**
-     * Shows the non-blocking confirmation toast with a count-appropriate message and
-     * schedules it to fade out automatically after 3 seconds.
-     */
-    private _showFlexPopup(count: number): void {
-        const popup = this.elements.flexPopup;
-        const message = this.elements.flexPopupMessage;
-        if (!popup || !message) return;
-
-        message.textContent = count === 1
-            ? this.t('flexPopup.message')
-            : this.t('flexPopup.messagePlural', { count: String(count) });
-
-        if (this._flexPopupTimeout) clearTimeout(this._flexPopupTimeout);
-
-        // Reset state and force a reflow so the entrance, icon pop and countdown
-        // bar animations replay cleanly, even if the toast is still visible from
-        // a previous batch.
-        popup.classList.remove('flex-popup-hiding', 'flex-popup-visible');
-        popup.hidden = false;
-        void popup.offsetWidth;
-        popup.classList.add('flex-popup-visible');
-
-        this._flexPopupTimeout = setTimeout(() => {
-            const el = this.elements.flexPopup;
-            if (!el || el.hidden) return;
-            // Play the exit animation, then fully hide.
-            el.classList.remove('flex-popup-visible');
-            el.classList.add('flex-popup-hiding');
-            this._flexPopupTimeout = setTimeout(() => this._hideFlexPopup(), 240);
-        }, 3000);
-    }
-
-    /** Hides the flex toast immediately and cancels any pending auto-dismiss timer. */
-    private _hideFlexPopup(): void {
-        if (this._flexPopupTimeout) {
-            clearTimeout(this._flexPopupTimeout);
-            this._flexPopupTimeout = null;
-        }
-        const popup = this.elements.flexPopup;
-        if (!popup) return;
-        popup.hidden = true;
-        popup.classList.remove('flex-popup-hiding', 'flex-popup-visible');
-    }
-
-    /** Merges two connection lists and sorts ascending by departure timestamp. */
-    private _mergeAndSortConnections(existing: Connection[], additions: Connection[]): Connection[] {
-        const merged = [...existing, ...additions];
-        merged.sort((a, b) =>
-            DateTime.fromISO(a.connection_start_timestamp, { zone: 'utc' }).toMillis() -
-            DateTime.fromISO(b.connection_start_timestamp, { zone: 'utc' }).toMillis()
-        );
-        return merged;
-    }
-
-    /**
-     * Merges the new flex connections into the displayed lists in the correct
-     * chronological position, re-renders both sliders, and restores the user's
-     * current selection so all downstream logic (summaries, activity-time box,
-     * opposite-slider disabling, duration dots, scroll buttons) is re-applied.
-     * Invoked automatically once the background flex result arrives.
-     */
-    private _applyFlexConnections(): void {
-        const additions = this._flexNewConnections;
-        if (!additions) return;
-
-        const prevSelectedTo = this.state.selectedToConnection;
-        const prevSelectedFrom = this.state.selectedFromConnection;
-
-        // Record where the selected connection currently sits within each slider's
-        // viewport so we can keep it visually anchored after the re-render. Inserting
-        // earlier connections shifts the content right; compensating the scroll keeps
-        // the user's selection in place instead of scrolling the whole view around.
-        const topAnchor = this._captureSliderAnchor('topSlider');
-        const bottomAnchor = this._captureSliderAnchor('bottomSlider');
-
-        if (additions.newTo.length > 0) {
-            this._markConnectionElements(additions.newTo);
-            this.calculateAnytimeConnections(additions.newTo, 'to');
-            this.state.toConnections = this._mergeAndSortConnections(this.state.toConnections, additions.newTo);
-        }
-        if (additions.newFrom.length > 0) {
-            this._markConnectionElements(additions.newFrom);
-            this.calculateAnytimeConnections(additions.newFrom, 'from');
-            this.state.fromConnections = this._mergeAndSortConnections(this.state.fromConnections, additions.newFrom);
-        }
-
-        // Re-render both sliders against the merged lists.
-        this.renderTimeSlots('topSlider', this.state.toConnections, 'to');
-        this.renderTimeSlots('bottomSlider', this.state.fromConnections, 'from');
-        this.addSwipeBehavior('topSlider');
-        this.addSwipeBehavior('bottomSlider');
-
-        // Restore the user's current selection. The original connection objects
-        // survive the merge, so indexOf locates their new positions; re-selecting
-        // re-applies summaries, the activity-time box, opposite-slider disabling and dots.
-        if (this.state.toConnections.length > 0) {
-            let toIdx = prevSelectedTo ? this.state.toConnections.indexOf(prevSelectedTo) : -1;
-            if (toIdx === -1) toIdx = Math.min(Math.max(this.state.recommendedToIndex, 0), this.state.toConnections.length - 1);
-            this.state.recommendedToIndex = toIdx;
-            this.selectConnectionByIndex('to', toIdx);
-        }
-        if (this.state.fromConnections.length > 0) {
-            let fromIdx = prevSelectedFrom ? this.state.fromConnections.indexOf(prevSelectedFrom) : -1;
-            if (fromIdx === -1) fromIdx = Math.min(Math.max(this.state.recommendedFromIndex, 0), this.state.fromConnections.length - 1);
-            this.state.recommendedFromIndex = fromIdx;
-            this.selectConnectionByIndex('from', fromIdx);
-        }
-
-        this.updateScrollButtons();
-
-        // Keep the selected connections visually anchored (horizontal only — no
-        // vertical page scroll), so adding the extra connections doesn't jump the view.
-        requestAnimationFrame(() => {
-            this._restoreSliderAnchor('topSlider', topAnchor);
-            this._restoreSliderAnchor('bottomSlider', bottomAnchor);
-        });
-
-        // Consumed.
-        this._flexNewConnections = null;
-        this._flexPending = null;
-    }
-
-    /**
-     * Captures the on-screen horizontal offset of the active connection button within
-     * a slider's viewport (its `offsetLeft` minus the current `scrollLeft`), or null
-     * if there is no active button. Used to anchor the selection across a re-render.
-     */
-    private _captureSliderAnchor(sliderId: string): number | null {
-        const slider = this.elements[sliderId];
-        const active = slider?.querySelector('.active-time') as HTMLElement | null;
-        if (!slider || !active) return null;
-        return active.offsetLeft - slider.scrollLeft;
-    }
-
-    /**
-     * Restores a slider's scroll position so the (re-rendered) active button sits at
-     * the same on-screen offset captured by {@link _captureSliderAnchor}.
-     */
-    private _restoreSliderAnchor(sliderId: string, onScreenOffset: number | null): void {
-        if (onScreenOffset === null) return;
-        const slider = this.elements[sliderId];
-        const active = slider?.querySelector('.active-time') as HTMLElement | null;
-        if (!slider || !active) return;
-        slider.scrollLeft = Math.max(0, active.offsetLeft - onScreenOffset);
-    }
-
     updateScrollButtons(): void {
-        if (!this.enableConnectionScrolling) return;
         const show = (btn: HTMLButtonElement | null, visible: boolean) => {
             if (!btn) return;
             btn.hidden = !visible;
@@ -1696,7 +1476,6 @@ export default class DianaWidget {
     }
 
     async fetchScrollConnections(direction: 'to' | 'from', scrollType: 'before' | 'after'): Promise<void> {
-        if (!this.enableConnectionScrolling) return;
         const currentConnections = direction === 'to' ? this.state.toConnections : this.state.fromConnections;
         if (!currentConnections.length) return;
 
@@ -1710,9 +1489,9 @@ export default class DianaWidget {
         }
 
         try {
+            // `use_flex` follows the form-page toggle, so an earlier/later batch is drawn
+            // from the same pool of services as the results the user is already looking at.
             const params = this._buildActivityParams();
-            // Earlier/later batches always include FLEX (on-demand) services.
-            params.use_flex = 'true';
 
             const anchor = scrollType === 'before'
                 ? currentConnections[0].connection_start_timestamp
@@ -1840,18 +1619,30 @@ export default class DianaWidget {
         }
     }
 
+    /**
+     * The input/suggestion pair the autocomplete currently drives. The change-departure-point
+     * dialog reuses the whole autocomplete flow, so while it is open it owns these surfaces.
+     */
+    _originSearchTarget(): { input: HTMLInputElement | null; suggestions: HTMLElement | null } {
+        if (this._isShareOriginDialogOpen()) {
+            return {input: this.elements.shareOriginInput, suggestions: this.elements.shareOriginSuggestions};
+        }
+        return {input: this.elements.originInput, suggestions: this.elements.suggestionsContainer};
+    }
+
     renderSuggestions(): void {
-        if (!this.elements.suggestionsContainer || !this.elements.originInput) return;
-        this.elements.suggestionsContainer.innerHTML = this.state.suggestions
+        const {input, suggestions} = this._originSearchTarget();
+        if (!suggestions || !input) return;
+        suggestions.innerHTML = this.state.suggestions
             .map(feature => `
         <div class="suggestion-item" role="option" tabindex="0"
-             data-value="${feature.diana_properties.display_name.replace(/"/g, '"')}"
+             data-value="${feature.diana_properties.display_name.replace(/"/g, '&quot;')}"
              data-location_type="${feature.diana_properties.location_type}"
              data-lat="${feature.geometry.coordinates[1]}" data-lon="${feature.geometry.coordinates[0]}">
           ${feature.diana_properties.display_name}
         </div>`).join('');
-        this.elements.suggestionsContainer.style.display = this.state.suggestions.length > 0 ? 'block' : 'none';
-        this.elements.originInput.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
+        suggestions.style.display = this.state.suggestions.length > 0 ? 'block' : 'none';
+        input.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
     }
 
     /**
@@ -1956,6 +1747,9 @@ export default class DianaWidget {
             }
             delete (this.state as { preselectTimes?: typeof this.state.preselectTimes }).preselectTimes;
         }
+        // Refresh here too: the banner's wording depends on whether the recipient has
+        // changed the origin, which can happen between renders.
+        this._renderShareInfoBanner();
         this.slideToRecommendedConnections();
         this.updateScrollButtons();
     }
@@ -1965,24 +1759,19 @@ export default class DianaWidget {
         if (!slider) return;
         slider.innerHTML = '';
 
-        // Connection scrolling is intentionally disabled here so the earlier/later
-        // buttons stay out of the DOM. Set `enableConnectionScrolling = true` to
-        // restore the button block below without changing the rest of the logic.
-
-        if (this.enableConnectionScrolling) {
-            const earlierBtn = document.createElement('button');
-            earlierBtn.id = sliderId === 'topSlider' ? 'topEarlierBtn' : 'bottomEarlierBtn';
-            earlierBtn.className = 'slider-load-more-btn';
-            earlierBtn.setAttribute('hidden', '');
-            earlierBtn.setAttribute('aria-label', this.t('ariaLabels.loadEarlier'));
-            earlierBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-            earlierBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'before'));
-            slider.appendChild(earlierBtn);
-            if (sliderId === 'topSlider') {
-                this.elements.topEarlierBtn = earlierBtn;
-            } else {
-                this.elements.bottomEarlierBtn = earlierBtn;
-            }
+        // Create "load earlier" button as the first item in the slider
+        const earlierBtn = document.createElement('button');
+        earlierBtn.id = sliderId === 'topSlider' ? 'topEarlierBtn' : 'bottomEarlierBtn';
+        earlierBtn.className = 'slider-load-more-btn';
+        earlierBtn.setAttribute('hidden', '');
+        earlierBtn.setAttribute('aria-label', this.t('ariaLabels.loadEarlier'));
+        earlierBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M10 3L5 8L10 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        earlierBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'before'));
+        slider.appendChild(earlierBtn);
+        if (sliderId === 'topSlider') {
+            this.elements.topEarlierBtn = earlierBtn;
+        } else {
+            this.elements.bottomEarlierBtn = earlierBtn;
         }
 
         let lastDate: string | null = null; // To track the date of the last processed connection
@@ -2039,20 +1828,19 @@ export default class DianaWidget {
             slider.appendChild(btn);
         });
 
-        if (this.enableConnectionScrolling) {
-            const laterBtn = document.createElement('button');
-            laterBtn.id = sliderId === 'topSlider' ? 'topLaterBtn' : 'bottomLaterBtn';
-            laterBtn.className = 'slider-load-more-btn';
-            laterBtn.setAttribute('hidden', '');
-            laterBtn.setAttribute('aria-label', this.t('ariaLabels.loadLater'));
-            laterBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-            laterBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'after'));
-            slider.appendChild(laterBtn);
-            if (sliderId === 'topSlider') {
-                this.elements.topLaterBtn = laterBtn;
-            } else {
-                this.elements.bottomLaterBtn = laterBtn;
-            }
+        // Create "load later" button as the last item in the slider
+        const laterBtn = document.createElement('button');
+        laterBtn.id = sliderId === 'topSlider' ? 'topLaterBtn' : 'bottomLaterBtn';
+        laterBtn.className = 'slider-load-more-btn';
+        laterBtn.setAttribute('hidden', '');
+        laterBtn.setAttribute('aria-label', this.t('ariaLabels.loadLater'));
+        laterBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M6 3L11 8L6 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        laterBtn.addEventListener('click', () => this.fetchScrollConnections(type, 'after'));
+        slider.appendChild(laterBtn);
+        if (sliderId === 'topSlider') {
+            this.elements.topLaterBtn = laterBtn;
+        } else {
+            this.elements.bottomLaterBtn = laterBtn;
         }
     }
 
@@ -2206,6 +1994,10 @@ export default class DianaWidget {
         const slider = this.elements[sliderId];
 
         if (index < 0 || index >= connections.length || !slider) return;
+
+        // A different connection means a different journey, so any share link we already
+        // minted for the previous selection no longer describes what is on screen.
+        this._shareUrlCache = null;
 
         const selectedConnection = connections[index];
 
@@ -2601,7 +2393,6 @@ export default class DianaWidget {
 
 
     addSwipeBehavior(sliderId) {
-        if (!this.enableConnectionScrolling) return;
         const slider = this.elements[sliderId];
         if (!slider) return;
 
@@ -2676,10 +2467,6 @@ export default class DianaWidget {
 
     navigateToForm(): void {
         this.clearMessages();
-        // Leaving the results page invalidates any pending background flex result
-        // (bumping the sequence makes an in-flight request bail) and hides the popup.
-        this._flexSeq++;
-        this._resetFlexState();
         if (this.pageManager) {
             this.pageManager.navigateToForm();
         }
@@ -2692,46 +2479,88 @@ export default class DianaWidget {
         if (this.elements.collapsibleFromActivity) this.elements.collapsibleFromActivity.classList.remove('expanded');
     }
 
+    /**
+     * Builds the `POST /share/` request body from the current selection.
+     * `activity` must be present: bundled mode rejects a share without one (code 5004).
+     */
+    _buildSharePayload(overrides: Partial<Record<string, unknown>> = {}): Record<string, unknown> {
+        if (!this.elements.originInput) throw new Error("Origin input not available");
+        if (!this.state.selectedDate) throw new Error("Selected date not available");
+
+        const lat = this.elements.originInput.dataset.lat;
+        const lon = this.elements.originInput.dataset.lon;
+        const originValue = this.elements.originInput.value;
+
+        return {
+            origin: originValue,
+            // Always send the human-readable value. Sending null here (the old behaviour for
+            // address-typed origins) is what made restored origins come back as raw text.
+            origin_display_name: originValue,
+            origin_lat: lat ? parseFloat(lat) : null,
+            origin_lon: lon ? parseFloat(lon) : null,
+            date: formatDatetime(this.state.selectedDate, this.config.timezone), // yyyy-MM-dd
+            dateEnd: this.config.multiday && this.state.selectedEndDate ? formatDatetime(this.state.selectedEndDate, this.config.timezone) : null,
+            to_connection_start_time: this.state.selectedToConnection?.connection_start_timestamp ?? null,
+            to_connection_end_time: this.state.selectedToConnection?.connection_end_timestamp ?? null,
+            from_connection_start_time: this.state.selectedFromConnection?.connection_start_timestamp ?? null,
+            from_connection_end_time: this.state.selectedFromConnection?.connection_end_timestamp ?? null,
+            activity: this.state.activity ?? null,
+            payload: this.state.shareContext?.payload ?? null,
+            // The toggle position travels with the share, so a recipient searches the same
+            // pool of services the creator did. `state.useFlex` is seeded from an inbound
+            // share in _loadFromShareID(), so it is the single source of truth here.
+            use_flex: this.state.useFlex,
+            shareURLPrefix: this.config.shareURLPrefix,
+            ...overrides,
+        };
+    }
+
+    /** Identity of the current share-able selection; a change invalidates the cached share link. */
+    _shareSelectionKey(): string {
+        return [
+            this.state.selectedToConnection?.connection_id ?? '-',
+            this.state.selectedFromConnection?.connection_id ?? '-',
+            this.elements.originInput?.value ?? '',
+            this.state.selectedDate ? formatDatetime(this.state.selectedDate, this.config.timezone) : '',
+            String(this.state.useFlex),
+        ].join('|');
+    }
+
     async handleShare() {
         this.clearMessages();
 
         try {
             if (!this.elements.originInput) throw new Error("Origin input not available");
             if (!this.state.selectedDate) throw new Error("Selected date not available");
-            
-            const hasCoordinates = !!(this.elements.originInput.dataset.lat && this.elements.originInput.dataset.lon);
-            const dataToShare = {
-                origin: this.elements.originInput.value,
-                origin_display_name: hasCoordinates ? this.elements.originInput.value : null,
-                origin_lat: this.elements.originInput.dataset.lat || null,
-                origin_lon: this.elements.originInput.dataset.lon || null,
-                date: formatDatetime(this.state.selectedDate, this.config.timezone), // yyyy-MM-dd
-                dateEnd: this.config.multiday && this.state.selectedEndDate ? formatDatetime(this.state.selectedEndDate, this.config.timezone) : null,
-                to_connection_start_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_start_timestamp : null,
-                to_connection_end_time: this.state.selectedToConnection ? this.state.selectedToConnection.connection_end_timestamp : null,
-                from_connection_start_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_start_timestamp : null,
-                from_connection_end_time: this.state.selectedFromConnection ? this.state.selectedFromConnection.connection_end_timestamp : null,
-                activity: this.state.activity ?? null,
-                shareURLPrefix: this.config.shareURLPrefix,
-            };
 
-            const response = await this._fetchApi(`${this.config.apiBaseUrl}/share/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(dataToShare)
-            });
+            // A share without an activity object cannot be replayed via ?share_id= (5004).
+            // `state.activity` is set by every successful fetchActivityData(), and the share
+            // menu item is only enabled on the results page, so this is defensive.
+            if (!this.state.activity) {
+                this.showError(this.t('errors.shareNoActivityData'), 'results', true);
+                return;
+            }
 
-            const result = await response.json();
-            const shareId = result.shareId;
-            if (!shareId) {
-                throw new Error(this.t('errors.shareLinkCreateFailed'));
+            const selectionKey = this._shareSelectionKey();
+            let shareId: string | undefined;
+
+            // While a shared journey is open, its id is *the* link — passing it on must hand
+            // over the very same share, even after the recipient re-planned from their own
+            // departure point. A new id is only ever minted outside share mode, i.e. after
+            // _exitShareMode() or on a page that was never opened from a share link.
+            if (this.state.shareContext?.shareId) {
+                shareId = this.state.shareContext.shareId;
+            } else if (this._shareUrlCache?.key === selectionKey) {
+                shareId = this._shareUrlCache.shareId;
+            } else {
+                const result = await this.apiService!.createShare(this._buildSharePayload());
+                shareId = result?.shareId;
+                if (!shareId) throw new Error(this.t('errors.shareLinkCreateFailed'));
+                this._shareUrlCache = { key: selectionKey, shareId };
             }
 
             if (!this.config.shareURLPrefix) throw new Error("Share URL prefix not configured");
-            const url = new URL(this.config.shareURLPrefix);
-            url.searchParams.set('diana-share', shareId);
+            const url = new URL(buildShareUrl(this.config.shareURLPrefix, shareId), window.location.href);
 
             if (navigator.share) {
                 await navigator.share({
@@ -2770,107 +2599,421 @@ export default class DianaWidget {
         }
     }
 
-    async _loadFromShareID(shareId) {
-        await this.initDOM();
-        this.setLoadingState(true, true);
+    /** Removes ?diana-share= from the address bar without reloading. */
+    _stripShareParamFromUrl(): void {
         const currentUrl = new URL(window.location.href);
+        if (currentUrl.searchParams.has('diana-share')) {
+            currentUrl.searchParams.delete('diana-share');
+            window.history.replaceState(null, '', currentUrl.toString());
+        }
+    }
 
+    /**
+     * Abandons share mode and boots the widget normally with the host page's own config.
+     * Used whenever a share cannot be honoured (invalid id, expired, past date, bad activity).
+     */
+    async _abandonShareAndInitNormally(infoKey?: string): Promise<void> {
+        this.state.shareContext = null;
+        this.state.preselectTimes = null;
+        this.config.shareId = undefined;
+        this.config.readOnly = false;
+        this._stripShareParamFromUrl();
+        await this.initDOM();
+        if (infoKey) this.showInfo(this.t(infoKey));
+    }
+
+    /** Builds the in-memory share context from a `GET /share/<id>/` response. */
+    _buildShareContext(shareId: string, data: ShareDataResponse): ShareContext {
+        const lat = data.origin_lat != null ? parseFloat(String(data.origin_lat)) : null;
+        const lon = data.origin_lon != null ? parseFloat(String(data.origin_lon)) : null;
+        return {
+            shareId,
+            origin: data.origin_display_name || data.origin,
+            originDisplayName: data.origin_display_name ?? null,
+            originLat: lat != null && !isNaN(lat) ? lat : null,
+            originLon: lon != null && !isNaN(lon) ? lon : null,
+            date: data.date,
+            dateEnd: data.dateEnd ?? null,
+            toConnectionStartTime: data.to_connection_start_time ?? null,
+            toConnectionEndTime: data.to_connection_end_time ?? null,
+            fromConnectionStartTime: data.from_connection_start_time ?? null,
+            fromConnectionEndTime: data.from_connection_end_time ?? null,
+            activity: data.activity ?? null,
+            payload: data.payload ?? null,
+            useFlex: data.use_flex ?? false,
+        };
+    }
+
+    /**
+     * Writes a value (and its optional coordinates) into the origin input and syncs the
+     * clear / current-location icons. Passing an empty value clears the field.
+     */
+    _setOriginInputValue(value: string, lat: number | string | null, lon: number | string | null): void {
+        const input = this.elements.originInput;
+        if (!input) return;
+
+        input.value = value;
+        if (value && lat != null && lat !== '' && lon != null && lon !== '') {
+            input.setAttribute('data-lat', String(lat));
+            input.setAttribute('data-lon', String(lon));
+        } else {
+            input.removeAttribute('data-lat');
+            input.removeAttribute('data-lon');
+        }
+
+        if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
+            this.elements.clearInputBtn.style.display = value ? 'block' : 'none';
+            this.elements.currentLocationBtn.style.display = value ? 'none' : 'block';
+        }
+    }
+
+    /**
+     * Loads a shared journey.
+     *
+     * The share is fetched *before* initDOM() so the shared activity data can be written
+     * over the local config: the templates stringify the config exactly once, so an
+     * override applied after DOM init would have no effect. This is what makes a share
+     * link reproduce the creator's tour on any host page, regardless of how that page
+     * configured the widget.
+     */
+    async _loadFromShareID(shareId: string): Promise<void> {
+        if (!isValidShareId(shareId)) {
+            await this._abandonShareAndInitNormally();
+            return;
+        }
+
+        let data: ShareDataResponse;
         try {
-            const response = await this._fetchApi(`${this.config.apiBaseUrl}/share/${shareId}/`);
-
-            if (!response.ok) { // This check is redundant now but kept for safety
-                this.setLoadingState(false, true);
-                this.showInfo(this.t('errors.shareLinkInvalidExpired'));
-                currentUrl.searchParams.delete('diana-share');
-                window.history.replaceState(null, '', currentUrl.toString());
-                return;
-            }
-
-            const data = await response.json();
-
-            // Pre-fill origin input
-            if (this.elements.originInput) {
-                this.elements.originInput.value = data.origin;
-                if (data.origin_lat && data.origin_lon) {
-                    this.elements.originInput.setAttribute('data-lat', data.origin_lat.toString());
-                    this.elements.originInput.setAttribute('data-lon', data.origin_lon.toString());
-                }
-                if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
-                    if (data.origin) {
-                        this.elements.clearInputBtn.style.display = 'block';
-                        this.elements.currentLocationBtn.style.display = 'none';
-                    }
-                }
-            }
-
-            // Validate dates
-            const sharedDate = DateTime.fromISO(data.date).startOf('day');
-            const sharedDateEnd = data.dateEnd ? DateTime.fromISO(data.dateEnd).startOf('day') : null;
-            const today = DateTime.now().setZone(this.config.timezone).startOf('day');
-
-            if (!sharedDate.isValid || sharedDate < today) {
-                this.setLoadingState(false, true);
-                this.showInfo(this.t('infos.sharedDateInPast'));
-                currentUrl.searchParams.delete('diana-share');
-                window.history.replaceState(null, '', currentUrl.toString());
-                return;
-            }
-
-            if (this.config.multiday) {
-                if (sharedDateEnd && (!sharedDateEnd.isValid || sharedDateEnd < today)) {
-                    this.setLoadingState(false, true);
-                    this.showInfo(this.t('infos.sharedDateInPast'));
-                    currentUrl.searchParams.delete('diana-share');
-                    window.history.replaceState(null, '', currentUrl.toString());
-                    return;
-                }
-
-                // Check if activityDurationDaysFixed is set and if dates are valid
-                if (this.config.activityDurationDaysFixed && sharedDateEnd && sharedDateEnd.diff(sharedDate, 'days').days !== this.config.activityDurationDaysFixed - 1) {
-                    this.setLoadingState(false, true);
-                    this.showInfo(this.t('infos.sharedDateDurationMismatch'));
-                    currentUrl.searchParams.delete('diana-share');
-                    window.history.replaceState(null, '', currentUrl.toString());
-                    return;
-                }
-
-                this.state.selectedDate = sharedDate.toJSDate();
-                this.state.selectedEndDate = sharedDateEnd ? sharedDateEnd.toJSDate() : null;
-
-                if (this.elements.activityDateStart && this.state.selectedDate) {
-                    this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate, this.config.timezone);
-                }
-                if (this.elements.activityDateEnd && this.state.selectedEndDate) {
-                    this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate, this.config.timezone);
-                }
-
-                this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-                this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-            } else {
-                // Date is valid, proceed with auto-search
-                this.state.selectedDate = sharedDate.toJSDate();
-                this._updateSingleDayDateButtonStates();
-            }
-
-            this.state.preselectTimes = {
-                toStart: data.to_connection_start_time,
-                toEnd: data.to_connection_end_time,
-                fromStart: data.from_connection_start_time,
-                fromEnd: data.from_connection_end_time,
-            };
-
-            // Restore activity object if present (null for old share links)
-            this.state.activity = data.activity ?? null;
-
-            this.setLoadingState(false, true);
-            await this.handleSearch();
-
+            data = await this.apiService!.fetchShare(shareId);
         } catch (error) {
             if (error.isSessionExpired) return;
-            console.error("Failed to load data from shareID:", error);
-            this.setLoadingState(false, true);
+            // 5001 (unknown/expired) and any other retrieval failure: fall back to a
+            // normally-configured widget rather than leaving a dead one behind.
+            console.warn("Could not load shared journey, falling back to normal mode:", error);
+            await this._abandonShareAndInitNormally('errors.shareLinkInvalidExpired');
+            return;
+        }
+
+        const ctx = this._buildShareContext(shareId, data);
+
+        // Snapshot the config so a share carrying unusable activity data can be rolled back.
+        const configSnapshot = { ...this.config };
+
+        if (ctx.activity) {
+            applySharedActivityToConfig(ctx.activity, data, this.config);
+
+            const validation = validateConfig(this.config);
+            if (validation.errors.length > 0) {
+                console.warn("Shared activity data failed validation, using local config instead:", validation.errors);
+                this.config = configSnapshot;
+                ctx.activity = null;
+            } else {
+                this.config = validation.config;
+            }
+        }
+
+        // Dates always come from the share, even for legacy shares with no activity object.
+        const sharedDate = DateTime.fromISO(data.date, {zone: 'utc'}).startOf('day');
+        const sharedDateEnd = data.dateEnd ? DateTime.fromISO(data.dateEnd, {zone: 'utc'}).startOf('day') : null;
+        // "Today" in the activity's own timezone, expressed as UTC midnight so it is
+        // directly comparable to the calendar dates above.
+        const todayIso = DateTime.now().setZone(this.config.timezone).toISODate() as string;
+        const today = DateTime.fromISO(todayIso, {zone: 'utc'}).startOf('day');
+
+        if (!sharedDate.isValid || sharedDate < today) {
+            this.config = configSnapshot;
+            await this._abandonShareAndInitNormally('infos.sharedDateInPast');
+            return;
+        }
+        if (sharedDateEnd && (!sharedDateEnd.isValid || sharedDateEnd < sharedDate)) {
+            this.config = configSnapshot;
+            await this._abandonShareAndInitNormally('infos.sharedDateInPast');
+            return;
+        }
+
+        this.state.selectedDate = sharedDate.toJSDate();
+        this.state.selectedEndDate = this.config.multiday && sharedDateEnd ? sharedDateEnd.toJSDate() : null;
+
+        this.state.shareContext = ctx;
+        this.state.activity = ctx.activity;
+        this.state.preselectTimes = {
+            toStart: ctx.toConnectionStartTime,
+            toEnd: ctx.toConnectionEndTime,
+            fromStart: ctx.fromConnectionStartTime,
+            fromEnd: ctx.fromConnectionEndTime,
+        };
+
+        // The share's origin must win over any cached start location from a previous visit,
+        // and over a host-page origin override — which would otherwise both overwrite it in
+        // _initializeOriginInputWithOverridesAndCache() and (when the field is disabled)
+        // stop the recipient changing where they travel from.
+        this.config.cacheUserStartLocation = false;
+        this.config.overrideUserStartLocation = null;
+        this.config.overrideUserStartLocationType = null;
+        this.config.disableUserStartLocationField = false;
+
+        // Must be set before initDOM(): the form template stringifies the toggle's checked
+        // state once, so the recipient sees the same on-demand setting the creator shared.
+        this.state.useFlex = ctx.useFlex;
+
+        await this.initDOM();
+
+        this._setOriginInputValue(ctx.origin, ctx.originLat, ctx.originLon);
+
+        if (this.config.multiday) {
+            if (this.elements.activityDateStart && this.state.selectedDate) {
+                this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate, this.config.timezone);
+            }
+            if (this.elements.activityDateEnd && this.state.selectedEndDate) {
+                this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate, this.config.timezone);
+            }
+            this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
+            this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
+        } else {
+            this._updateSingleDayDateButtonStates();
+        }
+
+        this._renderShareInfoBanner();
+
+        // Search straight away: the recipient was sent a journey and must be able to see it
+        // before deciding anything. Changing the departure point is offered afterwards, from
+        // the share info banner (see _showShareOriginDialog).
+        await this._runSharedSearch();
+    }
+
+    /** Runs the search for a shared journey, reporting failures as a share-load error. */
+    async _runSharedSearch(): Promise<void> {
+        try {
+            await this.handleSearch();
+        } catch (error) {
+            if (error.isSessionExpired) return;
+            console.error("Failed to load connections for shared journey:", error);
             this._showFatalError(this.t('errors.shareLinkErrorTitle'), error.message, "info", true);
         }
+    }
+
+    _isShareOriginDialogOpen(): boolean {
+        return this.elements.shareOriginOverlay?.classList.contains('visible') === true;
+    }
+
+    /**
+     * Opens the "change departure point" dialog over the results, so the shared journey
+     * stays visible behind it. Never opened automatically — only from the banner button.
+     */
+    _showShareOriginDialog(): void {
+        const overlay = this.elements.shareOriginOverlay;
+        const ctx = this.state.shareContext;
+        if (!overlay || !ctx) return;
+
+        if (this.elements.shareOriginText) {
+            this.elements.shareOriginText.textContent = this.t('shareOriginDialog.hint', {origin: ctx.origin});
+        }
+        this._setShareOriginStatus(null);
+
+        // Start from what is currently in effect, pre-selected so typing replaces it.
+        if (this.elements.shareOriginInput) {
+            this.elements.shareOriginInput.value = this.elements.originInput?.value ?? '';
+        }
+        this.state.suggestions = [];
+
+        overlay.style.display = 'flex';
+        overlay.classList.add('visible');
+        // renderSuggestions() targets the dialog only once it is marked visible.
+        this.renderSuggestions();
+
+        this.elements.shareOriginInput?.focus();
+        this.elements.shareOriginInput?.select();
+    }
+
+    _hideShareOriginDialog(): void {
+        const overlay = this.elements.shareOriginOverlay;
+        if (!overlay) return;
+        this.state.suggestions = [];
+        this.renderSuggestions();
+        overlay.classList.remove('visible');
+        overlay.style.display = 'none';
+        this._setShareOriginStatus(null);
+    }
+
+    /**
+     * The dialog covers the pages, so it needs its own message line: showInfo/showError
+     * write into containers that live on the form and results pages behind it.
+     */
+    _setShareOriginStatus(message: string | null, isError = false): void {
+        const el = this.elements.shareOriginStatus;
+        if (!el) return;
+        el.textContent = message ?? '';
+        el.classList.toggle('is-error', !!message && isError);
+        el.style.display = message ? 'block' : 'none';
+    }
+
+    /** Binds the change-departure-point dialog. The share id and the tour never change here. */
+    _setupShareOriginDialogListeners(): void {
+        const overlay = this.elements.shareOriginOverlay;
+        if (!overlay) return;
+
+        const close = () => this._hideShareOriginDialog();
+
+        this.elements.shareOriginCloseBtn?.addEventListener('click', close);
+        this.elements.shareOriginCancelBtn?.addEventListener('click', close);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) close();
+        });
+        overlay.addEventListener('keydown', (e) => {
+            if ((e as KeyboardEvent).key === 'Escape') close();
+        });
+
+        if (this.elements.shareOriginInput) {
+            this.elements.shareOriginInput.addEventListener('input', (e) => {
+                this._setShareOriginStatus(null);
+                this.debouncedHandleAddressInput((e.target as HTMLInputElement).value.trim());
+            });
+            this.elements.shareOriginInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
+                else if (e.key === 'Enter') this.handleSuggestionEnter(e);
+            });
+        }
+
+        this.elements.shareOriginSuggestions?.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            if (target.classList.contains('suggestion-item')) {
+                this.handleSuggestionSelect(target.dataset.value, target.dataset.lat, target.dataset.lon);
+            }
+        });
+
+        this.elements.shareOriginLocationBtn?.addEventListener('click', () => {
+            void this.handleCurrentLocation();
+        });
+    }
+
+    /**
+     * Called when the user picks a new origin while viewing a shared journey.
+     *
+     * The share id deliberately stays the same — it is the link the recipient was given and
+     * the one they pass on. `GET /connections?share_id=…` treats the recipient's own
+     * `user_start_location` as an override while the backend keeps using the *stored*
+     * arrival time as the consumer-mode arrive-by target, so re-planning from somewhere
+     * else still lands on the creator's meeting time.
+     */
+    _handleOriginChangedInShareMode(): void {
+        if (!this.state.shareContext) return;
+
+        // The creator's connections are no longer the ones to preselect — the recipient
+        // departs from somewhere else, so let the API's consumer-mode recommendation win.
+        this.state.preselectTimes = null;
+        this._renderShareInfoBanner();
+
+        this.handleSearch().catch(error => {
+            if (error?.isSessionExpired) return;
+            console.error("Search after origin change failed:", error);
+        });
+    }
+
+    /**
+     * Leaves share mode and returns to free planning: the shared tour is kept, but the date
+     * becomes editable again and the next share mints a new id instead of passing on the
+     * link this widget was opened with.
+     */
+    async _exitShareMode(): Promise<void> {
+        if (!this.state.shareContext) return;
+
+        // initDOM() rebuilds the form from config alone, so carry the origin over by hand.
+        const origin = this.elements.originInput?.value ?? '';
+        const lat = this.elements.originInput?.dataset.lat ?? null;
+        const lon = this.elements.originInput?.dataset.lon ?? null;
+
+        this.state.shareContext = null;
+        this.state.preselectTimes = null;
+        this._shareUrlCache = null;
+        this.config.shareId = undefined;
+        this.config.readOnly = false;
+
+        // Unlock the date pickers. These were written by applySharedActivityToConfig();
+        // state.selectedDate is kept, so the shared date is still shown — just editable.
+        this.config.overrideActivityStartDate = null;
+        this.config.overrideActivityEndDate = null;
+
+        this._stripShareParamFromUrl();
+
+        await this.initDOM();
+
+        this._setOriginInputValue(origin, lat, lon);
+        this.pageManager?.navigateToForm();
+    }
+
+    /** Escapes API- and user-supplied text before it goes into an innerHTML string. */
+    _escapeHtml(value: string): string {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /**
+     * Renders the share info banner (results page only): which meeting point and time the
+     * creator planned, the departure point currently in effect, and a button to change it.
+     * Also drives the visibility of the "leave share mode" button.
+     */
+    _renderShareInfoBanner(): void {
+        const ctx = this.state.shareContext;
+        const banner = this.elements.shareInfoBanner;
+        if (this.elements.exitShareModeBtn) {
+            this.elements.exitShareModeBtn.style.display = ctx ? 'block' : 'none';
+        }
+        if (!banner) return;
+
+        if (!ctx) {
+            banner.style.display = 'none';
+            banner.innerHTML = '';
+            return;
+        }
+
+        const locale = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'}[this.config.language] || 'en-GB';
+        const parts: string[] = [];
+
+        if (ctx.toConnectionEndTime) {
+            const meetingLocation = this.config.activityStartLocationDisplayName || this.config.activityName;
+            const meetingTime = convertUTCToLocalTime(ctx.toConnectionEndTime, this.config.timezone);
+            const meetingDate = formatLegDateForDisplay(ctx.toConnectionEndTime, this.config.timezone, this.config.language, 'dd.MM.yyyy');
+            const originChanged = !!this.elements.originInput
+                && this.elements.originInput.value !== ctx.origin;
+
+            parts.push(this.t(
+                originChanged ? 'shareInfo.meetingPointChangedOrigin' : 'shareInfo.meetingPoint',
+                {
+                    location: this._escapeHtml(meetingLocation ?? ''),
+                    date: this._escapeHtml(meetingDate || DateTime.fromISO(ctx.date).setLocale(locale).toFormat('dd.MM.yyyy')),
+                    time: this._escapeHtml(meetingTime),
+                    origin: this._escapeHtml(this.elements.originInput?.value ?? ''),
+                }
+            ));
+        }
+
+        if (ctx.fromConnectionStartTime) {
+            parts.push(this.t('shareInfo.tourEnd', {
+                location: this._escapeHtml(this.config.activityEndLocationDisplayName || this.config.activityName || ''),
+                date: this._escapeHtml(formatLegDateForDisplay(ctx.fromConnectionStartTime, this.config.timezone, this.config.language, 'dd.MM.yyyy')),
+                time: this._escapeHtml(convertUTCToLocalTime(ctx.fromConnectionStartTime, this.config.timezone)),
+            }));
+        }
+
+        // The departure point currently in effect, with the affordance to change it. This is
+        // the only place a share recipient can re-plan from somewhere else, so it sits right
+        // under the journey it applies to rather than behind a blocking dialog on load.
+        const currentOrigin = this.elements.originInput?.value ?? '';
+        const originRow = `
+            <div class="share-origin-row">
+                <div class="share-origin-current">
+                    <span class="share-origin-current-label">${this._escapeHtml(this.t('origin'))}</span>
+                    <span class="share-origin-current-value">${this._escapeHtml(currentOrigin)}</span>
+                </div>
+                <button type="button" class="share-origin-change-btn" data-action="change-share-origin">${this._escapeHtml(this.t('shareOriginDialog.change'))}</button>
+            </div>`;
+
+        banner.innerHTML = parts.map(p => `<p>${p}</p>`).join('') + originRow;
+        banner.style.display = 'block';
     }
 
 
@@ -3081,6 +3224,8 @@ export default class DianaWidget {
 
     showError(message: string | null, page = 'form', preserveContent = false, rawError: Response | null = null) {
         this.state.error = message;
+        // The change-origin dialog overlays the pages, so it owns the message surface.
+        if (this._isShareOriginDialogOpen()) this._setShareOriginStatus(message, true);
         const errorContainer = page === 'form' ? this.elements.formErrorContainer : this.elements.resultsErrorContainer;
         const debugContainer = page === 'form' ? this.elements.formDebugContainer : this.elements.resultsDebugContainer;
 
@@ -3150,6 +3295,8 @@ export default class DianaWidget {
 
     showInfo(message) {
         this.state.info = message;
+        // The change-origin dialog overlays the pages, so it owns the message surface.
+        if (this._isShareOriginDialogOpen()) this._setShareOriginStatus(message);
         if (this.elements.infoContainer) {
             this.elements.infoContainer.textContent = message ?? '';
             this.elements.infoContainer.style.display = message ? "block" : "none";
