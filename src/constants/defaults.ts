@@ -35,6 +35,14 @@ export const ADDRESS_INPUT_DEBOUNCE_MS = 700;
 export const MIN_AUTOCOMPLETE_QUERY_LENGTH = 2;
 
 /**
+ * How far a connection may drift from the timestamp stored in a share and still count as
+ * the same connection. Realtime data moves a departure by a minute or two between sharing
+ * a journey and opening the link, so an exact comparison would report a perfectly good
+ * connection as missing. Mirrors the API's `SHARE_CONNECTION_MATCH_TOLERANCE_SECONDS`.
+ */
+export const SHARED_CONNECTION_MATCH_TOLERANCE_MS = 120_000;
+
+/**
  * Cache key prefix for user start location
  */
 export const CACHE_KEY_PREFIX = 'diana_user_start_location_';
@@ -159,7 +167,6 @@ export const DEFAULT_STATE: WidgetState = {
         warningDuration: false,
     },
     currentContentKey: null,
-    preselectTimes: null,
     activity: null,
     shareContext: null,
     useFlex: false,

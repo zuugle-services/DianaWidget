@@ -42,6 +42,8 @@ export function getResultsPageTemplateHTML(args) {
                     </svg>
                 </div>
 
+                <div id="shareInfoBanner" class="share-info-banner" style="display:none"></div>
+
                 <div id="activity-time" class="middle-box">${config.activityName}</div>
 
                 <div class="collapsible-container" id="collapsibleFromActivity">
@@ -57,9 +59,6 @@ export function getResultsPageTemplateHTML(args) {
                         <path d="m16.354 5.075-7.855 7.854L.646 5.075l.707-.707 7.145 7.146 7.148-7.147z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
-
-                <div id="shareInfoBanner" class="share-info-banner" style="display:none"></div>
-                <button type="button" id="exitShareModeBtn" class="share-exit-btn" style="display:none">${t('shareInfo.exitShareMode')}</button>
             </div>
 
             <!-- Persistent Footer -->

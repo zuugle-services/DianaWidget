@@ -193,8 +193,7 @@ const translations: Translations = {
         shareInfo: {
             meetingPoint: "Planned start of this tour is \"{location}\" on {date} at {time}.",
             meetingPointChangedOrigin: "Planned start of this tour is \"{location}\" on {date} at {time}. The connections shown here are the ones for your own departure point.",
-            tourEnd: "Planned end of this tour is \"{location}\" on {date} at {time}.",
-            exitShareMode: "Plan your own journey"
+            tourEnd: "Planned end of this tour is \"{location}\" on {date} at {time}."
         },
         shareOriginDialog: {
             title: "Change departure point",
@@ -394,8 +393,7 @@ const translations: Translations = {
         shareInfo: {
             meetingPoint: "Geplanter Start für diese Tour ist \"{location}\" am {date} um {time}.",
             meetingPointChangedOrigin: "Geplanter Start für diese Tour ist \"{location}\" am {date} um {time}. Die hier angezeigten Verbindungen gelten für deinen eigenen Abfahrtsort.",
-            tourEnd: "Geplantes Ende für diese Tour ist \"{location}\" am {date} um {time}.",
-            exitShareMode: "Eigene Planung starten"
+            tourEnd: "Geplantes Ende für diese Tour ist \"{location}\" am {date} um {time}."
         },
         shareOriginDialog: {
             title: "Abfahrtsort ändern",
@@ -595,8 +593,7 @@ const translations: Translations = {
         shareInfo: {
             meetingPoint: "El inicio planificado de este recorrido es \"{location}\" el {date} a las {time}.",
             meetingPointChangedOrigin: "El inicio planificado de este recorrido es \"{location}\" el {date} a las {time}. Las conexiones que se muestran aquí corresponden a su propio punto de partida.",
-            tourEnd: "El final planificado de este recorrido es \"{location}\" el {date} a las {time}.",
-            exitShareMode: "Planificar mi propio viaje"
+            tourEnd: "El final planificado de este recorrido es \"{location}\" el {date} a las {time}."
         },
         shareOriginDialog: {
             title: "Cambiar punto de partida",
@@ -796,8 +793,7 @@ const translations: Translations = {
         shareInfo: {
             meetingPoint: "Le départ prévu pour cette visite est « {location} » le {date} à {time}.",
             meetingPointChangedOrigin: "Le départ prévu pour cette visite est « {location} » le {date} à {time}. Les correspondances affichées ici correspondent à votre propre point de départ.",
-            tourEnd: "La fin prévue de cette visite est « {location} » le {date} à {time}.",
-            exitShareMode: "Planifier mon propre trajet"
+            tourEnd: "La fin prévue de cette visite est « {location} » le {date} à {time}."
         },
         shareOriginDialog: {
             title: "Changer le point de départ",
@@ -997,8 +993,7 @@ const translations: Translations = {
         shareInfo: {
             meetingPoint: "L'inizio previsto per questo tour è \"{location}\" il {date} alle {time}.",
             meetingPointChangedOrigin: "L'inizio previsto per questo tour è \"{location}\" il {date} alle {time}. I collegamenti mostrati qui valgono per il tuo punto di partenza.",
-            tourEnd: "La fine prevista per questo tour è \"{location}\" il {date} alle {time}.",
-            exitShareMode: "Pianifica il tuo viaggio"
+            tourEnd: "La fine prevista per questo tour è \"{location}\" il {date} alle {time}."
         },
         shareOriginDialog: {
             title: "Cambia punto di partenza",
@@ -1198,8 +1193,7 @@ const translations: Translations = {
         shareInfo: {
             meetingPoint: "จุดเริ่มต้นที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time}",
             meetingPointChangedOrigin: "จุดเริ่มต้นที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time} การเชื่อมต่อที่แสดงที่นี่ใช้สำหรับจุดออกเดินทางของคุณเอง",
-            tourEnd: "จุดสิ้นสุดที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time}",
-            exitShareMode: "วางแผนการเดินทางของคุณเอง"
+            tourEnd: "จุดสิ้นสุดที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time}"
         },
         shareOriginDialog: {
             title: "เปลี่ยนจุดออกเดินทาง",

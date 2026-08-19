@@ -20,20 +20,6 @@ export interface ActivityTimes {
 }
 
 /**
- * Preselect times for shared journeys
- */
-export interface PreselectTimes {
-    /** To connection start time */
-    toStart: string | null;
-    /** To connection end time */
-    toEnd: string | null;
-    /** From connection start time */
-    fromStart: string | null;
-    /** From connection end time */
-    fromEnd: string | null;
-}
-
-/**
  * Context for an active share session.
  * Populated when the widget is opened via a ?diana-share= URL parameter.
  */
@@ -114,9 +100,6 @@ export interface WidgetState {
     /** Current content page key */
     currentContentKey: string | null;
     
-    /** Preselect times for shared journeys */
-    preselectTimes: PreselectTimes | null;
-
     /** Activity object from last /connections response; null until first successful fetch */
     activity: ActivityObject | null;
 

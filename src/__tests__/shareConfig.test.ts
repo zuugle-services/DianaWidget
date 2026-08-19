@@ -1,11 +1,12 @@
 import {
     applySharedActivityToConfig,
     buildShareUrl,
+    findSharedConnectionIndex,
     isValidShareId
 } from '../core/shareConfig';
 import { convertLocalTimeToUTC } from '../datetimeUtils';
 import { DEFAULT_CONFIG } from '../constants/defaults';
-import type { ActivityObject, ShareDataResponse } from '../types/api';
+import type { ActivityObject, Connection, ShareDataResponse } from '../types/api';
 import type { WidgetConfig } from '../types/config';
 
 const UUID = 'a1b2c3d4-e5f6-7890-1234-567890abcdef';
@@ -244,6 +245,112 @@ describe('applySharedActivityToConfig', () => {
             const config = hostConfig({ language: 'DE' });
             applySharedActivityToConfig(viennaActivity(), share(), config);
             expect(config.language).toBe('DE');
+        });
+    });
+});
+
+describe('findSharedConnectionIndex', () => {
+    /** Minimal connection: only the two timestamps matter for matching. */
+    function conn(id: number, start: string, end: string): Connection {
+        return {
+            connection_id: id,
+            connection_start_timestamp: start,
+            connection_end_timestamp: end,
+        } as Connection;
+    }
+
+    // The reported case: a share created from Graz, opened by someone leaving from Wien.
+    // Nothing departs when the creator did, but one connection reaches the meeting point
+    // at exactly the shared arrival time.
+    const SHARED_TO_START = '2026-10-24T03:36:00Z';
+    const SHARED_TO_END = '2026-10-24T07:56:00Z';
+
+    describe('to-activity (anchored on the arrival at the meeting point)', () => {
+        it('finds the connection arriving at the shared meeting time after an origin change', () => {
+            const connections = [
+                conn(0, '2026-10-24T02:52:00Z', '2026-10-24T05:37:00Z'),
+                conn(1, '2026-10-24T04:52:00Z', '2026-10-24T06:56:00Z'),
+                conn(2, '2026-10-24T05:52:00Z', '2026-10-24T07:56:00Z'),
+            ];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(2);
+        });
+
+        it('still finds the creator\'s own connection when the origin is unchanged', () => {
+            const connections = [
+                conn(0, SHARED_TO_START, SHARED_TO_END),
+                conn(1, '2026-10-24T04:52:00Z', '2026-10-24T06:56:00Z'),
+            ];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(0);
+        });
+
+        it('breaks a tie on the arrival using the departure', () => {
+            const connections = [
+                conn(0, '2026-10-24T05:52:00Z', SHARED_TO_END),
+                conn(1, SHARED_TO_START, SHARED_TO_END),
+            ];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(1);
+        });
+
+        it('tolerates realtime drift within two minutes', () => {
+            const connections = [conn(0, '2026-10-24T05:52:00Z', '2026-10-24T07:57:00Z')];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(0);
+        });
+
+        it('rejects a connection arriving well outside the tolerance', () => {
+            const connections = [conn(0, '2026-10-24T05:52:00Z', '2026-10-24T08:10:00Z')];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(-1);
+        });
+
+        it('prefers the closest arrival when several are inside the tolerance', () => {
+            const connections = [
+                conn(0, '2026-10-24T05:50:00Z', '2026-10-24T07:55:00Z'),
+                conn(1, '2026-10-24T05:52:00Z', SHARED_TO_END),
+            ];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(1);
+        });
+
+        it('falls back to the departure for a share that stored no arrival', () => {
+            const connections = [
+                conn(0, '2026-10-24T02:52:00Z', '2026-10-24T05:37:00Z'),
+                conn(1, SHARED_TO_START, SHARED_TO_END),
+            ];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, null)).toBe(1);
+        });
+    });
+
+    describe('from-activity (anchored on the departure from the activity)', () => {
+        const SHARED_FROM_START = '2026-10-24T14:11:00Z';
+        const SHARED_FROM_END = '2026-10-24T18:19:00Z';
+
+        it('matches on the departure even when the journey home differs', () => {
+            const connections = [
+                conn(0, SHARED_FROM_START, '2026-10-24T16:08:00Z'),
+                conn(1, '2026-10-24T16:11:00Z', '2026-10-24T18:08:00Z'),
+            ];
+            expect(findSharedConnectionIndex(connections, 'from', SHARED_FROM_START, SHARED_FROM_END)).toBe(0);
+        });
+
+        it('does not match on the arrival home alone', () => {
+            const connections = [conn(0, '2026-10-24T09:00:00Z', SHARED_FROM_END)];
+            expect(findSharedConnectionIndex(connections, 'from', SHARED_FROM_START, SHARED_FROM_END)).toBe(-1);
+        });
+    });
+
+    describe('robustness', () => {
+        it('returns -1 when the share stored no timestamps at all', () => {
+            expect(findSharedConnectionIndex([conn(0, SHARED_TO_START, SHARED_TO_END)], 'to', null, null)).toBe(-1);
+        });
+
+        it('returns -1 for an empty connection list', () => {
+            expect(findSharedConnectionIndex([], 'to', SHARED_TO_START, SHARED_TO_END)).toBe(-1);
+        });
+
+        it('skips connections with unparseable timestamps', () => {
+            const connections = [
+                conn(0, 'not-a-timestamp', 'not-a-timestamp'),
+                conn(1, '2026-10-24T05:52:00Z', SHARED_TO_END),
+            ];
+            expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(1);
         });
     });
 });

@@ -7,7 +7,6 @@
 import type {
     WidgetState,
     ActivityTimes,
-    PreselectTimes,
     Connection,
     Suggestion
 } from '../types';
@@ -263,20 +262,6 @@ export class StateManager {
      */
     set currentContentKey(key: string | null) {
         this.setState({ currentContentKey: key });
-    }
-
-    /**
-     * Gets the preselect times
-     */
-    get preselectTimes(): PreselectTimes | null {
-        return this.state.preselectTimes;
-    }
-
-    /**
-     * Sets the preselect times
-     */
-    set preselectTimes(times: PreselectTimes | null) {
-        this.setState({ preselectTimes: times });
     }
 
     /**

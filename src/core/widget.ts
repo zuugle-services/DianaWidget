@@ -37,6 +37,7 @@ import { ConnectionRenderer } from './ConnectionRenderer';
 import {
     applySharedActivityToConfig,
     buildShareUrl,
+    findSharedConnectionIndex,
     isValidShareId,
     readShareIdFromUrl
 } from './shareConfig';
@@ -110,7 +111,6 @@ interface WidgetElements {
     bottomLaterBtn: HTMLButtonElement | null;
     useFlexToggle: HTMLInputElement | null;
     shareInfoBanner: HTMLElement | null;
-    exitShareModeBtn: HTMLButtonElement | null;
     shareOriginOverlay: HTMLElement | null;
     shareOriginText: HTMLElement | null;
     shareOriginInput: HTMLInputElement | null;
@@ -718,7 +718,6 @@ export default class DianaWidget {
 
             // Share mode UI
             shareInfoBanner: this.shadowRoot.querySelector("#shareInfoBanner"),
-            exitShareModeBtn: this.shadowRoot.querySelector("#exitShareModeBtn"),
             shareOriginOverlay: this.shadowRoot.querySelector("#shareOriginOverlay"),
             shareOriginText: this.shadowRoot.querySelector("#shareOriginText"),
             shareOriginInput: this.shadowRoot.querySelector("#shareOriginInput"),
@@ -826,12 +825,6 @@ export default class DianaWidget {
                 // A different set of connections is a different journey, so any share link
                 // we already minted no longer describes what the user would share.
                 this._shareUrlCache = null;
-            });
-        }
-
-        if (this.elements.exitShareModeBtn) {
-            this.elements.exitShareModeBtn.addEventListener('click', () => {
-                void this._exitShareMode();
             });
         }
 
@@ -1688,6 +1681,12 @@ export default class DianaWidget {
             this.state.recommendedFromIndex = 0;
         }
 
+        // In share mode the creator's connections outrank whatever the API recommended:
+        // the recipient opened this link to reach that meeting point at that time.
+        // Applied here, before the sliders are drawn, so the highlighted badge, the
+        // selection and the activity times all end up describing the same connection.
+        this._applySharedRecommendation();
+
         if (this.state.toConnections.length === 0) {
             if (this.elements.responseBox) this.elements.responseBox.innerHTML = this.t('errors.api.noToConnectionsFound');
             const toSummary = this.elements.collapsibleToActivity?.querySelector('.summary-content-wrapper');
@@ -1729,29 +1728,46 @@ export default class DianaWidget {
         this.addSwipeBehavior('topSlider');
         this.addSwipeBehavior('bottomSlider');
 
-        if (this.state.preselectTimes) {
-            const { toStart, toEnd, fromStart, fromEnd } = this.state.preselectTimes;
-
-            if (toStart && toEnd && this.state.toConnections.length > 0) {
-                const toIdx = this.state.toConnections.findIndex(c =>
-                    c.connection_start_timestamp === toStart && c.connection_end_timestamp === toEnd
-                );
-                if (toIdx !== -1) this.selectConnectionByIndex('to', toIdx);
-            }
-
-            if (fromStart && fromEnd && this.state.fromConnections.length > 0) {
-                const fromIdx = this.state.fromConnections.findIndex(c =>
-                    c.connection_start_timestamp === fromStart && c.connection_end_timestamp === fromEnd
-                );
-                if (fromIdx !== -1) this.selectConnectionByIndex('from', fromIdx);
-            }
-            delete (this.state as { preselectTimes?: typeof this.state.preselectTimes }).preselectTimes;
-        }
         // Refresh here too: the banner's wording depends on whether the recipient has
         // changed the origin, which can happen between renders.
         this._renderShareInfoBanner();
         this.slideToRecommendedConnections();
         this.updateScrollButtons();
+    }
+
+    /**
+     * Points the recommendation at the connections the share actually names.
+     *
+     * The API's own `recommended_*_activity_connection` ranks by score, which is the right
+     * answer for a normal search and the wrong one for a share: the recipient came here to
+     * be at the creator's meeting point at the creator's meeting time, even when a
+     * higher-scoring connection gets them there an hour early.
+     *
+     * Runs on every search rather than once on load. The case that needs it most is the
+     * recipient changing their departure point — that re-searches from a different origin,
+     * where the creator's own connection no longer exists and the score ranking is at its
+     * least useful.
+     *
+     * Leaves the API's recommendation alone when nothing matches, which is the honest
+     * fallback: no connection reaches the meeting point near the shared time.
+     */
+    _applySharedRecommendation(): void {
+        const ctx = this.state.shareContext;
+        if (!ctx) return;
+
+        if (this.state.toConnections.length > 0) {
+            const toIdx = findSharedConnectionIndex(
+                this.state.toConnections, 'to', ctx.toConnectionStartTime, ctx.toConnectionEndTime
+            );
+            if (toIdx !== -1) this.state.recommendedToIndex = toIdx;
+        }
+
+        if (this.state.fromConnections.length > 0) {
+            const fromIdx = findSharedConnectionIndex(
+                this.state.fromConnections, 'from', ctx.fromConnectionStartTime, ctx.fromConnectionEndTime
+            );
+            if (fromIdx !== -1) this.state.recommendedFromIndex = fromIdx;
+        }
     }
 
     renderTimeSlots(sliderId, connections, type) {
@@ -2065,6 +2081,12 @@ export default class DianaWidget {
         }
 
         const arrivalTimeToActivity = DateTime.fromISO(this.state.selectedToConnection.connection_end_timestamp, { zone: 'utc' }).setZone(this.config.timezone);
+        // Same pinning as updateActivityTimeBox(): in share mode the activity cannot start
+        // before the shared meeting time nor run past the shared tour end, so the dots must
+        // rate the duration the activity box actually shows — not the time spent travelling.
+        const sharedStart = this._sharedActivityBoundaryDateTime('start');
+        const sharedEnd = this._sharedActivityBoundaryDateTime('end');
+        const activityStartTime = sharedStart && sharedStart > arrivalTimeToActivity ? sharedStart : arrivalTimeToActivity;
 
         this.state.fromConnections.forEach((fromConn, index) => {
             const button = this.elements.bottomSlider?.querySelector(`button[data-index="${index}"]`);
@@ -2081,7 +2103,10 @@ export default class DianaWidget {
             // Skip if this 'from' connection is invalid based on the 'to' connection
             if (departureTimeFromActivity < arrivalTimeToActivity) return;
 
-            const durationResult = calculateDurationLocalWithDates(arrivalTimeToActivity, departureTimeFromActivity, (key) => this.t(key));
+            const activityEndTime = sharedEnd && sharedEnd < departureTimeFromActivity ? sharedEnd : departureTimeFromActivity;
+            if (activityEndTime < activityStartTime) return;
+
+            const durationResult = calculateDurationLocalWithDates(activityStartTime, activityEndTime, (key) => this.t(key));
             const actualMinutes = durationResult.totalMinutes;
 
             if (actualMinutes < recommendedDurationMinutes) {
@@ -2092,6 +2117,35 @@ export default class DianaWidget {
         });
     }
 
+
+    /**
+     * The activity boundary a share pins down, in the activity's timezone, or `null` outside
+     * share mode (or when the share carries no such timestamp).
+     *
+     * A share stores the creator's own journey: they arrive at the meeting point at
+     * `to_connection_end_time` and leave it at `from_connection_start_time`. Those two
+     * instants *are* the tour's start and end for everyone holding the link — the activity's
+     * generic earliest-start / latest-end window is what the creator picked within, not what
+     * the recipient should be shown.
+     *
+     * @param {'start'|'end'} boundary - Which end of the activity to resolve.
+     * @returns {DateTime|null} The instant in `config.timezone`, or null when not applicable.
+     */
+    _sharedActivityBoundaryDateTime(boundary: 'start' | 'end'): DateTime | null {
+        const ctx = this.state.shareContext;
+        if (!ctx) return null;
+
+        const timestamp = boundary === 'start' ? ctx.toConnectionEndTime : ctx.fromConnectionStartTime;
+        if (!timestamp) return null;
+
+        const dt = DateTime.fromISO(timestamp, {zone: 'utc'}).setZone(this.config.timezone);
+        return dt.isValid ? dt : null;
+    }
+
+    /** The same boundary as a local `HH:mm`, for the string-based activity time bookkeeping. */
+    _sharedActivityBoundaryLocal(boundary: 'start' | 'end'): string | null {
+        return this._sharedActivityBoundaryDateTime(boundary)?.toFormat('HH:mm') ?? null;
+    }
 
     updateActivityTimeBox(connection, type) {
         if (!connection) return;
@@ -2104,12 +2158,18 @@ export default class DianaWidget {
             const connectionStartTimeLocal = convertUTCToLocalTime(connection.connection_start_timestamp, this.config.timezone);
             const connectionEndTimeLocal = convertUTCToLocalTime(connection.connection_end_timestamp, this.config.timezone);
 
+            // In share mode the tour has a fixed meeting time and a fixed end: the creator's
+            // arrival and departure. Those replace the config's earliest-start / latest-end
+            // window, so a recipient travelling from elsewhere sees the *shared* start and end
+            // — and any gap between their own connection and it shows up as a waiting block.
             if (type === 'to') {
-                const earliestConfigStartLocal = convertConfigTimeToLocalTime(this.config.activityEarliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
-                this.state.activityTimes.start = getLaterTime(connectionEndTimeLocal, earliestConfigStartLocal, this.config.timezone);
+                const earliestStartLocal = this._sharedActivityBoundaryLocal('start')
+                    ?? convertConfigTimeToLocalTime(this.config.activityEarliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
+                this.state.activityTimes.start = getLaterTime(connectionEndTimeLocal, earliestStartLocal, this.config.timezone);
             } else { // type === 'from'
-                const latestConfigEndLocal = convertConfigTimeToLocalTime(this.config.activityLatestEndTime ?? '23:59', activityEndDate, this.config.timezone);
-                this.state.activityTimes.end = getEarlierTime(connectionStartTimeLocal, latestConfigEndLocal, this.config.timezone);
+                const latestEndLocal = this._sharedActivityBoundaryLocal('end')
+                    ?? convertConfigTimeToLocalTime(this.config.activityLatestEndTime ?? '23:59', activityEndDate, this.config.timezone);
+                this.state.activityTimes.end = getEarlierTime(connectionStartTimeLocal, latestEndLocal, this.config.timezone);
             }
 
             if (!this.config.multiday && this.state.activityTimes.start && this.state.activityTimes.end && activityStartDate) {
@@ -2546,8 +2606,8 @@ export default class DianaWidget {
 
             // While a shared journey is open, its id is *the* link — passing it on must hand
             // over the very same share, even after the recipient re-planned from their own
-            // departure point. A new id is only ever minted outside share mode, i.e. after
-            // _exitShareMode() or on a page that was never opened from a share link.
+            // departure point. A new id is only ever minted on a page that was never opened
+            // from a share link.
             if (this.state.shareContext?.shareId) {
                 shareId = this.state.shareContext.shareId;
             } else if (this._shareUrlCache?.key === selectionKey) {
@@ -2614,7 +2674,6 @@ export default class DianaWidget {
      */
     async _abandonShareAndInitNormally(infoKey?: string): Promise<void> {
         this.state.shareContext = null;
-        this.state.preselectTimes = null;
         this.config.shareId = undefined;
         this.config.readOnly = false;
         this._stripShareParamFromUrl();
@@ -2736,12 +2795,6 @@ export default class DianaWidget {
 
         this.state.shareContext = ctx;
         this.state.activity = ctx.activity;
-        this.state.preselectTimes = {
-            toStart: ctx.toConnectionStartTime,
-            toEnd: ctx.toConnectionEndTime,
-            fromStart: ctx.fromConnectionStartTime,
-            fromEnd: ctx.fromConnectionEndTime,
-        };
 
         // The share's origin must win over any cached start location from a previous visit,
         // and over a host-page origin override — which would otherwise both overwrite it in
@@ -2898,47 +2951,14 @@ export default class DianaWidget {
     _handleOriginChangedInShareMode(): void {
         if (!this.state.shareContext) return;
 
-        // The creator's connections are no longer the ones to preselect — the recipient
-        // departs from somewhere else, so let the API's consumer-mode recommendation win.
-        this.state.preselectTimes = null;
+        // The creator's meeting time still governs: renderConnectionResults() re-applies
+        // the shared selection against whatever the new origin returns.
         this._renderShareInfoBanner();
 
         this.handleSearch().catch(error => {
             if (error?.isSessionExpired) return;
             console.error("Search after origin change failed:", error);
         });
-    }
-
-    /**
-     * Leaves share mode and returns to free planning: the shared tour is kept, but the date
-     * becomes editable again and the next share mints a new id instead of passing on the
-     * link this widget was opened with.
-     */
-    async _exitShareMode(): Promise<void> {
-        if (!this.state.shareContext) return;
-
-        // initDOM() rebuilds the form from config alone, so carry the origin over by hand.
-        const origin = this.elements.originInput?.value ?? '';
-        const lat = this.elements.originInput?.dataset.lat ?? null;
-        const lon = this.elements.originInput?.dataset.lon ?? null;
-
-        this.state.shareContext = null;
-        this.state.preselectTimes = null;
-        this._shareUrlCache = null;
-        this.config.shareId = undefined;
-        this.config.readOnly = false;
-
-        // Unlock the date pickers. These were written by applySharedActivityToConfig();
-        // state.selectedDate is kept, so the shared date is still shown — just editable.
-        this.config.overrideActivityStartDate = null;
-        this.config.overrideActivityEndDate = null;
-
-        this._stripShareParamFromUrl();
-
-        await this.initDOM();
-
-        this._setOriginInputValue(origin, lat, lon);
-        this.pageManager?.navigateToForm();
     }
 
     /** Escapes API- and user-supplied text before it goes into an innerHTML string. */
@@ -2959,9 +2979,6 @@ export default class DianaWidget {
     _renderShareInfoBanner(): void {
         const ctx = this.state.shareContext;
         const banner = this.elements.shareInfoBanner;
-        if (this.elements.exitShareModeBtn) {
-            this.elements.exitShareModeBtn.style.display = ctx ? 'block' : 'none';
-        }
         if (!banner) return;
 
         if (!ctx) {

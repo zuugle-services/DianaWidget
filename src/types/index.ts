@@ -13,8 +13,7 @@ export type {
 // State types
 export type { 
     WidgetState, 
-    ActivityTimes, 
-    PreselectTimes 
+    ActivityTimes 
 } from './state';
 
 // API types

@@ -179,8 +179,6 @@ export interface ShareInfoTranslations {
     meetingPoint: string;
     meetingPointChangedOrigin: string;
     tourEnd: string;
-    /** Label of the button that leaves share mode and unlocks free planning */
-    exitShareMode: string;
 }
 
 /**

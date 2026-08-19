@@ -160,27 +160,6 @@
   background-color: var(--bg-apply-hover);
 }
 
-/* Leaves share mode and returns to free planning. Only shown while a share is open. */
-.share-exit-btn {
-  background-color: transparent;
-  border: 1px solid var(--primary-color);
-  border-radius: 4px;
-  box-sizing: border-box;
-  color: var(--primary-color);
-  cursor: pointer;
-  font-family: "DM Sans", sans-serif !important;
-  font-size: 13px;
-  margin: 0 20px 12px;
-  padding: 8px 16px;
-  transition: background-color 0.2s ease, color 0.2s ease;
-  width: calc(100% - 40px);
-}
-
-.share-exit-btn:hover {
-  background-color: var(--primary-color);
-  color: var(--bg-primary);
-}
-
 /* --- Shared departure point dialog --- */
 .share-origin-overlay {
   align-items: center;

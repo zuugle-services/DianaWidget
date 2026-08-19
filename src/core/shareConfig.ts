@@ -1,7 +1,15 @@
 import { DateTime } from 'luxon';
 import { convertUTCToLocalTime } from '../datetimeUtils';
-import type { ActivityObject, ShareDataResponse } from '../types/api';
+import { SHARED_CONNECTION_MATCH_TOLERANCE_MS } from '../constants/defaults';
+import type { ActivityObject, Connection, ShareDataResponse } from '../types/api';
 import type { WidgetConfig, LocationType } from '../types/config';
+
+/** Epoch millis for a UTC ISO timestamp, or null when absent or unparseable. */
+function toMillis(iso: string | null | undefined): number | null {
+    if (!iso) return null;
+    const dt = DateTime.fromISO(iso, {zone: 'utc'});
+    return dt.isValid ? dt.toMillis() : null;
+}
 
 /**
  * Returns true if id matches UUID format
@@ -137,4 +145,66 @@ export function buildShareUrl(prefix: string, shareId: string): string {
         const separator = prefix.includes('?') ? '&' : '?';
         return `${prefix}${separator}diana-share=${encodeURIComponent(shareId)}`;
     }
+}
+
+/**
+ * Locates the connection a share names, among the ones fetched for *this* recipient.
+ *
+ * Matched on the end that touches the activity — the arrival at the meeting point for the
+ * outbound leg, the departure from the activity for the return — because that is the only
+ * end a recipient departing from somewhere else still has in common with the creator.
+ * Requiring both ends to line up silently found nothing the moment the departure point
+ * changed, which is the entire point of opening someone else's share.
+ *
+ * Mirrors `_find_match()` in the API's `shared_connection_recovery.py`: same anchor choice,
+ * same tolerance for realtime drift between sharing and opening the link, and the same
+ * tiebreak on the other end so an unchanged departure point still prefers the creator's
+ * literal connection over another one arriving in the same minute.
+ *
+ * @param connections - Candidates for one direction, in slider order.
+ * @param type - Which leg is being matched.
+ * @param sharedStart - Departure stored in the share (UTC ISO), if any.
+ * @param sharedEnd - Arrival stored in the share (UTC ISO), if any.
+ * @returns Index into `connections`, or -1 when nothing matches.
+ */
+export function findSharedConnectionIndex(
+    connections: Connection[],
+    type: 'to' | 'from',
+    sharedStart: string | null | undefined,
+    sharedEnd: string | null | undefined
+): number {
+    let anchorTarget = toMillis(type === 'to' ? sharedEnd : sharedStart);
+    let otherTarget = toMillis(type === 'to' ? sharedStart : sharedEnd);
+    let anchorIsArrival = type === 'to';
+
+    // A legacy share may carry only the other end; matching on it beats not matching.
+    if (anchorTarget === null) {
+        if (otherTarget === null) return -1;
+        anchorTarget = otherTarget;
+        otherTarget = null;
+        anchorIsArrival = !anchorIsArrival;
+    }
+
+    let bestIndex = -1;
+    let bestAnchorDelta = Number.POSITIVE_INFINITY;
+    let bestOtherDelta = Number.POSITIVE_INFINITY;
+
+    connections.forEach((connection, index) => {
+        const anchor = toMillis(anchorIsArrival ? connection.connection_end_timestamp : connection.connection_start_timestamp);
+        if (anchor === null) return;
+
+        const anchorDelta = Math.abs(anchor - (anchorTarget as number));
+        if (anchorDelta > SHARED_CONNECTION_MATCH_TOLERANCE_MS) return;
+
+        const other = toMillis(anchorIsArrival ? connection.connection_start_timestamp : connection.connection_end_timestamp);
+        const otherDelta = otherTarget !== null && other !== null ? Math.abs(other - otherTarget) : 0;
+
+        if (anchorDelta < bestAnchorDelta || (anchorDelta === bestAnchorDelta && otherDelta < bestOtherDelta)) {
+            bestIndex = index;
+            bestAnchorDelta = anchorDelta;
+            bestOtherDelta = otherDelta;
+        }
+    });
+
+    return bestIndex;
 }
