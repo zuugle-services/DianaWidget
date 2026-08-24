@@ -1,5 +1,6 @@
 import { getWidgetHeaderHTML } from './partials/_widgetHeader';
 import { getMenuDropdownHTML } from './partials/_menuDropdown';
+import { getResultsSkeletonHTML } from './partials/_resultsSkeleton';
 
 /**
  * Generates the HTML for the results page.
@@ -16,6 +17,7 @@ export function getResultsPageTemplateHTML(args) {
       <div id="resultsPage" class="modal-page">
         <div class="modal-body-result">
             <div id="resultsErrorContainer" class="error-message" style="display: none" role="alert"></div>
+            <div id="resultsInfoContainer" class="info-message" style="display: none" role="status"></div>
             <div id="resultsDebugContainer" class="debug-container" style="display: none;"></div>
 
             <!-- Persistent Header -->
@@ -25,6 +27,8 @@ export function getResultsPageTemplateHTML(args) {
                     <div class="slider" id="topSlider" role="group" aria-label="${t('ariaLabels.topSlider')}"></div>
                 </div>
             </div>
+
+            ${getResultsSkeletonHTML({t})}
 
             <!-- Container for Toggled Content -->
             <div class="results-content-area">

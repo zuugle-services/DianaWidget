@@ -99,6 +99,8 @@ export interface ErrorTranslations {
     shareLinkInvalidExpired: string;
     shareLinkCreateFailed: string;
     shareLinkErrorTitle: string;
+    shareOriginSearchFailed: string;
+    shareOriginNoConnections: string;
     shareNoActivityData: string;
     widgetLoadErrorTitle: string;
     api: ApiErrorTranslations;

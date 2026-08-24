@@ -973,3 +973,117 @@ div#eleCont {
 .alert-description a:hover {
   text-decoration: underline;
 }
+
+/* --- Results Loading Skeleton --- */
+/* Stands in for the results page while connections load. Toggled by `is-loading` on
+   #resultsPage, which hides the real sliders and content so the skeleton takes their
+   place in normal flow — the widget header above it stays real and visible. */
+#resultsPage.is-loading .top-slider-wrapper,
+#resultsPage.is-loading .results-content-area,
+#resultsPage.is-loading .slider-wrap-fixed {
+  display: none;
+}
+
+#resultsPage.is-loading #resultsSkeleton {
+  display: flex;
+}
+
+.results-skeleton {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.skeleton-sr-only {
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.skeleton-block {
+  animation: skeleton-shimmer 1.4s ease infinite;
+  background: linear-gradient(
+      90deg,
+      var(--bg-tertiary) 25%,
+      var(--bg-hover) 37%,
+      var(--bg-tertiary) 63%
+  );
+  background-size: 400% 100%;
+  border-radius: 6px;
+  display: block;
+}
+
+.skeleton-chip-row {
+  display: flex;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.skeleton-chip {
+  border-radius: 8px;
+  flex: 0 0 auto;
+  height: 40px;
+  width: 62px;
+}
+
+.skeleton-card {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.skeleton-line {
+  height: 14px;
+}
+
+.skeleton-line-lg {
+  width: 80%;
+}
+
+.skeleton-line-sm {
+  width: 55%;
+}
+
+.skeleton-line-md {
+  width: 70%;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block {
+    animation: none;
+  }
+}
+
+/* Stand-in for the widget header while a shared journey is still being fetched and the
+   real header (which needs the activity name from the share) cannot be rendered yet. */
+.skeleton-boot-header {
+  align-items: center;
+  box-sizing: border-box;
+  display: flex;
+  min-height: 56px;
+  padding: 16px;
+  width: 100%;
+}

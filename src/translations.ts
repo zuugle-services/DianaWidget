@@ -98,6 +98,8 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Share link is invalid or expired.",
             shareLinkCreateFailed: "Failed to create share link.",
             shareLinkErrorTitle: "Couldn't Load This Shared Journey.",
+            shareOriginSearchFailed: "No connections could be loaded from this departure point. The previous journey is still shown.",
+            shareOriginNoConnections: "No suitable connection was found from this departure point. The previous journey is still shown.",
             shareNoActivityData: "No activity data available to create a share link.",
             widgetLoadErrorTitle: "Widget could not be loaded.",
             api: {
@@ -298,6 +300,8 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Der geteilte Link ist ungültig oder abgelaufen.",
             shareLinkCreateFailed: "Der Teilen-Link konnte nicht erstellt werden.",
             shareLinkErrorTitle: "Laden der geteilten Daten fehlgeschlagen",
+            shareOriginSearchFailed: "Von diesem Abfahrtsort konnte keine Verbindung geladen werden. Die vorherige Verbindung wird weiterhin angezeigt.",
+            shareOriginNoConnections: "Von diesem Abfahrtsort wurde keine passende Verbindung gefunden. Die vorherige Verbindung wird weiterhin angezeigt.",
             shareNoActivityData: "Keine Aktivitätsdaten vorhanden, um einen geteilten Link zu erstellen.",
             widgetLoadErrorTitle: "Das Widget konnte nicht geladen werden.",
             api: {
@@ -498,6 +502,8 @@ const translations: Translations = {
             shareLinkInvalidExpired: "El enlace compartido no es válido o ha caducado.",
             shareLinkCreateFailed: "No se pudo crear el enlace para compartir.",
             shareLinkErrorTitle: "No se pudo cargar este viaje compartido.",
+            shareOriginSearchFailed: "No se pudieron cargar conexiones desde este punto de partida. Se sigue mostrando el trayecto anterior.",
+            shareOriginNoConnections: "No se encontró ninguna conexión adecuada desde este punto de partida. Se sigue mostrando el trayecto anterior.",
             shareNoActivityData: "No hay datos de actividad disponibles para crear un enlace compartido.",
             widgetLoadErrorTitle: "No se pudo cargar el widget.",
             api: {
@@ -698,6 +704,8 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Le lien partagé est invalide ou a expiré.",
             shareLinkCreateFailed: "Échec de la création du lien de partage.",
             shareLinkErrorTitle: "Échec du chargement de ce trajet partagé",
+            shareOriginSearchFailed: "Aucune correspondance n’a pu être chargée depuis ce point de départ. Le trajet précédent reste affiché.",
+            shareOriginNoConnections: "Aucune correspondance appropriée n’a été trouvée depuis ce point de départ. Le trajet précédent reste affiché.",
             shareNoActivityData: "Aucune donnée d'activité disponible pour créer un lien partagé.",
             widgetLoadErrorTitle: "Le widget n'a pas pu être chargé.",
             api: {
@@ -898,6 +906,8 @@ const translations: Translations = {
             shareLinkInvalidExpired: "Il link condiviso non è valido o è scaduto.",
             shareLinkCreateFailed: "Impossibile creare il link di condivisione.",
             shareLinkErrorTitle: "Caricamento dei dati condivisi fallito",
+            shareOriginSearchFailed: "Non è stato possibile caricare collegamenti da questo punto di partenza. Viene ancora mostrato il viaggio precedente.",
+            shareOriginNoConnections: "Nessun collegamento adatto trovato da questo punto di partenza. Viene ancora mostrato il viaggio precedente.",
             shareNoActivityData: "Nessun dato sull'attività disponibile per creare un link di condivisione.",
             widgetLoadErrorTitle: "Impossibile caricare il widget.",
             api: {
@@ -1098,6 +1108,8 @@ const translations: Translations = {
             shareLinkInvalidExpired: "ลิงก์ที่แชร์ไม่ถูกต้องหรือหมดอายุแล้ว",
             shareLinkCreateFailed: "ไม่สามารถสร้างลิงก์สำหรับแชร์ได้",
             shareLinkErrorTitle: "โหลดการเดินทางที่แชร์นี้ไม่สำเร็จ",
+            shareOriginSearchFailed: "ไม่สามารถโหลดการเชื่อมต่อจากจุดออกเดินทางนี้ได้ ระบบยังคงแสดงการเดินทางก่อนหน้านี้",
+            shareOriginNoConnections: "ไม่พบการเชื่อมต่อที่เหมาะสมจากจุดออกเดินทางนี้ ระบบยังคงแสดงการเดินทางก่อนหน้านี้",
             shareNoActivityData: "ไม่มีข้อมูลกิจกรรมสำหรับสร้างลิงก์แชร์",
             widgetLoadErrorTitle: "ไม่สามารถโหลดวิดเจ็ตได้",
             api: {

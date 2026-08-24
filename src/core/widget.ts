@@ -24,6 +24,8 @@ import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
 
 import {helpContent} from '../templates/helpContent';
 import {getShareOriginDialogHTML} from '../templates/partials/_shareOriginDialog';
+import {getResultsSkeletonHTML} from '../templates/partials/_resultsSkeleton';
+import {getLocationTypeIconHTML} from '../templates/partials/_locationIcons';
 
 import {
     DEFAULT_CONFIG,
@@ -54,6 +56,32 @@ import type {
 import type { ShareDataResponse } from '../types/api';
 import type { ShareContext } from '../types/state';
 
+/**
+ * The departure point as it is held in the origin input: the text the user sees plus the
+ * coordinates behind it, if the value came from a geocoded pick rather than free text.
+ */
+interface OriginValue {
+    value: string;
+    lat: string | null;
+    lon: string | null;
+}
+
+/**
+ * Everything `renderConnectionResults()` draws from. Captured before a re-plan so the
+ * journey on screen can be put back when the re-plan turns out to be unusable.
+ */
+interface ConnectionSnapshot {
+    toConnections: Connection[];
+    fromConnections: Connection[];
+    recommendedToIndex: number;
+    recommendedFromIndex: number;
+    activity: WidgetState['activity'];
+    hasMoreBeforeToActivity: boolean | null;
+    hasMoreAfterToActivity: boolean | null;
+    hasMoreBeforeFromActivity: boolean | null;
+    hasMoreAfterFromActivity: boolean | null;
+}
+
 /** 
  * Interface for cached DOM elements
  */
@@ -70,6 +98,7 @@ interface WidgetElements {
     formErrorContainer: HTMLElement | null;
     formDebugContainer: HTMLElement | null;
     resultsErrorContainer: HTMLElement | null;
+    resultsInfoContainer: HTMLElement | null;
     resultsDebugContainer: HTMLElement | null;
     infoContainer: HTMLElement | null;
     collapsibleToActivity: HTMLElement | null;
@@ -149,6 +178,18 @@ export default class DianaWidget {
      */
     private _shareUrlCache: { key: string; shareId: string } | null;
 
+    /**
+     * The origin the currently displayed journey was actually searched with. Used to roll
+     * the input and the share banner back when a re-plan from a new departure point fails.
+     */
+    private _lastSearchedOrigin: OriginValue | null;
+
+    /**
+     * Incremented for every re-plan in share mode. A search whose token is stale lost the
+     * race to a newer one and must not paint or roll anything back.
+     */
+    private _originSearchToken: number;
+
     constructor(config: PartialWidgetConfig = {}, containerId: string = "dianaWidgetContainer") {
         // Initialize default config using imported constant
         this.defaultConfig = { ...DEFAULT_CONFIG };
@@ -171,6 +212,8 @@ export default class DianaWidget {
         this.apiService = null;
         this.connectionRenderer = null;
         this._shareUrlCache = null;
+        this._lastSearchedOrigin = null;
+        this._originSearchToken = 0;
         this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const validationResult = validateConfig(this.config);
@@ -291,6 +334,7 @@ export default class DianaWidget {
                 // A share ID is present: fetch the share and overwrite the local config with
                 // its activity data *before* the DOM is built, because the templates bake the
                 // config into HTML strings exactly once.
+                this._showBootSkeleton();
                 this._loadFromShareID(shareId).catch(error => {
                     console.error("Error during shared journey initialization:", error);
                     this._showFatalError(this.t('errors.shareLinkErrorTitle'), error.message, "info", true);
@@ -667,6 +711,7 @@ export default class DianaWidget {
             formErrorContainer: this.shadowRoot.querySelector("#formErrorContainer"),
             formDebugContainer: this.shadowRoot.querySelector("#formDebugContainer"),
             resultsErrorContainer: this.shadowRoot.querySelector("#resultsErrorContainer"),
+            resultsInfoContainer: this.shadowRoot.querySelector("#resultsInfoContainer"),
             resultsDebugContainer: this.shadowRoot.querySelector("#resultsDebugContainer"),
             infoContainer: this.shadowRoot.querySelector("#infoContainer"),
 
@@ -792,7 +837,10 @@ export default class DianaWidget {
             if (this.elements.suggestionsContainer) {
                 this.elements.suggestionsContainer.addEventListener('click', (e) => {
                     const target = e.target as HTMLElement;
-                    if (target.classList.contains('suggestion-item')) this.handleSuggestionSelect(target.dataset.value, target.dataset.lat, target.dataset.lon);
+                    // closest(): the row now wraps an icon and a text span, so the click
+                    // target is usually a child rather than .suggestion-item itself.
+                    const item = target.closest('.suggestion-item') as HTMLElement | null;
+                    if (item) this.handleSuggestionSelect(item.dataset.value, item.dataset.lat, item.dataset.lon);
                 });
             }
 
@@ -1088,7 +1136,7 @@ export default class DianaWidget {
 
                 if (fromDialog) this._hideShareOriginDialog();
 
-                this._handleOriginChangedInShareMode();
+                void this._handleOriginChangedInShareMode();
             } else {
                 throw new Error(this.t('errors.reverseGeocodeNoResults'));
             }
@@ -1156,7 +1204,7 @@ export default class DianaWidget {
         }
 
         // In share mode a new origin re-plans the journey from here, under the same share id.
-        this._handleOriginChangedInShareMode();
+        void this._handleOriginChangedInShareMode();
     }
 
     handleSuggestionNavigation(e) {
@@ -1297,7 +1345,9 @@ export default class DianaWidget {
                 // Use the error message directly if it's not one of the known API error patterns
                 errorMessage = error.message || this.t('errors.api.unknown');
             }
-            this.showError(errorMessage, 'form', false, errorResponse);
+            // preserveContent: a failed re-plan in share mode must not wipe the journey
+            // that is still on screen - _handleOriginChangedInShareMode() restores it.
+            this.showError(errorMessage, this._activeMessagePage(), true, errorResponse);
         } finally {
             this.setLoadingState(false);
         }
@@ -1627,13 +1677,18 @@ export default class DianaWidget {
         const {input, suggestions} = this._originSearchTarget();
         if (!suggestions || !input) return;
         suggestions.innerHTML = this.state.suggestions
-            .map(feature => `
+            .map(feature => {
+                const props = feature.diana_properties;
+                const displayName = this._escapeHtml(props.display_name ?? '');
+                return `
         <div class="suggestion-item" role="option" tabindex="0"
-             data-value="${feature.diana_properties.display_name.replace(/"/g, '&quot;')}"
-             data-location_type="${feature.diana_properties.location_type}"
+             data-value="${displayName}"
+             data-location_type="${this._escapeHtml(props.location_type ?? '')}"
              data-lat="${feature.geometry.coordinates[1]}" data-lon="${feature.geometry.coordinates[0]}">
-          ${feature.diana_properties.display_name}
-        </div>`).join('');
+          <span class="suggestion-icon" aria-hidden="true">${getLocationTypeIconHTML(props.location_type)}</span>
+          <span class="suggestion-text">${displayName}</span>
+        </div>`;
+            }).join('');
         suggestions.style.display = this.state.suggestions.length > 0 ? 'block' : 'none';
         input.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
     }
@@ -1662,6 +1717,13 @@ export default class DianaWidget {
 
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
+            if (this.state.shareContext) {
+                // Navigating away would drop the recipient on a form they were never meant
+                // to see and clear the shared journey outright. Report it here instead and
+                // let _handleOriginChangedInShareMode() put the previous journey back.
+                this.showError(this.t('errors.api.noConnectionsFound'), 'results', true);
+                return;
+            }
             this.showError(this.t('errors.api.noConnectionsFound'), 'results');
             this.navigateToForm();
             this.showError(this.t('errors.api.noConnectionsFound'), 'form');
@@ -2704,6 +2766,49 @@ export default class DianaWidget {
     }
 
     /**
+     * Reads back what `_setOriginInputValue()` wrote. `#originInput` is the canonical
+     * departure point - both `_buildActivityParams()` and the share banner read it - so
+     * this is the whole state that has to be restored when a re-plan fails.
+     */
+    _readOriginInputValue(): OriginValue | null {
+        const input = this.elements.originInput;
+        if (!input) return null;
+        return {
+            value: input.value,
+            lat: input.getAttribute('data-lat'),
+            lon: input.getAttribute('data-lon'),
+        };
+    }
+
+    /** Captures the connections currently on screen so a failed re-plan can put them back. */
+    _snapshotConnectionState(): ConnectionSnapshot {
+        return {
+            toConnections: [...this.state.toConnections],
+            fromConnections: [...this.state.fromConnections],
+            recommendedToIndex: this.state.recommendedToIndex,
+            recommendedFromIndex: this.state.recommendedFromIndex,
+            activity: this.state.activity,
+            hasMoreBeforeToActivity: this.state.hasMoreBeforeToActivity,
+            hasMoreAfterToActivity: this.state.hasMoreAfterToActivity,
+            hasMoreBeforeFromActivity: this.state.hasMoreBeforeFromActivity,
+            hasMoreAfterFromActivity: this.state.hasMoreAfterFromActivity,
+        };
+    }
+
+    /** Counterpart of `_snapshotConnectionState()`. The caller re-renders afterwards. */
+    _restoreConnectionState(snapshot: ConnectionSnapshot): void {
+        this.state.toConnections = snapshot.toConnections;
+        this.state.fromConnections = snapshot.fromConnections;
+        this.state.recommendedToIndex = snapshot.recommendedToIndex;
+        this.state.recommendedFromIndex = snapshot.recommendedFromIndex;
+        this.state.activity = snapshot.activity;
+        this.state.hasMoreBeforeToActivity = snapshot.hasMoreBeforeToActivity;
+        this.state.hasMoreAfterToActivity = snapshot.hasMoreAfterToActivity;
+        this.state.hasMoreBeforeFromActivity = snapshot.hasMoreBeforeFromActivity;
+        this.state.hasMoreAfterFromActivity = snapshot.hasMoreAfterFromActivity;
+    }
+
+    /**
      * Writes a value (and its optional coordinates) into the origin input and syncs the
      * clear / current-location icons. Passing an empty value clears the field.
      */
@@ -2811,6 +2916,12 @@ export default class DianaWidget {
 
         await this.initDOM();
 
+        // A share recipient opened a link to one specific journey - the search form is
+        // never theirs to see. Go to the results page immediately and let the skeleton
+        // stand in for the connections until they arrive.
+        this.navigateToResults();
+        this._setResultsSkeletonVisible(true);
+
         this._setOriginInputValue(ctx.origin, ctx.originLat, ctx.originLon);
 
         if (this.config.multiday) {
@@ -2831,7 +2942,55 @@ export default class DianaWidget {
         // Search straight away: the recipient was sent a journey and must be able to see it
         // before deciding anything. Changing the departure point is offered afterwards, from
         // the share info banner (see _showShareOriginDialog).
-        await this._runSharedSearch();
+        try {
+            await this._runSharedSearch();
+        } finally {
+            this._setResultsSkeletonVisible(false);
+        }
+
+        // The baseline a failed "change departure point" rolls back to.
+        this._lastSearchedOrigin = this._readOriginInputValue();
+    }
+
+    /**
+     * Paints a styled skeleton before any of the real DOM exists.
+     *
+     * Opening a share link starts with `GET /share/<id>/`, which happens before initDOM()
+     * because the shared activity data has to be written over the config first. Without
+     * this the host page shows an empty box for that whole roundtrip. initDOM(),
+     * _showFatalError() and _abandonShareAndInitNormally() all clear the shadow root
+     * before rendering, so this is replaced cleanly whichever way the load ends.
+     */
+    _showBootSkeleton(): void {
+        if (!this.shadowRoot) return;
+
+        const styleTag = document.createElement('style');
+        styleTag.textContent = styles;
+        this.shadowRoot.appendChild(styleTag);
+
+        const bootContainer = document.createElement('div');
+        bootContainer.className = 'diana-container';
+        // The activity name is not known yet (it arrives with the share), so the header is
+        // a placeholder bar rather than the real one initDOM() will render.
+        bootContainer.innerHTML = `
+          <div class="modal visible">
+            <div class="modal-content">
+              <div id="resultsPage" class="modal-page active is-loading">
+                <div class="modal-body-result">
+                  <div class="slider-wrapper etc">
+                    <div class="skeleton-boot-header">
+                      <span class="skeleton-block skeleton-line skeleton-line-sm"></span>
+                    </div>
+                  </div>
+                  ${getResultsSkeletonHTML({t: (key) => this.t(key)})}
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        this.shadowRoot.appendChild(bootContainer);
+        this.dianaWidgetRootContainer = bootContainer;
+        this._applyExternalStyles();
     }
 
     /** Runs the search for a shared journey, reporting failures as a share-load error. */
@@ -2929,8 +3088,9 @@ export default class DianaWidget {
 
         this.elements.shareOriginSuggestions?.addEventListener('click', (e) => {
             const target = e.target as HTMLElement;
-            if (target.classList.contains('suggestion-item')) {
-                this.handleSuggestionSelect(target.dataset.value, target.dataset.lat, target.dataset.lon);
+            const item = target.closest('.suggestion-item') as HTMLElement | null;
+            if (item) {
+                this.handleSuggestionSelect(item.dataset.value, item.dataset.lat, item.dataset.lon);
             }
         });
 
@@ -2948,17 +3108,56 @@ export default class DianaWidget {
      * arrival time as the consumer-mode arrive-by target, so re-planning from somewhere
      * else still lands on the creator's meeting time.
      */
-    _handleOriginChangedInShareMode(): void {
+    async _handleOriginChangedInShareMode(): Promise<void> {
         if (!this.state.shareContext) return;
 
         // The creator's meeting time still governs: renderConnectionResults() re-applies
         // the shared selection against whatever the new origin returns.
         this._renderShareInfoBanner();
 
-        this.handleSearch().catch(error => {
+        // Two quick origin changes fire two overlapping /connections requests. Only the
+        // newest may paint - and, crucially, only the newest may roll anything back.
+        const token = ++this._originSearchToken;
+        const previousOrigin = this._lastSearchedOrigin;
+        const previousResults = this._snapshotConnectionState();
+
+        this._setResultsSkeletonVisible(true);
+
+        let failure: string | null = null;
+        try {
+            // handleSearch() reports its own transport/API errors through
+            // _activeMessagePage(), i.e. onto the results page the recipient is looking at.
+            await this.handleSearch();
+            if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
+                failure = this.t('errors.shareOriginNoConnections');
+            }
+        } catch (error) {
             if (error?.isSessionExpired) return;
             console.error("Search after origin change failed:", error);
-        });
+            failure = this.t('errors.shareOriginSearchFailed');
+        } finally {
+            if (token === this._originSearchToken) this._setResultsSkeletonVisible(false);
+        }
+
+        if (token !== this._originSearchToken) return;
+
+        if (failure) {
+            // Put the recipient back where they were: same departure point, same journey.
+            // renderConnectionResults() has already cleared the sliders by this point, so
+            // the previous connections have to be re-rendered, not merely left alone.
+            if (previousOrigin) {
+                this._setOriginInputValue(previousOrigin.value, previousOrigin.lat, previousOrigin.lon);
+            }
+            this._restoreConnectionState(previousResults);
+            this._renderShareInfoBanner();
+            if (previousResults.toConnections.length > 0 || previousResults.fromConnections.length > 0) {
+                this.renderConnectionResults();
+            }
+            this.showError(failure, 'results', true);
+            return;
+        }
+
+        this._lastSearchedOrigin = this._readOriginInputValue();
     }
 
     /** Escapes API- and user-supplied text before it goes into an innerHTML string. */
@@ -3239,6 +3438,24 @@ export default class DianaWidget {
         }
     }
 
+    /**
+     * The page whose message containers are actually on screen. Errors and info raised
+     * during a shared-journey re-plan must land on the results page, because the form
+     * page the widget normally reports to is never shown to a share recipient.
+     */
+    _activeMessagePage(): 'form' | 'results' {
+        return this.elements.resultsPage?.classList.contains('active') ? 'results' : 'form';
+    }
+
+    /**
+     * Shows or hides the results-page loading skeleton. `is-loading` hides the real
+     * sliders and content area, so the skeleton takes their place while the widget
+     * header above it stays visible.
+     */
+    _setResultsSkeletonVisible(visible: boolean): void {
+        this.elements.resultsPage?.classList.toggle('is-loading', visible);
+    }
+
     showError(message: string | null, page = 'form', preserveContent = false, rawError: Response | null = null) {
         this.state.error = message;
         // The change-origin dialog overlays the pages, so it owns the message surface.
@@ -3314,15 +3531,26 @@ export default class DianaWidget {
         this.state.info = message;
         // The change-origin dialog overlays the pages, so it owns the message surface.
         if (this._isShareOriginDialogOpen()) this._setShareOriginStatus(message);
-        if (this.elements.infoContainer) {
-            this.elements.infoContainer.textContent = message ?? '';
-            this.elements.infoContainer.style.display = message ? "block" : "none";
-            if (message) {
-                this.elements.infoContainer.setAttribute('role', 'status');
+
+        // Written to whichever page is on screen: a share recipient re-planning their
+        // journey never sees the form page, so its #infoContainer would be a dead end.
+        const containers = [this.elements.infoContainer, this.elements.resultsInfoContainer];
+        const target = this._activeMessagePage() === 'results'
+            ? this.elements.resultsInfoContainer
+            : this.elements.infoContainer;
+
+        containers.forEach(container => {
+            if (!container) return;
+            const text = container === target ? (message ?? '') : '';
+            container.textContent = text;
+            container.style.display = text ? "block" : "none";
+            if (text) {
+                container.setAttribute('role', 'status');
             } else {
-                this.elements.infoContainer.removeAttribute('role');
+                container.removeAttribute('role');
             }
-        }
+        });
+
         if (message) {
             console.info(`Widget Info: ${message}`);
         }
