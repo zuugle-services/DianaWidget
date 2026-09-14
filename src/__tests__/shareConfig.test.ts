@@ -2,7 +2,8 @@ import {
     applySharedActivityToConfig,
     buildShareUrl,
     findSharedConnectionIndex,
-    isValidShareId
+    isValidShareId,
+    resolveShareOrigin
 } from '../core/shareConfig';
 import { convertLocalTimeToUTC } from '../datetimeUtils';
 import { DEFAULT_CONFIG } from '../constants/defaults';
@@ -241,6 +242,24 @@ describe('applySharedActivityToConfig', () => {
             expect(config.activityName).toBe(original);
         });
 
+        it('leaves the host name alone when the share explicitly carries none', () => {
+            const config = hostConfig();
+            applySharedActivityToConfig(viennaActivity({ name: undefined }), share(), config);
+            expect(config.activityName).toBe('Host Page Activity');
+        });
+
+        it('treats a blank shared activity name as no name at all', () => {
+            const config = hostConfig();
+            applySharedActivityToConfig(viennaActivity({ name: '   ' }), share(), config);
+            expect(config.activityName).toBeNull();
+        });
+
+        it('trims the shared activity name', () => {
+            const config = hostConfig();
+            applySharedActivityToConfig(viennaActivity({ name: '  Eishöhle  ' }), share(), config);
+            expect(config.activityName).toBe('Eishöhle');
+        });
+
         it('does not overwrite the host page language', () => {
             const config = hostConfig({ language: 'DE' });
             applySharedActivityToConfig(viennaActivity(), share(), config);
@@ -351,6 +370,42 @@ describe('findSharedConnectionIndex', () => {
                 conn(1, '2026-10-24T05:52:00Z', SHARED_TO_END),
             ];
             expect(findSharedConnectionIndex(connections, 'to', SHARED_TO_START, SHARED_TO_END)).toBe(1);
+        });
+    });
+});
+
+describe('resolveShareOrigin', () => {
+    const ctx = {origin: 'Salzburg Hbf', originLat: 47.813, originLon: 13.045};
+
+    it("prefers the recipient's own saved start location over the share's origin", () => {
+        expect(resolveShareOrigin({value: 'Wien Hbf', lat: '48.185', lon: '16.377'}, ctx)).toEqual({
+            value: 'Wien Hbf', lat: '48.185', lon: '16.377', fromCache: true,
+        });
+    });
+
+    it('trims the cached value and carries a coordinate-less entry through', () => {
+        expect(resolveShareOrigin({value: '  Wien Hbf  ', lat: null, lon: null}, ctx)).toEqual({
+            value: 'Wien Hbf', lat: null, lon: null, fromCache: true,
+        });
+    });
+
+    it("falls back to the share's origin when there is no cache entry", () => {
+        const expected = {value: 'Salzburg Hbf', lat: 47.813, lon: 13.045, fromCache: false};
+        expect(resolveShareOrigin(null, ctx)).toEqual(expected);
+        expect(resolveShareOrigin(undefined, ctx)).toEqual(expected);
+    });
+
+    it("falls back when the cached value is blank - an empty origin would fail the search", () => {
+        const expected = {value: 'Salzburg Hbf', lat: 47.813, lon: 13.045, fromCache: false};
+        expect(resolveShareOrigin({value: ''}, ctx)).toEqual(expected);
+        expect(resolveShareOrigin({value: '   '}, ctx)).toEqual(expected);
+        expect(resolveShareOrigin({value: null}, ctx)).toEqual(expected);
+        expect(resolveShareOrigin({}, ctx)).toEqual(expected);
+    });
+
+    it('reports coordinates as absent when the cache holds none', () => {
+        expect(resolveShareOrigin({value: 'Wien Hbf'}, ctx)).toEqual({
+            value: 'Wien Hbf', lat: null, lon: null, fromCache: true,
         });
     });
 });

@@ -184,3 +184,25 @@ export function getApiErrorTranslationKey(errorCode: string | number): string {
     return codeMap[errorCode] || 'errors.api.unknown';
 }
 
+
+/**
+ * First value that is a non-blank string, trimmed, or null when there is none.
+ *
+ * "Missing" throughout the widget means absent, null, undefined, empty or whitespace-only:
+ * an activity configured with `activityName: "  "` must render exactly like one configured
+ * without the key at all.
+ */
+export function firstNonBlank(...values: (string | null | undefined)[]): string | null {
+    for (const value of values) {
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed) return trimmed;
+        }
+    }
+    return null;
+}
+
+/** The activity's display name, or null when the host page supplied none. */
+export function resolveActivityName(config: { activityName?: string | null }): string | null {
+    return firstNonBlank(config?.activityName);
+}

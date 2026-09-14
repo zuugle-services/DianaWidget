@@ -4,7 +4,7 @@
  * @returns {string} HTML string for the widget header.
  */
 export function getWidgetHeaderHTML(args) {
-    const {t, title, titleId, showBackButton = false, backButtonId, menuDropdownHTML = ''} = args;
+    const {t, title = '', titleId, showBackButton = false, backButtonId, menuDropdownHTML = ''} = args;
 
     const backButtonHTML = showBackButton ? `
         <button id="${backButtonId}" class="back-btn-arrow" aria-label="${t('ariaLabels.backButton')}">
@@ -21,7 +21,7 @@ export function getWidgetHeaderHTML(args) {
             <div class="widget-header-button">
                 ${backButtonHTML}
             </div>
-            <div ${titleIdAttr} class="widget-header-heading">${title}</div>
+            <div ${titleIdAttr} class="widget-header-heading">${title ?? ''}</div>
             <div class="widget-header-button">
                 <button class="menu-btn-dots" aria-label="${t('ariaLabels.menuButton')}">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

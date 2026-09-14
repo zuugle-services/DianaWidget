@@ -48,7 +48,6 @@ export type {
     LanguageTranslations,
     TranslationFunction,
     MenuTranslations,
-    WarningTranslations,
     InfoTranslations,
     ErrorTranslations,
     ApiErrorTranslations,

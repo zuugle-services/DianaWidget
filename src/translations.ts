@@ -42,6 +42,8 @@ const translations: Translations = {
         activityStart: "Start",
         activityEnd: "End",
         activityDuration: "Duration",
+        plannedDuration: "Planned duration",
+        availableTime: "Available time",
         dateRangeLabel: "Date range",
         noConnectionDetails: "No connection details available.",
         noConnectionElements: "No connection elements available.",
@@ -64,14 +66,6 @@ const translations: Translations = {
             helpAndSupport: "Help",
             helpAndSupportSubtitle: "Find answers & guides.",
             imprint: "Imprint"
-        },
-        warnings: {
-            earlyStart: "Warning: Earlier Arrival than recommended starting time of activity!",
-            lateEnd: "Warning: Later Departure than recommended ending time of activity!",
-            duration: "Warning: Activity duration below recommended",
-            durationShort: "Duration too short",
-            durationShorter: "shorter than recommended",
-            durationLonger: "longer than recommended"
         },
         infos: {
             originRequired: "Please enter an origin location.",
@@ -244,6 +238,8 @@ const translations: Translations = {
         activityStart: "Beginn",
         activityEnd: "Ende",
         activityDuration: "Dauer",
+        plannedDuration: "Geplante Dauer",
+        availableTime: "Verfügbare Zeit",
         dateRangeLabel: "Zeitraum",
         noConnectionDetails: "Keine Verbindungsdetails verfügbar.",
         noConnectionElements: "Keine Verbindungselemente verfügbar.",
@@ -266,14 +262,6 @@ const translations: Translations = {
             helpAndSupport: "Hilfe",
             helpAndSupportSubtitle: "Häufig gestellte Fragen und Guides.",
             imprint: "Impressum"
-        },
-        warnings: {
-            earlyStart: "Warnung: Frühere Ankunft als empfohlene Startzeit!",
-            lateEnd: "Warnung: Spätere Abfahrt als empfohlene Endzeit!",
-            duration: "Warnung: Aktivitätsdauer unter Empfehlung.",
-            durationShort: "Dauer zu kurz",
-            durationShorter: "kürzer als empfohlen",
-            durationLonger: "länger als empfohlen"
         },
         infos: {
             originRequired: "Bitte geben Sie einen Startort ein.",
@@ -446,6 +434,8 @@ const translations: Translations = {
         activityStart: "Inicio",
         activityEnd: "Fin",
         activityDuration: "Duración",
+        plannedDuration: "Duración prevista",
+        availableTime: "Tiempo disponible",
         dateRangeLabel: "Rango de fechas",
         noConnectionDetails: "No hay detalles de conexión disponibles.",
         noConnectionElements: "No hay elementos de conexión disponibles.",
@@ -468,14 +458,6 @@ const translations: Translations = {
             helpAndSupport: "Ayuda",
             helpAndSupportSubtitle: "Preguntas frecuentes y guías.",
             imprint: "Aviso legal"
-        },
-        warnings: {
-            earlyStart: "Advertencia: ¡Llegada anterior a la hora de inicio recomendada!",
-            lateEnd: "Advertencia: ¡Salida posterior a la hora de finalización recomendada!",
-            duration: "Advertencia: Duración de la actividad por debajo de la recomendada.",
-            durationShort: "Duración demasiado corta",
-            durationShorter: "más corto de lo recomendado",
-            durationLonger: "más largo de lo recomendado"
         },
         infos: {
             originRequired: "Por favor, introduzca un lugar de origen.",
@@ -648,6 +630,8 @@ const translations: Translations = {
         activityStart: "Début",
         activityEnd: "Fin",
         activityDuration: "Durée",
+        plannedDuration: "Durée prévue",
+        availableTime: "Temps disponible",
         dateRangeLabel: "Période",
         noConnectionDetails: "Aucun détail de connexion disponible.",
         noConnectionElements: "Aucun élément de connexion disponible.",
@@ -670,14 +654,6 @@ const translations: Translations = {
             helpAndSupport: "Aide",
             helpAndSupportSubtitle: "Trouver des réponses et des guides.",
             imprint: "Mentions légales"
-        },
-        warnings: {
-            earlyStart: "Avertissement : Arrivée plus tôt que l'heure de début d'activité recommandée !",
-            lateEnd: "Avertissement : Départ plus tard que l'heure de fin d'activité recommandée !",
-            duration: "Avertissement : Durée de l'activité inférieure à la recommandation.",
-            durationShort: "Durée trop courte",
-            durationShorter: "plus court que recommandé",
-            durationLonger: "plus long que recommandé"
         },
         infos: {
             originRequired: "Veuillez entrer un lieu de départ.",
@@ -850,6 +826,8 @@ const translations: Translations = {
         activityStart: "Inizio",
         activityEnd: "Fine",
         activityDuration: "Durata",
+        plannedDuration: "Durata prevista",
+        availableTime: "Tempo disponibile",
         dateRangeLabel: "Intervallo di date",
         noConnectionDetails: "Nessun dettaglio di connessione disponibile.",
         noConnectionElements: "Nessun elemento di connessione disponibile.",
@@ -872,14 +850,6 @@ const translations: Translations = {
             helpAndSupport: "Aiuto",
             helpAndSupportSubtitle: "Trova risposte e guide.",
             imprint: "Avviso legale"
-        },
-        warnings: {
-            earlyStart: "Attenzione: Arrivo in anticipo rispetto all'orario di inizio attività consigliato!",
-            lateEnd: "Attenzione: Partenza in ritardo rispetto all'orario di fine attività consigliato!",
-            duration: "Attenzione: Durata attività inferiore al consigliato.",
-            durationShort: "Durata troppo breve",
-            durationShorter: "più breve del consigliato",
-            durationLonger: "più lungo del consigliato"
         },
         infos: {
             originRequired: "Si prega di inserire un luogo di partenza.",
@@ -1052,6 +1022,8 @@ const translations: Translations = {
         activityStart: "เริ่มต้น",
         activityEnd: "สิ้นสุด",
         activityDuration: "ระยะเวลา",
+        plannedDuration: "ระยะเวลาที่วางแผนไว้",
+        availableTime: "เวลาที่ใช้ได้",
         dateRangeLabel: "ช่วงวันที่",
         noConnectionDetails: "ไม่มีรายละเอียดการเชื่อมต่อ",
         noConnectionElements: "ไม่มีองค์ประกอบการเชื่อมต่อ",
@@ -1074,14 +1046,6 @@ const translations: Translations = {
             helpAndSupport: "ความช่วยเหลือ",
             helpAndSupportSubtitle: "ค้นหาคำตอบและคู่มือ",
             imprint: "ข้อมูลทางกฎหมาย"
-        },
-        warnings: {
-            earlyStart: "คำเตือน: มาถึงเร็วกว่าเวลาเริ่มต้นกิจกรรมที่แนะนำ!",
-            lateEnd: "คำเตือน: ออกเดินทางช้ากว่าเวลาสิ้นสุดกิจกรรมที่แนะนำ!",
-            duration: "คำเตือน: ระยะเวลากิจกรรมต่ำกว่าที่แนะนำ",
-            durationShort: "ระยะเวลาสั้นเกินไป",
-            durationShorter: "สั้นกว่าที่แนะนำ",
-            durationLonger: "ยาวนานกว่าที่แนะนำ"
         },
         infos: {
             originRequired: "กรุณาป้อนจุดเริ่มต้น",

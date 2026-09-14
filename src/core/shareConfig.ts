@@ -3,6 +3,8 @@ import { convertUTCToLocalTime } from '../datetimeUtils';
 import { SHARED_CONNECTION_MATCH_TOLERANCE_MS } from '../constants/defaults';
 import type { ActivityObject, Connection, ShareDataResponse } from '../types/api';
 import type { WidgetConfig, LocationType } from '../types/config';
+import type { ShareContext } from '../types/state';
+import { firstNonBlank } from '../utils';
 
 /** Epoch millis for a UTC ISO timestamp, or null when absent or unparseable. */
 function toMillis(iso: string | null | undefined): number | null {
@@ -35,6 +37,36 @@ export function readShareIdFromUrl(): string | null {
     return null;
 }
 
+/** A departure point, in the shape `_setOriginInputValue()` takes. */
+export interface ResolvedShareOrigin {
+    value: string;
+    lat: number | string | null;
+    lon: number | string | null;
+    /** True when this came from the recipient's own saved start location. */
+    fromCache: boolean;
+}
+
+/**
+ * Which departure point a freshly opened share should search from.
+ *
+ * The recipient's own saved start location wins over the origin the share was created
+ * with: they are almost certainly travelling from where they last travelled from, not
+ * from where the creator did. The share's origin stays in `state.shareContext`, so the
+ * info banner can still name the meeting point and flag the changed departure point.
+ *
+ * A blank cached value falls through - `handleSearch()` refuses an empty origin.
+ */
+export function resolveShareOrigin(
+    cached: { value?: string | null; lat?: string | null; lon?: string | null } | null | undefined,
+    ctx: Pick<ShareContext, 'origin' | 'originLat' | 'originLon'>
+): ResolvedShareOrigin {
+    const cachedValue = firstNonBlank(cached?.value);
+    if (cachedValue) {
+        return {value: cachedValue, lat: cached?.lat ?? null, lon: cached?.lon ?? null, fromCache: true};
+    }
+    return {value: ctx.origin, lat: ctx.originLat, lon: ctx.originLon, fromCache: false};
+}
+
 /**
  * Maps the activity object fields onto the WidgetConfig.
  */
@@ -48,7 +80,10 @@ export function applySharedActivityToConfig(activity: ActivityObject, share: Sha
     }
 
     if (activity.name !== undefined && activity.name !== null) {
-        config.activityName = activity.name;
+        // A present-but-blank name is the same as no name at all, so it must not leave an
+        // empty string behind for resolveActivityName() to trip over. An *absent* name is
+        // different: it leaves the host page's own config untouched.
+        config.activityName = firstNonBlank(activity.name);
     }
     if (activity.start_location !== undefined && activity.start_location !== null) {
         config.activityStartLocation = activity.start_location;

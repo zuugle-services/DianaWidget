@@ -306,8 +306,7 @@ export class StateManager {
             activityTimes: {
                 start: '',
                 end: '',
-                duration: '',
-                warningDuration: false
+                duration: ''
             }
         });
     }

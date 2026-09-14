@@ -1,7 +1,7 @@
 /**
  * Unit tests for utils.ts
  */
-import { getMonthName, getShortDayName, getApiErrorTranslationKey, formatDateForDisplay } from '../utils';
+import { getMonthName, getShortDayName, getApiErrorTranslationKey, formatDateForDisplay, firstNonBlank, resolveActivityName } from '../utils';
 
 describe('getMonthName', () => {
     const mockTFunction = (key: string): string | string[] => {
@@ -84,5 +84,50 @@ describe('formatDateForDisplay', () => {
         const date = new Date(Date.UTC(2024, 0, 1)); // January 1, 2024 UTC
         const resultDE = formatDateForDisplay(date, 'de-DE', 'UTC');
         expect(resultDE).toMatch(/01.*Jan.*2024/);
+    });
+});
+
+describe('firstNonBlank', () => {
+    it('returns the first value that has content', () => {
+        expect(firstNonBlank('a', 'b')).toBe('a');
+        expect(firstNonBlank(null, undefined, '', '   ', 'b', 'c')).toBe('b');
+    });
+
+    it('trims the value it returns', () => {
+        expect(firstNonBlank('  Eishöhle  ')).toBe('Eishöhle');
+        expect(firstNonBlank('\t\nMeeting point\n')).toBe('Meeting point');
+    });
+
+    it('treats empty, whitespace-only, null and undefined as blank', () => {
+        expect(firstNonBlank('')).toBeNull();
+        expect(firstNonBlank('   ')).toBeNull();
+        expect(firstNonBlank('\t\n')).toBeNull();
+        expect(firstNonBlank(null)).toBeNull();
+        expect(firstNonBlank(undefined)).toBeNull();
+        expect(firstNonBlank(null, undefined, '', '  ')).toBeNull();
+    });
+
+    it('returns null with no arguments', () => {
+        expect(firstNonBlank()).toBeNull();
+    });
+
+    it('does not treat "0" or "false" as blank', () => {
+        expect(firstNonBlank('0')).toBe('0');
+        expect(firstNonBlank('false')).toBe('false');
+    });
+});
+
+describe('resolveActivityName', () => {
+    it('returns the trimmed activity name', () => {
+        expect(resolveActivityName({ activityName: 'Eishöhle' })).toBe('Eishöhle');
+        expect(resolveActivityName({ activityName: '  Eishöhle  ' })).toBe('Eishöhle');
+    });
+
+    it('returns null when the host page supplied no usable name', () => {
+        expect(resolveActivityName({})).toBeNull();
+        expect(resolveActivityName({ activityName: undefined })).toBeNull();
+        expect(resolveActivityName({ activityName: null })).toBeNull();
+        expect(resolveActivityName({ activityName: '' })).toBeNull();
+        expect(resolveActivityName({ activityName: '   ' })).toBeNull();
     });
 });

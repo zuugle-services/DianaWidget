@@ -14,18 +14,6 @@ export interface MenuTranslations {
 }
 
 /**
- * Warning translations
- */
-export interface WarningTranslations {
-    earlyStart: string;
-    lateEnd: string;
-    duration: string;
-    durationShort: string;
-    durationShorter: string;
-    durationLonger: string;
-}
-
-/**
  * Info message translations
  */
 export interface InfoTranslations {
@@ -246,6 +234,10 @@ export interface LanguageTranslations {
     activityStart: string;
     activityEnd: string;
     activityDuration: string;
+    /** Label for the activity's configured duration in the activity box. */
+    plannedDuration: string;
+    /** Label for the time actually available between the two selected connections. */
+    availableTime: string;
     dateRangeLabel: string;
     noConnectionDetails: string;
     noConnectionElements: string;
@@ -265,7 +257,6 @@ export interface LanguageTranslations {
     direction: string;
     buyTicket: string;
     menu: MenuTranslations;
-    warnings: WarningTranslations;
     infos: InfoTranslations;
     errors: ErrorTranslations;
     debug: DebugTranslations;

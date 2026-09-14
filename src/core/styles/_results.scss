@@ -419,21 +419,6 @@
   padding: 0 4px;
 }
 
-.slider button .duration-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.slider button .dot-too-short {
-  background-color: var(--error-color);
-}
-
-.slider button .dot-too-long {
-  background-color: var(--primary-color);
-}
-
 .slider button .transfers-group {
   display: flex;
   gap: 2px;
@@ -466,6 +451,15 @@
   margin: 12px 20px;
   padding: 12px 15px;
   scroll-margin: 270px;
+  /* The box is emptied between a search and the first connection selection, and renders
+     without a title when the activity has no name - neither may collapse the layout.
+     .activity-time-card's 70px plus the 12px padding top and bottom. */
+  min-height: 94px;
+}
+
+.activity-time-placeholder {
+  display: block;
+  min-height: 70px;
 }
 
 .activity-time-card {
@@ -525,8 +519,8 @@
 .activity-main-info {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 0 10px 0;
+  gap: 2px;
+  padding: 8px 0;
   min-width: 0;
 }
 
@@ -539,67 +533,29 @@
   white-space: nowrap;
 }
 
+/* One labelled line each for the planned duration and the time actually available.
+   Wraps the value under its label rather than widening the card, which would push the
+   timeline and the arrival/departure columns apart. */
 .activity-duration-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: baseline;
   color: var(--text-secondary);
-  font-size: 14px;
-  flex-wrap: wrap;
-}
-
-.activity-duration-warning-wrapper {
+  column-gap: 6px;
   display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 500;
+  flex-wrap: wrap;
   font-size: 13px;
+  line-height: 1.35;
+  min-width: 0;
+  row-gap: 0;
 }
 
-.warning-icon-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.activity-duration-label {
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+}
 
-  .warning-tooltip {
-    visibility: hidden;
-    width: max-content;
-    max-width: 200px;
-    background-color: var(--text-primary);
-    color: var(--bg-primary);
-    text-align: center;
-    border-radius: 6px;
-    padding: 8px 12px;
-    position: absolute;
-    z-index: 10;
-    bottom: 150%;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    cursor: help;
-    transition: opacity 0.3s;
-    font-size: 12px;
-    font-weight: 400;
-    line-height: 1.4;
-    box-shadow: 0 2px 4px var(--shadow-medium);
-
-    &::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      margin-left: -5px;
-      border-width: 5px;
-      border-style: solid;
-      border-color: var(--text-primary) transparent transparent transparent;
-    }
-  }
-
-  &:hover .warning-tooltip {
-    visibility: visible;
-    opacity: 1;
-  }
+.activity-duration-value {
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .middle-box-content .connection-elements {

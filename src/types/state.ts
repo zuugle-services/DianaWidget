@@ -15,8 +15,6 @@ export interface ActivityTimes {
     end: string;
     /** Duration string */
     duration: string;
-    /** Whether duration is below recommended */
-    warningDuration: boolean;
 }
 
 /**

@@ -1,5 +1,6 @@
 import { getWidgetHeaderHTML } from './partials/_widgetHeader';
 import { getMenuDropdownHTML } from './partials/_menuDropdown';
+import { firstNonBlank, resolveActivityName } from '../utils';
 
 /**
  * Generates the HTML for the form page.
@@ -118,7 +119,7 @@ export function getFormPageTemplateHTML(args) {
     }
 
     const menuDropdownHTML = getMenuDropdownHTML({t, dropdownId: 'formMenuDropdown', isShareDisabled: true});
-    const headerHTML = getWidgetHeaderHTML({t, title: config.activityName, menuDropdownHTML});
+    const headerHTML = getWidgetHeaderHTML({t, title: resolveActivityName(config) ?? '', menuDropdownHTML});
 
     return `
       <div id="formPage" class="modal-page active">
@@ -145,7 +146,7 @@ export function getFormPageTemplateHTML(args) {
             <p id="destinationLabel">${t('destination')}</p>
             <div class="input-container">
               <svg class="input-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-              <input type="text" class="input-field disabled" id="destinationInput" placeholder="${t('destination')}" value="${config.destinationInputName || config.activityName}" readonly aria-labelledby="destinationLabel">
+              <input type="text" class="input-field disabled" id="destinationInput" placeholder="${t('destination')}" value="${firstNonBlank(config.destinationInputName, config.activityName, config.activityStartLocationDisplayName, config.activityStartLocation) ?? ''}" readonly aria-labelledby="destinationLabel">
             </div>
           </div>
           ${dateSectionHTML}

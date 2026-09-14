@@ -111,7 +111,6 @@ export const TIME_CONFIG_FIELDS = [
  * Default widget configuration
  */
 export const DEFAULT_CONFIG: WidgetConfig = {
-    activityName: '[Activity Name]',
     // REQUIRED_CONFIG_FIELDS is readonly to prevent mutation; cast needed for WidgetConfig.requiredFields type
     requiredFields: REQUIRED_CONFIG_FIELDS as unknown as string[],
     activityStartLocationDisplayName: null,
@@ -164,7 +163,6 @@ export const DEFAULT_STATE: WidgetState = {
         start: '',
         end: '',
         duration: '',
-        warningDuration: false,
     },
     currentContentKey: null,
     activity: null,

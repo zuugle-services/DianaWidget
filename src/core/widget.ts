@@ -1,7 +1,7 @@
 import styles from './styles/widget.scss';
 import {DateTime} from 'luxon';
 import translations from '../translations';
-import {debounce, formatDateForDisplay, getApiErrorTranslationKey} from '../utils';
+import {debounce, firstNonBlank, formatDateForDisplay, getApiErrorTranslationKey, resolveActivityName} from '../utils';
 import {
     addMinutesToDate,
     calculateDurationLocalWithDates,
@@ -41,7 +41,8 @@ import {
     buildShareUrl,
     findSharedConnectionIndex,
     isValidShareId,
-    readShareIdFromUrl
+    readShareIdFromUrl,
+    resolveShareOrigin
 } from './shareConfig';
 
 import { ApiService } from '../services';
@@ -1391,7 +1392,6 @@ export default class DianaWidget {
 
         const params: Record<string, string | number | undefined> = {
             date: formatDatetime(activityStartDate, this.config.timezone),
-            activity_name: this.config.activityName,
             activity_start_location: this.config.activityStartLocation,
             activity_start_location_type: this.config.activityStartLocationType,
             activity_end_location: this.config.activityEndLocation,
@@ -1423,6 +1423,11 @@ export default class DianaWidget {
             params["user_start_location"] = this.elements.originInput.value;
             params["user_start_location_type"] = "address";
         }
+
+        // Omitted rather than sent empty: params go through URLSearchParams, which would turn
+        // a missing name into the literal string "undefined".
+        const activityName = resolveActivityName(this.config);
+        if (activityName) params.activity_name = activityName;
 
         if (this.config.activityStartLocationDisplayName) params.activity_start_location_display_name = this.config.activityStartLocationDisplayName;
         if (this.config.activityEndLocationDisplayName) params.activity_end_location_display_name = this.config.activityEndLocationDisplayName;
@@ -1713,7 +1718,7 @@ export default class DianaWidget {
         this._resetCollapsibleSummary(this.elements.collapsibleToActivity);
         this._resetCollapsibleSummary(this.elements.collapsibleFromActivity);
 
-        if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.config.activityName;
+        if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = '';
 
 
         if (this.state.toConnections.length === 0 && this.state.fromConnections.length === 0) {
@@ -1888,14 +1893,11 @@ export default class DianaWidget {
                 </div>
             `;
 
-            const dotPlaceholder = type === 'from' ? `<div class="duration-dot"></div>` : '';
-
             btn.innerHTML = `
                 <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
                   <div style="font-size: 14px; margin-bottom: 4px; font-weight: bold;">${startTimeLocal} - ${endTimeLocal}</div>
                   <div class="slider-button-details">
                     <span>${duration}</span>
-                    ${dotPlaceholder}
                     ${transfersHtml}
                   </div>
                 </div>`;
@@ -1972,7 +1974,6 @@ export default class DianaWidget {
             const fromButtons = bottomSlider?.querySelectorAll('button') ?? [];
             if (!selectedToConnection) {
                 fromButtons.forEach(btn => btn.classList.remove('disabled'));
-                this._updateFromConnectionDots(); // Clear dots
                 return;
             }
             const arrivalTime = DateTime.fromISO(selectedToConnection.connection_end_timestamp, { zone: 'utc' });
@@ -2012,8 +2013,6 @@ export default class DianaWidget {
                     if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
                 }
             }
-            this._updateFromConnectionDots();
-
 
         } else if (sourceType === 'from') {
             // Update 'to' slider based on 'from' selection
@@ -2057,7 +2056,6 @@ export default class DianaWidget {
 
                     // Re-render activity box with partial data
                     if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
-                    this._updateFromConnectionDots(); // Clear dots
                 }
             }
         }
@@ -2127,59 +2125,6 @@ export default class DianaWidget {
     }
 
 
-    _updateFromConnectionDots(): void {
-        if (this.config.multiday || !this.elements.bottomSlider) {
-            return;
-        }
-
-        const recommendedDurationMinutes = parseInt(String(this.config.activityDurationMinutes), 10);
-
-        // Clear all dots if no 'to' connection is selected
-        if (!this.state.selectedToConnection) {
-            this.elements.bottomSlider.querySelectorAll('.duration-dot').forEach(dot => {
-                dot.className = 'duration-dot'; // Reset classes
-            });
-            return;
-        }
-
-        const arrivalTimeToActivity = DateTime.fromISO(this.state.selectedToConnection.connection_end_timestamp, { zone: 'utc' }).setZone(this.config.timezone);
-        // Same pinning as updateActivityTimeBox(): in share mode the activity cannot start
-        // before the shared meeting time nor run past the shared tour end, so the dots must
-        // rate the duration the activity box actually shows — not the time spent travelling.
-        const sharedStart = this._sharedActivityBoundaryDateTime('start');
-        const sharedEnd = this._sharedActivityBoundaryDateTime('end');
-        const activityStartTime = sharedStart && sharedStart > arrivalTimeToActivity ? sharedStart : arrivalTimeToActivity;
-
-        this.state.fromConnections.forEach((fromConn, index) => {
-            const button = this.elements.bottomSlider?.querySelector(`button[data-index="${index}"]`);
-            if (!button) return;
-
-            const dotElement = button.querySelector('.duration-dot');
-            if (!dotElement) return;
-
-            // Reset dot style
-            dotElement.className = 'duration-dot';
-
-            const departureTimeFromActivity = DateTime.fromISO(fromConn.connection_start_timestamp, { zone: 'utc' }).setZone(this.config.timezone);
-
-            // Skip if this 'from' connection is invalid based on the 'to' connection
-            if (departureTimeFromActivity < arrivalTimeToActivity) return;
-
-            const activityEndTime = sharedEnd && sharedEnd < departureTimeFromActivity ? sharedEnd : departureTimeFromActivity;
-            if (activityEndTime < activityStartTime) return;
-
-            const durationResult = calculateDurationLocalWithDates(activityStartTime, activityEndTime, (key) => this.t(key));
-            const actualMinutes = durationResult.totalMinutes;
-
-            if (actualMinutes < recommendedDurationMinutes) {
-                dotElement.classList.add('dot-too-short');
-            } else if ((actualMinutes / recommendedDurationMinutes) > 1.10) {
-                dotElement.classList.add('dot-too-long');
-            }
-        });
-    }
-
-
     /**
      * The activity boundary a share pins down, in the activity's timezone, or `null` outside
      * share mode (or when the share carries no such timestamp).
@@ -2234,25 +2179,6 @@ export default class DianaWidget {
                 this.state.activityTimes.end = getEarlierTime(connectionStartTimeLocal, latestEndLocal, this.config.timezone);
             }
 
-            if (!this.config.multiday && this.state.activityTimes.start && this.state.activityTimes.end && activityStartDate) {
-                const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
-                    .set({
-                        year: activityStartDate.getFullYear(),
-                        month: activityStartDate.getMonth() + 1,
-                        day: activityStartDate.getDate()
-                    });
-                const endDateForDuration = DateTime.fromFormat(this.state.activityTimes.end, 'HH:mm', {zone: this.config.timezone})
-                    .set({
-                        year: activityStartDate.getFullYear(),
-                        month: activityStartDate.getMonth() + 1,
-                        day: activityStartDate.getDate()
-                    });
-                const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key: string) => this.t(key));
-                this.state.activityTimes.warningDuration = durationResult.totalMinutes < parseInt(String(this.config.activityDurationMinutes), 10);
-            } else {
-                this.state.activityTimes.warningDuration = false;
-            }
-
             if (this.elements.activityTimeBox) this.elements.activityTimeBox.innerHTML = this.getActivityTimeBoxHTML();
 
         } catch (error) {
@@ -2267,11 +2193,21 @@ export default class DianaWidget {
         try {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
-            if (!activityStartDate) return `<div class="activity-time-placeholder">${this.config.activityName}</div>`;
+            if (!activityStartDate) return `<div class="activity-time-placeholder"></div>`;
             const recommendedDurationMinutes = parseInt(String(this.config.activityDurationMinutes), 10);
 
+            // "Geplante Dauer: 4:00h" / "Verfügbare Zeit: 4:51h" - one labelled line each,
+            // so the two are directly comparable without an icon or a tooltip to decode.
+            const labelledLine = (labelKey: string, value: string) => `
+                        <div class="activity-duration-line">
+                            <span class="activity-duration-label">${this.t(labelKey)}:</span>
+                            <span class="activity-duration-value">${value}</span>
+                        </div>`;
+            const plannedLine = Number.isFinite(recommendedDurationMinutes) && recommendedDurationMinutes > 0
+                ? labelledLine('plannedDuration', getTimeFormatFromMinutes(recommendedDurationMinutes, (k) => this.t(k)))
+                : '';
+
             let durationDisplayHtml;
-            let durationWarningHtml = '';
 
             const isMultiDayDisplay = this.config.multiday && activityStartDate && activityEndDate &&
                 DateTime.fromJSDate(activityEndDate).startOf('day') > DateTime.fromJSDate(activityStartDate).startOf('day');
@@ -2281,12 +2217,10 @@ export default class DianaWidget {
                 const numNights = numDays - 1;
                 const daysText = numDays === 1 ? this.t('daySg') : this.t('dayPl');
 
-                if (numNights > 0) {
-                    const nightsText = numNights === 1 ? this.t('nightSg') : this.t('nightPl');
-                    durationDisplayHtml = `<span>${numDays} ${daysText} / ${numNights} ${nightsText}</span>`;
-                } else {
-                    durationDisplayHtml = `<span>${numDays} ${daysText}</span>`;
-                }
+                const spanText = numNights > 0
+                    ? `${numDays} ${daysText} / ${numNights} ${numNights === 1 ? this.t('nightSg') : this.t('nightPl')}`
+                    : `${numDays} ${daysText}`;
+                durationDisplayHtml = `<div class="activity-duration-line"><span>${spanText}</span></div>`;
             } else {
                 if (this.state.activityTimes.start && this.state.activityTimes.end) {
                     const startDateForDuration = DateTime.fromFormat(this.state.activityTimes.start, 'HH:mm', {zone: this.config.timezone})
@@ -2302,49 +2236,17 @@ export default class DianaWidget {
                             day: activityStartDate.getDate()
                         });
 
-                    if (endDateForDuration < startDateForDuration) {
-                        durationDisplayHtml = `<span>--</span>`;
-                    } else {
+                    let availableText = '--';
+                    if (endDateForDuration >= startDateForDuration) {
                         const durationResult = calculateDurationLocalWithDates(startDateForDuration, endDateForDuration, (key) => this.t(key));
-                        this.state.activityTimes.duration = durationResult.text; // Store for sharing
-                        durationDisplayHtml = `<span>${durationResult.text}</span>`;
-                        const actualMinutes = durationResult.totalMinutes;
-                        const diffMinutes = actualMinutes - recommendedDurationMinutes;
-
-                        if (diffMinutes < 0) {
-                            const timeShorter = getTimeFormatFromMinutes(Math.abs(diffMinutes), (k) => this.t(k));
-                            const visibleWarningText = `${timeShorter} ${this.t("warnings.durationShorter")}`;
-                            const tooltipText = `${this.t("warnings.duration")} (${getTimeFormatFromMinutes(recommendedDurationMinutes, (k) => this.t(k))})`;
-                            const rabbitIcon = `<svg style="fill: var(--error-color); color: var(--error-color);" width="18" height="18" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M 29.3459 49.1765 C 30.6543 49.1765 31.7945 48.5597 34.2618 48.5597 C 36.7292 48.5597 37.4018 49.1765 39.2335 49.1765 C 42.0001 49.1765 43.4582 48.0176 43.4582 46.0924 C 43.4582 42.8027 39.8694 40.5971 34.2431 40.5971 C 31.4767 40.5971 30.2244 40.8587 28.6730 41.2513 L 26.6542 36.6531 C 24.6542 32.2419 21.4767 29.3634 16.9533 29.3634 L 14.7477 29.3634 C 14.0187 29.3634 13.5327 29.0456 13.5327 28.3353 C 13.5327 27.1765 15.0841 26.8961 16.7851 26.8961 C 22.2430 26.8961 26.2991 29.9054 28.7664 35.9615 L 30.0374 39.0830 C 31.3085 38.8213 32.6730 38.6905 34.0562 38.6905 C 35.1590 38.6905 36.1684 38.7653 37.2338 38.9148 C 38.3554 38.0737 39.6638 37.1952 41.5514 36.3727 C 43.6450 37.7933 46.0188 38.7092 48.5234 38.7092 C 53.6825 38.7092 56.0000 37.5877 56.0000 32.7092 C 56.0000 26.8213 51.7382 22.4101 46.0750 22.4288 L 41.0469 15.7559 C 38.2245 12.0923 34.8786 10.3353 31.5701 10.3353 C 28.8412 10.3353 24.7851 11.9054 24.7851 14.1110 C 24.7851 15.6064 27.8131 17.6998 30.1496 19.1391 L 40.9160 25.7185 C 40.0749 26.5223 39.3086 26.9522 38.3925 26.9522 C 36.9348 26.9522 35.4392 26.0737 33.1777 24.7653 C 27.4019 21.4382 22.9720 18.3167 16.9907 18.3167 C 10.7664 18.3167 6.0374 21.8867 3.5140 28.8400 C 1.5140 28.8400 0 30.1485 0 32.0737 C 0 34.2419 1.7196 35.6064 4.0748 35.6064 C 6.8038 39.4195 11.2711 40.9522 16.5608 40.9522 C 16.8412 40.9522 17.1215 40.9335 17.4019 40.9335 L 24.9720 47.2139 C 26.8412 48.9148 27.9253 49.1765 29.3459 49.1765 Z M 48.0936 31.8120 C 47.2525 31.8120 46.5796 31.1017 46.5796 30.2793 C 46.5796 29.4382 47.2713 28.6905 48.1123 28.6905 C 48.9721 28.6905 49.6263 29.3634 49.6263 30.2045 C 49.6263 31.0456 48.9346 31.8120 48.0936 31.8120 Z M 15.8318 50.6531 C 19.4393 50.6531 21.6262 49.9616 23.4206 48.7279 L 17.6449 43.9055 C 17.3832 43.9242 17.0655 43.9616 16.6729 43.9616 C 15.7383 43.9616 14.3552 43.6812 12.7103 43.6812 C 10.6168 43.6812 9.3271 44.8027 9.3271 46.4849 C 9.3271 48.9896 11.8692 50.6531 15.8318 50.6531 Z"></path></g></svg>`;
-
-
-                            durationWarningHtml = `
-                                <div class="activity-duration-warning-wrapper">
-                                    <span class="warning-icon-wrapper">
-                                        ${rabbitIcon}
-                                        <span class="warning-tooltip">${tooltipText}</span>
-                                        <span>${visibleWarningText}</span>
-                                    </span>
-                                </div>`;
-                        } else if (diffMinutes > 0 && (actualMinutes / recommendedDurationMinutes) > 1.10) {
-                            const timeLonger = getTimeFormatFromMinutes(diffMinutes, (k) => this.t(k));
-                            const visibleWarningText = `${timeLonger} ${this.t("warnings.durationLonger")}`;
-                            const tooltipText = `${this.t("warnings.duration")} (${getTimeFormatFromMinutes(recommendedDurationMinutes, (k) => this.t(k))})`;
-                            const turtleIcon = `<svg style="fill: var(--primary-color); color: var(--primary-color);" width="18" height="18" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><path d="M 4.8942 42.0850 C 8.1403 42.0850 11.4863 40.6700 14.1332 37.9400 C 15.9810 38.9388 17.7789 39.8544 20.4590 39.8544 C 23.3888 39.8544 25.2200 39.0886 26.8680 38.1730 C 29.4317 40.7200 32.7443 42.1183 35.9238 42.1183 C 38.5708 42.1183 40.5850 41.0196 40.5850 38.9887 C 40.5850 37.0577 39.1534 36.2586 37.2057 35.7259 C 36.7062 35.5928 36.2068 35.4762 35.7077 35.3431 C 43.0986 35.1932 43.1818 31.4477 48.1426 31.4477 C 52.6541 31.4477 56.0000 29.8829 56.0000 26.7866 C 56.0000 20.1611 52.2045 16.6320 47.7932 16.6320 C 43.2653 16.6320 40.8512 19.4952 39.8857 23.2574 C 39.3365 25.3050 38.3710 26.5868 36.9060 27.3193 L 35.8573 25.3882 C 31.4958 17.2479 27.3674 13.9851 20.6920 13.9685 C 13.4673 13.9851 9.7717 17.1314 4.3948 27.3193 C 2.7634 30.4322 0 31.1148 0 33.0624 C 0 34.4275 1.0488 35.3431 3.1629 35.3431 L 4.8775 35.3431 C 4.1617 35.5428 3.4459 35.7259 2.7967 35.9590 C 1.2319 36.5083 .2331 37.3407 .2331 38.9388 C .2331 40.9697 2.2473 42.0850 4.8942 42.0850 Z M 20.6920 16.6154 C 25.1867 16.6154 28.0499 18.6296 30.3805 21.6094 C 27.6338 23.9233 24.3044 25.2218 20.4923 25.2218 C 16.7301 25.2218 13.4507 23.9899 10.7539 21.7259 C 13.6005 17.9471 16.3971 16.6154 20.6920 16.6154 Z M 40.5018 31.9305 C 39.7361 31.3478 38.8537 30.2491 38.3212 29.3169 C 40.1356 28.6344 41.3507 27.4191 42.0666 24.5725 C 42.8658 21.1433 44.6969 19.1457 47.7932 19.1457 C 50.9727 19.1457 53.6196 22.0755 53.6196 26.3871 C 53.6196 27.9852 51.1725 29.0172 48.6421 29.0172 C 44.7634 29.0172 42.6326 30.5654 40.5018 31.9305 Z M 48.2759 25.1219 C 49.0083 25.1219 49.5909 24.5226 49.5909 23.7901 C 49.5909 23.0577 49.0083 22.4750 48.2759 22.4750 C 47.5433 22.4750 46.9606 23.0577 46.9606 23.7901 C 46.9606 24.5226 47.5433 25.1219 48.2759 25.1219 Z M 33.7098 26.8199 C 34.8584 28.8674 36.3234 31.1980 37.8050 32.6629 C 37.1225 32.6796 36.3401 32.6629 35.5409 32.6629 C 33.0607 32.6629 31.2129 33.1124 29.6647 33.7283 C 28.0499 31.5809 26.8847 28.5345 26.6183 26.2705 C 28.5660 25.5381 30.2307 24.5060 31.6291 23.3573 C 32.3447 24.4394 33.0273 25.6047 33.7098 26.8199 Z M 5.8264 32.6629 C 4.9774 32.6629 4.1118 32.6796 3.3460 32.7295 L 3.2129 32.4964 C 4.3448 31.5476 5.7598 30.3490 6.7586 28.3514 C 7.7408 26.4703 8.6397 24.8722 9.5220 23.4905 C 10.9203 24.6391 12.6350 25.6879 14.6825 26.4037 C 14.3496 28.5844 13.1510 31.6475 11.6195 33.7283 C 10.1046 33.1124 8.2735 32.6629 5.8264 32.6629 Z M 20.4590 37.2075 C 17.5458 37.2075 15.7646 35.8425 13.4673 34.6106 C 15.0155 32.4132 16.1641 29.3835 16.4970 26.9198 C 17.7289 27.2028 19.0606 27.3692 20.4923 27.3692 C 22.0238 27.3692 23.4388 27.1694 24.7539 26.8532 C 25.0036 29.4168 26.1855 32.4465 27.8002 34.6272 C 25.4863 35.8591 23.6219 37.2075 20.4590 37.2075 Z M 2.7134 38.5892 C 2.7134 37.9899 3.1463 37.5904 4.4281 37.2741 C 5.2105 37.0743 7.2913 36.4251 8.8062 35.7093 C 9.9382 35.9590 10.9203 36.3252 11.8026 36.7414 C 9.2557 38.8888 6.9750 39.8544 4.9108 39.8544 C 3.4459 39.8544 2.7134 39.3882 2.7134 38.5892 Z M 36.3902 37.3240 C 37.6717 37.6403 38.1047 38.0398 38.1047 38.6391 C 38.1047 39.4215 37.3721 39.8876 35.9071 39.8876 C 33.8762 39.8876 31.6291 38.9554 29.1320 36.8912 C 29.9810 36.4251 30.8965 36.0256 31.9786 35.7426 C 33.4770 36.4584 35.6078 37.1076 36.3902 37.3240 Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g></svg>`;
-
-                            durationWarningHtml = `
-                                <div class="activity-duration-warning-wrapper">
-                                    <span class="warning-icon-wrapper">
-                                        ${turtleIcon}
-                                        <span class="warning-tooltip">${tooltipText}</span>
-                                        <span>${visibleWarningText}</span>
-                                    </span>
-                                </div>`;
-                        }
+                        this.state.activityTimes.duration = durationResult.text;
+                        availableText = durationResult.text;
                     }
-
+                    durationDisplayHtml = plannedLine + labelledLine('availableTime', availableText);
                 } else {
-                    durationDisplayHtml = `<span>--</span>`;
+                    // The planned duration comes from the config, so it stands before the
+                    // recipient has picked anything - only the available time is unknown.
+                    durationDisplayHtml = plannedLine + labelledLine('availableTime', '--');
                 }
             }
 
@@ -2355,6 +2257,11 @@ export default class DianaWidget {
             const endDateForDisplay = activityEndDate ?? activityStartDate;
             const startDateTimeText = this.state.activityTimes.start ? `${formatLegDateForDisplay(activityStartDate.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.start}` : '--';
             const endDateTimeText = this.state.activityTimes.end ? `${formatLegDateForDisplay(endDateForDisplay.toISOString(), this.config.timezone, locale)} ${this.state.activityTimes.end}` : '--';
+
+            // An activity with no configured name renders no title row at all, rather than an
+            // empty one that would leave a gap above the duration lines.
+            const activityName = resolveActivityName(this.config);
+            const titleHtml = activityName ? `<div class="activity-title">${activityName}</div>` : '';
 
             const startLocationDisplayText = startLocationDisplay ? `${startLocationDisplay}` : '--';
             const endLocationDisplayText = endLocationDisplay ? `${endLocationDisplay}` : '--';
@@ -2372,11 +2279,8 @@ export default class DianaWidget {
                         <div class="element-location">${startLocationDisplayText}</div>
                     </div>
                     <div class="activity-main-info">
-                        <div class="activity-title">${this.config.activityName}</div>
-                        <div class="activity-duration-line">
-                           ${durationDisplayHtml}
-                           ${durationWarningHtml}
-                        </div>
+                        ${titleHtml}
+                        ${durationDisplayHtml}
                     </div>
                     <div class="element-time-location-group">
                         <div class="element-time">${endDateTimeText}</div>
@@ -2594,7 +2498,7 @@ export default class DianaWidget {
         }
         this.state.toConnections = [];
         this.state.fromConnections = [];
-        this.state.activityTimes = {start: '', end: '', duration: '', warningDuration: false};
+        this.state.activityTimes = {start: '', end: '', duration: ''};
 
         // Reset collapsible states when going back to form
         if (this.elements.collapsibleToActivity) this.elements.collapsibleToActivity.classList.remove('expanded');
@@ -2686,7 +2590,11 @@ export default class DianaWidget {
 
             if (navigator.share) {
                 await navigator.share({
-                    title: this.config.activityName,
+                    // Falls back to where the activity is: a share sheet with no label at
+                    // all tells the recipient nothing about what they are being sent.
+                    title: resolveActivityName(this.config)
+                        ?? firstNonBlank(this.config.activityStartLocationDisplayName, this.config.activityStartLocation)
+                        ?? undefined,
                     url: url.toString(),
                 });
             } else if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -2901,11 +2809,13 @@ export default class DianaWidget {
         this.state.shareContext = ctx;
         this.state.activity = ctx.activity;
 
-        // The share's origin must win over any cached start location from a previous visit,
-        // and over a host-page origin override — which would otherwise both overwrite it in
-        // _initializeOriginInputWithOverridesAndCache() and (when the field is disabled)
-        // stop the recipient changing where they travel from.
-        this.config.cacheUserStartLocation = false;
+        // A host-page origin override must not survive into share mode: it would overwrite
+        // the origin chosen below and (when the field is disabled) stop the recipient
+        // changing where they travel from. The recipient's *own* saved start location is a
+        // different matter - it is their own last choice and it beats the share's origin
+        // (see resolveShareOrigin below), so caching stays on: reading it seeds the first
+        // search, and writing it keeps a later pick from the "change departure point"
+        // dialog for next time.
         this.config.overrideUserStartLocation = null;
         this.config.overrideUserStartLocationType = null;
         this.config.disableUserStartLocationField = false;
@@ -2922,7 +2832,11 @@ export default class DianaWidget {
         this.navigateToResults();
         this._setResultsSkeletonVisible(true);
 
-        this._setOriginInputValue(ctx.origin, ctx.originLat, ctx.originLon);
+        // Read the cache explicitly rather than inspecting what initDOM() left in the field:
+        // the form template also seeds #originInput from config.userStartLocationDefault,
+        // which is not the recipient's saved location and must not beat the share's origin.
+        const shareOrigin = resolveShareOrigin(this._getCachedStartLocation(), ctx);
+        this._setOriginInputValue(shareOrigin.value, shareOrigin.lat, shareOrigin.lon);
 
         if (this.config.multiday) {
             if (this.elements.activityDateStart && this.state.selectedDate) {
@@ -2939,17 +2853,31 @@ export default class DianaWidget {
 
         this._renderShareInfoBanner();
 
+        // The baseline a failed "change departure point" rolls back to. Seeded before the
+        // first search, with the origin actually being searched, so it exists even if that
+        // search fails.
+        this._lastSearchedOrigin = this._readOriginInputValue();
+
         // Search straight away: the recipient was sent a journey and must be able to see it
         // before deciding anything. Changing the departure point is offered afterwards, from
         // the share info banner (see _showShareOriginDialog).
         try {
-            await this._runSharedSearch();
+            const searched = await this._runSharedSearch();
+
+            // The saved start location is keyed per container, not per activity, so a stale
+            // entry can belong to a different city entirely. When it finds nothing, fall
+            // back once to the origin the share was created with rather than handing the
+            // recipient an error page for a perfectly good link.
+            const foundNothing = this.state.toConnections.length === 0 && this.state.fromConnections.length === 0;
+            if (searched && shareOrigin.fromCache && foundNothing && ctx.origin) {
+                this._setOriginInputValue(ctx.origin, ctx.originLat, ctx.originLon);
+                this._renderShareInfoBanner();
+                this._lastSearchedOrigin = this._readOriginInputValue();
+                await this._runSharedSearch();
+            }
         } finally {
             this._setResultsSkeletonVisible(false);
         }
-
-        // The baseline a failed "change departure point" rolls back to.
-        this._lastSearchedOrigin = this._readOriginInputValue();
     }
 
     /**
@@ -2993,14 +2921,22 @@ export default class DianaWidget {
         this._applyExternalStyles();
     }
 
-    /** Runs the search for a shared journey, reporting failures as a share-load error. */
-    async _runSharedSearch(): Promise<void> {
+    /**
+     * Runs the search for a shared journey, reporting failures as a share-load error.
+     *
+     * @returns false when the request itself failed. Empty connection lists are *not* a
+     *          failure - callers that retry from a different origin need to tell the two
+     *          apart, since a transport error says nothing about the departure point.
+     */
+    async _runSharedSearch(): Promise<boolean> {
         try {
             await this.handleSearch();
+            return true;
         } catch (error) {
-            if (error.isSessionExpired) return;
+            if (error.isSessionExpired) return false;
             console.error("Failed to load connections for shared journey:", error);
             this._showFatalError(this.t('errors.shareLinkErrorTitle'), error.message, "info", true);
+            return false;
         }
     }
 
@@ -3190,7 +3126,7 @@ export default class DianaWidget {
         const parts: string[] = [];
 
         if (ctx.toConnectionEndTime) {
-            const meetingLocation = this.config.activityStartLocationDisplayName || this.config.activityName;
+            const meetingLocation = firstNonBlank(this.config.activityStartLocationDisplayName, this.config.activityName, this.config.activityStartLocation);
             const meetingTime = convertUTCToLocalTime(ctx.toConnectionEndTime, this.config.timezone);
             const meetingDate = formatLegDateForDisplay(ctx.toConnectionEndTime, this.config.timezone, this.config.language, 'dd.MM.yyyy');
             const originChanged = !!this.elements.originInput
@@ -3209,7 +3145,7 @@ export default class DianaWidget {
 
         if (ctx.fromConnectionStartTime) {
             parts.push(this.t('shareInfo.tourEnd', {
-                location: this._escapeHtml(this.config.activityEndLocationDisplayName || this.config.activityName || ''),
+                location: this._escapeHtml(firstNonBlank(this.config.activityEndLocationDisplayName, this.config.activityName, this.config.activityEndLocation) ?? ''),
                 date: this._escapeHtml(formatLegDateForDisplay(ctx.fromConnectionStartTime, this.config.timezone, this.config.language, 'dd.MM.yyyy')),
                 time: this._escapeHtml(convertUTCToLocalTime(ctx.fromConnectionStartTime, this.config.timezone)),
             }));

@@ -1,6 +1,7 @@
 import { getWidgetHeaderHTML } from './partials/_widgetHeader';
 import { getMenuDropdownHTML } from './partials/_menuDropdown';
 import { getResultsSkeletonHTML } from './partials/_resultsSkeleton';
+import { resolveActivityName } from '../utils';
 
 /**
  * Generates the HTML for the results page.
@@ -11,7 +12,7 @@ export function getResultsPageTemplateHTML(args) {
     const {config, t} = args;
 
     const menuDropdownHTML = getMenuDropdownHTML({t, dropdownId: 'resultsMenuDropdown', isShareDisabled: !config.share});
-    const headerHTML = getWidgetHeaderHTML({t, title: config.activityName, showBackButton: true, backButtonId: 'backBtn', menuDropdownHTML});
+    const headerHTML = getWidgetHeaderHTML({t, title: resolveActivityName(config) ?? '', showBackButton: true, backButtonId: 'backBtn', menuDropdownHTML});
 
     return `
       <div id="resultsPage" class="modal-page">
@@ -48,7 +49,7 @@ export function getResultsPageTemplateHTML(args) {
 
                 <div id="shareInfoBanner" class="share-info-banner" style="display:none"></div>
 
-                <div id="activity-time" class="middle-box">${config.activityName}</div>
+                <div id="activity-time" class="middle-box"></div>
 
                 <div class="collapsible-container" id="collapsibleFromActivity">
                     <div class="collapsible-header">

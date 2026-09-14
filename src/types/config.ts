@@ -12,8 +12,8 @@ export type Language = 'EN' | 'DE' | 'FR' | 'IT' | 'TH' | 'ES';
  * Configuration interface for DianaWidget
  */
 export interface WidgetConfig {
-    /** Name of the activity */
-    activityName: string;
+    /** Name of the activity. Optional: with no value the widget renders no title anywhere. */
+    activityName?: string | null;
     
     /** List of required configuration fields */
     requiredFields: string[];
