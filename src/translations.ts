@@ -156,8 +156,7 @@ const translations: Translations = {
             loadLater: "Load later"
         },
         useFlex: {
-            label: "Include on-demand transit",
-            hint: "Also search dial-a-ride, shared taxis and other services that run on request."
+            label: "Include on-demand transit"
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",
@@ -352,8 +351,7 @@ const translations: Translations = {
             loadLater: "Spätere laden"
         },
         useFlex: {
-            label: "Bedarfsverkehr einbeziehen",
-            hint: "Ruf- und Sammeltaxis sowie andere Angebote auf Bestellung werden mitgesucht."
+            label: "Bedarfsverkehr einbeziehen"
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
@@ -548,8 +546,7 @@ const translations: Translations = {
             loadLater: "Cargar posteriores"
         },
         useFlex: {
-            label: "Incluir transporte a demanda",
-            hint: "También se buscan taxis compartidos, servicios a la carta y otras ofertas bajo petición."
+            label: "Incluir transporte a demanda"
         },
         waiting: {
             beforeActivity: "Esperando el inicio de la actividad",
@@ -744,8 +741,7 @@ const translations: Translations = {
             loadLater: "Charger suivants"
         },
         useFlex: {
-            label: "Inclure le transport à la demande",
-            hint: "Les taxis collectifs, services sur réservation et autres offres à la demande sont également recherchés."
+            label: "Inclure le transport à la demande"
         },
         waiting: {
             beforeActivity: "En attente du début de l'activité",
@@ -940,8 +936,7 @@ const translations: Translations = {
             loadLater: "Carica successivi"
         },
         useFlex: {
-            label: "Includi il trasporto a chiamata",
-            hint: "Vengono cercati anche taxi collettivi, servizi su prenotazione e altre offerte a richiesta."
+            label: "Includi il trasporto a chiamata"
         },
         waiting: {
             beforeActivity: "In attesa dell'inizio dell'attività",
@@ -1136,8 +1131,7 @@ const translations: Translations = {
             loadLater: "โหลดถัดไป"
         },
         useFlex: {
-            label: "รวมบริการขนส่งตามความต้องการ",
-            hint: "ค้นหารถแท็กซี่ร่วมโดยสารและบริการอื่น ๆ ที่ให้บริการตามการเรียกใช้ด้วย"
+            label: "รวมบริการขนส่งตามความต้องการ"
         },
         waiting: {
             beforeActivity: "กำลังรอให้กิจกรรมเริ่มต้น",

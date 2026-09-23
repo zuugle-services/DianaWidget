@@ -126,8 +126,6 @@ export interface AriaLabelTranslations {
 export interface UseFlexTranslations {
     /** Label next to the switch */
     label: string;
-    /** Explanatory line below the switch */
-    hint: string;
 }
 
 /**
