@@ -211,9 +211,10 @@ const translations: Translations = {
             deadline: "Book by {datetime}",
             deadlineRealTime: "Bookable until departure",
             opensAt: "Booking opens {datetime}",
-            expired: "Booking deadline passed ({datetime})",
+            expired: "Too late! Book by {datetime}",
             summary: "Booking required",
-            summaryExpired: "Booking deadline passed",
+            summaryExpired: "Too late!",
+            advance: "Please book at least {minutes} min before departure",
             headerButton: "Book trip"
         },
         flex: {
@@ -443,9 +444,10 @@ const translations: Translations = {
             deadline: "Buchbar bis {datetime}",
             deadlineRealTime: "Buchbar bis zur Abfahrt",
             opensAt: "Buchbar ab {datetime}",
-            expired: "Buchungsfrist abgelaufen ({datetime})",
+            expired: "Zu kurzfristig! Buchen war bis {datetime} nötig",
             summary: "Buchung erforderlich",
-            summaryExpired: "Buchungsfrist abgelaufen",
+            summaryExpired: "Zu kurzfristig!",
+            advance: "Bitte mindestens {minutes} Min. vor Abfahrt buchen",
             headerButton: "Fahrt buchen"
         },
         flex: {
@@ -675,9 +677,10 @@ const translations: Translations = {
             deadline: "Reservar antes de {datetime}",
             deadlineRealTime: "Se puede reservar hasta la salida",
             opensAt: "Reservas a partir de {datetime}",
-            expired: "Plazo de reserva vencido ({datetime})",
+            expired: "¡Demasiado tarde! Había que reservar antes de {datetime}",
             summary: "Reserva obligatoria",
-            summaryExpired: "Plazo de reserva vencido",
+            summaryExpired: "¡Demasiado tarde!",
+            advance: "Reserve al menos {minutes} min antes de la salida",
             headerButton: "Reservar viaje"
         },
         flex: {
@@ -907,9 +910,10 @@ const translations: Translations = {
             deadline: "Réserver avant le {datetime}",
             deadlineRealTime: "Réservable jusqu'au départ",
             opensAt: "Réservation possible dès le {datetime}",
-            expired: "Délai de réservation dépassé ({datetime})",
+            expired: "Trop tard ! Il fallait réserver avant le {datetime}",
             summary: "Réservation obligatoire",
-            summaryExpired: "Délai de réservation dépassé",
+            summaryExpired: "Trop tard !",
+            advance: "Réservez au moins {minutes} min avant le départ",
             headerButton: "Réserver le trajet"
         },
         flex: {
@@ -1139,9 +1143,10 @@ const translations: Translations = {
             deadline: "Prenota entro {datetime}",
             deadlineRealTime: "Prenotabile fino alla partenza",
             opensAt: "Prenotabile dal {datetime}",
-            expired: "Termine di prenotazione scaduto ({datetime})",
+            expired: "Troppo tardi! Bisognava prenotare entro {datetime}",
             summary: "Prenotazione obbligatoria",
-            summaryExpired: "Termine di prenotazione scaduto",
+            summaryExpired: "Troppo tardi!",
+            advance: "Prenota almeno {minutes} min prima della partenza",
             headerButton: "Prenota viaggio"
         },
         flex: {
@@ -1371,9 +1376,10 @@ const translations: Translations = {
             deadline: "จองได้ถึง {datetime}",
             deadlineRealTime: "จองได้จนถึงเวลาออกเดินทาง",
             opensAt: "เปิดจองตั้งแต่ {datetime}",
-            expired: "หมดเวลาจองแล้ว ({datetime})",
+            expired: "สายเกินไป! ต้องจองก่อน {datetime}",
             summary: "ต้องจองล่วงหน้า",
-            summaryExpired: "หมดเวลาจองแล้ว",
+            summaryExpired: "สายเกินไป!",
+            advance: "โปรดจองล่วงหน้าอย่างน้อย {minutes} นาที",
             headerButton: "จองการเดินทาง"
         },
         flex: {

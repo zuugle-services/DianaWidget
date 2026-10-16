@@ -229,6 +229,8 @@ export interface BookingTranslations {
     expired: string;
     summary: string;
     summaryExpired: string;
+    /** {minutes} is the minimum notice in minutes */
+    advance: string;
     headerButton: string;
 }
 

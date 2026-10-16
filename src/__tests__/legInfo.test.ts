@@ -267,7 +267,7 @@ describe('booking', () => {
     test('expired booking hides the online booking button and is marked', () => {
         const html = renderLegBooking(leg({booking: {pickup: rule}}), ctx({now: DateTime.fromISO('2026-10-19T06:00:00Z')}));
         expect(html).toContain('leg-booking--expired');
-        expect(html).toContain('Booking deadline passed (Sun 18 Oct, 17:00)');
+        expect(html).toContain('Too late! Book by Sun 18 Oct, 17:00');
         expect(html).not.toContain('book.example');
         expect(html).toContain('tel:+4350422422');
     });
@@ -350,7 +350,7 @@ describe('connection summary and header action', () => {
     test('expired bookings are flagged in the summary and drop the header action', () => {
         const late = ctx({now: DateTime.fromISO('2026-10-19T07:00:00Z')});
         const conn = connection([bookingLeg]);
-        expect(renderSummaryBadges(conn, late)).toContain('Booking deadline passed');
+        expect(renderSummaryBadges(conn, late)).toContain('Too late!');
         expect(renderBookingHeaderAction(conn, late)).toBe('');
         expect(renderBookingHeaderAction(conn, ctx())).toContain('href="https://book.example"');
         expect(renderBookingHeaderAction(conn, ctx())).toContain('Book trip');

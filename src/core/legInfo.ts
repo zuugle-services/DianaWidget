@@ -377,6 +377,9 @@ export function getBookingStatus(rule: BookingRule, ctx: LegInfoContext): Bookin
     if (latest?.isValid) {
         return {state: 'open', text: ctx.t('booking.deadline', {datetime: formatDateTime(rule.latest_booking_time, ctx) ?? ''})};
     }
+    if (rule.prior_notice_duration_min) {
+        return {state: 'open', text: ctx.t('booking.advance', {minutes: String(rule.prior_notice_duration_min)})};
+    }
     return {state: 'open', text: null};
 }
 
