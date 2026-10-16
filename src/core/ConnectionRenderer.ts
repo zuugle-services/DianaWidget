@@ -19,6 +19,14 @@ import type {
     Connection,
     ConnectionElement
 } from '../types';
+import {
+    isUrgentAlert,
+    renderBookingHeaderAction,
+    renderLegAlerts,
+    renderLegBooking,
+    renderSummaryBadges,
+    type LegInfoContext
+} from './legInfo';
 
 /**
  * Interface for translation function
@@ -65,6 +73,15 @@ export class ConnectionRenderer {
         this.config = config;
     }
 
+    /** Context for rendering alerts, booking and on-demand information. */
+    private legInfoContext(): LegInfoContext {
+        return {
+            t: (key, replacements) => this.t(key, replacements),
+            timezone: this.config.timezone,
+            language: this.config.language,
+        };
+    }
+
     /**
      * Renders a compact summary of a connection for the collapsible header.
      * @param connection - The connection object.
@@ -106,6 +123,10 @@ export class ConnectionRenderer {
 
         const isLive = connection.connection_elements && connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.provider === 'live');
         const liveIndicatorHTML = isLive ? `<span class="live-indicator">${this.t('live')}</span>` : '';
+        const badgesHTML = renderSummaryBadges(connection, this.legInfoContext());
+        const statusHTML = (badgesHTML || liveIndicatorHTML)
+            ? `<span class="summary-status">${badgesHTML}${liveIndicatorHTML}</span>`
+            : '';
 
         return `
             <div class="summary-line-1">
@@ -117,7 +138,7 @@ export class ConnectionRenderer {
             </div>
             <div class="summary-line-3">
                 <span>${duration} &bull; ${transfers} ${this.t('transfers')}</span>
-                ${liveIndicatorHTML}
+                ${statusHTML}
             </div>
         `;
     }
@@ -157,12 +178,17 @@ export class ConnectionRenderer {
             </button>
             ` : '';
 
-            const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML) ? `
+            const bookingActionHTML = renderBookingHeaderAction(conn, this.legInfoContext());
+
+            const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML || bookingActionHTML) ? `
             <div class="connection-details-header">
                 ${liveIndicatorHTML}
-                ${ticketButtonHTML}
+                ${(ticketButtonHTML || bookingActionHTML) ? `<div class="connection-details-actions">${bookingActionHTML}${ticketButtonHTML}</div>` : ''}
             </div>
             ` : '';
+
+            // Alerts are shown once per connection, at the first leg they apply to.
+            const shownAlerts = new Set<string>();
 
             let html = `<div class="connection-details-wrapper">${headerDetailsHTML}<div class="connection-elements">`;
 
@@ -172,7 +198,7 @@ export class ConnectionRenderer {
             }
 
             filteredElements.forEach((element, index) => {
-                html += this._renderConnectionElement(element, index, filteredElements, type, conn, elements, state.activityTimes.start);
+                html += this._renderConnectionElement(element, index, filteredElements, type, conn, elements, state.activityTimes.start, shownAlerts);
             });
 
             // Display waiting time before activity starts (for 'to' connections)
@@ -195,7 +221,8 @@ export class ConnectionRenderer {
         type: string,
         conn: Connection,
         elements: RendererElements,
-        activityStartTime: string
+        activityStartTime: string,
+        shownAlerts?: Set<string>
     ): string {
         const departureTime = convertUTCToLocalTime(element.departure_time, this.config.timezone);
         const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
@@ -203,7 +230,7 @@ export class ConnectionRenderer {
 
         const vehicleType = (element.type !== 'JNY') ? (element.type || 'DEFAULT') : (element.vehicle_type || 'DEFAULT');
         const icon = this.getTransportIcon(vehicleType);
-        const transportName = this.getTransportName(vehicleType);
+        const transportName = element.flex ? this.t('flex.label') : this.getTransportName(vehicleType);
 
         // Date display logic
         let dateDisplay = '';
@@ -256,7 +283,9 @@ export class ConnectionRenderer {
               </div>
               ${dateDisplay}
             </div>
-            ${this.renderAlert(element)}
+            ${renderLegAlerts(element, this.legInfoContext(), shownAlerts, isUrgentAlert)}
+            ${renderLegBooking(element, this.legInfoContext())}
+            ${renderLegAlerts(element, this.legInfoContext(), shownAlerts, alert => !isUrgentAlert(alert))}
           </div>
         `;
 
@@ -376,78 +405,6 @@ export class ConnectionRenderer {
             }
         }
         return '';
-    }
-
-    /**
-     * Renders alert information for a connection element if alerts are present.
-     * @param element - The connection element containing potential alerts.
-     * @returns HTML string for the alert display, or empty string if no alerts.
-     */
-    renderAlert(element: ConnectionElement): string {
-        if (!element.alerts || element.alerts.length === 0) {
-            return '';
-        }
-
-        // Only show the first alert as per requirements
-        const alert = element.alerts[0];
-        
-        const alertIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-
-        // Escape HTML to prevent XSS, but allow links in description
-        const escapeHtml = (text: string | undefined): string => {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        };
-
-        // Escape for use in HTML attributes (more strict escaping)
-        const escapeAttr = (text: string | undefined): string => {
-            if (!text) return '';
-            return text
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        };
-
-        // Convert URLs to clickable links in description
-        const linkifyDescription = (text: string | undefined): string => {
-            if (!text) return '';
-            const escaped = escapeHtml(text);
-            // Match URLs and convert to links
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return escaped.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-        };
-
-        const headerText = alert.header_text ? escapeHtml(alert.header_text) : '';
-        const descriptionText = linkifyDescription(alert.description_text);
-
-        // Build the alert HTML - using data-expandable class for event delegation
-        // Note: Alerts are expanded by default. To revert to collapsed by default,
-        // remove "expanded" class from "alert-header-text" and "alert-description" elements below.
-        let alertHTML = `
-            <div class="connection-element-alert">
-                <div class="alert-header">
-                    <span class="alert-icon">${alertIcon}</span>
-                    <span>${this.t('alert.label')}</span>
-                </div>`;
-
-        if (headerText) {
-            alertHTML += `
-                <div class="alert-header-text expandable expanded" title="${escapeAttr(alert.header_text ?? '')}">${headerText}</div>`;
-        }
-
-        if (descriptionText) {
-            alertHTML += `
-                <div class="alert-description expandable expanded" title="${escapeAttr(alert.description_text ?? '')}">${descriptionText}</div>`;
-        }
-
-        alertHTML += `
-            </div>`;
-
-        return alertHTML;
     }
 
     /**

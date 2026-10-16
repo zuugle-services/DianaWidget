@@ -185,7 +185,63 @@ export interface ShareOriginDialogTranslations {
  * Alert translations
  */
 export interface AlertTranslations {
+    /** Generic label for a service notice */
     label: string;
+    /** Labels per display severity */
+    severity: {
+        info: string;
+        warning: string;
+        severe: string;
+    };
+    /** Accessible name of the list of notices under a leg */
+    listLabel: string;
+    /** Context for stop-scoped alerts; {stop} is the stop name */
+    atStop: string;
+    showMore: string;
+    showLess: string;
+    moreInfo: string;
+    /** Validity of an alert; {date} / {start} / {end} are formatted dates */
+    validFrom: string;
+    validUntil: string;
+    validBetween: string;
+    /** Summary indicator; {count} is the number of notices */
+    summaryOne: string;
+    summaryMany: string;
+}
+
+/**
+ * Booking (GTFS-Flex booking rules) translations
+ */
+export interface BookingTranslations {
+    /** Accessible name of the booking section */
+    sectionLabel: string;
+    title: string;
+    pickup: string;
+    dropOff: string;
+    bookOnline: string;
+    /** {number} is the phone number */
+    call: string;
+    info: string;
+    /** {datetime} is a formatted date and time */
+    deadline: string;
+    deadlineRealTime: string;
+    opensAt: string;
+    expired: string;
+    summary: string;
+    summaryExpired: string;
+    /** {minutes} is the minimum notice in minutes */
+    advance: string;
+    headerButton: string;
+}
+
+/**
+ * On-demand (GTFS-Flex) service translations
+ */
+export interface FlexTranslations {
+    label: string;
+    /** {start} / {end} are formatted times */
+    availability: string;
+    bookingHint: string;
 }
 
 /**
@@ -265,6 +321,10 @@ export interface LanguageTranslations {
     waiting: WaitingTranslations;
     vehicles: VehicleTranslations;
     alert: AlertTranslations;
+    booking: BookingTranslations;
+    flex: FlexTranslations;
+    /** Accessible hint appended to links that open a new tab */
+    opensInNewTab: string;
     shareInfo: ShareInfoTranslations;
     shareOriginDialog: ShareOriginDialogTranslations;
 }

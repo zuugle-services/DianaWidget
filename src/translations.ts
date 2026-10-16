@@ -183,8 +183,46 @@ const translations: Translations = {
             'TRSF': 'Transfer'
         },
         alert: {
-            label: 'Alert'
+            label: "Alert",
+            severity: {
+                info: "Notice",
+                warning: "Service change",
+                severe: "Disruption"
+            },
+            listLabel: "Notices for this leg",
+            atStop: "Stop {stop}",
+            showMore: "Show more",
+            showLess: "Show less",
+            moreInfo: "More information",
+            validFrom: "From {date}",
+            validUntil: "Until {date}",
+            validBetween: "{start} – {end}",
+            summaryOne: "1 notice for this connection",
+            summaryMany: "{count} notices for this connection"
         },
+        booking: {
+            sectionLabel: "Booking",
+            title: "Booking required",
+            pickup: "Boarding",
+            dropOff: "Alighting",
+            bookOnline: "Book online",
+            call: "Call {number}",
+            info: "Booking information",
+            deadline: "Book by {datetime}",
+            deadlineRealTime: "Bookable until departure",
+            opensAt: "Booking opens {datetime}",
+            expired: "Too late! Book by {datetime}",
+            summary: "Booking required",
+            summaryExpired: "Too late!",
+            advance: "Please book at least {minutes} min before departure",
+            headerButton: "Book trip"
+        },
+        flex: {
+            label: "On-demand service",
+            availability: "Available {start}–{end}",
+            bookingHint: "Booking with the operator may be required."
+        },
+        opensInNewTab: "opens in a new tab",
         shareInfo: {
             meetingPoint: "Planned start of this tour is \"{location}\" on {date} at {time}.",
             meetingPointChangedOrigin: "Planned start of this tour is \"{location}\" on {date} at {time}. The connections shown here are the ones for your own departure point.",
@@ -378,8 +416,46 @@ const translations: Translations = {
             'TRSF': 'Umstieg'
         },
         alert: {
-            label: 'Hinweis'
+            label: "Hinweis",
+            severity: {
+                info: "Hinweis",
+                warning: "Einschränkung",
+                severe: "Störung"
+            },
+            listLabel: "Hinweise zu diesem Abschnitt",
+            atStop: "Haltestelle {stop}",
+            showMore: "Mehr anzeigen",
+            showLess: "Weniger anzeigen",
+            moreInfo: "Weitere Informationen",
+            validFrom: "Ab {date}",
+            validUntil: "Bis {date}",
+            validBetween: "{start} – {end}",
+            summaryOne: "1 Hinweis zu dieser Verbindung",
+            summaryMany: "{count} Hinweise zu dieser Verbindung"
         },
+        booking: {
+            sectionLabel: "Buchung",
+            title: "Buchung erforderlich",
+            pickup: "Einstieg",
+            dropOff: "Ausstieg",
+            bookOnline: "Online buchen",
+            call: "{number} anrufen",
+            info: "Infos zur Buchung",
+            deadline: "Buchbar bis {datetime}",
+            deadlineRealTime: "Buchbar bis zur Abfahrt",
+            opensAt: "Buchbar ab {datetime}",
+            expired: "Zu kurzfristig! Buchen war bis {datetime} nötig",
+            summary: "Buchung erforderlich",
+            summaryExpired: "Zu kurzfristig!",
+            advance: "Bitte mindestens {minutes} Min. vor Abfahrt buchen",
+            headerButton: "Fahrt buchen"
+        },
+        flex: {
+            label: "Bedarfsverkehr",
+            availability: "Verfügbar {start}–{end}",
+            bookingHint: "Die Fahrt muss ggf. vorab beim Betreiber gebucht werden."
+        },
+        opensInNewTab: "öffnet in neuem Tab",
         shareInfo: {
             meetingPoint: "Geplanter Start für diese Tour ist \"{location}\" am {date} um {time}.",
             meetingPointChangedOrigin: "Geplanter Start für diese Tour ist \"{location}\" am {date} um {time}. Die hier angezeigten Verbindungen gelten für deinen eigenen Abfahrtsort.",
@@ -573,8 +649,46 @@ const translations: Translations = {
             'TRSF': 'Transbordo'
         },
         alert: {
-            label: 'Alerta'
+            label: "Alerta",
+            severity: {
+                info: "Aviso",
+                warning: "Cambio en el servicio",
+                severe: "Interrupción"
+            },
+            listLabel: "Avisos para este tramo",
+            atStop: "Parada {stop}",
+            showMore: "Mostrar más",
+            showLess: "Mostrar menos",
+            moreInfo: "Más información",
+            validFrom: "Desde {date}",
+            validUntil: "Hasta {date}",
+            validBetween: "{start} – {end}",
+            summaryOne: "1 aviso para esta conexión",
+            summaryMany: "{count} avisos para esta conexión"
         },
+        booking: {
+            sectionLabel: "Reserva",
+            title: "Reserva obligatoria",
+            pickup: "Subida",
+            dropOff: "Bajada",
+            bookOnline: "Reservar en línea",
+            call: "Llamar al {number}",
+            info: "Información sobre la reserva",
+            deadline: "Reservar antes de {datetime}",
+            deadlineRealTime: "Se puede reservar hasta la salida",
+            opensAt: "Reservas a partir de {datetime}",
+            expired: "¡Demasiado tarde! Había que reservar antes de {datetime}",
+            summary: "Reserva obligatoria",
+            summaryExpired: "¡Demasiado tarde!",
+            advance: "Reserve al menos {minutes} min antes de la salida",
+            headerButton: "Reservar viaje"
+        },
+        flex: {
+            label: "Servicio a demanda",
+            availability: "Disponible {start}–{end}",
+            bookingHint: "Puede ser necesario reservar con el operador."
+        },
+        opensInNewTab: "se abre en una pestaña nueva",
         shareInfo: {
             meetingPoint: "El inicio planificado de este recorrido es \"{location}\" el {date} a las {time}.",
             meetingPointChangedOrigin: "El inicio planificado de este recorrido es \"{location}\" el {date} a las {time}. Las conexiones que se muestran aquí corresponden a su propio punto de partida.",
@@ -768,8 +882,46 @@ const translations: Translations = {
             'TRSF': 'Correspondance'
         },
         alert: {
-            label: 'Alerte'
+            label: "Alerte",
+            severity: {
+                info: "Information",
+                warning: "Modification du service",
+                severe: "Perturbation"
+            },
+            listLabel: "Avis pour cette étape",
+            atStop: "Arrêt {stop}",
+            showMore: "Afficher plus",
+            showLess: "Afficher moins",
+            moreInfo: "Plus d'informations",
+            validFrom: "À partir du {date}",
+            validUntil: "Jusqu'au {date}",
+            validBetween: "{start} – {end}",
+            summaryOne: "1 avis pour ce trajet",
+            summaryMany: "{count} avis pour ce trajet"
         },
+        booking: {
+            sectionLabel: "Réservation",
+            title: "Réservation obligatoire",
+            pickup: "Montée",
+            dropOff: "Descente",
+            bookOnline: "Réserver en ligne",
+            call: "Appeler le {number}",
+            info: "Infos sur la réservation",
+            deadline: "Réserver avant le {datetime}",
+            deadlineRealTime: "Réservable jusqu'au départ",
+            opensAt: "Réservation possible dès le {datetime}",
+            expired: "Trop tard ! Il fallait réserver avant le {datetime}",
+            summary: "Réservation obligatoire",
+            summaryExpired: "Trop tard !",
+            advance: "Réservez au moins {minutes} min avant le départ",
+            headerButton: "Réserver le trajet"
+        },
+        flex: {
+            label: "Transport à la demande",
+            availability: "Disponible {start}–{end}",
+            bookingHint: "Une réservation auprès de l'opérateur peut être nécessaire."
+        },
+        opensInNewTab: "s'ouvre dans un nouvel onglet",
         shareInfo: {
             meetingPoint: "Le départ prévu pour cette visite est « {location} » le {date} à {time}.",
             meetingPointChangedOrigin: "Le départ prévu pour cette visite est « {location} » le {date} à {time}. Les correspondances affichées ici correspondent à votre propre point de départ.",
@@ -963,8 +1115,46 @@ const translations: Translations = {
             'TRSF': 'Cambio'
         },
         alert: {
-            label: 'Avviso'
+            label: "Avviso",
+            severity: {
+                info: "Avviso",
+                warning: "Variazione del servizio",
+                severe: "Interruzione"
+            },
+            listLabel: "Avvisi per questa tratta",
+            atStop: "Fermata {stop}",
+            showMore: "Mostra di più",
+            showLess: "Mostra meno",
+            moreInfo: "Ulteriori informazioni",
+            validFrom: "Dal {date}",
+            validUntil: "Fino al {date}",
+            validBetween: "{start} – {end}",
+            summaryOne: "1 avviso per questo collegamento",
+            summaryMany: "{count} avvisi per questo collegamento"
         },
+        booking: {
+            sectionLabel: "Prenotazione",
+            title: "Prenotazione obbligatoria",
+            pickup: "Salita",
+            dropOff: "Discesa",
+            bookOnline: "Prenota online",
+            call: "Chiama il {number}",
+            info: "Informazioni sulla prenotazione",
+            deadline: "Prenota entro {datetime}",
+            deadlineRealTime: "Prenotabile fino alla partenza",
+            opensAt: "Prenotabile dal {datetime}",
+            expired: "Troppo tardi! Bisognava prenotare entro {datetime}",
+            summary: "Prenotazione obbligatoria",
+            summaryExpired: "Troppo tardi!",
+            advance: "Prenota almeno {minutes} min prima della partenza",
+            headerButton: "Prenota viaggio"
+        },
+        flex: {
+            label: "Servizio a chiamata",
+            availability: "Disponibile {start}–{end}",
+            bookingHint: "Potrebbe essere necessario prenotare presso l'operatore."
+        },
+        opensInNewTab: "si apre in una nuova scheda",
         shareInfo: {
             meetingPoint: "L'inizio previsto per questo tour è \"{location}\" il {date} alle {time}.",
             meetingPointChangedOrigin: "L'inizio previsto per questo tour è \"{location}\" il {date} alle {time}. I collegamenti mostrati qui valgono per il tuo punto di partenza.",
@@ -1158,8 +1348,46 @@ const translations: Translations = {
             'TRSF': 'เปลี่ยนรถ'
         },
         alert: {
-            label: 'แจ้งเตือน'
+            label: "แจ้งเตือน",
+            severity: {
+                info: "ข้อมูล",
+                warning: "การเปลี่ยนแปลงบริการ",
+                severe: "บริการหยุดชะงัก"
+            },
+            listLabel: "ประกาศสำหรับช่วงการเดินทางนี้",
+            atStop: "ป้าย {stop}",
+            showMore: "แสดงเพิ่มเติม",
+            showLess: "แสดงน้อยลง",
+            moreInfo: "ข้อมูลเพิ่มเติม",
+            validFrom: "ตั้งแต่ {date}",
+            validUntil: "จนถึง {date}",
+            validBetween: "{start} – {end}",
+            summaryOne: "1 ประกาศสำหรับการเดินทางนี้",
+            summaryMany: "{count} ประกาศสำหรับการเดินทางนี้"
         },
+        booking: {
+            sectionLabel: "การจอง",
+            title: "ต้องจองล่วงหน้า",
+            pickup: "ขึ้นรถ",
+            dropOff: "ลงรถ",
+            bookOnline: "จองออนไลน์",
+            call: "โทร {number}",
+            info: "ข้อมูลการจอง",
+            deadline: "จองได้ถึง {datetime}",
+            deadlineRealTime: "จองได้จนถึงเวลาออกเดินทาง",
+            opensAt: "เปิดจองตั้งแต่ {datetime}",
+            expired: "สายเกินไป! ต้องจองก่อน {datetime}",
+            summary: "ต้องจองล่วงหน้า",
+            summaryExpired: "สายเกินไป!",
+            advance: "โปรดจองล่วงหน้าอย่างน้อย {minutes} นาที",
+            headerButton: "จองการเดินทาง"
+        },
+        flex: {
+            label: "บริการตามความต้องการ",
+            availability: "ให้บริการ {start}–{end}",
+            bookingHint: "อาจต้องจองกับผู้ให้บริการล่วงหน้า"
+        },
+        opensInNewTab: "เปิดในแท็บใหม่",
         shareInfo: {
             meetingPoint: "จุดเริ่มต้นที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time}",
             meetingPointChangedOrigin: "จุดเริ่มต้นที่วางแผนไว้สำหรับทัวร์นี้คือ \"{location}\" ในวันที่ {date} เวลา {time} การเชื่อมต่อที่แสดงที่นี่ใช้สำหรับจุดออกเดินทางของคุณเอง",

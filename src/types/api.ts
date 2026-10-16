@@ -76,6 +76,12 @@ export interface ConnectionElement {
     
     /** Alerts/warnings for this element */
     readonly alerts?: readonly TransportAlert[];
+
+    /** On-demand (GTFS-Flex) service details; only present on FLEX legs */
+    readonly flex?: FlexInfo;
+
+    /** Booking requirements; only present when the routing provider supplies booking rules */
+    readonly booking?: LegBooking;
     
     /** 
      * Whether this is the first element in the original connection.
@@ -183,14 +189,84 @@ export interface TransportLeg {
     readonly ticket_url?: string;
 }
 
+/** Display severity of an alert, derived by the backend from the feed */
+export type AlertSeverity = 'info' | 'warning' | 'severe';
+
+/** What an alert refers to */
+export type AlertScope = 'trip' | 'departure_stop' | 'arrival_stop';
+
+/** A time interval; a missing bound means open-ended */
+export interface AlertTimeRange {
+    readonly start?: string | null;
+    readonly end?: string | null;
+}
+
 /**
- * Transport alert/warning (GTFS Realtime-based)
+ * Transport alert/warning (GTFS Realtime-based).
+ * Texts are in the requested language when the feed provides a translation.
  */
 export interface TransportAlert {
-    readonly cause?: string;
-    readonly effect?: string;
+    readonly cause?: string | null;
+    readonly effect?: string | null;
+    readonly severity?: AlertSeverity;
+    readonly scope?: AlertScope;
+    /** Name of the affected stop for stop-scoped alerts */
+    readonly stop_name?: string;
     readonly header_text?: string;
     readonly description_text?: string;
+    /** URL with additional information */
+    readonly url?: string;
+    readonly cause_detail?: string;
+    readonly effect_detail?: string;
+    readonly code?: string;
+    readonly impact_period?: readonly AlertTimeRange[];
+    readonly communication_period?: readonly AlertTimeRange[];
+    readonly image_url?: string;
+    readonly image_media_type?: string;
+    readonly image_alternative_text?: string;
+}
+
+/** On-demand (GTFS-Flex) service details of a leg */
+export interface FlexInfo {
+    /** Name of the on-demand service or service area */
+    readonly name?: string;
+    readonly id?: string;
+    readonly pickup_window_start?: string;
+    readonly pickup_window_end?: string;
+    readonly drop_off_window_start?: string;
+    readonly drop_off_window_end?: string;
+}
+
+/** GTFS-Flex booking type */
+export type BookingType = 'real_time' | 'same_day' | 'prior_days';
+
+/** Booking rule (GTFS-Flex booking_rules.txt) with backend-computed booking window */
+export interface BookingRule {
+    readonly booking_type?: BookingType;
+    readonly message?: string;
+    readonly pickup_message?: string;
+    readonly drop_off_message?: string;
+    readonly phone_number?: string;
+    readonly info_url?: string;
+    readonly booking_url?: string;
+    readonly prior_notice_duration_min?: number;
+    readonly prior_notice_duration_max?: number;
+    readonly prior_notice_last_day?: number;
+    readonly prior_notice_last_time?: string;
+    readonly prior_notice_start_day?: number;
+    readonly prior_notice_start_time?: string;
+    /** Earliest time the leg can be booked (ISO 8601, UTC) */
+    readonly earliest_booking_time?: string;
+    /** Booking deadline (ISO 8601, UTC) */
+    readonly latest_booking_time?: string;
+}
+
+/** Booking requirements of a leg */
+export interface LegBooking {
+    /** Rule for boarding the leg */
+    readonly pickup?: BookingRule;
+    /** Rule for alighting from the leg */
+    readonly drop_off?: BookingRule;
 }
 
 /**
