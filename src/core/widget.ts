@@ -894,17 +894,19 @@ export default class DianaWidget {
 
         this.elements.collapsibleToActivity?.addEventListener('click', () => this.toggleCollapsible('to'));
         this.elements.collapsibleFromActivity?.addEventListener('click', () => this.toggleCollapsible('from'));
+        this._setupCollapsibleAccessibility('to');
+        this._setupCollapsibleAccessibility('from');
 
         if (this.elements.responseBox) {
             this.elements.responseBox.addEventListener('click', (e) => {
                 this.handleBuyTicketClick(e);
-                this.handleAlertExpandClick(e);
+                this.handleLegInfoClick(e);
             });
         }
         if (this.elements.responseBoxBottom) {
             this.elements.responseBoxBottom.addEventListener('click', (e) => {
                 this.handleBuyTicketClick(e);
-                this.handleAlertExpandClick(e);
+                this.handleLegInfoClick(e);
             });
         }
 
@@ -980,6 +982,37 @@ export default class DianaWidget {
      * Toggles the collapsible state of a journey box, if it has content.
      * @param {string} type - 'to' or 'from'.
      */
+    /**
+     * Makes a journey summary header operable as a disclosure button for keyboard and
+     * screen-reader users. The container's classes are changed from many places, so the
+     * ARIA state is kept in sync by observing them instead of updating every call site.
+     */
+    _setupCollapsibleAccessibility(type: 'to' | 'from'): void {
+        const container = type === 'to' ? this.elements.collapsibleToActivity : this.elements.collapsibleFromActivity;
+        const header = container?.querySelector('.collapsible-header') as HTMLElement | null;
+        const content = type === 'to' ? this.elements.responseBox : this.elements.responseBoxBottom;
+        if (!container || !header) return;
+
+        header.setAttribute('role', 'button');
+        if (content?.id) header.setAttribute('aria-controls', content.id);
+
+        const sync = () => {
+            const enabled = container.classList.contains('has-summary');
+            header.tabIndex = enabled ? 0 : -1;
+            header.setAttribute('aria-disabled', String(!enabled));
+            header.setAttribute('aria-expanded', String(enabled && container.classList.contains('expanded')));
+        };
+        sync();
+        new MutationObserver(sync).observe(container, {attributes: true, attributeFilter: ['class']});
+
+        header.addEventListener('keydown', (event: KeyboardEvent) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                this.toggleCollapsible(type);
+            }
+        });
+    }
+
     toggleCollapsible(type: string): void {
         const container = type === 'to'
             ? this.elements.collapsibleToActivity
@@ -1400,7 +1433,9 @@ export default class DianaWidget {
             activity_latest_start_time: utcLatestStart,
             activity_earliest_end_time: utcEarliestEnd,
             activity_latest_end_time: utcLatestEnd,
-            activity_duration_minutes: this.config.activityDurationMinutes
+            activity_duration_minutes: this.config.activityDurationMinutes,
+            // Alerts and booking information are returned in this language when the feed has it.
+            lang: this.config.language?.toLowerCase()
         };
 
         if (this.config.multiday && this.state.selectedEndDate) {
@@ -2341,27 +2376,31 @@ export default class DianaWidget {
     }
 
     /**
-     * Handles click events on expandable alert text elements.
-     * Uses event delegation to toggle the 'expanded' class.
+     * Handles clicks inside leg notices, booking cards and the details header actions.
+     * Toggles clamped notice texts and keeps clicks on these elements (including links)
+     * from bubbling up to the collapsible container, which would otherwise close.
      * @param {Event} event - The click event.
      */
-    handleAlertExpandClick(event) {
-        const alertBox = event.target.closest('.connection-element-alert');
-        if (!alertBox) return;
-        
-        // Don't expand if clicking on a link inside the alert, but still stop propagation
-        // to prevent the collapsible container from toggling
-        if (event.target.tagName === 'A') {
+    handleLegInfoClick(event) {
+        const target = event.target as HTMLElement | null;
+        if (!target?.closest) return;
+
+        const toggle = target.closest('.leg-notice__toggle') as HTMLButtonElement | null;
+        if (toggle) {
             event.stopPropagation();
+            const textId = toggle.getAttribute('aria-controls');
+            const text = textId ? toggle.closest('.leg-notice')?.querySelector(`#${CSS.escape(textId)}`) : null;
+            const expanded = toggle.getAttribute('aria-expanded') !== 'true';
+            toggle.setAttribute('aria-expanded', String(expanded));
+            text?.classList.toggle('is-clamped', !expanded);
+            const label = toggle.querySelector('.leg-notice__toggle-label');
+            if (label) label.textContent = (expanded ? toggle.dataset.labelLess : toggle.dataset.labelMore) ?? '';
             return;
         }
-        
-        // Stop event propagation to prevent toggling the collapsible container
-        event.stopPropagation();
-        
-        // Toggle all expandable elements inside this alert box (header and description expand together)
-        const expandables = alertBox.querySelectorAll('.expandable');
-        expandables.forEach(el => el.classList.toggle('expanded'));
+
+        if (target.closest('.leg-notice, .leg-booking, .leg-flex, .booking-cta')) {
+            event.stopPropagation();
+        }
     }
 
     renderConnectionDetails(connections: Connection[], type: string): string {
