@@ -44,6 +44,7 @@ import {
     readShareIdFromUrl,
     resolveShareOrigin
 } from './shareConfig';
+import { isConnectionDeparted, shouldIncludePastConnections } from './pastConnections';
 
 import { ApiService } from '../services';
 import type { ApiError, FetchOptions } from '../services';
@@ -1491,6 +1492,12 @@ export default class DianaWidget {
             params.use_flex = 'false';
         }
 
+        // For today, ask the backend to keep connections that have already left, so the
+        // whole day can be browsed with "load earlier". They are greyed out in the slider.
+        if (shouldIncludePastConnections(this.config.showPastConnections, params.date as string, this.config.timezone)) {
+            params.include_past = 'true';
+        }
+
         return params;
     }
 
@@ -1916,8 +1923,14 @@ export default class DianaWidget {
             const endTimeLocal = convertUTCToLocalTime(conn.connection_end_timestamp, this.config.timezone);
             const duration = calculateTimeDifference(conn.connection_start_timestamp, conn.connection_end_timestamp, (key) => this.t(key));
             const anytime = conn.connection_anytime;
+            // Only present when searching today with showPastConnections (the backend drops them otherwise)
+            const departed = isConnectionDeparted(conn);
             const btn = document.createElement('button');
             btn.dataset.index = index; // Add index for easy targeting
+            if (departed) {
+                btn.classList.add('departed');
+                btn.title = `${this.t('departed')} · ${duration}`;
+            }
 
             const transfersHtml = anytime ? this.getTransportIcon("WALK_BLACK") : `
                 <div class="transfers-group">

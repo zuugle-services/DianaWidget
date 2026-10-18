@@ -40,6 +40,8 @@
     --text-error: var(--error-color);
     --text-info: color-mix(in srgb, var(--primary-color), black 30%);
     --text-warning: color-mix(in srgb, var(--warning-color), black 40%);
+    --text-success: color-mix(in srgb, var(--success-color), black 30%);
+    --text-delay: color-mix(in srgb, var(--error-color), black 15%);
     --icon-input-color: #656C6E;
 
     /* Background Colors */

@@ -245,6 +245,28 @@ export interface FlexTranslations {
 }
 
 /**
+ * Live data (delays, platform changes, cancellations) translations
+ */
+export interface RealtimeTranslations {
+    /** Label of the live-data marker on a leg */
+    liveData: string;
+    /** Screen-reader suffix for a realtime time that is on schedule */
+    onTime: string;
+    /** {scheduled} / {actual} are formatted times */
+    timeChanged: string;
+    /** {scheduled} / {actual} are platform names */
+    platformChanged: string;
+    /** {minutes} is a positive number */
+    departureLate: string;
+    departureEarly: string;
+    arrivalLate: string;
+    arrivalEarly: string;
+    cancelled: string;
+    cancelledText: string;
+    additionalService: string;
+}
+
+/**
  * Complete translation object for a single language
  */
 export interface LanguageTranslations {
@@ -294,6 +316,8 @@ export interface LanguageTranslations {
     availableTime: string;
     dateRangeLabel: string;
     noConnectionDetails: string;
+    /** Tag on a time slot whose connection has already left (today's search) */
+    departed: string;
     noConnectionElements: string;
     selectTimeSlot: string;
     useCurrentLocation: string;
@@ -305,8 +329,6 @@ export interface LanguageTranslations {
     share: string;
     shareUrlCopied: string;
     shareUrlCopyFailed: string;
-    live: string;
-    liveConnection: string;
     platform: string;
     direction: string;
     buyTicket: string;
@@ -323,6 +345,7 @@ export interface LanguageTranslations {
     alert: AlertTranslations;
     booking: BookingTranslations;
     flex: FlexTranslations;
+    realtime: RealtimeTranslations;
     /** Accessible hint appended to links that open a new tab */
     opensInNewTab: string;
     shareInfo: ShareInfoTranslations;

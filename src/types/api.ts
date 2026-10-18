@@ -71,8 +71,35 @@ export interface ConnectionElement {
     /** Number of intermediate stops */
     readonly n_intermediate_stops?: number;
     
-    /** Data provider (e.g., 'live') */
-    readonly provider?: string;
+    /**
+     * True when the routing provider has live data for this leg (transit legs only).
+     * departure_time / arrival_time are always the actual times.
+     */
+    readonly realtime?: boolean;
+
+    /** Timetable departure (ISO, UTC); only present on realtime legs */
+    readonly departure_time_scheduled?: string;
+
+    /** Timetable arrival (ISO, UTC); only present on realtime legs */
+    readonly arrival_time_scheduled?: string;
+
+    /** Departure delay in minutes (negative = early); only present on realtime legs */
+    readonly departure_delay?: number;
+
+    /** Arrival delay in minutes (negative = early); only present on realtime legs */
+    readonly arrival_delay?: number;
+
+    /** Timetable departure platform; only present when the live platform differs */
+    readonly platform_orig_scheduled?: string;
+
+    /** Timetable arrival platform; only present when the live platform differs */
+    readonly platform_dest_scheduled?: string;
+
+    /** True when the trip is cancelled */
+    readonly cancelled?: boolean;
+
+    /** True for an extra trip that is not in the timetable */
+    readonly additional_service?: boolean;
     
     /** Alerts/warnings for this element */
     readonly alerts?: readonly TransportAlert[];
@@ -324,9 +351,6 @@ export interface Connection {
     /** Whether this is a recommended connection */
     readonly is_recommended?: boolean;
     
-    /** Whether this connection has realtime data */
-    readonly has_realtime?: boolean;
-    
     /** Whether this is an "anytime" connection (flexible timing) */
     readonly connection_anytime?: boolean;
 
@@ -442,8 +466,8 @@ export interface ConnectionSearchResponse {
     /** Canonical activity object */
     readonly activity?: ActivityObject;
 
-    /** Whether a realtime data provider was used */
-    readonly live?: boolean;
+    /** Whether a billable realtime routing provider (VAO) answered; accounting only, not displayed */
+    readonly realtime_provider_used?: boolean;
 
     /** Error code if any */
     readonly error_code?: string | number;

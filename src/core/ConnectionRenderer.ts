@@ -27,6 +27,14 @@ import {
     renderSummaryBadges,
     type LegInfoContext
 } from './legInfo';
+import {
+    getConnectionRealtime,
+    renderDelayHint,
+    renderLegArrivalTime,
+    renderLegDepartureTime,
+    renderLegRealtimeNotices,
+    renderPlatform
+} from './realtime';
 
 /**
  * Interface for translation function
@@ -108,29 +116,30 @@ export class ConnectionRenderer {
             toLocation = elements.originInput?.value ?? '';
         }
 
-        const mainTransportTypes = [...connection.connection_elements
-            .filter(el => el.type === 'JNY')
-            .map(el => el.vehicle_type)
-        ].filter((t): t is string => t !== undefined);
+        const mainTransports = connection.connection_elements
+            .filter(el => el.type === 'JNY' && el.vehicle_type !== undefined)
+            .map(el => ({type: el.vehicle_type as string, realtime: !!el.realtime}));
 
         if (connection.connection_anytime || (connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.type === 'WALK'))) {
-            if (!mainTransportTypes.includes('WALK')) {
-                mainTransportTypes.unshift('WALK');
+            if (!mainTransports.some(m => m.type === 'WALK')) {
+                mainTransports.unshift({type: 'WALK', realtime: false});
             }
         }
 
-        const iconsHTML = mainTransportTypes.slice(0, 4).map(t => `<span title="${this.getTransportName(t)}" alt="${this.getTransportName(t)}">${this.getTransportIcon(t)}</span>`).join('');
+        const liveLabel = this.t('realtime.liveData');
+        const iconsHTML = mainTransports.slice(0, 4).map(({type: t, realtime}) => {
+            const name = realtime ? `${this.getTransportName(t)} · ${liveLabel}` : this.getTransportName(t);
+            return `<span class="summary-icon${realtime ? ' summary-icon--live' : ''}" title="${name}" alt="${name}">${this.getTransportIcon(t)}</span>`;
+        }).join('');
 
-        const isLive = connection.connection_elements && connection.connection_elements.length > 0 && connection.connection_elements.every(el => el.provider === 'live');
-        const liveIndicatorHTML = isLive ? `<span class="live-indicator">${this.t('live')}</span>` : '';
-        const badgesHTML = renderSummaryBadges(connection, this.legInfoContext());
-        const statusHTML = (badgesHTML || liveIndicatorHTML)
-            ? `<span class="summary-status">${badgesHTML}${liveIndicatorHTML}</span>`
-            : '';
+        const ctx = this.legInfoContext();
+        const {departureDelay, arrivalDelay} = getConnectionRealtime(connection);
+        const badgesHTML = renderSummaryBadges(connection, ctx);
+        const statusHTML = badgesHTML ? `<span class="summary-status">${badgesHTML}</span>` : '';
 
         return `
             <div class="summary-line-1">
-                <strong>${type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal} - ${endTimeLocal}</strong>
+                <strong>${type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal}${renderDelayHint(departureDelay, 'departure', ctx)} - ${endTimeLocal}${renderDelayHint(arrivalDelay, 'arrival', ctx)}</strong>
                 <div class="summary-icons">${iconsHTML}</div>
             </div>
             <div class="summary-line-2">
@@ -168,9 +177,6 @@ export class ConnectionRenderer {
                 return `<div>${this.t('noConnectionElements')}</div>`;
             }
 
-            const isLive = conn.connection_elements && conn.connection_elements.length > 0 && conn.connection_elements.every(el => el.provider === 'live');
-            const liveIndicatorHTML = isLive ? `<div class="live-indicator-details"><span class="live-dot"></span>${this.t('liveConnection')}</div>` : '';
-
             const ticketButtonHTML = conn.connection_ticketshop_provider ? `
             <button class="ticket-button" data-conn-type="${type}">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M20 12.5C20 11.12 20.83 10 22 10V8C22 6.9 21.1 6 20 6H4C2.9 6 2 6.9 2 8V10C3.17 10 4 11.12 4 12.5C4 13.88 3.17 15 2 15V17C2 18.1 2.9 19 4 19H20C21.1 19 22 18.1 22 17V15C20.83 15 20 13.88 20 12.5ZM11.5 16H9.5V15H11.5V16ZM11.5 14H9.5V13H11.5V14ZM11.5 12H9.5V11H11.5V12ZM11.5 10H9.5V9H11.5V10ZM14.5 16H12.5V15H14.5V16ZM14.5 14H12.5V13H14.5V14ZM14.5 12H12.5V11H14.5V12ZM14.5 10H12.5V9H14.5V10Z"></path></svg>
@@ -180,10 +186,9 @@ export class ConnectionRenderer {
 
             const bookingActionHTML = renderBookingHeaderAction(conn, this.legInfoContext());
 
-            const headerDetailsHTML = (liveIndicatorHTML || ticketButtonHTML || bookingActionHTML) ? `
+            const headerDetailsHTML = (ticketButtonHTML || bookingActionHTML) ? `
             <div class="connection-details-header">
-                ${liveIndicatorHTML}
-                ${(ticketButtonHTML || bookingActionHTML) ? `<div class="connection-details-actions">${bookingActionHTML}${ticketButtonHTML}</div>` : ''}
+                <div class="connection-details-actions">${bookingActionHTML}${ticketButtonHTML}</div>
             </div>
             ` : '';
 
@@ -224,8 +229,9 @@ export class ConnectionRenderer {
         activityStartTime: string,
         shownAlerts?: Set<string>
     ): string {
-        const departureTime = convertUTCToLocalTime(element.departure_time, this.config.timezone);
-        const arrivalTime = convertUTCToLocalTime(element.arrival_time, this.config.timezone);
+        const ctx = this.legInfoContext();
+        const departureTime = renderLegDepartureTime(element, filteredElements[index - 1], ctx);
+        const arrivalTime = renderLegArrivalTime(element, ctx);
         const durationDisplayString = calculateTimeDifference(element.departure_time, element.arrival_time, (key) => this.t(key));
 
         const vehicleType = (element.type !== 'JNY') ? (element.type || 'DEFAULT') : (element.vehicle_type || 'DEFAULT');
@@ -274,7 +280,7 @@ export class ConnectionRenderer {
               <div class="element-time-location-group">
                   <span class="element-time">${departureTime}</span>
                   <span class="element-location">${fromLocationDisplay}</span>
-                  ${element.platform_orig ? `<span class="element-platform">${this.t("platform")} ${element.platform_orig}</span>` : ''}
+                  ${renderPlatform(element.platform_orig, element.platform_orig_scheduled, ctx)}
               </div>
               <div id="eleCont" ${dateDisplay !== "" ? 'style="margin-right: 70px;"' : ''}>
                 <div class="element-circle"></div>
@@ -283,9 +289,10 @@ export class ConnectionRenderer {
               </div>
               ${dateDisplay}
             </div>
-            ${renderLegAlerts(element, this.legInfoContext(), shownAlerts, isUrgentAlert)}
-            ${renderLegBooking(element, this.legInfoContext())}
-            ${renderLegAlerts(element, this.legInfoContext(), shownAlerts, alert => !isUrgentAlert(alert))}
+            ${renderLegRealtimeNotices(element, ctx)}
+            ${renderLegAlerts(element, ctx, shownAlerts, isUrgentAlert)}
+            ${renderLegBooking(element, ctx)}
+            ${renderLegAlerts(element, ctx, shownAlerts, alert => !isUrgentAlert(alert))}
           </div>
         `;
 
@@ -306,7 +313,7 @@ export class ConnectionRenderer {
                 <div class="element-time-location-group">
                   <span class="element-time">${arrivalTime}</span>
                   <span class="element-location">${toLocationDisplay}</span>
-                  ${element.platform_dest ? `<span class="element-platform">${this.t('platform')} ${element.platform_dest}</span>` : ''}
+                  ${renderPlatform(element.platform_dest, element.platform_dest_scheduled, ctx)}
                 </div>
                 <div class="element-circle-wrapper">
                   <div class="element-circle"></div>
