@@ -37,7 +37,7 @@
   cursor: pointer;
 }
 
-.collapsible-container.has-summary:hover {
+.collapsible-container.has-summary:not(.expanded):hover {
   background-color: color-mix(in srgb, var(--bg-hover), white 50%);
 }
 
@@ -172,11 +172,11 @@
 }
 
 
-#responseBox .connection-elements > div:nth-child(1) {
+#responseBox .connection-elements > :first-child {
   scroll-margin-top: 0;
 }
 
-#responseBox-bottom .connection-elements > div:nth-child(1) {
+#responseBox-bottom .connection-elements > :first-child {
   scroll-margin-top: -80px;
 }
 
@@ -494,12 +494,15 @@
   background-color: var(--border-secondary);
 }
 
+/* Same node as the connection timeline */
 .timeline-dot {
   position: absolute;
-  left: 6px;
-  width: 5px;
-  height: 5px;
-  background-color: var(--primary-color);
+  left: 8.5px;
+  width: 11px;
+  height: 11px;
+  margin-left: -5.5px;
+  background-color: var(--bg-primary);
+  border: 2.5px solid var(--primary-color);
   border-radius: 50%;
   box-sizing: border-box;
 }
@@ -569,43 +572,7 @@
   white-space: nowrap;
 }
 
-.middle-box-content .connection-elements {
-  border-left: 3px solid var(--border-tertiary);
-  margin-left: 7px;
-  padding-left: 15px;
-  position: relative;
-}
-
-.middle-box-content .connection-element {
-  margin-bottom: 15px;
-}
-
-.middle-box-content .connection-element:last-child {
-  margin-bottom: 0;
-}
-
-.middle-box-content .connection-element-content {
-  position: relative;
-}
-
-.connection-leg-date-display {
-  background-color: var(--bg-info);
-  border-radius: 4px;
-  box-shadow: 0 1px 2px var(--shadow-light);
-  color: var(--text-info);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.3;
-  padding: 3px 7px;
-  position: absolute;
-  right: 8px;
-  text-align: right;
-  top: 50%;
-  transform: translateY(-50%);
-  white-space: nowrap;
-  z-index: 1;
-}
-
+/* Activity card rows (between the two connections) */
 .element-time-location-group {
   align-items: baseline;
   display: flex;
@@ -626,100 +593,354 @@
   font-weight: 500;
 }
 
-.element-time-location-group .element-platform {
-  background-color: var(--bg-tertiary);
-  border: 1px solid var(--border-primary);
-  border-radius: 4px;
-  color: var(--text-secondary);
+.connection-details-wrapper {
+  container: connection-details / inline-size;
+}
+
+/* --- Connection details timeline --- */
+/* Every row is the same three-column grid (time | rail | content), so times, nodes and
+   station names line up. Rows have no vertical margins: the rail pieces of neighbouring
+   rows touch and read as one continuous line. */
+
+.journey {
+  --journey-accent: var(--primary-color);
+  --journey-time-width: 40px;
+  --journey-rail-width: 14px;
+  --journey-gap: 8px;
+  /* Row padding defaults, inherited by the rows (a rule on the rows would outrank theirs) */
+  --row-pt: 0px;
+  --row-pb: 0px;
+
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Vertical spacing lives inside the cells (--row-pt / --row-pb), never on the row
+   itself, so the rail in the stretched marker cell covers the full row height. */
+.journey > li {
+  align-items: baseline;
+  column-gap: var(--journey-gap);
+  display: grid;
+  grid-template-columns: var(--journey-time-width) var(--journey-rail-width) minmax(0, 1fr);
+}
+
+.journey > li > .journey-time,
+.journey > li > .journey-body {
+  padding-bottom: var(--row-pb);
+  padding-top: var(--row-pt);
+}
+
+.journey-time {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 20px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Live times: actual time in the row, struck-through timetable time hanging below it
+   into the (always empty) time cell of the next row. Taken out of the flow, so a delay
+   neither pushes the station name sideways nor makes the row taller. */
+.journey-time .rt-time {
+  display: inline-block;
+  position: relative;
+}
+
+.journey-time .rt-time__scheduled {
   font-size: 11px;
-  font-weight: 500;
-  padding: 1px 5px;
-}
-
-.element-icon {
-  align-items: center;
-  display: flex;
-  height: 16px;
-  justify-content: center;
-  width: 16px;
-}
-
-.middle-box-content .element-icon svg {
-  height: 100%;
-  min-height: 16px;
-  min-width: 16px;
-  width: 100%;
-}
-
-.middle-box-content .element-duration {
-  color: var(--text-primary);
-  font-family: 'DM Sans', sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  line-height: 120%;
-  padding: 4px;
-}
-
-.middle-box-content .element-vehicle {
-  color: var(--primary-color);
-  font-size: 13px
-}
-
-.middle-box-content .element-circle {
-  background-color: var(--primary-color);
-  border-radius: 50%;
-  height: 5px;
-  left: -19px;
+  line-height: 14px;
+  margin: 0;
   position: absolute;
-  top: 5px;
-  width: 5px;
-  z-index: 0
+  right: 0;
+  top: 100%;
 }
 
-/* Wrapper for final arrival marker's element-circle to provide position: relative context */
-.middle-box-content .element-circle-wrapper {
-  min-height: 10px;
+/* Where the next row has a time of its own, make room for the hanging timetable time */
+.journey-stop:has(.rt-time__scheduled) + .journey-day,
+.journey-stop:has(.rt-time__scheduled) + .journey-wait {
+  --row-pt: 14px;
 }
 
-.middle-box-content .waiting-block .element-circle {
-  display: none;
+.journey > .journey-stop:last-child:has(.rt-time__scheduled) {
+  --row-pb: 14px;
 }
 
-
-div#eleCont {
-  align-items: center;
-  background-color: var(--bg-tertiary);
-  border-radius: 8px;
-  display: flex;
-  flex-direction: row;
-  gap: 4px;
-  min-height: 30px;
-  padding: 4px 8px;
-  position: relative;
-  width: fit-content;
+/* Cancelled ride: its departure no longer holds, and the rail is broken in red */
+.journey-stop--departure-cancelled .journey-time,
+.journey-stop--departure-cancelled .journey-time .rt-time {
+  color: var(--text-muted);
+  text-decoration: line-through;
 }
 
-.waiting-block {
-  background: var(--bg-waiting-block);
-  border-radius: 6px;
-  margin: 10px 0;
-  padding: 8px 10px 8px 25px;
+.journey-stop--departure-cancelled .journey-rail--bottom,
+.journey-leg--cancelled .journey-rail {
+  background: linear-gradient(var(--error-color) 60%, transparent 0) center top / 4px 8px repeat-y;
+}
+
+.journey-marker {
+  /* Vertical centre of the row's first text line (20px line height): where the node sits */
+  --journey-node-y: calc(var(--row-pt) + 10px);
+
+  align-self: stretch;
   position: relative;
 }
 
-.waiting-block .element-time {
+.journey-rail {
+  bottom: 0;
+  left: 50%;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 4px;
+}
+
+.journey-rail--top {
+  bottom: auto;
+  height: var(--journey-node-y);
+}
+
+.journey-rail--bottom {
+  top: var(--journey-node-y);
+}
+
+.journey-rail--transit {
+  background-color: var(--journey-accent);
+}
+
+.journey-rail--walk {
+  background: radial-gradient(circle, var(--journey-accent) 1.5px, transparent 2px) center top / 4px 7px repeat-y;
+}
+
+.journey-rail--transfer {
+  background: linear-gradient(var(--border-secondary) 60%, transparent 0) center top / 2px 7px repeat-y;
+  width: 2px;
+}
+
+.journey-rail--wait {
+  background: radial-gradient(circle, var(--text-disabled) 1.25px, transparent 1.75px) center top / 4px 6px repeat-y;
+}
+
+.journey-node {
+  background-color: var(--bg-primary);
+  border: 2.5px solid var(--journey-accent);
+  border-radius: 50%;
+  box-sizing: border-box;
+  height: 13px;
+  left: 50%;
+  position: absolute;
+  top: var(--journey-node-y);
+  transform: translate(-50%, -50%);
+  width: 13px;
+  z-index: 1;
+}
+
+.journey-stop--endpoint .journey-node {
+  background-color: var(--journey-accent);
+}
+
+.journey-body {
+  min-width: 0;
+}
+
+/* Stops */
+.journey-station {
   color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.journey-stop .element-platform {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 6px;
+  white-space: nowrap;
+
+  s {
+    color: var(--text-muted);
+  }
+}
+
+.journey-stop .element-platform--changed {
+  color: var(--text-delay);
+  font-weight: 600;
+}
+
+/* Legs */
+/* Spacing rhythm: transit legs 6 / 14px, one-line legs (walk, transfer) 4 / 10px */
+.journey-leg {
+  --row-pt: 6px;
+  --row-pb: 14px;
+}
+
+.journey-leg__title,
+.journey-leg__meta {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.journey-leg__title {
+  align-items: flex-start;
+  color: var(--text-primary);
+  display: flex;
+  font-size: 14px;
+  font-weight: 600;
+  gap: 6px;
+  line-height: 20px;
+}
+
+.journey-leg__icon {
+  color: var(--journey-accent);
+  display: flex;
+  flex-shrink: 0;
+  padding-top: 2px;
+
+  svg {
+    height: 16px;
+    width: 16px;
+  }
+}
+
+.journey-leg__name {
+  min-width: 0;
+}
+
+/* One line under the title: direction · duration · stops, wrapping only when needed */
+.journey-leg__meta {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 18px;
+  margin-top: 1px;
+  padding-left: 22px; /* under the title text, past the icon */
+}
+
+.journey-leg__direction {
+  color: var(--text-tertiary);
+
+  svg {
+    display: inline-block;
+    height: 11px;
+    margin-right: 3px;
+    vertical-align: -1px;
+    width: 11px;
+  }
+}
+
+.journey-leg__sep {
+  margin: 0 4px;
+}
+
+.journey-leg__stats {
+  white-space: nowrap;
+}
+
+.journey-leg--walk .journey-leg__title {
+  color: var(--journey-accent);
+  font-weight: 500;
+}
+
+.journey-leg--walk,
+.journey-leg--transfer {
+  --row-pt: 4px;
+  --row-pb: 10px;
+}
+
+.journey-leg--transfer .journey-leg__title {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.journey-leg--transfer .journey-leg__icon {
+  color: var(--text-muted);
+}
+
+.journey-leg--cancelled .journey-leg__name {
+  text-decoration: line-through;
+}
+
+/* Day label above the first stop and at every day change */
+.journey-day .journey-time {
+  color: var(--text-info);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 14px;
+}
+
+.journey-day {
+  --row-pb: 6px;
+}
+
+/* The activity end of the timeline: waiting until the activity starts / after it ends */
+.journey-wait {
+  --row-pt: 4px;
+  --row-pb: 4px;
+}
+
+.journey-wait .journey-time {
+  color: var(--text-tertiary);
+}
+
+.journey-wait .journey-node {
+  border-color: var(--text-disabled);
+  height: 11px;
+  width: 11px;
+}
+
+.journey-wait .journey-leg__title {
+  color: var(--text-secondary);
   font-size: 13px;
   font-weight: 500;
-  margin-bottom: 4px;
 }
 
-.waiting-block #eleCont {
-  background: transparent;
+.journey-wait .journey-leg__icon {
+  color: var(--wait-color);
 }
 
-.waiting-block .element-icon {
-  top: 8px;
+.journey-wait .journey-leg__meta {
+  display: block;
+}
+
+.journey-wait:first-child,
+.journey-day + .journey-wait {
+  --row-pt: 0px;
+  --row-pb: 12px;
+}
+
+.journey-wait:last-child {
+  --row-pt: 12px;
+  --row-pb: 0px;
+}
+
+/* Room for the card's collapse chevron in the bottom right corner */
+.journey > li:last-child > .journey-body {
+  padding-right: 28px;
+}
+
+/* Narrow cards (phones): tighter columns, the content column keeps the room */
+@container connection-details (max-width: 340px) {
+  .journey {
+    --journey-gap: 6px;
+    --journey-time-width: 38px;
+  }
+
+  .journey-leg__meta {
+    padding-left: 0;
+  }
+
+  /* The provider would wrap on its own anyway; give it its own line, without the dot */
+  .ticket-button--inline .ticket-button__provider {
+    display: block;
+
+    &::before {
+      content: none;
+    }
+  }
 }
 
 
@@ -746,15 +967,7 @@ div#eleCont {
   text-align: center;
 }
 
-/* --- Connection Details Header & Ticket Button Styles --- */
-.connection-details-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  gap: 10px;
-}
-
+/* --- Ticket Button Styles --- */
 .ticket-button {
   background-color: var(--primary-color);
   color: var(--bg-primary);
@@ -783,15 +996,122 @@ div#eleCont {
   }
 }
 
+.ticket-button__label {
+  min-width: 0;
+}
+
+.ticket-button__provider {
+  font-weight: 400;
+  opacity: 0.85;
+  white-space: nowrap;
+
+  &::before {
+    content: '·';
+    margin-right: 4px;
+  }
+}
+
+/* One ticket for the whole trip: full width under the timeline, clear of the collapse chevron */
+.journey-ticket {
+  border-top: 1px solid var(--border-tertiary);
+  margin: 12px 32px 0 0;
+  padding-top: 12px;
+}
+
+.ticket-button--block {
+  min-height: 40px;
+  width: 100%;
+}
+
+/* Ticket for part of the trip, at the first leg it covers */
+.ticket-button--inline {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--primary-color);
+  color: var(--primary-color);
+  font-size: 12px;
+  justify-content: flex-start;
+  margin-top: 6px;
+  max-width: 100%;
+  min-height: 30px;
+  min-width: 0;
+  padding: 5px 10px;
+  text-align: left;
+  white-space: normal;
+
+  &:hover {
+    background-color: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
+  }
+
+  svg {
+    flex-shrink: 0;
+    height: 14px;
+    width: 14px;
+  }
+}
+
+.journey-leg__no-ticket {
+  align-items: flex-start;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 12px;
+  gap: 6px;
+  line-height: 17px;
+  margin: 4px 0 0;
+
+  svg {
+    flex-shrink: 0;
+    height: 14px;
+    margin-top: 2px;
+    opacity: 0.6;
+    width: 14px;
+  }
+}
+
+.ticket-button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .ticket-button--inline {
+    min-height: 40px;
+  }
+
+  .ticket-button--block {
+    min-height: 44px;
+  }
+}
+
+/* Loading: the spinner overlays the hidden label, so the button keeps its size */
+.ticket-button {
+  position: relative;
+}
+
+.ticket-button.is-loading {
+  cursor: progress;
+
+  > :not(.loading-spinner-small) {
+    visibility: hidden;
+  }
+}
+
 .ticket-button .loading-spinner-small {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
+  animation: spin 1s ease-in-out infinite;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
   border-top-color: #fff;
-  animation: spin 1s ease-in-out infinite;
-  vertical-align: middle;
+  box-sizing: border-box;
+  height: 16px;
+  left: 50%;
+  margin: -8px 0 0 -8px;
+  position: absolute;
+  top: 50%;
+  width: 16px;
+}
+
+.ticket-button.ticket-button--inline .loading-spinner-small {
+  border-color: color-mix(in srgb, var(--primary-color) 30%, transparent);
+  border-top-color: var(--primary-color);
 }
 
 @keyframes spin {
@@ -832,16 +1152,6 @@ div#eleCont {
   margin-right: 4px;
 }
 
-.element-time-location-group .element-platform--changed {
-  background-color: var(--bg-error);
-  border-color: var(--border-error);
-  color: var(--text-delay);
-
-  s {
-    color: var(--text-muted);
-  }
-}
-
 .rt-delay {
   font-size: 0.8em;
   font-weight: 600;
@@ -863,6 +1173,7 @@ div#eleCont {
 
 /* Collapsed summary: a small dot on transit icons that have live data */
 .summary-icon {
+  color: var(--primary-color);
   display: inline-flex;
 }
 
@@ -930,8 +1241,7 @@ div#eleCont {
 .leg-notices a:focus-visible,
 .leg-notice__toggle:focus-visible,
 .leg-booking a:focus-visible,
-.leg-flex a:focus-visible,
-.booking-cta:focus-visible {
+.leg-flex a:focus-visible {
   outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }
@@ -1245,41 +1555,6 @@ div#eleCont {
   font-weight: 600;
 }
 
-/* Details header: actions next to the live indicator */
-.connection-details-header {
-  flex-wrap: wrap;
-}
-
-.connection-details-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-left: auto;
-}
-
-.booking-cta {
-  align-items: center;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--primary-color);
-  border-radius: 6px;
-  color: var(--primary-color);
-  display: inline-flex;
-  font-size: 13px;
-  font-weight: 500;
-  gap: 6px;
-  justify-content: center;
-  min-height: 34px;
-  padding: 8px 12px;
-  text-decoration: none;
-  transition: background-color 0.2s ease;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
-  }
-}
-
 /* Collapsed summary: notice / booking badges */
 .summary-status {
   align-items: center;
@@ -1319,8 +1594,7 @@ div#eleCont {
 
 /* Touch devices: comfortable tap targets */
 @media (pointer: coarse) {
-  .leg-action,
-  .booking-cta {
+  .leg-action {
     min-height: 44px;
   }
 
@@ -1338,8 +1612,7 @@ div#eleCont {
 
 @media (prefers-reduced-motion: reduce) {
   .leg-notice__toggle .leg-info-icon--chevron,
-  .leg-action,
-  .booking-cta {
+  .leg-action {
     transition: none;
   }
 }
@@ -1355,8 +1628,7 @@ div#eleCont {
     border: 1px solid CanvasText;
   }
 
-  .leg-action,
-  .booking-cta {
+  .leg-action {
     border: 1px solid ButtonText;
   }
 }

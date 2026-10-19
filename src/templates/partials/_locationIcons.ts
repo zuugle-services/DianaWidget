@@ -6,9 +6,8 @@
  * provider in DianaProxy), which is exactly the distinction worth showing: a station
  * symbol or a map pin.
  *
- * Deliberately not reusing `getTransportIcon()` from widget.ts: its icons hard-code
- * their own fills (green for vehicles, black for streets), whereas a dropdown row must
- * follow the surrounding text colour in both light and dark consumer themes.
+ * Separate from `getTransportIcon()` (core/transportIcons.ts): these mark what a
+ * suggestion is, not how someone travels, and always follow the dropdown's text colour.
  */
 
 /** Public-transport stop: vehicle body on two wheels. */

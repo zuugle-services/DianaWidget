@@ -210,14 +210,17 @@ export function calculateTimeDifference(
         if (!start.isValid || !end.isValid) {
             throw new Error(`Invalid date format for time difference: ${startISO} or ${endISO}`);
         }
-        const diff = end.diff(start, ['hours', 'minutes']);
-        const hours = Math.floor(diff.as('hours'));
-        const minutes = Math.round(diff.as('minutes')) % 60;
+        const totalMinutes = Math.round(end.diff(start, 'minutes').minutes);
+        // A negative span (e.g. live delays eating a transfer) is formatted like a positive one
+        // with a leading minus, instead of flooring hours and minutes separately ("-1:-2h").
+        const sign = totalMinutes < 0 ? '−' : '';
+        const hours = Math.floor(Math.abs(totalMinutes) / 60);
+        const minutes = Math.abs(totalMinutes) % 60;
 
         if (hours === 0) {
-            return `${minutes} ${tFunction("durationMinutesShort")}`;
+            return `${sign}${minutes} ${tFunction("durationMinutesShort")}`;
         } else {
-            return `${hours}:${String(minutes).padStart(2, '0')}${tFunction("durationHoursShort")}`;
+            return `${sign}${hours}:${String(minutes).padStart(2, '0')}${tFunction("durationHoursShort")}`;
         }
     } catch (error) {
         console.error("Error calculating time difference:", error);

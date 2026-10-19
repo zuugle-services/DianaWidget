@@ -13,7 +13,6 @@ import {
     getLegAlerts,
     isUrgentAlert,
     linkifyText,
-    renderBookingHeaderAction,
     renderLegAlerts,
     renderLegBooking,
     renderSummaryBadges,
@@ -347,13 +346,10 @@ describe('connection summary and header action', () => {
         expect(renderSummaryBadges(connection([leg()]), ctx())).toBe('');
     });
 
-    test('expired bookings are flagged in the summary and drop the header action', () => {
+    test('expired bookings are flagged in the summary', () => {
         const late = ctx({now: DateTime.fromISO('2026-10-19T07:00:00Z')});
         const conn = connection([bookingLeg]);
         expect(renderSummaryBadges(conn, late)).toContain('Too late!');
-        expect(renderBookingHeaderAction(conn, late)).toBe('');
-        expect(renderBookingHeaderAction(conn, ctx())).toContain('href="https://book.example"');
-        expect(renderBookingHeaderAction(conn, ctx())).toContain('Book trip');
     });
 });
 

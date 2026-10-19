@@ -104,6 +104,11 @@ describe('calculateTimeDifference', () => {
         expect(result).toBe('1:30h');
     });
 
+    it('formats negative differences with a single leading minus', () => {
+        expect(calculateTimeDifference('2024-01-15T10:02:00Z', '2024-01-15T10:00:00Z', mockTFunction)).toBe('−2 min');
+        expect(calculateTimeDifference('2024-01-15T11:30:00Z', '2024-01-15T10:00:00Z', mockTFunction)).toBe('−1:30h');
+    });
+
     it('should handle invalid timestamps gracefully', () => {
         const result = calculateTimeDifference('invalid', 'also-invalid', mockTFunction);
         expect(result).toBe('--');

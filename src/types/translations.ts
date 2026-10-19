@@ -231,7 +231,6 @@ export interface BookingTranslations {
     summaryExpired: string;
     /** {minutes} is the minimum notice in minutes */
     advance: string;
-    headerButton: string;
 }
 
 /**
@@ -264,6 +263,22 @@ export interface RealtimeTranslations {
     cancelled: string;
     cancelledText: string;
     additionalService: string;
+}
+
+/**
+ * Connection details timeline translations
+ */
+export interface JourneyTranslations {
+    /** Screen-reader text for the direction arrow; {direction} is the vehicle's destination */
+    towards: string;
+    /** Transfer between two platforms; {from} / {to} are platform names */
+    platformFromTo: string;
+    platformFrom: string;
+    platformTo: string;
+    /** Button of a ticket covering part of the trip; {stop} is where that ticket ends */
+    ticketUntil: string;
+    /** Note on a part of the trip no ticketshop sells */
+    noOnlineTicket: string;
 }
 
 /**
@@ -346,6 +361,7 @@ export interface LanguageTranslations {
     booking: BookingTranslations;
     flex: FlexTranslations;
     realtime: RealtimeTranslations;
+    journey: JourneyTranslations;
     /** Accessible hint appended to links that open a new tab */
     opensInNewTab: string;
     shareInfo: ShareInfoTranslations;

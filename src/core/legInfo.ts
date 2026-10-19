@@ -449,25 +449,37 @@ function flexAvailability(flex: FlexInfo, ctx: LegInfoContext): string | null {
     return start && end ? ctx.t('flex.availability', {start, end}) : null;
 }
 
+/** Vehicle type of services that only run when booked (Rufbus, Anrufsammeltaxi, GTFS-Flex) */
+const ON_DEMAND_VEHICLE_TYPE = '10';
+
+/**
+ * True for a leg that only runs when booked: a GTFS-Flex leg, or a timetabled
+ * on-demand service (vehicle type 10, e.g. a Rufbus line or an Anrufsammeltaxi).
+ */
+export function isOnDemandLeg(element: ConnectionElement): boolean {
+    return Boolean(element.flex) || String(element.vehicle_type) === ON_DEMAND_VEHICLE_TYPE;
+}
+
 /**
  * Booking card and on-demand service details for a leg. Empty when the leg has
- * neither booking rules nor FLEX information.
+ * neither booking rules nor is an on-demand service.
  */
 export function renderLegBooking(element: ConnectionElement, ctx: LegInfoContext): string {
     const {t} = ctx;
     const parts = getBookingParts(element, t);
     const flex = element.flex;
-    if (parts.length === 0 && !flex) return '';
+    const onDemand = isOnDemandLeg(element);
+    if (parts.length === 0 && !onDemand) return '';
 
     const flexMeta: string[] = [];
-    if (flex) {
+    if (onDemand) {
         flexMeta.push(escapeHtml(t('flex.label')));
-        const availability = flexAvailability(flex, ctx);
+        const availability = flex ? flexAvailability(flex, ctx) : null;
         if (availability) flexMeta.push(escapeHtml(availability));
     }
 
     if (parts.length === 0) {
-        // FLEX leg without booking rules: say what we know, and that booking may be needed.
+        // On-demand leg without booking rules: say what we know, and that booking may be needed.
         return `
         <div class="leg-flex">
             ${LEG_INFO_ICONS.info()}
@@ -550,13 +562,4 @@ export function renderSummaryBadges(connection: Connection, ctx: LegInfoContext)
             + `${LEG_INFO_ICONS.calendar()}</span>`);
     }
     return badges.join('');
-}
-
-/** "Book trip" call-to-action for the connection details header, if a leg can be booked online. */
-export function renderBookingHeaderAction(connection: Connection, ctx: LegInfoContext): string {
-    const {bookingUrl} = getConnectionNotices(connection, ctx);
-    if (!bookingUrl) return '';
-    return `<a class="booking-cta" href="${escapeHtml(bookingUrl)}" target="_blank" rel="noopener noreferrer">`
-        + `${LEG_INFO_ICONS.calendar()}<span>${escapeHtml(ctx.t('booking.headerButton'))}</span>`
-        + `<span class="visually-hidden"> (${escapeHtml(ctx.t('opensInNewTab'))})</span></a>`;
 }
