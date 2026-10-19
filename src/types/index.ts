@@ -31,6 +31,7 @@ export type {
     BookingRule,
     LegBooking,
     TicketshopSegment,
+    TicketUrls,
     Suggestion,
     SuggestionProperties,
     SuggestionGeometry,

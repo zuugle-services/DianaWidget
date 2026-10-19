@@ -109,7 +109,10 @@ export interface ConnectionElement {
 
     /** Booking requirements; only present when the routing provider supplies booking rules */
     readonly booking?: LegBooking;
-    
+
+    /** The leg's own ticket link; only present when the routing provider supplies one */
+    readonly ticket_urls?: TicketUrls;
+
     /** 
      * Whether this is the first element in the original connection.
      * This is an internal mutable flag set by the widget during processing.
@@ -304,8 +307,20 @@ export interface TicketshopSegment {
     readonly leg_from: number;
     /** Inclusive end index into connection_elements (0-based) */
     readonly leg_to: number;
-    /** Provider name (e.g. "OEBB", "TRAIVELLING"), or null if no coverage */
+    /** Provider name (e.g. "OEBB", "TRAIVELLING"), a leg's own ticket link name (e.g. "Postbus"), or null if no coverage */
     readonly provider: string | null;
+    /** Ticket link, only on segments using a leg's own ticket link; open it directly instead of calling /generate-ticketshop-link */
+    readonly url?: string;
+}
+
+/**
+ * Ticket link the routing provider supplies for a leg
+ */
+export interface TicketUrls {
+    /** Ticket booking link for the web */
+    readonly web: string;
+    /** Display name: the route's name, else the agency's, else the line name */
+    readonly name?: string;
 }
 
 /**

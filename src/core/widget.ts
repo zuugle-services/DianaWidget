@@ -2346,6 +2346,8 @@ export default class DianaWidget {
         if (!button) return;
 
         event.stopPropagation();
+        // A ticket link the API already supplied is a plain link the browser opens itself.
+        if (button.tagName === 'A') return;
         this.clearMessages();
 
         const connType = button.dataset.connType;

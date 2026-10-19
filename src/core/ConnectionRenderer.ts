@@ -28,6 +28,7 @@ import {
     renderLegAlerts,
     renderLegBooking,
     renderSummaryBadges,
+    safeHttpUrl,
     type LegInfoContext
 } from './legInfo';
 import {
@@ -293,11 +294,21 @@ export class ConnectionRenderer {
     }
 
     private _ticketButton(segment: TicketSegmentRef, type: string, label: string, modifier: string): string {
+        const content = `
+                ${TICKET_ICON}
+                <span class="ticket-button__label">${escapeHtml(label)} <span class="ticket-button__provider">${escapeHtml(this._providerName(segment.provider as string))}</span></span>`;
+        // A segment that already carries its link (a leg's own ticket link) needs no
+        // /generate-ticketshop-link call: link to it directly.
+        const url = safeHttpUrl(segment.url);
+        if (url) {
+            return `
+            <a class="ticket-button ticket-button--${modifier}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${content}
+                <span class="visually-hidden"> (${escapeHtml(this.t('opensInNewTab'))})</span>
+            </a>`;
+        }
         const segmentAttr = segment.index !== undefined ? ` data-segment-index="${segment.index}"` : '';
         return `
-            <button type="button" class="ticket-button ticket-button--${modifier}" data-conn-type="${type}"${segmentAttr}>
-                ${TICKET_ICON}
-                <span class="ticket-button__label">${escapeHtml(label)} <span class="ticket-button__provider">${escapeHtml(this._providerName(segment.provider as string))}</span></span>
+            <button type="button" class="ticket-button ticket-button--${modifier}" data-conn-type="${type}"${segmentAttr}>${content}
             </button>`;
     }
 

@@ -212,6 +212,30 @@ describe('ticket buttons', () => {
         expect(html.indexOf('Ticket bis Payerbach')).toBeLessThan(html.indexOf('journey-leg--transfer'));
         expect(html.indexOf('kein Online-Ticket')).toBeGreaterThan(html.indexOf('Bus 341'));
     });
+
+    it('links a segment with its own ticket URL directly, without an API call', () => {
+        const html = render({
+            connection_ticketshop_provider: 'TRAIVELLING',
+            connection_ticketshop_segments: [
+                {leg_from: 1, leg_to: 1, provider: 'TRAIVELLING'},
+                {leg_from: 3, leg_to: 3, provider: 'Postbus', url: 'https://shop.example-bus.at/ticket?trip=123&x=1'},
+            ],
+        } as Partial<Connection>, 'DE');
+        expect(count(html, 'class="ticket-button ticket-button--inline"')).toBe(2);
+        expect(html).toContain('<a class="ticket-button ticket-button--inline" href="https://shop.example-bus.at/ticket?trip=123&amp;x=1" target="_blank" rel="noopener noreferrer"');
+        // only the Traivelling segment still asks the API for its link
+        expect(count(html, 'data-segment-index=')).toBe(1);
+        expect(textOf(html)).toContain('Postbus');
+        expect(html).not.toContain('kein Online-Ticket');
+    });
+
+    it('falls back to the API for a segment URL that is not http(s)', () => {
+        const html = render({
+            connection_ticketshop_segments: [{leg_from: 0, leg_to: 3, provider: 'Postbus', url: 'javascript:alert(1)'}],
+        } as Partial<Connection>);
+        expect(html).not.toContain('javascript:');
+        expect(html).toContain('<button type="button" class="ticket-button ticket-button--block"');
+    });
 });
 
 describe('on-demand legs with booking rules', () => {

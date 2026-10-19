@@ -985,6 +985,7 @@
   min-height: 34px; /* Ensure consistent height */
   min-width: 90px;  /* Ensure consistent width */
   justify-content: center;
+  text-decoration: none; /* also rendered as a link when the ticket URL is known */
 
   &:hover {
     background-color: var(--bg-apply-hover);
