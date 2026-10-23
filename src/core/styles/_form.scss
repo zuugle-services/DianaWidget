@@ -109,6 +109,8 @@
 }
 
 .input-field {
+  /* Background and text colour always set together, so the field stays legible whatever the page does. */
+  background-color: var(--bg-primary);
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-md);
   box-sizing: border-box;

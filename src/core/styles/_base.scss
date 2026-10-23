@@ -1,5 +1,8 @@
-/* Tailwind's preflight sets a font stack on :host; the widget uses the page's font instead. */
+/* Tailwind's preflight sets a font stack on :host; the widget uses the page's font instead.
+   color-scheme is inherited from the page; the widget is light-only, so native controls
+   (fields, selects, scrollbars) must not switch to their dark defaults on dark-mode pages. */
 :host {
+  color-scheme: light;
   font-family: inherit;
 }
 
