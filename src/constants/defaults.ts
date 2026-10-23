@@ -27,7 +27,7 @@ export const DEFAULT_CACHE_TTL_MINUTES = 15;
 /**
  * Debounce delay for address input (in milliseconds)
  */
-export const ADDRESS_INPUT_DEBOUNCE_MS = 700;
+export const ADDRESS_INPUT_DEBOUNCE_MS = 250;
 
 /**
  * Minimum query length for address autocomplete
@@ -129,6 +129,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     displayStartDate: null,
     displayEndDate: null,
     destinationInputName: null,
+    fontFamily: null,
     multiday: false,
     overrideActivityStartDate: null,
     overrideActivityEndDate: null,

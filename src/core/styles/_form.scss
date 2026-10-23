@@ -1,13 +1,40 @@
 /* --- Form Specific Styles --- */
+/* Sections are 18px apart; captions sit directly on their field. */
 .form-section {
-  color: var(--text-muted);
-  margin-bottom: 15px;
+  color: var(--text-tertiary);
+  margin-bottom: 18px;
   position: relative;
 }
 
-.form-section p {
+/* Field captions: <label> for text fields, <p> for groups. */
+.form-section p,
+.form-label-text {
   font-size: 14px;
   margin-bottom: 5px;
+}
+
+.form-label-text {
+  display: block;
+  margin-top: 0;
+}
+
+.visually-hidden {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+/* A problem with a field, shown directly under it instead of as a banner above the form. */
+.form-section .field-error {
+  color: var(--text-error);
+  font-size: 13px;
+  margin: 6px 0 0;
 }
 
 .input-container {
@@ -15,25 +42,55 @@
 }
 
 .suggestions-container {
+  animation: diana-pop-in var(--dur-fast) var(--ease-out);
   background-color: var(--bg-primary);
-  border: 1px solid var(--secondary-color);
-  border-radius: 5px;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px var(--shadow-light);
   display: none;
   left: 0;
-  max-height: 150px;
+  margin-top: 4px;
+  max-height: 240px;
   overflow-y: auto;
   position: absolute;
   right: 0;
   top: 100%;
+  transform-origin: top center;
   z-index: 1000;
 }
 
 .suggestion-item {
   align-items: center;
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   gap: 8px;
   padding: 10px;
+}
+
+.suggestion-item.active-suggestion {
+  background-color: var(--bg-hover);
+}
+
+/* "Recent" above previously used starting points. */
+.suggestion-heading {
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  padding: 10px 12px 2px;
+  text-transform: uppercase;
+}
+
+/* "No places found" / load error / hint row: shown inside the list, next to where the user is typing. */
+.suggestion-message {
+  color: var(--text-tertiary);
+  cursor: default;
+  font-size: 14px;
+  padding: 10px 12px;
+}
+
+.suggestion-message.is-error {
+  color: var(--text-error);
 }
 
 .suggestion-icon {
@@ -51,30 +108,38 @@
   white-space: nowrap;
 }
 
-.suggestion-item:hover {
-  background-color: var(--bg-hover);
-}
-
-#clearInputBtn:hover {
-  background-color: var(--bg-hover);
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-}
-
-#currentLocationBtn:hover {
-  background-color: var(--bg-hover);
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
-}
-
 .input-field {
   border: 1px solid var(--border-primary);
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   box-sizing: border-box;
-  font-family: "DM Sans", sans-serif !important;
-  font-size: 14px;
-  padding: 12px 40px !important;
+  color: var(--text-primary);
+  font-family: inherit;
+  /* 16px keeps iOS Safari from zooming the host page when the field is focused. */
+  font-size: 16px;
+  padding: 12px 48px 12px 40px !important;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
   width: 100%;
+}
+
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
+.input-field:focus {
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.input-field[aria-invalid="true"] {
+  border-color: var(--error-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--error-color) 22%, transparent);
+}
+
+/* Temporarily disabled while a search or location lookup runs. */
+.input-field:disabled:not(.disabled) {
+  background-color: var(--bg-tertiary);
+  color: var(--text-tertiary);
 }
 
 .input-field.disabled {
@@ -82,203 +147,292 @@
   color: var(--text-tertiary);
   cursor: not-allowed;
   pointer-events: none;
-  --moz-user-select: none;
-  --ms-user-select: none;
-  --webkit-user-select: none;
   user-select: none;
 }
 
-.input-icon,
-.input-icon-right {
+.input-icon {
   color: var(--icon-input-color);
+  left: 12px;
   pointer-events: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
 }
 
-.input-icon {
-  left: 12px;
+/* --- Route: origin dot → line → destination pin, aligned with the field icon --- */
+.origin-dot-fill {
+  fill: var(--primary-color);
+  opacity: 0;
+  transform: scale(0.4);
+  transform-origin: 12px 12px;
+  transition: opacity var(--dur-fast) ease, transform var(--dur-fast) var(--ease-out);
 }
 
-.input-icon-right {
-  right: 12px;
+.origin-dot.is-resolved {
+  color: var(--primary-color);
 }
 
+.origin-dot.is-resolved .origin-dot-fill {
+  opacity: 1;
+  transform: scale(1);
+}
 
-.date-section-wrapper {
+.route-rail {
+  border-left: 2px dashed var(--border-secondary);
+  height: 16px;
+  margin-left: 21px;
+  transition: border-color var(--dur-base) ease;
+}
+
+.route-rail.is-resolved {
+  border-left-color: color-mix(in srgb, var(--primary-color) 55%, white);
+  border-left-style: solid;
+}
+
+.route-destination {
   align-items: flex-start;
+  color: var(--icon-input-color);
   display: flex;
   gap: 10px;
+  padding-left: 12px;
 }
 
-.date-input-column {
-  flex: 1;
+.route-destination svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.form-section .route-destination-name {
+  color: var(--text-primary);
+  font-size: 15px;
+  line-height: 1.35;
+  margin: 0;
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
-.date-input-column.single {
-  flex-basis: 100%;
-}
-
-/* Styles for the old date input display (multiday or overridden single day) */
-.date-input-container {
-  cursor: pointer;
-  position: relative;
-}
-
-.date-input-container.disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.date-input-container.disabled .date-input {
-  background-color: var(--bg-tertiary);
-  pointer-events: none;
-}
-
-.date-input-container.disabled .date-input-display {
-  color: var(--text-disabled);
-}
-
-.date-input {
+/* Clear / current-location buttons inside the origin field: real buttons with a 40px hit area. */
+.input-icon-btn {
   align-items: center;
-  background-color: var(--bg-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 5px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-md);
+  color: var(--icon-input-color);
+  cursor: pointer;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  margin-top: -20px;
+  padding: 0;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transition: background-color var(--dur-fast) ease, transform 160ms var(--ease-out);
+  width: 40px;
+}
+
+.input-icon-btn[hidden] {
+  display: none;
+}
+
+.input-icon-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.input-icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.input-icon-btn:disabled {
+  cursor: default;
+}
+
+.input-icon-btn[aria-busy="true"] svg {
+  animation: diana-locating 900ms ease-in-out infinite alternate;
+}
+
+/* Inline spinner while autocomplete results load. */
+.input-container.is-loading::after {
+  animation: spin 700ms linear infinite;
+  border: 2px solid var(--border-primary);
+  border-radius: 50%;
+  border-top-color: var(--primary-color);
   box-sizing: border-box;
-  cursor: pointer;
-  display: flex;
-  font-family: "DM Sans", sans-serif !important;
-  padding: 12px 40px !important;
+  content: "";
+  height: 16px;
+  margin-top: -8px;
+  pointer-events: none;
+  position: absolute;
+  right: 50px;
+  top: 50%;
+  width: 16px;
+}
+
+.input-container.is-loading .input-field {
+  padding-right: 72px !important;
+}
+
+/* --- Date: day strip (DateField) --- */
+.date-section {
+  container-type: inline-size;
+}
+
+.day-strip {
+  --strip-days: 7;
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(var(--strip-days), minmax(0, 1fr)) 44px;
   position: relative;
-  width: 100%;
 }
 
-.date-input-display { /* The span showing the date in old style */
-  color: var(--text-secondary);
-  flex-grow: 1;
-  font-family: "DM Sans", sans-serif !important;
-  font-size: 14px;
-  pointer-events: none;
-}
-
-.date-input-display.placeholder {
-  color: var(--text-disabled);
-}
-
-.date-input-icon { /* Icon in old style date input */
-  color: var(--icon-input-color);
-  left: 12px;
-  pointer-events: none;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.date-input-arrow {
-  color: var(--icon-input-color);
-  pointer-events: none;
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-input[type=date].native-date-picker-single {
-  cursor: pointer;
-  display: none !important;
-  font-family: "DM Sans", sans-serif !important;
-  height: 100%;
-  left: 0;
+/* One highlight that slides between days, positioned with clip-path by DateField. */
+.day-strip-pill {
+  background-color: var(--primary-color);
+  border-radius: var(--radius-md);
+  clip-path: inset(0 100% 0 0 round var(--radius-md));
+  inset: 0;
   opacity: 0;
-  pointer-events: none; /* Important: allow clicks to pass through to button on desktop */
+  pointer-events: none;
   position: absolute;
-  top: 0;
-  width: 100%;
+  transition: clip-path 220ms var(--ease-in-out), opacity var(--dur-fast) ease;
+  z-index: 0;
 }
 
-/* Date Selector Buttons for Single Day (Desktop and Mobile) */
-.date-selector-buttons {
-  display: flex;
-  gap: 8px; /* Space between buttons */
-  margin-bottom: 5px; /* Space below the button group */
+.day-strip-pill.is-visible {
+  opacity: 1;
 }
 
-.date-selector-btn {
+.day-strip-pill.no-transition {
+  transition: none;
+}
+
+.day-btn {
   align-items: center;
-  background-color: transparent; /* Default transparent background */
+  background-color: transparent;
   border: 1px solid var(--border-primary);
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
   cursor: pointer;
-  display: flex; /* For aligning content within the button (icon and text) */
-  font-family: "DM Sans", sans-serif !important;
-  font-size: 14px;
-  justify-content: center; /* Center text for Today/Tomorrow */
-  line-height: 1.2; /* Adjust for better vertical alignment of text */
-  min-width: 0; /* Allow buttons to shrink if needed */
-  padding: 10px 12px;
-  text-align: center;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  font-family: inherit;
+  justify-content: center;
+  min-height: 52px;
+  min-width: 0;
+  padding: 6px 2px;
+  position: relative;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease, transform 160ms var(--ease-out);
+  z-index: 1;
 }
 
-/* Sizing for Today and Tomorrow buttons */
-.date-selector-btn#dateBtnToday,
-.date-selector-btn#dateBtnTomorrow {
-  flex: 2; /* Smaller proportion */
+.day-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
-/* Sizing for Other Date button */
-.date-selector-btn#dateBtnOther {
-  flex: 3; /* Larger proportion */
-  justify-content: space-between; /* Align text to left, arrow to right */
-  position: relative; /* For potential absolute positioning of arrow if needed, though flex is better */
+.day-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
 }
 
-.date-selector-btn:hover {
-  background-color: var(--bg-hover); /* Light background on hover */
-  border-color: var(--secondary-color); /* Slightly darker border on hover */
+.day-btn:disabled {
+  color: var(--secondary-color);
+  cursor: not-allowed;
 }
 
-/* Active state for all selector buttons */
-.date-selector-btn.active {
-  background-color: var(--primary-color); /* Solid background when active */
-  border-color: var(--primary-color); /* Border matches background */
-  color: var(--bg-primary); /* White text when active */
-  font-weight: 500; /* Slightly bolder text */
-}
-
-.date-selector-btn.active:hover {
-  background-color: var(--bg-apply-hover); /* Darker shade of primary on hover when active */
-  border-color: var(--bg-apply-hover);
-}
-
-/* Styling for the text span within "Other Date" button */
-#dateBtnOther #otherDateText {
-  flex-grow: 1; /* Allow text to take available space */
-  margin-right: 5px; /* Space between text and arrow */
+.day-btn-dow {
+  font-size: 12px;
+  line-height: 1.2;
+  max-width: 100%;
   overflow: hidden;
-  text-align: left; /* Align text to the left */
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Styling for the arrow icon specifically within the "Other Date" button */
-#dateBtnOther .date-input-arrow {
-  color: var(--text-secondary); /* Default arrow color (matches button text) */
-  flex-shrink: 0; /* Prevent arrow from shrinking */
-  height: 16px;
-  position: static; /* Override absolute positioning from .date-input-arrow */
-  stroke-width: 2px; /* Thicker arrow */
-  transform: none; /* Override transform */
-  width: 16px; /* Explicit size for the arrow SVG */
+.day-btn-num {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
-/* Arrow color when "Other Date" button is active */
-.date-selector-btn.active #dateBtnOther .date-input-arrow {
-  color: var(--bg-primary); /* White arrow to match text color */
-  stroke: var(--bg-primary); /* Ensure SVG stroke also changes if it's an inline SVG */
+/* Single day: the pill paints the fill, the button only switches its text colour. */
+.day-btn.selected {
+  border-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+/* Multi-day: both ends filled, the days between tinted. */
+.day-btn.range-edge {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+.day-btn.in-range {
+  background-color: var(--bg-info);
+  border-color: var(--bg-info);
+  color: var(--text-info);
+}
+
+.day-btn-calendar {
+  color: var(--icon-input-color);
+}
+
+/* The calendar button stands for a chosen day outside (or hidden from) the strip. */
+.day-btn-calendar.selected,
+.day-btn-calendar.holds-choice {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+.form-section .date-summary {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.form-section .date-summary:empty {
+  display: none;
+}
+
+/* Date decided by the config: shown, not chosen. */
+.locked-date {
+  align-items: center;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+}
+
+.locked-date svg {
+  color: var(--icon-input-color);
+  flex: 0 0 auto;
+}
+
+/* Narrow widgets show fewer days; the calendar button covers the rest. */
+@container (max-width: 360px) {
+  .day-strip {
+    --strip-days: 5;
+  }
+
+  .day-strip .day-btn:nth-child(n + 7):not(.day-btn-calendar) {
+    display: none;
+  }
+}
+
+@container (max-width: 300px) {
+  .day-strip {
+    --strip-days: 4;
+  }
+
+  .day-strip .day-btn:nth-child(n + 6):not(.day-btn-calendar) {
+    display: none;
+  }
 }
 
 
@@ -293,11 +447,23 @@ input[type=date].native-date-picker-single {
   display: flex;
   gap: 12px;
   justify-content: space-between;
+  min-height: 44px;
+}
+
+.toggle-text {
+  min-width: 0;
 }
 
 .toggle-label {
   color: var(--text-primary);
+  display: block;
   font-size: 14px;
+}
+
+.toggle-help {
+  color: var(--text-tertiary);
+  display: block;
+  font-size: 12px;
 }
 
 .toggle-switch {
@@ -330,19 +496,19 @@ input[type=date].native-date-picker-single {
   position: absolute;
   right: 0;
   top: 0;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--dur-base) ease;
 }
 
 .toggle-slider::before {
   background-color: var(--bg-primary);
-  border-radius: 50%;
+  border-radius: 8px;
   box-shadow: 0 1px 2px var(--shadow-light);
   content: "";
   height: 16px;
   left: 2px;
   position: absolute;
   top: 2px;
-  transition: transform 0.2s ease;
+  transition: transform var(--dur-base) var(--ease-out), width var(--dur-fast) var(--ease-out);
   width: 16px;
 }
 
@@ -354,9 +520,17 @@ input[type=date].native-date-picker-single {
   transform: translateX(16px);
 }
 
+/* Pressing stretches the thumb toward its travel direction, like a physical switch. */
+.toggle-row:active .toggle-slider::before {
+  width: 20px;
+}
+
+.toggle-row:active .toggle-switch input[type="checkbox"]:checked + .toggle-slider::before {
+  transform: translateX(12px);
+}
+
 .toggle-switch input[type="checkbox"]:focus-visible + .toggle-slider {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
 }
 
 .form-footer {
@@ -372,11 +546,20 @@ input[type=date].native-date-picker-single {
 
 .btn {
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   padding: 10px 20px;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--dur-fast) ease, transform 160ms var(--ease-out);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
 }
 
 .btn:disabled {
@@ -384,18 +567,38 @@ input[type=date].native-date-picker-single {
   opacity: 0.7;
 }
 
-.apply-btn,
-button.calendar-footer-btn.calendar-apply-btn {
+.apply-btn {
   background-color: var(--primary-color);
   color: var(--bg-primary);
 }
 
-.apply-btn:hover:not(:disabled) {
-  background-color: var(--bg-apply-hover);
+/* Search button: one line, the label crossfades when the loading text changes. */
+.apply-btn {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.apply-btn .loading-spinner {
+  flex-shrink: 0;
+}
+
+.btn-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 120ms ease, filter 120ms ease;
+  white-space: nowrap;
+}
+
+.btn-label.is-swapping {
+  filter: blur(2px);
+  opacity: 0;
 }
 
 .loading-spinner {
-  animation: spin 1s ease-in-out infinite;
+  animation: spin 700ms linear infinite;
   border: 2px solid var(--shadow-gray);
   border-radius: 50%;
   border-top-color: var(--bg-primary);
@@ -412,62 +615,60 @@ button.calendar-footer-btn.calendar-apply-btn {
   }
 }
 
-/* --- Mobile Date Input Handling --- */
-/* The .date-selector-buttons are now always flex by default for single day */
-/* The input[type=date]#activityDate for single day is always hidden via inline style in JS */
-
-/* Styles for native date input for MULTIDAY on mobile, if applicable */
-@media (max-width: 768px) {
-  .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Target multiday native inputs */
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-primary);
-    border-radius: 5px;
-    box-sizing: border-box;
-    color: var(--text-secondary);
-    display: block !important; /* Ensure it's visible */
-    font-size: 14px;
-    height: auto;
+@keyframes diana-locating {
+  from {
     opacity: 1;
-    padding: 12px 15px !important;
-    pointer-events: all;
-    position: relative;
-    width: 100%;
   }
-
-  .date-input-column:not(.single) .date-input { /* Hide custom styled div for multiday on mobile */
-    display: none !important;
-  }
-
-  /* For ALL native date pickers on mobile (single and multi) */
-  input[type="date"]::-webkit-calendar-picker-indicator {
-    cursor: pointer;
-    opacity: 0.6;
-    padding: 4px;
-  }
-
-  /* On mobile, the native-date-picker-single should become interactive if JS tries to open it */
-  input[type="date"].native-date-picker-single {
-    /* While it's styled as display:none !important in HTML,
-       if JS needs to interact with it (e.g., for .showPicker()),
-       it might need to be briefly visible or at least not pointer-events:none.
-       However, the primary interaction is through the buttons.
-       The .showPicker() method works on hidden inputs.
-    */
+  to {
+    opacity: 0.35;
   }
 }
 
-@media (min-width: 769px) {
-  .date-input-column:not(.single) input[type="date"].native-date-picker-multiday { /* Hide native multiday input on desktop */
-    display: none !important;
+/* Hover only where a real pointer can hover; touch taps would otherwise leave it stuck. */
+@media (hover: hover) and (pointer: fine) {
+  .suggestion-item:hover {
+    background-color: var(--bg-hover);
   }
 
-  .date-input-column:not(.single) .date-input { /* Show custom styled div for multiday on desktop */
-    display: flex !important;
+  .input-icon-btn:hover:not(:disabled) {
+    background-color: var(--bg-hover);
   }
 
-  /* On desktop, ensure the single day native picker remains completely non-interactive */
-  input[type="date"].native-date-picker-single {
-    display: none !important; /* Keep it hidden */
-    pointer-events: none !important; /* Ensure no interaction on desktop */
+  .day-btn:hover:not(:disabled):not(.selected):not(.range-edge):not(.in-range):not(.holds-choice) {
+    background-color: var(--bg-hover);
+    border-color: var(--secondary-color);
+  }
+
+  .apply-btn:hover:not(:disabled) {
+    background-color: var(--bg-apply-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .suggestions-container {
+    animation-name: diana-fade-in;
+  }
+
+  .btn,
+  .day-btn,
+  .input-icon-btn,
+  .toggle-slider::before,
+  .day-strip-pill,
+  .origin-dot-fill {
+    transition-property: background-color, border-color, color, opacity;
+  }
+
+  .btn:active:not(:disabled),
+  .day-btn:active:not(:disabled),
+  .input-icon-btn:active:not(:disabled) {
+    transform: none;
+  }
+
+  .btn-label {
+    transition-property: opacity;
+  }
+
+  .btn-label.is-swapping {
+    filter: none;
   }
 }

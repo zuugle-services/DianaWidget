@@ -1,7 +1,7 @@
 /**
  * Unit tests for utils.ts
  */
-import { getMonthName, getShortDayName, getApiErrorTranslationKey, formatDateForDisplay, firstNonBlank, resolveActivityName } from '../utils';
+import { getMonthName, getShortDayName, getApiErrorTranslationKey, formatDateForDisplay, firstNonBlank, resolveActivityName, isBrowserDefaultFont } from '../utils';
 
 describe('getMonthName', () => {
     const mockTFunction = (key: string): string | string[] => {
@@ -129,5 +129,21 @@ describe('resolveActivityName', () => {
         expect(resolveActivityName({ activityName: null })).toBeNull();
         expect(resolveActivityName({ activityName: '' })).toBeNull();
         expect(resolveActivityName({ activityName: '   ' })).toBeNull();
+    });
+});
+
+describe('isBrowserDefaultFont', () => {
+    it('recognises the fonts browsers use when a page sets none', () => {
+        expect(isBrowserDefaultFont('"Times New Roman"')).toBe(true);
+        expect(isBrowserDefaultFont('Times')).toBe(true);
+        expect(isBrowserDefaultFont('serif')).toBe(true);
+        expect(isBrowserDefaultFont('-webkit-standard')).toBe(true);
+        expect(isBrowserDefaultFont('')).toBe(true);
+    });
+
+    it('keeps any font the page chose', () => {
+        expect(isBrowserDefaultFont('Georgia, serif')).toBe(false);
+        expect(isBrowserDefaultFont('"Open Sans", Arial, sans-serif')).toBe(false);
+        expect(isBrowserDefaultFont('system-ui')).toBe(false);
     });
 });

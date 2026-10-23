@@ -206,3 +206,41 @@ export function firstNonBlank(...values: (string | null | undefined)[]): string 
 export function resolveActivityName(config: { activityName?: string | null }): string | null {
     return firstNonBlank(config?.activityName);
 }
+
+const LOCALE_BY_LANGUAGE: Record<string, string> = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
+
+/** BCP 47 locale for a widget language code. */
+export function localeForLanguage(language: string | undefined | null): string {
+    if (!language) return 'en-GB';
+    return LOCALE_BY_LANGUAGE[language] || `${language.toLowerCase()}-${language.toUpperCase()}`;
+}
+
+/**
+ * Formats an ISO day ('YYYY-MM-DD') for the date field and calendar.
+ * 'long': "Saturday, 24 October 2026" · 'short': "Sat 24 Oct" · 'weekday': "Sat".
+ */
+export function formatIsoDay(iso: string, language: string, style: 'long' | 'short' | 'weekday'): string {
+    const dt = DateTime.fromISO(iso, {zone: 'utc'}).setLocale(localeForLanguage(language));
+    if (style === 'long') return dt.toLocaleString(DateTime.DATE_HUGE);
+    if (style === 'weekday') return dt.toLocaleString({weekday: 'short'});
+    return dt.toLocaleString({weekday: 'short', day: 'numeric', month: 'short'});
+}
+
+/** Compact range in the local style: "27–30 Oct", "27.–30. Okt.", "30 Oct – 2 Nov". */
+export function formatIsoRange(startIso: string, endIso: string, language: string): string {
+    const toDate = (iso: string) => DateTime.fromISO(iso, {zone: 'utc'}).toJSDate();
+    // formatRange is ES2021; typed loosely so the project's lib setting doesn't hide it.
+    const format = new Intl.DateTimeFormat(localeForLanguage(language), {day: 'numeric', month: 'short', timeZone: 'UTC'}) as Intl.DateTimeFormat & {formatRange?: (a: Date, b: Date) => string};
+    return typeof format.formatRange === 'function'
+        ? format.formatRange(toDate(startIso), toDate(endIso))
+        : `${format.format(toDate(startIso))} – ${format.format(toDate(endIso))}`;
+}
+
+/** Families browsers fall back to when a page sets no font of its own. */
+const BROWSER_DEFAULT_FONTS = ['serif', 'times new roman', 'times', '-webkit-standard'];
+
+/** True when a computed font-family is just the browser default, i.e. the page chose no font. */
+export function isBrowserDefaultFont(fontFamily: string | null | undefined): boolean {
+    const first = (fontFamily ?? '').split(',')[0].trim().replace(/^["']|["']$/g, '').toLowerCase();
+    return !first || BROWSER_DEFAULT_FONTS.includes(first);
+}

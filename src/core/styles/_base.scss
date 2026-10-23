@@ -1,3 +1,8 @@
+/* Tailwind's preflight sets a font stack on :host; the widget uses the page's font instead. */
+:host {
+  font-family: inherit;
+}
+
 .diana-container {
   /* Layout & Box Model */
   position: relative;
@@ -5,8 +10,9 @@
   max-height: inherit;
   isolation: isolate;
 
-  /* Typography */
-  font-family: "DM Sans", sans-serif !important;
+  /* Typography: the host page's font by default. A host (or the fontFamily option) can set
+     --font-family; while it is unset, var() is invalid and font-family falls back to inheriting. */
+  font-family: var(--font-family);
 }
 
 .fatal-error-box,
@@ -150,7 +156,7 @@
   color: var(--bg-primary);
   cursor: pointer;
   flex-shrink: 0;
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   font-size: 13px;
   padding: 7px 14px;
   transition: background-color 0.2s ease;
@@ -186,7 +192,7 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   display: flex;
   flex-direction: column;
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   max-width: 350px;
   min-width: 280px;
   width: auto;
@@ -258,7 +264,7 @@
   border-radius: 4px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   font-size: 12px;
   padding: 8px 15px;
 }
@@ -335,7 +341,7 @@
   border: none;
   border-radius: 8px;
   font-size: 16px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   color: var(--text-primary);
   background-color: transparent;
   outline: none;
@@ -364,18 +370,24 @@
   border-left: none;
   border-right: none;
   color: var(--text-primary);
+  /* Long activity names get two lines before truncating, instead of one. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   flex-grow: 1;
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   font-size: 16px;
   font-style: normal;
   font-weight: 400;
   letter-spacing: 0.02em;
   line-height: 120%;
   overflow: hidden;
-  padding: 18px 9px;
+  /* Vertical spacing as margin: padding would show part of the clamped third line. */
+  margin: 12px 0;
+  padding: 0 9px;
   text-align: center;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  text-wrap: balance;
 }
 
 .widget-header-button {
@@ -411,12 +423,25 @@
   display: flex;
   justify-content: center;
   padding: 8px;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--dur-fast) ease, transform 160ms var(--ease-out);
 }
 
-.back-btn-arrow:hover,
-.menu-btn-dots:hover {
-  background-color: var(--bg-hover);
+.back-btn-arrow:active,
+.menu-btn-dots:active {
+  transform: scale(0.94);
+}
+
+.back-btn-arrow:focus-visible,
+.menu-btn-dots:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .back-btn-arrow:hover,
+  .menu-btn-dots:hover {
+    background-color: var(--bg-hover);
+  }
 }
 
 
@@ -425,7 +450,7 @@
   align-items: center;
   background-color: transparent;
   display: none; /* Initially hidden */
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   height: 100%;
   justify-content: center;
   margin: 0;
@@ -454,7 +479,6 @@
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
-  transition: all .3s ease-in-out;
   width: 100%;
 }
 
@@ -480,7 +504,7 @@
   flex-direction: column;
   flex-grow: 1;
   flex-shrink: 0; /* Prevent shrinking beyond content size */
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   max-height: inherit; /* Ensure it doesn't exceed parent */
   min-height: 0; /* Allow shrinking if content is small */
   width: 100%; /* Ensure pages take full width */
@@ -490,13 +514,22 @@
   display: flex !important; /* Show active page */
 }
 
+/* Page changes: forward slides in from the right, back from the left (set by PageManager). */
+.modal-page.active.page-enter-forward {
+  animation: diana-page-forward 240ms var(--ease-drawer);
+}
+
+.modal-page.active.page-enter-back {
+  animation: diana-page-back 240ms var(--ease-drawer);
+}
+
 /* --- Modal Body Areas --- */
 .modal-body,
 .content-page-body {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  font-family: "DM Sans", sans-serif !important;
+  font-family: inherit;
   overflow-y: auto;
   padding: 20px;
 }
@@ -535,8 +568,10 @@
   border: 1px solid var(--border-tertiary);
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--shadow-medium);
+  animation: diana-pop-in var(--dur-fast) var(--ease-out);
   display: none; /* Toggled by JS */
   min-width: 180px;
+  transform-origin: top right;
   position: absolute;
   right: 0;
   top: calc(100% + 5px); /* Position below the button */
@@ -555,8 +590,15 @@
   transition: background-color 0.2s ease;
 }
 
-.menu-dropdown-item:hover {
+@media (hover: hover) and (pointer: fine) {
+  .menu-dropdown-item:hover {
+    background-color: var(--bg-hover);
+  }
+}
+
+.menu-dropdown-item:focus-visible {
   background-color: var(--bg-hover);
+  outline: none;
 }
 
 .menu-dropdown-item svg {
@@ -625,13 +667,13 @@
   border: 1px solid var(--border-secondary);
   border-radius: 8px;
   font-size: 16px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: inherit;
   color: var(--text-primary);
   background-color: var(--bg-primary);
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23656C6E' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23656C6E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23656C6E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%23656C6E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center, left 12px center;
   background-size: 1em, 20px;
@@ -709,4 +751,48 @@
 
 .reload-button:hover {
   background-color: var(--bg-apply-hover);
+}
+
+/* --- Shared motion --- */
+@keyframes diana-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+
+@keyframes diana-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes diana-page-forward {
+  from {
+    opacity: 0;
+    transform: translateX(8%);
+  }
+}
+
+@keyframes diana-page-back {
+  from {
+    opacity: 0;
+    transform: translateX(-8%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-dropdown {
+    animation-name: diana-fade-in;
+  }
+
+  .modal-page.active.page-enter-forward,
+  .modal-page.active.page-enter-back {
+    animation-name: diana-fade-in;
+  }
+
+  .back-btn-arrow:active,
+  .menu-btn-dots:active {
+    transform: none;
+  }
 }

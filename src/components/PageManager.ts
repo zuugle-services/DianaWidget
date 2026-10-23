@@ -1,3 +1,6 @@
+/** Direction of a page change; drives the slide animation (see `.page-enter-*` in _base.scss). */
+type PageDirection = 'forward' | 'back';
+
 /**
  * Manages the navigation between different pages within the widget.
  */
@@ -21,9 +24,9 @@ export class PageManager {
      * @param contentPageElement - The DOM element for the content page.
      */
     constructor(
-        formPageElement: HTMLElement | null, 
-        resultsPageElement: HTMLElement | null, 
-        innerContainerElement: HTMLElement | null, 
+        formPageElement: HTMLElement | null,
+        resultsPageElement: HTMLElement | null,
+        innerContainerElement: HTMLElement | null,
         contentPageElement: HTMLElement | null
     ) {
         this.formPage = formPageElement;
@@ -44,11 +47,28 @@ export class PageManager {
     }
 
     /**
+     * Shows `page` and hides the others. When another page was on screen, the new one slides in
+     * from the side given by `direction`; the first page shown (initial render) does not animate.
+     */
+    private _showPage(page: HTMLElement | null, direction: PageDirection): void {
+        const pages = [this.formPage, this.resultsPage, this.contentPage];
+        const replacesVisiblePage = pages.some(p => p && p !== page && p.classList.contains('active'));
+        this._hideAllPages();
+        if (!page) return;
+
+        page.classList.remove('page-enter-forward', 'page-enter-back');
+        page.classList.add('active');
+        if (replacesVisiblePage) {
+            void page.offsetWidth; // Restart the animation if the same direction is used twice.
+            page.classList.add(`page-enter-${direction}`);
+        }
+    }
+
+    /**
      * Navigates to the form page.
      */
-    navigateToForm(): void {
-        this._hideAllPages();
-        if (this.formPage) this.formPage.classList.add("active");
+    navigateToForm(direction: PageDirection = 'back'): void {
+        this._showPage(this.formPage, direction);
         this.activePage = this.formPage;
         if (this.innerContainer) {
             // Style for form page (typically primary background)
@@ -59,9 +79,8 @@ export class PageManager {
     /**
      * Navigates to the results page.
      */
-    navigateToResults(): void {
-        this._hideAllPages();
-        if (this.resultsPage) this.resultsPage.classList.add("active");
+    navigateToResults(direction: PageDirection = 'forward'): void {
+        this._showPage(this.resultsPage, direction);
         this.activePage = this.resultsPage;
         if (this.innerContainer) {
             // Style for results page (typically secondary background)
@@ -74,8 +93,7 @@ export class PageManager {
      * Navigates to the content page.
      */
     navigateToContentPage(): void {
-        this._hideAllPages();
-        if (this.contentPage) this.contentPage.classList.add("active");
+        this._showPage(this.contentPage, 'forward');
         if (this.innerContainer) {
             this.innerContainer.style.backgroundColor = "var(--bg-primary)"; // Or a specific content page background
         }
@@ -86,11 +104,10 @@ export class PageManager {
      * If no specific active page was tracked, defaults to form page.
      */
     returnToActivePage(): void {
-        this._hideAllPages();
         if (this.activePage === this.resultsPage) {
-            this.navigateToResults();
+            this.navigateToResults('back');
         } else {
-            this.navigateToForm(); // Default to form page
+            this.navigateToForm('back');
         }
     }
 }

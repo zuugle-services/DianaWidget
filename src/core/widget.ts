@@ -1,7 +1,7 @@
 import styles from './styles/widget.scss';
 import {DateTime} from 'luxon';
 import translations from '../translations';
-import {debounce, firstNonBlank, formatDateForDisplay, getApiErrorTranslationKey, resolveActivityName} from '../utils';
+import {debounce, firstNonBlank, formatDateForDisplay, getApiErrorTranslationKey, resolveActivityName, isBrowserDefaultFont} from '../utils';
 import {
     addMinutesToDate,
     calculateDurationLocalWithDates,
@@ -20,7 +20,8 @@ import {
 
 import {PageManager} from '../components/PageManager';
 import {UIManager} from '../components/UIManager';
-import {RangeCalendarModal, SingleCalendar} from "../components/Calendar";
+import {DateField} from '../components/DateField';
+import {dateToIso, getDateFieldMode, isoToDate, type RangeValue} from './dateSelection';
 
 import {helpContent} from '../templates/helpContent';
 import {getShareOriginDialogHTML} from '../templates/partials/_shareOriginDialog';
@@ -48,6 +49,7 @@ import {
 import { isConnectionDeparted, shouldIncludePastConnections } from './pastConnections';
 
 import { ApiService } from '../services';
+import { FALLBACK_FONT_STACK, registerFallbackFont } from './fontFallback';
 import type { ApiError, FetchOptions } from '../services';
 
 import type {
@@ -113,17 +115,11 @@ interface WidgetElements {
     activityTimeBox: HTMLElement | null;
     currentLocationBtn: HTMLButtonElement | null;
     clearInputBtn: HTMLButtonElement | null;
-    activityDateStart: HTMLInputElement | null;
-    dateDisplayStart: HTMLElement | null;
-    activityDateEnd: HTMLInputElement | null;
-    dateDisplayEnd: HTMLElement | null;
-    activityDate: HTMLInputElement | null;
-    dateDisplay: HTMLElement | null;
-    dateBtnToday: HTMLButtonElement | null;
-    dateBtnTomorrow: HTMLButtonElement | null;
-    dateBtnOther: HTMLButtonElement | null;
-    otherDateText: HTMLElement | null;
-    dateSelectorButtonsGroup: HTMLElement | null;
+    originError: HTMLElement | null;
+    originDot: HTMLElement | null;
+    routeRail: HTMLElement | null;
+    dateSection: HTMLElement | null;
+    dateError: HTMLElement | null;
     toActivityDateDisplay: HTMLElement | null;
     fromActivityDateDisplay: HTMLElement | null;
     formPageMenuButton: HTMLButtonElement | null;
@@ -154,6 +150,9 @@ interface WidgetElements {
     [key: string]: HTMLElement | null | undefined;
 }
 
+/** How many recently used starting points the origin field offers. */
+const MAX_RECENT_START_LOCATIONS = 3;
+
 export default class DianaWidget {
     // Class property declarations
     defaultConfig: WidgetConfig;
@@ -165,8 +164,7 @@ export default class DianaWidget {
     state: WidgetState;
     loadingTextTimeout1: ReturnType<typeof setTimeout> | null;
     loadingTextTimeout2: ReturnType<typeof setTimeout> | null;
-    singleCalendarInstance: SingleCalendar | null;
-    rangeCalendarModal: RangeCalendarModal | null;
+    dateField: DateField | null;
     pageManager: PageManager | null;
     uiManager: UIManager | null;
     elements: WidgetElements;
@@ -205,8 +203,7 @@ export default class DianaWidget {
         this.CACHE_KEY_USER_START_LOCATION = '';
         this.loadingTextTimeout1 = null;
         this.loadingTextTimeout2 = null;
-        this.singleCalendarInstance = null;
-        this.rangeCalendarModal = null;
+        this.dateField = null;
         this.pageManager = null;
         this.uiManager = null;
         this.elements = {} as WidgetElements;
@@ -367,7 +364,7 @@ export default class DianaWidget {
             '--bg-primary', '--bg-secondary', '--bg-tertiary', '--bg-hover', '--bg-error', '--bg-info',
             '--bg-transparent', '--bg-waiting-block', '--border-primary', '--border-secondary',
             '--border-tertiary', '--border-error', '--border-info', '--shadow-verylight', '--shadow-light',
-            '--shadow-medium', '--shadow-dark', '--shadow-gray'
+            '--shadow-medium', '--shadow-dark', '--shadow-gray', '--font-family'
         ];
 
         if (!this.container || !this.dianaWidgetRootContainer) {
@@ -382,6 +379,15 @@ export default class DianaWidget {
                 this.dianaWidgetRootContainer.style.setProperty(prop, value);
             }
         });
+
+        // Font: the page's own font by default; the fontFamily option (or a --font-family set
+        // by the host) overrides it; Inter is the fallback when the page set no font at all.
+        if (typeof this.config.fontFamily === 'string' && this.config.fontFamily.trim()) {
+            this.dianaWidgetRootContainer.style.setProperty('--font-family', this.config.fontFamily.trim());
+        } else if (!hostStyles.getPropertyValue('--font-family').trim() && isBrowserDefaultFont(hostStyles.fontFamily)) {
+            registerFallbackFont();
+            this.dianaWidgetRootContainer.style.setProperty('--font-family', FALLBACK_FONT_STACK);
+        }
     }
 
     _handleConfigErrors(errors, containerId) {
@@ -485,24 +491,8 @@ export default class DianaWidget {
         );
 
         this.setupAccessibility();
-        if (this.config.multiday) {
-            if (this.elements.activityDateStart && this.state.selectedDate) {
-                this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate, this.config.timezone);
-            }
-            if (this.elements.activityDateEnd && this.state.selectedEndDate) {
-                this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate, this.config.timezone);
-            }
-
-            this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-            this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-        } else {
-            if (this.elements.activityDate && this.state.selectedDate) {
-                this.elements.activityDate.value = formatDatetime(this.state.selectedDate, this.config.timezone);
-            }
-        }
         this.setupEventListeners();
-        this._setupDateInput();
-        this._initCustomCalendar();
+        this._initDateField();
         this._initializeOriginInputWithOverridesAndCache();
     }
 
@@ -522,7 +512,7 @@ export default class DianaWidget {
             this.state.availableDates = availableDates;
 
             if (availableDates.length > 0) {
-                const dateContainer = this.elements.dateSelectorButtonsGroup?.parentElement;
+                const dateContainer = this.elements.dateSection;
                 if (dateContainer) {
                     dateContainer.innerHTML = '';
                     dateContainer.className = 'date-select-container';
@@ -619,15 +609,8 @@ export default class DianaWidget {
             if (this.config.disableUserStartLocationField) {
                 originInput.disabled = true;
                 originInput.classList.add('disabled');
-                if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'none';
-                if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
-            } else {
-                // Field is editable, show appropriate buttons
-                if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
-                    this.elements.clearInputBtn.style.display = 'block';
-                    this.elements.currentLocationBtn.style.display = 'none';
-                }
             }
+            this._syncOriginInputButtons();
             return;
         }
         const cachedLocation = this._getCachedStartLocation();
@@ -639,15 +622,39 @@ export default class DianaWidget {
             }
         }
 
-        // Set initial button state based on input value
-        if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
-            if (originInput.value.trim()) {
-                this.elements.clearInputBtn.style.display = 'block';
-                this.elements.currentLocationBtn.style.display = 'none';
-            } else {
-                this.elements.clearInputBtn.style.display = 'none';
-                this.elements.currentLocationBtn.style.display = 'block';
-            }
+        this._syncOriginInputButtons();
+    }
+
+    /**
+     * Shows the clear button while the origin field has text, the current-location button
+     * otherwise, and marks the route as resolved once the origin has coordinates.
+     */
+    _syncOriginInputButtons(): void {
+        const {originInput, clearInputBtn, currentLocationBtn} = this.elements;
+        if (!originInput || !clearInputBtn || !currentLocationBtn) return;
+        const locked = originInput.classList.contains('disabled');
+        const hasValue = !!originInput.value.trim();
+        clearInputBtn.hidden = locked || !hasValue;
+        currentLocationBtn.hidden = locked || hasValue;
+        // A place matched to coordinates fills the origin dot and makes the route line solid.
+        const resolved = originInput.hasAttribute('data-lat');
+        this.elements.originDot?.classList.toggle('is-resolved', resolved);
+        this.elements.routeRail?.classList.toggle('is-resolved', resolved);
+    }
+
+    /**
+     * Flags the origin field as needing attention (or clears the flag). An optional message
+     * is shown directly under the field, where the user is looking.
+     */
+    _markOriginInvalid(invalid: boolean, message: string | null = null): void {
+        const input = this.elements.originInput;
+        if (!input) return;
+        if (invalid) input.setAttribute('aria-invalid', 'true');
+        else input.removeAttribute('aria-invalid');
+        const errorEl = this.elements.originError;
+        if (errorEl) {
+            errorEl.textContent = invalid && message ? message : '';
+            errorEl.hidden = !(invalid && message);
         }
     }
 
@@ -691,9 +698,43 @@ export default class DianaWidget {
                 value: value, lat: lat ? lat.toString() : null, lon: lon ? lon.toString() : null, timestamp: Date.now()
             };
             localStorage.setItem(this.CACHE_KEY_USER_START_LOCATION, JSON.stringify(locationData));
+            if (locationData.lat && locationData.lon) {
+                const others = this._getRecentStartLocations().filter(entry => entry.value !== value);
+                localStorage.setItem(this._recentStartLocationsKey(), JSON.stringify([locationData, ...others].slice(0, MAX_RECENT_START_LOCATIONS)));
+            }
         } catch (error) {
             console.error("Error saving start location to cache:", error);
         }
+    }
+
+    _recentStartLocationsKey(): string {
+        return `${this.CACHE_KEY_USER_START_LOCATION}_recent`;
+    }
+
+    /** Places the user picked before (newest first), within the same TTL as the cached start location. */
+    _getRecentStartLocations(): Array<{value: string; lat: string; lon: string; timestamp: number}> {
+        if (!this._shouldCacheUserStartLocation()) return [];
+        try {
+            const entries = JSON.parse(localStorage.getItem(this._recentStartLocationsKey()) || '[]');
+            const ttlMilliseconds = this.config.userStartLocationCacheTTLMinutes * 60 * 1000;
+            return Array.isArray(entries)
+                ? entries.filter(entry => entry && entry.value && entry.lat && entry.lon && Date.now() < entry.timestamp + ttlMilliseconds)
+                : [];
+        } catch {
+            return [];
+        }
+    }
+
+    /** Offers recent starting points while the origin field is empty and focused. */
+    _showRecentOrigins(): void {
+        const recent = this._getRecentStartLocations();
+        this.state.suggestions = recent.map(entry => ({
+            type: 'Feature',
+            geometry: {type: 'Point', coordinates: [Number(entry.lon), Number(entry.lat)]},
+            properties: {},
+            diana_properties: {display_name: entry.value, location_type: 'recent'},
+        })) as unknown as typeof this.state.suggestions;
+        this.renderSuggestions(recent.length > 0 ? {text: this.t('recentOrigins'), isHeading: true} : null);
     }
 
     cacheDOMElements() {
@@ -728,17 +769,11 @@ export default class DianaWidget {
             activityTimeBox: this.shadowRoot.querySelector("#activity-time"),
             currentLocationBtn: this.shadowRoot.querySelector("#currentLocationBtn"),
             clearInputBtn: this.shadowRoot.querySelector("#clearInputBtn"),
-            activityDateStart: this.shadowRoot.querySelector("#activityDateStart"),
-            dateDisplayStart: this.shadowRoot.querySelector("#dateDisplayStart"),
-            activityDateEnd: this.shadowRoot.querySelector("#activityDateEnd"),
-            dateDisplayEnd: this.shadowRoot.querySelector("#dateDisplayEnd"),
-            activityDate: this.shadowRoot.querySelector("#activityDate"),
-            dateDisplay: this.shadowRoot.querySelector("#dateDisplay"),
-            dateBtnToday: this.shadowRoot.querySelector("#dateBtnToday"),
-            dateBtnTomorrow: this.shadowRoot.querySelector("#dateBtnTomorrow"),
-            dateBtnOther: this.shadowRoot.querySelector("#dateBtnOther"),
-            otherDateText: this.shadowRoot.querySelector("#otherDateText"),
-            dateSelectorButtonsGroup: this.shadowRoot.querySelector(".date-selector-buttons"),
+            originError: this.shadowRoot.querySelector("#originError"),
+            originDot: this.shadowRoot.querySelector("#originDot"),
+            routeRail: this.shadowRoot.querySelector("#routeRail"),
+            dateSection: this.shadowRoot.querySelector("#dateSection"),
+            dateError: this.shadowRoot.querySelector("#dateError"),
             toActivityDateDisplay: this.shadowRoot.querySelector("#toActivityDateDisplay"),
             fromActivityDateDisplay: this.shadowRoot.querySelector("#fromActivityDateDisplay"),
 
@@ -787,13 +822,6 @@ export default class DianaWidget {
         }
 
 
-        if (this.config.multiday) {
-            if (this.elements.activityDateStart) this.elements.activityDateStart.setAttribute('aria-hidden', 'true');
-            if (this.elements.activityDateEnd) this.elements.activityDateEnd.setAttribute('aria-hidden', 'true');
-        } else {
-            if (this.elements.activityDate) this.elements.activityDate.setAttribute('aria-hidden', 'true');
-        }
-
         if (this.elements.searchBtn) this.elements.searchBtn.setAttribute('aria-label', this.t('ariaLabels.searchButton'));
         if (this.elements.backBtn) this.elements.backBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
         if (this.elements.contentPageBackBtn) this.elements.contentPageBackBtn.setAttribute('aria-label', this.t('ariaLabels.backButton'));
@@ -825,17 +853,9 @@ export default class DianaWidget {
                 this.elements.originInput!.removeAttribute("data-lon");
                 this.clearMessages();
                 const target = e.target as HTMLInputElement;
+                this._markOriginInvalid(false);
                 this.debouncedHandleAddressInput(target.value.trim());
-
-                if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
-                    if (target.value.trim()) {
-                        this.elements.clearInputBtn.style.display = 'block';
-                        this.elements.currentLocationBtn.style.display = 'none';
-                    } else {
-                        this.elements.clearInputBtn.style.display = 'none';
-                        this.elements.currentLocationBtn.style.display = 'block';
-                    }
-                }
+                this._syncOriginInputButtons();
             });
             if (this.elements.suggestionsContainer) {
                 this.elements.suggestionsContainer.addEventListener('click', (e) => {
@@ -847,9 +867,9 @@ export default class DianaWidget {
                 });
             }
 
-            this.elements.originInput.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
-                else if (e.key === 'Enter') this.handleSuggestionEnter(e);
+            this.elements.originInput.addEventListener('keydown', (e) => this._handleOriginInputKeydown(e));
+            this.elements.originInput.addEventListener('focus', () => {
+                if (!this.elements.originInput?.value.trim()) this._showRecentOrigins();
             });
             if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.addEventListener('click', () => this.handleCurrentLocation());
 
@@ -858,11 +878,9 @@ export default class DianaWidget {
                 this.elements.originInput.value = '';
                 this.elements.originInput.removeAttribute("data-lat");
                 this.elements.originInput.removeAttribute("data-lon");
-                if (this.elements.clearInputBtn) this.elements.clearInputBtn.style.display = 'none';
-                if (this.elements.currentLocationBtn) this.elements.currentLocationBtn.style.display = 'block';
+                this._syncOriginInputButtons();
                 this.elements.originInput.focus();
-                this.state.suggestions = [];
-                this.renderSuggestions();
+                this._showRecentOrigins();
             });
         }
         if (this.elements.searchBtn) this.elements.searchBtn.addEventListener('click', (e) => {
@@ -966,7 +984,13 @@ export default class DianaWidget {
 
         document.addEventListener("click", (e) => {
             const target = e.target as Node;
-            if (this.elements.suggestionsContainer?.style.display === 'block' && !this.elements.suggestionsContainer.contains(target) && this.elements.originInput && !this.elements.originInput.contains(target)) {
+            // Inside the shadow root e.target is the host element, so check the composed path.
+            // The origin field's container (input, clear and location buttons) counts as inside.
+            const path = e.composedPath();
+            const originField = this.elements.originInput?.parentElement;
+            const clickedInOriginField = (this.elements.suggestionsContainer && path.includes(this.elements.suggestionsContainer))
+                || (originField && path.includes(originField));
+            if (this.elements.suggestionsContainer?.style.display === 'block' && !clickedInOriginField) {
                 this.state.suggestions = [];
                 this.renderSuggestions();
             }
@@ -1032,22 +1056,9 @@ export default class DianaWidget {
             this.elements.searchBtn,
             this.elements.currentLocationBtn,
             this.elements.clearInputBtn,
-            this.elements.dateBtnToday,
-            this.elements.dateBtnTomorrow,
-            this.elements.dateBtnOther,
-            this.elements.dateSelect,
-            this.elements.activityDateStart,
-            this.elements.activityDateEnd,
-            this.elements.activityDate
+            this.elements.dateSelect
         ];
-
-        this.shadowRoot?.querySelectorAll(".date-input-container").forEach(el => {
-            const htmlEl = el as HTMLElement;
-            if (htmlEl) {
-                htmlEl.style.pointerEvents = 'none';
-                htmlEl.classList.add('disabled-by-session-expiry');
-            }
-        });
+        this.dateField?.setDisabled(true);
 
         elementsToDisable.forEach(el => {
             if (el) {
@@ -1097,21 +1108,22 @@ export default class DianaWidget {
 
     async handleCurrentLocation(): Promise<void> {
         this.clearMessages();
+        this._markOriginInvalid(false);
         if (!navigator.geolocation) {
-            this.showError(this.t('errors.geolocationNotSupported'), 'form');
+            this._showOriginLookupError(this.t('errors.geolocationNotSupported'));
             return;
         }
         const locationBtn = this._isShareOriginDialogOpen()
             ? this.elements.shareOriginLocationBtn
             : this.elements.currentLocationBtn;
         if (locationBtn) {
-            locationBtn.style.pointerEvents = 'none';
-            locationBtn.style.opacity = '0.5';
+            (locationBtn as HTMLButtonElement).disabled = true;
+            locationBtn.setAttribute('aria-busy', 'true');
         }
         const activeInput = this._originSearchTarget().input;
         if (activeInput) activeInput.disabled = true;
 
-        this.showInfo(this.t('infos.fetchingLocation'));
+        this._setOriginLookupStatus(this.t('infos.fetchingLocation'));
         try {
             const position = await new Promise<GeolocationPosition>((resolve, reject) => {
                 navigator.geolocation.getCurrentPosition(resolve, reject, {
@@ -1136,19 +1148,50 @@ export default class DianaWidget {
                         break;
                 }
             }
-            this.showError(errorMsg, 'form');
+            this._showOriginLookupError(errorMsg);
         } finally {
             if (locationBtn) {
-                locationBtn.style.pointerEvents = 'auto';
-                locationBtn.style.opacity = '1';
+                (locationBtn as HTMLButtonElement).disabled = false;
+                locationBtn.removeAttribute('aria-busy');
             }
             if (activeInput) activeInput.disabled = false;
-            if (this.state.info === this.t('infos.fetchingLocation')) this.showInfo(null);
+            this._setOriginLookupStatus(null);
         }
     }
 
+    /**
+     * Shows what a location lookup is doing inside the origin field (as its placeholder, while
+     * the field is empty and disabled), so nothing above the form appears and pushes it down.
+     * The change-origin dialog keeps its own status line.
+     */
+    _setOriginLookupStatus(message: string | null): void {
+        if (this._isShareOriginDialogOpen()) {
+            if (message) this.showInfo(message);
+            else if (this.state.info) this.showInfo(null);
+            return;
+        }
+        const input = this.elements.originInput;
+        if (!input) return;
+        if (message) {
+            if (input.dataset.defaultPlaceholder === undefined) input.dataset.defaultPlaceholder = input.placeholder;
+            input.placeholder = message;
+        } else if (input.dataset.defaultPlaceholder !== undefined) {
+            input.placeholder = input.dataset.defaultPlaceholder;
+            delete input.dataset.defaultPlaceholder;
+        }
+    }
+
+    /** A failed location lookup, shown under the origin field (or in the change-origin dialog). */
+    _showOriginLookupError(message: string): void {
+        if (this._isShareOriginDialogOpen()) {
+            this.showError(message, 'form');
+            return;
+        }
+        this._markOriginInvalid(true, message);
+    }
+
     async fetchReverseGeocode(latitude: number, longitude: number): Promise<void> {
-        this.showInfo(this.t('infos.fetchingAddress'));
+        this._setOriginLookupStatus(this.t('infos.fetchingAddress'));
         try {
             const response = await this._fetchApi(
                 `${this.config.apiBaseUrl}/reverse-geocode?lat=${latitude}&lon=${longitude}`,
@@ -1188,33 +1231,46 @@ export default class DianaWidget {
             } else {
                 errorMessage = error.message || this.t('errors.reverseGeocodeFailed');
             }
-            this.showError(errorMessage, 'form');
+            this._showOriginLookupError(errorMessage);
         } finally {
-            if (this.state.info === this.t('infos.fetchingAddress')) this.showInfo(null);
+            this._setOriginLookupStatus(null);
         }
     }
 
     async handleAddressInput(query) {
+        const fieldContainer = this._originSearchTarget().input?.closest('.input-container');
         if (query.length < 2) {
+            this.lastQuery = query;
+            fieldContainer?.classList.remove('is-loading');
+            if (!query) {
+                this._showRecentOrigins();
+                return;
+            }
             this.state.suggestions = [];
             this.renderSuggestions();
             return;
         }
         this.lastQuery = query;
+        fieldContainer?.classList.add('is-loading');
         try {
             const results = await this.fetchSuggestions(query);
             if (query === this.lastQuery) {
                 this.state.suggestions = (!results || !results.features || results.features.length === 0) ? [] : results.features;
-                this.renderSuggestions();
+                // While a search is blocked on an unmatched origin, keep the "choose from the list" hint.
+                const hint = this._originSearchTarget().input?.getAttribute('aria-invalid') === 'true'
+                    ? {text: this.t('chooseOriginFromList')}
+                    : null;
+                this.renderSuggestions(this.state.suggestions.length > 0 ? hint : {text: this.t('noPlacesFound')});
             }
         } catch (error) {
-            if (query === this.lastQuery) {
-                let errorMessage = this.t('errors.suggestionError');
-                if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
-                    errorMessage = !window.navigator.onLine ? this.t('errors.api.networkError') : this.t('errors.api.apiUnreachable');
-                }
-                this.showError(errorMessage, 'form');
+            if (query === this.lastQuery && !error.isSessionExpired) {
+                const errorMessage = error.userMessage ?? this.t('errors.suggestionError');
+                // Shown inside the dropdown, where the user is looking, rather than as a form banner.
+                this.state.suggestions = [];
+                this.renderSuggestions({text: errorMessage, isError: true});
             }
+        } finally {
+            if (query === this.lastQuery) fieldContainer?.classList.remove('is-loading');
         }
     }
 
@@ -1243,56 +1299,99 @@ export default class DianaWidget {
         void this._handleOriginChangedInShareMode();
     }
 
+    /** Keyboard handling for the origin combobox (main form and change-origin dialog). */
+    _handleOriginInputKeydown(e: KeyboardEvent): void {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            this.handleSuggestionNavigation(e);
+        } else if (e.key === 'Enter') {
+            this.handleSuggestionEnter(e);
+        } else if (e.key === 'Escape') {
+            const {suggestions} = this._originSearchTarget();
+            if (suggestions?.style.display === 'block') {
+                // Close the list only; a second Escape may then close the surrounding dialog.
+                e.preventDefault();
+                e.stopPropagation();
+                this.state.suggestions = [];
+                this.renderSuggestions();
+            }
+        } else if (e.key === 'Tab') {
+            // Tab accepts the highlighted place and lets focus move on as usual.
+            const active = this._originSearchTarget().suggestions?.querySelector('.suggestion-item.active-suggestion') as HTMLElement | null;
+            if (active) this.handleSuggestionSelect(active.dataset.value ?? '', active.dataset.lat ?? '', active.dataset.lon ?? '');
+        }
+    }
+
     handleSuggestionNavigation(e) {
         const {input, suggestions} = this._originSearchTarget();
         if (!suggestions || this.state.suggestions.length === 0) return;
         e.preventDefault(); // Prevent cursor movement in input
 
-        const items = Array.from(suggestions.querySelectorAll('.suggestion-item'));
+        const items = Array.from(suggestions.querySelectorAll('.suggestion-item')) as HTMLElement[];
         if (items.length === 0) return;
 
         let currentIndex = items.findIndex(item => item.classList.contains('active-suggestion'));
-
-        items.forEach(item => item.classList.remove('active-suggestion'));
-
         if (e.key === 'ArrowDown') {
             currentIndex = (currentIndex + 1) % items.length;
-        } else if (e.key === 'ArrowUp') {
-            currentIndex = (currentIndex - 1 + items.length) % items.length;
+        } else {
+            currentIndex = currentIndex <= 0 ? items.length - 1 : currentIndex - 1;
         }
 
-        if (currentIndex >= 0 && currentIndex < items.length) {
-            const item = items[currentIndex] as HTMLElement;
-            item.classList.add('active-suggestion');
-            item.focus(); // Make it focusable for screen readers and further interaction
-            // Scroll into view if necessary
-            item.scrollIntoView({block: 'nearest', inline: 'nearest'});
-            input?.setAttribute('aria-activedescendant', item.id || `suggestion-item-${currentIndex}`); // Assuming items have IDs
-        }
+        items.forEach((item, index) => {
+            const isActive = index === currentIndex;
+            item.classList.toggle('active-suggestion', isActive);
+            item.setAttribute('aria-selected', String(isActive));
+        });
+        const item = items[currentIndex];
+        // Focus stays in the input (combobox pattern), so typing keeps working;
+        // aria-activedescendant tells assistive tech which option is current.
+        item.scrollIntoView({block: 'nearest', inline: 'nearest'});
+        input?.setAttribute('aria-activedescendant', item.id);
     }
 
     handleSuggestionEnter(e: KeyboardEvent): void {
         const {input, suggestions} = this._originSearchTarget();
         if (!suggestions || this.state.suggestions.length === 0) return;
 
-        const activeItem = suggestions.querySelector('.suggestion-item.active-suggestion') as HTMLElement | null;
-        if (activeItem) {
-            e.preventDefault(); // Prevent form submission if input is in a form
-            this.handleSuggestionSelect(activeItem.dataset.value ?? '', activeItem.dataset.lat ?? '', activeItem.dataset.lon ?? '');
-        } else if (this.state.suggestions.length > 0 && (input?.value.trim().length ?? 0) >= 2) {
-            // If no specific item is active but there are suggestions and input has text,
-            // potentially select the first one or trigger search directly.
-            // For now, let's assume if Enter is pressed without an active suggestion,
-            // the user might intend to search with the current text if it's valid.
-            // Or, if the first suggestion is implicitly selected, uncomment the following:
-            // const firstItem = this.elements.suggestionsContainer.querySelector('.suggestion-item');
-            // if (firstItem) {
-            //   this.handleSuggestionSelect(firstItem.dataset.value, firstItem.dataset.lat, firstItem.dataset.lon);
-            // }
-            // If the intention is to proceed with search if enter is hit:
-            // this.handleSearch(); // Be cautious with this, as it might not always be the desired UX.
+        if (suggestions.style.display !== 'block' || (input?.value.trim().length ?? 0) < 2) return;
+
+        // Enter takes the highlighted place, or the top match when nothing is highlighted,
+        // instead of submitting text that was never matched to a place.
+        const item = (suggestions.querySelector('.suggestion-item.active-suggestion')
+            ?? suggestions.querySelector('.suggestion-item')) as HTMLElement | null;
+        if (!item) return;
+        e.preventDefault(); // Prevent form submission
+        this.handleSuggestionSelect(item.dataset.value ?? '', item.dataset.lat ?? '', item.dataset.lon ?? '');
+    }
+
+    /**
+     * Typed text that was never matched to a place would be sent as a free-text address,
+     * which the backend may resolve to somewhere unexpected. Offer the matching places instead.
+     * If the lookup itself fails, the search goes ahead with the free text as before.
+     * @returns true when the search can go ahead.
+     */
+    async _ensureOriginResolved(): Promise<boolean> {
+        const input = this.elements.originInput;
+        if (!input || input.hasAttribute('data-lat')) return true;
+        const query = input.value.trim();
+        // A host-provided default origin (the field's initial value attribute) is trusted as-is.
+        if (input.defaultValue.trim() && query === input.defaultValue.trim()) return true;
+
+        let features;
+        try {
+            const results = await this.fetchSuggestions(query);
+            features = results?.features ?? [];
+        } catch (error) {
+            return !error?.isSessionExpired;
         }
-        // If no active item and no clear "next step", the default browser behavior for Enter on an input might occur (e.g., form submission).
+
+        this.lastQuery = query;
+        this.state.suggestions = features;
+        this.renderSuggestions(features.length > 0
+            ? {text: this.t('chooseOriginFromList')}
+            : {text: this.t('originNotFound'), isError: true});
+        this._markOriginInvalid(true);
+        input.focus();
+        return false;
     }
 
     async handleSearch(): Promise<void> {
@@ -1306,45 +1405,19 @@ export default class DianaWidget {
         this.elements.collapsibleToActivity?.classList.remove('expanded');
         this.elements.collapsibleFromActivity?.classList.remove('expanded');
 
-        if (!this.config.overrideUserStartLocation && this.elements.originInput && !this.elements.originInput.value) {
-            this.showInfo(this.t('infos.originRequired'));
+        if (!this.config.overrideUserStartLocation && this.elements.originInput && !this.elements.originInput.value.trim()) {
+            // Shown at the field itself rather than as a banner above the form.
+            this._markOriginInvalid(true, this.t('infos.originRequired'));
+            this.elements.originInput.focus();
+            return;
+        }
+
+        if (!this.config.overrideUserStartLocation && !(await this._ensureOriginResolved())) {
             return;
         }
 
 
-        const datesFullyDetermined = this.config.multiday && this.config.activityDurationDaysFixed && (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
-
-        if (!datesFullyDetermined) {
-            const activityDateStartInput = this.config.multiday ? this.elements.activityDateStart : this.elements.activityDate;
-            const activityDateEndInput = this.config.multiday ? this.elements.activityDateEnd : null;
-
-            if (!this.config.overrideActivityStartDate && (!activityDateStartInput || !activityDateStartInput.value)) {
-                this.showInfo(this.t('infos.dateRequired'));
-                return;
-            }
-            if (this.config.multiday && !this.config.overrideActivityEndDate && (!activityDateEndInput || !activityDateEndInput.value) && !this.config.activityDurationDaysFixed) {
-                this.showInfo(this.t('infos.endDateRequired'));
-                return;
-            }
-        }
-
-
-        if (!this.config.multiday && !this.config.overrideActivityStartDate) {
-            // Single day date is already in this.state.selectedDate via _updateSingleDayDateButtonStates or native picker change
-        } else if (this.config.multiday) {
-            if (!this.config.overrideActivityStartDate && !datesFullyDetermined) {
-                const inputVal = this.elements.activityDateStart?.value;
-                if (inputVal) this.state.selectedDate = DateTime.fromISO(inputVal, {zone: 'utc'}).toJSDate();
-            }
-            if (!this.config.overrideActivityEndDate && !datesFullyDetermined) {
-                if (this.elements.activityDateEnd?.value) {
-                    this.state.selectedEndDate = DateTime.fromISO(this.elements.activityDateEnd.value, {zone: 'utc'}).toJSDate();
-                } else if (this.config.activityDurationDaysFixed && this.state.selectedDate) {
-                    this.state.selectedEndDate = DateTime.fromJSDate(this.state.selectedDate).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                }
-            }
-        }
-
+        if (!this._validateDates()) return;
 
         if (this.config.multiday && this.state.selectedDate && this.state.selectedEndDate && DateTime.fromJSDate(this.state.selectedDate).startOf('day') > DateTime.fromJSDate(this.state.selectedEndDate).startOf('day')) {
             this.showInfo(this.t('infos.endDateAfterStartDate'));
@@ -1407,8 +1480,8 @@ export default class DianaWidget {
             } else if (error.message && error.message.toLowerCase().includes('failed to fetch')) {
                 errorMessage = !window.navigator.onLine ? this.t('errors.api.networkError') : this.t('errors.api.apiUnreachable');
             }
-            this.showError(errorMessage, 'form');
-            return {features: []};
+            // The caller shows this inside the suggestion list, next to the field.
+            throw Object.assign(new Error(errorMessage), {userMessage: errorMessage});
         }
     }
 
@@ -1721,15 +1794,26 @@ export default class DianaWidget {
         return {input: this.elements.originInput, suggestions: this.elements.suggestionsContainer};
     }
 
-    renderSuggestions(): void {
+    /**
+     * Renders the autocomplete list. An optional message row (no results, load error, hint)
+     * is shown above the places, inside the list where the user is looking.
+     */
+    renderSuggestions(message: {text: string; isError?: boolean; isHeading?: boolean} | null = null): void {
         const {input, suggestions} = this._originSearchTarget();
         if (!suggestions || !input) return;
-        suggestions.innerHTML = this.state.suggestions
-            .map(feature => {
+        const idPrefix = suggestions.id || 'suggestions';
+        let messageHTML = '';
+        if (message?.isHeading) {
+            messageHTML = `<div class="suggestion-heading" role="presentation">${this._escapeHtml(message.text)}</div>`;
+        } else if (message) {
+            messageHTML = `<div class="suggestion-message${message.isError ? ' is-error' : ''}" role="option" aria-disabled="true">${this._escapeHtml(message.text)}</div>`;
+        }
+        suggestions.innerHTML = messageHTML + this.state.suggestions
+            .map((feature, index) => {
                 const props = feature.diana_properties;
                 const displayName = this._escapeHtml(props.display_name ?? '');
                 return `
-        <div class="suggestion-item" role="option" tabindex="0"
+        <div class="suggestion-item" role="option" id="${idPrefix}-option-${index}" aria-selected="false"
              data-value="${displayName}"
              data-location_type="${this._escapeHtml(props.location_type ?? '')}"
              data-lat="${feature.geometry.coordinates[1]}" data-lon="${feature.geometry.coordinates[0]}">
@@ -1737,8 +1821,10 @@ export default class DianaWidget {
           <span class="suggestion-text">${displayName}</span>
         </div>`;
             }).join('');
-        suggestions.style.display = this.state.suggestions.length > 0 ? 'block' : 'none';
-        input.setAttribute('aria-expanded', this.state.suggestions.length > 0 ? 'true' : 'false');
+        const isOpen = this.state.suggestions.length > 0 || !!message;
+        suggestions.style.display = isOpen ? 'block' : 'none';
+        input.setAttribute('aria-expanded', String(isOpen));
+        input.removeAttribute('aria-activedescendant');
     }
 
     /**
@@ -2772,10 +2858,8 @@ export default class DianaWidget {
             input.removeAttribute('data-lon');
         }
 
-        if (this.elements.clearInputBtn && this.elements.currentLocationBtn) {
-            this.elements.clearInputBtn.style.display = value ? 'block' : 'none';
-            this.elements.currentLocationBtn.style.display = value ? 'none' : 'block';
-        }
+        this._markOriginInvalid(false);
+        this._syncOriginInputButtons();
     }
 
     /**
@@ -2877,18 +2961,7 @@ export default class DianaWidget {
         const shareOrigin = resolveShareOrigin(this._getCachedStartLocation(), ctx);
         this._setOriginInputValue(shareOrigin.value, shareOrigin.lat, shareOrigin.lon);
 
-        if (this.config.multiday) {
-            if (this.elements.activityDateStart && this.state.selectedDate) {
-                this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate, this.config.timezone);
-            }
-            if (this.elements.activityDateEnd && this.state.selectedEndDate) {
-                this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate, this.config.timezone);
-            }
-            this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-            this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-        } else {
-            this._updateSingleDayDateButtonStates();
-        }
+        this._syncDateFieldFromState();
 
         this._renderShareInfoBanner();
 
@@ -3055,10 +3128,7 @@ export default class DianaWidget {
                 this._setShareOriginStatus(null);
                 this.debouncedHandleAddressInput((e.target as HTMLInputElement).value.trim());
             });
-            this.elements.shareOriginInput.addEventListener('keydown', (e) => {
-                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') this.handleSuggestionNavigation(e);
-                else if (e.key === 'Enter') this.handleSuggestionEnter(e);
-            });
+            this.elements.shareOriginInput.addEventListener('keydown', (e) => this._handleOriginInputKeydown(e));
         }
 
         this.elements.shareOriginSuggestions?.addEventListener('click', (e) => {
@@ -3329,23 +3399,51 @@ export default class DianaWidget {
         }
 
         if (isLoading) {
-            if (this.elements.searchBtn) this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateToActivity")}`;
-
+            this._setSearchButtonLabel(this.t("loadingStateToActivity"), true);
 
             this.loadingTextTimeout1 = setTimeout(() => {
-                if (this.state.loading && this.elements.searchBtn) {
-                    this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateFromActivity")}`;
+                if (this.state.loading) {
+                    this._setSearchButtonLabel(this.t("loadingStateFromActivity"), true);
 
                     this.loadingTextTimeout2 = setTimeout(() => {
-                        if (this.state.loading && this.elements.searchBtn) {
-                            this.elements.searchBtn.innerHTML = `<span class="loading-spinner"></span> ${this.t("loadingStateSearching")}`;
-                        }
+                        if (this.state.loading) this._setSearchButtonLabel(this.t("loadingStateSearching"), true);
                     }, 1800);
                 }
             }, 1300);
         } else {
-            if (this.elements.searchBtn) this.elements.searchBtn.innerHTML = this.t('search');
+            this._setSearchButtonLabel(this.t('search'), false);
         }
+    }
+
+    /**
+     * Sets the search button content. While loading, text changes crossfade (with a slight blur)
+     * so the rotating status reads as one label changing rather than a jump.
+     */
+    _setSearchButtonLabel(text: string, withSpinner: boolean): void {
+        const button = this.elements.searchBtn;
+        if (!button) return;
+        const render = () => {
+            button.innerHTML = `${withSpinner ? '<span class="loading-spinner" aria-hidden="true"></span>' : ''}<span class="btn-label">${text}</span>`;
+        };
+
+        const currentLabel = button.querySelector('.btn-label');
+        const isSwapWhileLoading = withSpinner && !!button.querySelector('.loading-spinner');
+        const reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!currentLabel || !isSwapWhileLoading || reduceMotion) {
+            render();
+            return;
+        }
+
+        currentLabel.classList.add('is-swapping');
+        setTimeout(() => {
+            if (!this.state.loading) return; // Loading finished meanwhile; that label already won.
+            render();
+            const nextLabel = button.querySelector('.btn-label') as HTMLElement | null;
+            if (!nextLabel) return;
+            nextLabel.classList.add('is-swapping');
+            void nextLabel.offsetWidth; // Commit the hidden state so the fade-in transitions.
+            nextLabel.classList.remove('is-swapping');
+        }, 120);
     }
 
     /**
@@ -3537,267 +3635,84 @@ export default class DianaWidget {
         this.showInfo(null);
     }
 
-    _initCustomCalendar() {
-        if (this.elements.dateSelect) {
-            return;
+    /** Sets up the date field (day strip + calendar), unless a host dateList dropdown replaces it. */
+    _initDateField(): void {
+        if (!this.config.multiday && !this.config.overrideActivityStartDate && this.config.dateList) {
+            this._setupDateInput();
+            if (this.elements.dateSelect) return;
         }
+        const section = this.elements.dateSection;
+        if (!section || !this.dianaWidgetRootContainer) return;
 
-        const datesFullyDetermined = this.config.multiday && this.config.activityDurationDaysFixed && (this.config.overrideActivityStartDate || this.config.overrideActivityEndDate);
+        const mode = getDateFieldMode(this.config);
+        this.dateField = new DateField(section, {
+            multiday: !!this.config.multiday,
+            rules: mode.rules,
+            locked: mode.locked,
+            language: this.config.language,
+            timezone: this.config.timezone,
+            t: (key) => this.t(key),
+            overlayContainer: this.dianaWidgetRootContainer,
+            onChange: (value) => this._onDateFieldChange(value),
+        });
+        this._syncDateFieldFromState();
+    }
 
-        if (this.config.multiday) {
-            if (!this.rangeCalendarModal) {
-                this.rangeCalendarModal = new RangeCalendarModal(
-                    this.state.selectedDate, this.state.selectedEndDate, this,
-                    (startDate, endDate) => {
-                        this.state.selectedDate = startDate;
-                        this.state.selectedEndDate = endDate;
-                        if (this.elements.activityDateStart) this.elements.activityDateStart.value = formatDatetime(startDate);
-                        if (this.elements.dateDisplayStart) this.updateDateDisplay(startDate, 'dateDisplayStart');
-                        if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(endDate);
-                        if (this.elements.dateDisplayEnd) this.updateDateDisplay(endDate, 'dateDisplayEnd');
-                        this.clearMessages();
-                        if (this.state.selectedEndDate && this.state.selectedDate && DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
-                    },
-                    this.config.overrideActivityStartDate ?? null, this.config.overrideActivityEndDate ?? null, this.config.activityDurationDaysFixed ?? null
-                );
-            }
+    /** Shows the dates in state (initial, shared journey, host API) in the date field. */
+    _syncDateFieldFromState(): void {
+        if (!this.dateField) return;
+        const start = dateToIso(this.state.selectedDate);
+        const end = this.config.multiday ? dateToIso(this.state.selectedEndDate) : start;
+        this.dateField.setValue({start, end: end ?? start, awaitingEnd: false});
+    }
 
-            const showRangeCalendar = (e) => {
-                if (window.matchMedia("(max-width: 768px)").matches && e.target.closest('.date-input-container')) {
-                    const nativeInput = e.target.closest('.date-input-container').querySelector('input[type="date"]');
-                    if (nativeInput) {
-                        return; // Let native picker proceed
-                    }
-                }
-                // Prevent default if the click was on the container but not the native input, to show custom calendar
-                if (e.target.closest('.date-input-container') && e.target.tagName !== 'INPUT') {
-                    e.preventDefault();
-                }
-                this.rangeCalendarModal?.show(this.state.selectedDate, this.state.selectedEndDate);
-            };
+    _onDateFieldChange(value: RangeValue): void {
+        this.state.selectedDate = value.start ? isoToDate(value.start) : null;
+        this.state.selectedEndDate = this.config.multiday && value.end ? isoToDate(value.end) : null;
+        this._setDateError(null);
+        this.clearMessages();
+        if (!this.config.multiday && value.start) this._notifyDateChange(value.start);
+    }
 
+    /** Shows (or clears) a problem with the date choice directly under the date field. */
+    _setDateError(message: string | null): void {
+        const errorEl = this.elements.dateError;
+        if (!errorEl) return;
+        errorEl.textContent = message ?? '';
+        errorEl.hidden = !message;
+    }
 
-            if (!datesFullyDetermined) {
-                if (!this.config.overrideActivityStartDate && this.elements.activityDateStart) {
-                    const sDIC = this.elements.activityDateStart.closest('.date-input-container');
-                    if (sDIC) sDIC.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showRangeCalendar(e);
-                    });
-                }
-                if (!this.config.overrideActivityEndDate && this.elements.activityDateEnd) {
-                    const eDIC = this.elements.activityDateEnd.closest('.date-input-container');
-                    if (eDIC) eDIC.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        showRangeCalendar(e);
-                    });
-                }
-            }
-            if (this.elements.activityDateStart) {
-                this.elements.activityDateStart.addEventListener('change', (e) => {
-                    const target = e.target as HTMLInputElement;
-                    const [y, m, d] = target.value.split('-').map(Number);
-                    const nSD = new Date(Date.UTC(y, m - 1, d));
-                    this.state.selectedDate = nSD;
-                    this.updateDateDisplay(nSD, 'dateDisplayStart');
-                    if (this.config.activityDurationDaysFixed) {
-                        this.state.selectedEndDate = DateTime.fromJSDate(nSD).plus({days: this.config.activityDurationDaysFixed - 1}).toJSDate();
-                        if (this.elements.activityDateEnd && this.state.selectedEndDate) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
-                        if (this.state.selectedEndDate) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-                    } else if (this.state.selectedEndDate && nSD > this.state.selectedEndDate) {
-                        this.state.selectedEndDate = new Date(nSD.valueOf());
-                        if (this.elements.activityDateEnd) this.elements.activityDateEnd.value = formatDatetime(this.state.selectedEndDate);
-                        this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-                    }
-                    this.clearMessages();
-                });
-            }
-            if (this.elements.activityDateEnd) {
-                this.elements.activityDateEnd.addEventListener('change', (e) => {
-                    if (this.config.activityDurationDaysFixed) return; // End date is fixed relative to start
-                    const target = e.target as HTMLInputElement;
-                    const [y, m, d] = target.value.split('-').map(Number);
-                    const nED = new Date(Date.UTC(y, m - 1, d));
-                    this.state.selectedEndDate = nED;
-                    this.updateDateDisplay(nED, 'dateDisplayEnd');
-                    if (this.state.selectedDate && nED < this.state.selectedDate) { // If new end date is before start date
-                        this.state.selectedDate = new Date(nED.valueOf()); // Adjust start date to be same as end date
-                        if (this.elements.activityDateStart) this.elements.activityDateStart.value = formatDatetime(this.state.selectedDate);
-                        this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-                    }
-                    this.clearMessages();
-                    if (this.state.selectedEndDate && this.state.selectedDate && DateTime.fromJSDate(this.state.selectedEndDate).startOf('day') < DateTime.fromJSDate(this.state.selectedDate).startOf('day')) this.showInfo(this.t('infos.endDateAfterStartDate'));
-                });
-            }
+    /** Checks the date choice before searching. */
+    _validateDates(): boolean {
+        if (getDateFieldMode(this.config).locked || this.elements.dateSelect) return true;
+        if (!this.state.selectedDate) {
+            this._setDateError(this.t('infos.dateRequired'));
+            return false;
+        }
+        if (this.config.multiday && (this.dateField?.getValue().awaitingEnd || !this.state.selectedEndDate)) {
+            this._setDateError(this.t('infos.endDateRequired'));
+            return false;
+        }
+        this._setDateError(null);
+        return true;
+    }
 
-
-            if (this.config.overrideActivityStartDate && this.elements.dateDisplayStart && this.state.selectedDate) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-            if (this.config.overrideActivityEndDate && this.elements.dateDisplayEnd && this.state.selectedEndDate) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-
-            if (datesFullyDetermined) {
-                if (this.elements.dateDisplayStart && this.state.selectedDate) this.updateDateDisplay(this.state.selectedDate, 'dateDisplayStart');
-                if (this.elements.dateDisplayEnd && this.state.selectedEndDate) this.updateDateDisplay(this.state.selectedEndDate, 'dateDisplayEnd');
-            }
-
-
-        } else { // Single day
-            if (!this.config.overrideActivityStartDate && this.elements.activityDate && this.elements.otherDateText && this.elements.dateBtnOther && this.elements.dateSelectorButtonsGroup) {
-                const dateInputElement = this.elements.activityDate;
-                const otherDateTextElement = this.elements.otherDateText;
-                const otherDateButtonElement = this.elements.dateBtnOther;
-                const dateButtonsGroupElement = this.elements.dateSelectorButtonsGroup;
-
-                if (!this.singleCalendarInstance) {
-                    this.singleCalendarInstance = new SingleCalendar(
-                        dateInputElement,
-                        otherDateTextElement,
-                        this.state.selectedDate,
-                        this,
-                        (newDate) => { // Calendar onDateSelectCallback
-                            this.onDateSelectedByButton(newDate);
-                        },
-                        otherDateButtonElement,
-                        dateButtonsGroupElement,
-                        styles
-                    );
-                }
-
-                this.elements.dateBtnToday?.addEventListener('click', () => {
-                    const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
-                    const today = new Date(today_object.year ?? new Date().getFullYear(), (today_object.month ?? 1) - 1, today_object.day ?? 1);
-                    this.onDateSelectedByButton(today);
-                });
-
-                this.elements.dateBtnTomorrow?.addEventListener('click', () => {
-                    const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({days: 1}).startOf('day').toObject();
-                    const tomorrow = new Date(tomorrow_object.year ?? new Date().getFullYear(), (tomorrow_object.month ?? 1) - 1, tomorrow_object.day ?? 1);
-                    this.onDateSelectedByButton(tomorrow);
-                });
-
-
-                otherDateButtonElement.addEventListener('click', (e) => {
-                    if (window.matchMedia("(max-width: 768px)").matches) {
-                        e.stopPropagation();
-                        if (this.elements.activityDate) {
-                            try {
-                                if (typeof this.elements.activityDate.showPicker === 'function') {
-                                    this.elements.activityDate.showPicker();
-                                } else {
-                                    this.elements.activityDate.focus(); // Fallback for browsers not supporting showPicker
-                                }
-                            } catch (err) {
-                                console.warn("Error trying to show native date picker:", err);
-                                this.elements.activityDate.focus(); // Fallback
-                            }
-                        }
-                    }
-                });
-
-
-                if (this.elements.activityDate) {
-                    this.elements.activityDate.addEventListener('change', (e) => {
-                        const target = e.target as HTMLInputElement;
-                        if (target.value) {
-                            const [year, month, day] = target.value.split('-').map(Number);
-                            const newSelectedDate = new Date(Date.UTC(year, month - 1, day));
-                            this.onDateSelectedByButton(newSelectedDate);
-
-                            if (this.singleCalendarInstance) {
-                                this.singleCalendarInstance.setSelectedDate(newSelectedDate, false);
-                            }
-                        }
-                    });
-                }
-                this._updateSingleDayDateButtonStates();
-
-            } else if (this.config.overrideActivityStartDate && this.elements.dateDisplay) {
-                this.updateDateDisplay(this.state.selectedDate, 'dateDisplay');
-            }
+    _notifyDateChange(isoDate: string): void {
+        if (typeof this.config.onDateChange !== 'function') return;
+        try {
+            this.config.onDateChange(isoDate);
+        } catch (e) {
+            console.error("Error executing onDateChange callback:", e);
         }
     }
 
-    updateDateDisplay(date, displayElementId) {
-        const displayElement = this.elements[displayElementId];
-        if (!displayElement) return;
-
-        const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
-        const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
-        if (date && !isNaN(date.getTime())) {
-            displayElement.textContent = formatDateForDisplay(date, locale, this.config.timezone);
-            displayElement.classList.remove("placeholder");
-        } else {
-            displayElement.textContent = this.t('selectDate'); // Fallback or placeholder text
-            displayElement.classList.add("placeholder");
-        }
-    }
-
+    /** Sets a single activity date from the host API or the dateList dropdown. */
     onDateSelectedByButton(date) {
         this.state.selectedDate = date;
-        if (this.elements.activityDate) {
-            this.elements.activityDate.value = formatDatetime(date, this.config.timezone);
-        }
-        this._updateSingleDayDateButtonStates();
-
-        if (this.singleCalendarInstance) {
-            this.singleCalendarInstance.setSelectedDate(date, false); // Update calendar's date
-            this.singleCalendarInstance.hide(); // Hide custom calendar if open
-        }
+        this._syncDateFieldFromState();
+        this._setDateError(null);
         this.clearMessages();
-
-        if (typeof this.config.onDateChange === 'function') {
-            try {
-                const isoDate = DateTime.fromJSDate(date).toISODate();
-                if (isoDate) {
-                    this.config.onDateChange(isoDate);
-                }
-            } catch (e) {
-                console.error("Error executing onDateChange callback:", e);
-            }
-        }
-    }
-
-    _updateSingleDayDateButtonStates() {
-        if (this.config.multiday || !this.elements.dateBtnToday || !this.elements.dateBtnTomorrow || !this.elements.dateBtnOther || !this.elements.otherDateText) {
-            return; // Not applicable for multiday or if elements are missing
-        }
-
-        const currentYear = new Date().getFullYear();
-        const today_object = DateTime.now().setZone(this.config.timezone).startOf('day').toObject();
-        const today = new Date(today_object.year ?? currentYear, (today_object.month ?? 1) - 1, today_object.day ?? 1);
-        const tomorrow_object = DateTime.now().setZone(this.config.timezone).plus({days: 1}).startOf('day').toObject();
-        const tomorrow = new Date(tomorrow_object.year ?? currentYear, (tomorrow_object.month ?? 1) - 1, tomorrow_object.day ?? 1);
-        const selected_object = this.state.selectedDate ? DateTime.fromJSDate(this.state.selectedDate).setZone(this.config.timezone).startOf('day').toObject() : null;
-        const selected = selected_object ? new Date(selected_object.year ?? currentYear, (selected_object.month ?? 1) - 1, selected_object.day ?? 1) : null;
-
-        this.elements.dateBtnToday.classList.remove('active');
-        this.elements.dateBtnTomorrow.classList.remove('active');
-        this.elements.dateBtnOther.classList.remove('active');
-        this.elements.otherDateText.textContent = this.t('otherDate'); // Default text
-        if (this.elements.dateBtnOther.children[1]) this.elements.dateBtnOther.children[1].setAttribute("stroke", "#000"); // Default arrow color
-
-
-        if (selected) {
-            const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
-            const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
-            if (selected.getTime() === today.getTime()) {
-                this.elements.dateBtnToday.classList.add('active');
-            } else if (selected.getTime() === tomorrow.getTime()) {
-                this.elements.dateBtnTomorrow.classList.add('active');
-            } else {
-                this.elements.dateBtnOther.classList.add('active');
-                this.elements.otherDateText.textContent = formatDateForDisplay(selected, locale, this.config.timezone);
-                if (this.elements.dateBtnOther.children[1]) this.elements.dateBtnOther.children[1].setAttribute("stroke", "#fff"); // Active arrow color
-            }
-            // Ensure hidden input is also updated
-            if (this.elements.activityDate) {
-                this.elements.activityDate.value = formatDatetime(selected, this.config.timezone);
-            }
-        } else {
-            // No date selected, reset "Other Date" text and hidden input
-            this.elements.otherDateText.textContent = this.t('otherDate');
-            if (this.elements.activityDate) {
-                this.elements.activityDate.value = '';
-            }
-        }
+        const isoDate = dateToIso(date);
+        if (isoDate) this._notifyDateChange(isoDate);
     }
 }

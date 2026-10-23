@@ -2,15 +2,15 @@ import type { Translations } from './types';
 
 const translations: Translations = {
     EN: {
-        origin: "Origin",
-        enterOrigin: "Enter origin",
+        origin: "From",
+        enterOrigin: "Enter your starting point",
         destination: "Destination",
         activityDate: "Activity date",
         activityStartDateLabel: "Start date",
         activityEndDateLabel: "End date",
-        search: "Search",
+        search: "Search connections",
         selectDate: "Select",
-        datePickerTitle: "Select Activity Date",
+        datePickerTitle: "Select activity date",
         apply: "Apply",
         cancel: "Cancel",
         back: "Back",
@@ -50,8 +50,18 @@ const translations: Translations = {
         noConnectionElements: "No connection elements available.",
         selectTimeSlot: "Please select a time slot above.",
         useCurrentLocation: "Use current location",
+        noPlacesFound: "No places found",
+        tripDates: "Trip dates",
+        tripDatesHint: "Trip dates (tap first and last day)",
+        moreDates: "More dates",
+        calendarRangeHint: "Tap the first day, then the last.",
+        pickLastDay: "now pick the last day",
+        daysCount: "{n} days",
+        recentOrigins: "Recent",
+        chooseOriginFromList: "Choose your starting point from the list.",
+        originNotFound: "We couldn't find this place. Check the spelling or try a nearby town.",
         clearInput: "Clear input",
-        selectDateRange: "Select date range",
+        selectDateRange: "Select trip dates",
         today: "Today",
         tomorrow: "Tomorrow",
         otherDate: "Other date",
@@ -67,10 +77,10 @@ const translations: Translations = {
             imprint: "Imprint"
         },
         infos: {
-            originRequired: "Please enter an origin location.",
+            originRequired: "Enter where you start from.",
             dateRequired: "Please select a date.",
             endDateRequired: "Please select an end date.",
-            fetchingLocation: "Fetching your location...",
+            fetchingLocation: "Finding your location…",
             fetchingAddress: "Looking up address...",
             endDateAfterStartDate: "End date must be on or after the start date.",
             sharedDateInPast: "This shared journey is for a date in the past. Please select a new date to find current connections.",
@@ -155,7 +165,8 @@ const translations: Translations = {
             loadLater: "Load later"
         },
         useFlex: {
-            label: "Include on-demand transit"
+            label: "Include on-demand transit",
+            help: "Rufbus and other flex services. Some need booking."
         },
         waiting: {
             beforeActivity: "Waiting for activity to start",
@@ -254,15 +265,15 @@ const translations: Translations = {
         }
     },
     DE: {
-        origin: "Startort",
-        enterOrigin: "Startort eingeben",
+        origin: "Von",
+        enterOrigin: "Startpunkt eingeben",
         destination: "Zielort",
-        activityDate: "Aktivitätsdatum",
+        activityDate: "Datum der Aktivität",
         activityStartDateLabel: "Startdatum",
         activityEndDateLabel: "Enddatum",
-        search: "Suchen",
+        search: "Verbindungen suchen",
         selectDate: "Auswählen",
-        datePickerTitle: "Aktivitätsdatum wählen",
+        datePickerTitle: "Datum wählen",
         apply: "Übernehmen",
         cancel: "Abbrechen",
         back: "Zurück",
@@ -302,8 +313,18 @@ const translations: Translations = {
         noConnectionElements: "Keine Verbindungselemente verfügbar.",
         selectTimeSlot: "Bitte wählen Sie ein Zeitfenster aus.",
         useCurrentLocation: "Aktuellen Standort verwenden",
+        noPlacesFound: "Keine Orte gefunden",
+        tripDates: "Reisedaten",
+        tripDatesHint: "Reisedaten (ersten und letzten Tag antippen)",
+        moreDates: "Weitere Termine",
+        calendarRangeHint: "Ersten und dann letzten Tag antippen.",
+        pickLastDay: "jetzt letzten Tag wählen",
+        daysCount: "{n} Tage",
+        recentOrigins: "Zuletzt verwendet",
+        chooseOriginFromList: "Wählen Sie Ihren Startpunkt aus der Liste.",
+        originNotFound: "Dieser Ort wurde nicht gefunden. Prüfen Sie die Schreibweise oder versuchen Sie einen Ort in der Nähe.",
         clearInput: "Eingabe löschen",
-        selectDateRange: "Datumsbereich auswählen",
+        selectDateRange: "Reisedaten wählen",
         today: "Heute",
         tomorrow: "Morgen",
         otherDate: "Anderes Datum",
@@ -319,10 +340,10 @@ const translations: Translations = {
             imprint: "Impressum"
         },
         infos: {
-            originRequired: "Bitte geben Sie einen Startort ein.",
+            originRequired: "Geben Sie Ihren Startpunkt ein.",
             dateRequired: "Bitte wählen Sie ein Datum.",
             endDateRequired: "Bitte wählen Sie ein Enddatum.",
-            fetchingLocation: "Standort wird abgerufen...",
+            fetchingLocation: "Standort wird ermittelt…",
             fetchingAddress: "Adresse wird gesucht...",
             endDateAfterStartDate: "Das Enddatum muss am oder nach dem Startdatum liegen.",
             sharedDateInPast: "Diese geteilte Reise bezieht sich auf ein vergangenes Datum. Bitte wählen Sie ein neues Datum, um aktuelle Verbindungen zu finden.",
@@ -407,7 +428,8 @@ const translations: Translations = {
             loadLater: "Spätere laden"
         },
         useFlex: {
-            label: "Bedarfsverkehr einbeziehen"
+            label: "Bedarfsverkehr einbeziehen",
+            help: "Rufbus und andere flexible Angebote. Teilweise mit Voranmeldung."
         },
         waiting: {
             beforeActivity: "Warten auf den Beginn der Aktivität",
@@ -506,15 +528,15 @@ const translations: Translations = {
         }
     },
     ES: {
-        origin: "Origen",
-        enterOrigin: "Introducir origen",
+        origin: "Desde",
+        enterOrigin: "Introduzca su punto de partida",
         destination: "Destino",
         activityDate: "Fecha de la actividad",
         activityStartDateLabel: "Fecha de inicio",
         activityEndDateLabel: "Fecha de fin",
-        search: "Buscar",
+        search: "Buscar conexiones",
         selectDate: "Seleccionar",
-        datePickerTitle: "Seleccionar fecha de la actividad",
+        datePickerTitle: "Elegir fecha",
         apply: "Aplicar",
         cancel: "Cancelar",
         back: "Atrás",
@@ -554,8 +576,18 @@ const translations: Translations = {
         noConnectionElements: "No hay elementos de conexión disponibles.",
         selectTimeSlot: "Por favor, seleccione una franja horaria.",
         useCurrentLocation: "Usar ubicación actual",
+        noPlacesFound: "No se encontraron lugares",
+        tripDates: "Fechas del viaje",
+        tripDatesHint: "Fechas del viaje (toque el primer y el último día)",
+        moreDates: "Más fechas",
+        calendarRangeHint: "Toque el primer día y después el último.",
+        pickLastDay: "ahora elija el último día",
+        daysCount: "{n} días",
+        recentOrigins: "Recientes",
+        chooseOriginFromList: "Elija su punto de partida de la lista.",
+        originNotFound: "No encontramos este lugar. Revise la ortografía o pruebe con una localidad cercana.",
         clearInput: "Borrar entrada",
-        selectDateRange: "Seleccionar rango de fechas",
+        selectDateRange: "Elegir fechas del viaje",
         today: "Hoy",
         tomorrow: "Mañana",
         otherDate: "Otra fecha",
@@ -571,10 +603,10 @@ const translations: Translations = {
             imprint: "Aviso legal"
         },
         infos: {
-            originRequired: "Por favor, introduzca un lugar de origen.",
+            originRequired: "Indique desde dónde sale.",
             dateRequired: "Por favor, seleccione una fecha.",
             endDateRequired: "Por favor, seleccione una fecha de fin.",
-            fetchingLocation: "Obteniendo su ubicación...",
+            fetchingLocation: "Buscando su ubicación…",
             fetchingAddress: "Buscando dirección...",
             endDateAfterStartDate: "La fecha de fin debe ser igual o posterior a la fecha de inicio.",
             sharedDateInPast: "Este viaje compartido es para una fecha en el pasado. Por favor, seleccione una nueva fecha para encontrar conexiones actuales.",
@@ -659,7 +691,8 @@ const translations: Translations = {
             loadLater: "Cargar posteriores"
         },
         useFlex: {
-            label: "Incluir transporte a demanda"
+            label: "Incluir transporte a demanda",
+            help: "Autobús a demanda y otros servicios flexibles. Algunos requieren reserva."
         },
         waiting: {
             beforeActivity: "Esperando el inicio de la actividad",
@@ -758,15 +791,15 @@ const translations: Translations = {
         }
     },
     FR: {
-        origin: "Lieu de départ",
-        enterOrigin: "Entrez le lieu de départ",
+        origin: "Départ",
+        enterOrigin: "Saisissez votre point de départ",
         destination: "Destination",
         activityDate: "Date de l'activité",
         activityStartDateLabel: "Date de début",
         activityEndDateLabel: "Date de fin",
-        search: "Rechercher",
+        search: "Rechercher des trajets",
         selectDate: "Sélectionner",
-        datePickerTitle: "Sélectionner la date de l'activité",
+        datePickerTitle: "Choisir la date",
         apply: "Appliquer",
         cancel: "Annuler",
         back: "Retour",
@@ -806,8 +839,18 @@ const translations: Translations = {
         noConnectionElements: "Aucun élément de connexion disponible.",
         selectTimeSlot: "Veuillez sélectionner un créneau horaire.",
         useCurrentLocation: "Utiliser la position actuelle",
+        noPlacesFound: "Aucun lieu trouvé",
+        tripDates: "Dates du séjour",
+        tripDatesHint: "Dates du séjour (touchez le premier puis le dernier jour)",
+        moreDates: "Plus de dates",
+        calendarRangeHint: "Touchez le premier jour, puis le dernier.",
+        pickLastDay: "choisissez maintenant le dernier jour",
+        daysCount: "{n} jours",
+        recentOrigins: "Récents",
+        chooseOriginFromList: "Choisissez votre point de départ dans la liste.",
+        originNotFound: "Ce lieu est introuvable. Vérifiez l'orthographe ou essayez une localité proche.",
         clearInput: "Effacer l'entrée",
-        selectDateRange: "Sélectionner la plage de dates",
+        selectDateRange: "Choisir les dates du séjour",
         today: "Aujourd'hui",
         tomorrow: "Demain",
         otherDate: "Autre date",
@@ -823,10 +866,10 @@ const translations: Translations = {
             imprint: "Mentions légales"
         },
         infos: {
-            originRequired: "Veuillez entrer un lieu de départ.",
+            originRequired: "Indiquez votre point de départ.",
             dateRequired: "Veuillez sélectionner une date.",
             endDateRequired: "Veuillez sélectionner une date de fin.",
-            fetchingLocation: "Récupération de votre position...",
+            fetchingLocation: "Recherche de votre position…",
             fetchingAddress: "Recherche de l'adresse...",
             endDateAfterStartDate: "La date de fin doit être égale ou postérieure à la date de début.",
             sharedDateInPast: "Ce trajet partagé concerne une date passée. Veuillez sélectionner une nouvelle date pour trouver les connexions actuelles.",
@@ -911,7 +954,8 @@ const translations: Translations = {
             loadLater: "Charger suivants"
         },
         useFlex: {
-            label: "Inclure le transport à la demande"
+            label: "Inclure le transport à la demande",
+            help: "Bus à la demande et autres services flexibles. Certains nécessitent une réservation."
         },
         waiting: {
             beforeActivity: "En attente du début de l'activité",
@@ -1010,15 +1054,15 @@ const translations: Translations = {
         }
     },
     IT: {
-        origin: "Luogo di partenza",
-        enterOrigin: "Inserisci luogo di partenza",
+        origin: "Partenza",
+        enterOrigin: "Inserisci il tuo punto di partenza",
         destination: "Destinazione",
         activityDate: "Data attività",
         activityStartDateLabel: "Data di inizio",
         activityEndDateLabel: "Data di fine",
-        search: "Cerca",
+        search: "Cerca collegamenti",
         selectDate: "Seleziona",
-        datePickerTitle: "Seleziona data attività",
+        datePickerTitle: "Scegli la data",
         apply: "Applica",
         cancel: "Annulla",
         back: "Indietro",
@@ -1058,8 +1102,18 @@ const translations: Translations = {
         noConnectionElements: "Nessun elemento di connessione disponibile.",
         selectTimeSlot: "Seleziona una fascia oraria.",
         useCurrentLocation: "Usa posizione attuale",
+        noPlacesFound: "Nessun luogo trovato",
+        tripDates: "Date del viaggio",
+        tripDatesHint: "Date del viaggio (tocca il primo e l'ultimo giorno)",
+        moreDates: "Altre date",
+        calendarRangeHint: "Tocca il primo giorno, poi l'ultimo.",
+        pickLastDay: "ora scegli l'ultimo giorno",
+        daysCount: "{n} giorni",
+        recentOrigins: "Recenti",
+        chooseOriginFromList: "Scegli il punto di partenza dall'elenco.",
+        originNotFound: "Non abbiamo trovato questo luogo. Controlla l'ortografia o prova una località vicina.",
         clearInput: "Cancella input",
-        selectDateRange: "Seleziona intervallo di date",
+        selectDateRange: "Scegli le date del viaggio",
         today: "Oggi",
         tomorrow: "Domani",
         otherDate: "Altra data",
@@ -1075,10 +1129,10 @@ const translations: Translations = {
             imprint: "Avviso legale"
         },
         infos: {
-            originRequired: "Si prega di inserire un luogo di partenza.",
+            originRequired: "Indica da dove parti.",
             dateRequired: "Si prega di selezionare una data.",
             endDateRequired: "Si prega di selezionare una data di fine.",
-            fetchingLocation: "Recupero della posizione in corso...",
+            fetchingLocation: "Ricerca della tua posizione…",
             fetchingAddress: "Ricerca indirizzo in corso...",
             endDateAfterStartDate: "La data di fine deve essere uguale o successiva alla data di inizio.",
             sharedDateInPast: "Questo viaggio condiviso si riferisce a una data passata. Si prega di selezionare una nuova data per trovare le connessioni attuali.",
@@ -1163,7 +1217,8 @@ const translations: Translations = {
             loadLater: "Carica successivi"
         },
         useFlex: {
-            label: "Includi il trasporto a chiamata"
+            label: "Includi il trasporto a chiamata",
+            help: "Bus a chiamata e altri servizi flessibili. Alcuni richiedono la prenotazione."
         },
         waiting: {
             beforeActivity: "In attesa dell'inizio dell'attività",
@@ -1262,15 +1317,15 @@ const translations: Translations = {
         }
     },
     TH: {
-        origin: "จุดเริ่มต้น",
-        enterOrigin: "ป้อนจุดเริ่มต้น",
+        origin: "จาก",
+        enterOrigin: "ป้อนจุดเริ่มต้นของคุณ",
         destination: "ปลายทาง",
         activityDate: "วันที่ของกิจกรรม",
         activityStartDateLabel: "วันที่เริ่มต้น",
         activityEndDateLabel: "วันที่สิ้นสุด",
-        search: "ค้นหา",
+        search: "ค้นหาการเดินทาง",
         selectDate: "เลือก",
-        datePickerTitle: "เลือกวันที่ของกิจกรรม",
+        datePickerTitle: "เลือกวันที่",
         apply: "ใช้",
         cancel: "ยกเลิก",
         back: "ย้อนกลับ",
@@ -1310,8 +1365,18 @@ const translations: Translations = {
         noConnectionElements: "ไม่มีองค์ประกอบการเชื่อมต่อ",
         selectTimeSlot: "กรุณาเลือกช่วงเวลา",
         useCurrentLocation: "ใช้ตำแหน่งปัจจุบัน",
+        noPlacesFound: "ไม่พบสถานที่",
+        tripDates: "วันที่เดินทาง",
+        tripDatesHint: "วันที่เดินทาง (แตะวันแรกและวันสุดท้าย)",
+        moreDates: "วันอื่นๆ",
+        calendarRangeHint: "แตะวันแรก แล้วแตะวันสุดท้าย",
+        pickLastDay: "เลือกวันสุดท้าย",
+        daysCount: "{n} วัน",
+        recentOrigins: "ล่าสุด",
+        chooseOriginFromList: "เลือกจุดเริ่มต้นจากรายการ",
+        originNotFound: "ไม่พบสถานที่นี้ กรุณาตรวจสอบการสะกดหรือลองเมืองใกล้เคียง",
         clearInput: "ล้างข้อมูล",
-        selectDateRange: "เลือกช่วงวันที่",
+        selectDateRange: "เลือกวันที่เดินทาง",
         today: "วันนี้",
         tomorrow: "พรุ่งนี้",
         otherDate: "วันที่อื่น",
@@ -1327,10 +1392,10 @@ const translations: Translations = {
             imprint: "ข้อมูลทางกฎหมาย"
         },
         infos: {
-            originRequired: "กรุณาป้อนจุดเริ่มต้น",
+            originRequired: "กรุณาระบุจุดเริ่มต้นของคุณ",
             dateRequired: "กรุณาเลือกวันที่",
             endDateRequired: "กรุณาเลือกวันที่สิ้นสุด",
-            fetchingLocation: "กำลังดึงข้อมูลตำแหน่งของคุณ...",
+            fetchingLocation: "กำลังค้นหาตำแหน่งของคุณ…",
             fetchingAddress: "กำลังค้นหาที่อยู่...",
             endDateAfterStartDate: "วันที่สิ้นสุดต้องเป็นวันเดียวกับหรือหลังวันที่เริ่มต้น",
             sharedDateInPast: "การเดินทางที่แชร์นี้เป็นวันที่ในอดีต กรุณาเลือกวันที่ใหม่เพื่อค้นหาการเชื่อมต่อปัจจุบัน",
@@ -1415,7 +1480,8 @@ const translations: Translations = {
             loadLater: "โหลดถัดไป"
         },
         useFlex: {
-            label: "รวมบริการขนส่งตามความต้องการ"
+            label: "รวมบริการขนส่งตามความต้องการ",
+            help: "รถโดยสารตามคำขอและบริการยืดหยุ่นอื่นๆ บางบริการต้องจองล่วงหน้า"
         },
         waiting: {
             beforeActivity: "กำลังรอให้กิจกรรมเริ่มต้น",

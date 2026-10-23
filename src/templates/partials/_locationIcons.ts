@@ -1,3 +1,5 @@
+import { getTransportIcon } from '../../core/transportIcons';
+
 /**
  * Leading glyphs for address-autocomplete rows.
  *
@@ -6,15 +8,19 @@
  * provider in DianaProxy), which is exactly the distinction worth showing: a station
  * symbol or a map pin.
  *
- * Separate from `getTransportIcon()` (core/transportIcons.ts): these mark what a
- * suggestion is, not how someone travels, and always follow the dropdown's text colour.
+ * Stations reuse the train from `getTransportIcon()` (core/transportIcons.ts), so the
+ * dropdown and the connection details draw a station the same way. All glyphs follow the
+ * dropdown's text colour.
  */
 
-/** Public-transport stop: vehicle body on two wheels. */
-const STATION_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="5" y="3" width="14" height="13" rx="3"></rect><line x1="5" y1="10" x2="19" y2="10"></line><circle cx="8.5" cy="19" r="1.5"></circle><circle cx="15.5" cy="19" r="1.5"></circle><line x1="8" y1="16" x2="6.5" y2="18"></line><line x1="16" y1="16" x2="17.5" y2="18"></line></svg>`;
+/** Public-transport stop: the same train as the connection details (transportIcons). */
+const STATION_ICON = getTransportIcon(1);
 
 /** Anything else: a map pin. */
 const PIN_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"></path><circle cx="12" cy="10" r="2.5"></circle></svg>`;
+
+/** Clock, for a starting point the user picked before. */
+const RECENT_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>`;
 
 /**
  * Returns the inline SVG for a suggestion's location type.
@@ -25,5 +31,6 @@ const PIN_ICON = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" st
  * @returns An inline SVG string, sized 16x16 and drawn in `currentColor`.
  */
 export function getLocationTypeIconHTML(locationType?: string | null): string {
+    if (locationType === 'recent') return RECENT_ICON;
     return locationType === 'station' ? STATION_ICON : PIN_ICON;
 }

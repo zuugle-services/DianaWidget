@@ -95,6 +95,12 @@ export interface WidgetConfig {
     
     /** Name for destination input field */
     destinationInputName?: string | null;
+
+    /**
+     * Font for the widget (CSS font-family value, e.g. '"Inter", sans-serif'). By default the
+     * widget uses the font of the page it is embedded in; the host can also set --font-family.
+     */
+    fontFamily?: string | null;
     
     /** Enable multiday activity mode */
     multiday: boolean;

@@ -48,9 +48,9 @@ function headingText(html: string): string {
     return (match?.[1] ?? '').trim();
 }
 
-/** The value="" of the read-only destination input. */
+/** The destination name shown under the origin field. */
 function destinationValue(html: string): string {
-    const match = /id="destinationInput"[^>]*value="([^"]*)"/.exec(html);
+    const match = /id="destinationName">([^<]*)</.exec(html);
     return match?.[1] ?? '';
 }
 

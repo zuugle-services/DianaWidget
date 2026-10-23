@@ -42,9 +42,7 @@ export function getResultsPageTemplateHTML(args) {
                     <div class="collapsible-content">
                         <div class="middle-box-content" id="responseBox" aria-live="polite"></div>
                     </div>
-                    <svg class="accordion-icon" width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="m16.354 5.075-7.855 7.854L.646 5.075l.707-.707 7.145 7.146 7.148-7.147z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
 
                 <div id="shareInfoBanner" class="share-info-banner" style="display:none"></div>
@@ -60,9 +58,7 @@ export function getResultsPageTemplateHTML(args) {
                     <div class="collapsible-content">
                         <div class="middle-box-content" id="responseBox-bottom" aria-live="polite"></div>
                     </div>
-                    <svg class="accordion-icon" width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="m16.354 5.075-7.855 7.854L.646 5.075l.707-.707 7.145 7.146 7.148-7.147z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
+                    <svg class="accordion-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
             </div>
 

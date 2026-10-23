@@ -126,6 +126,8 @@ export interface AriaLabelTranslations {
 export interface UseFlexTranslations {
     /** Label next to the switch */
     label: string;
+    /** One-line explanation under the label */
+    help: string;
 }
 
 /**
@@ -336,6 +338,17 @@ export interface LanguageTranslations {
     noConnectionElements: string;
     selectTimeSlot: string;
     useCurrentLocation: string;
+    noPlacesFound: string;
+    tripDates: string;
+    tripDatesHint: string;
+    moreDates: string;
+    calendarRangeHint: string;
+    pickLastDay: string;
+    /** "{n} days"; {n} is replaced with the count. */
+    daysCount: string;
+    recentOrigins: string;
+    chooseOriginFromList: string;
+    originNotFound: string;
     clearInput: string;
     selectDateRange: string;
     today: string;

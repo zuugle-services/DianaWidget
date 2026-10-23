@@ -1,708 +1,227 @@
 import {DateTime} from 'luxon';
-import {formatDateForDisplay, getMonthName, getShortDayName, throttle} from "../utils";
-import {convertToUTCMidnightJSDate, formatDatetime} from "../datetimeUtils";
-import { getSingleCalendarHTML } from '../templates/singleCalendarTemplate';
-import { getRangeCalendarModalHTML } from '../templates/rangeCalendarModalTemplate';
-import type { TranslationFunction } from '../types';
+import {
+    addDaysIso, countDays, isDayDisabled, pickRangeDay, todayIso,
+    type RangeRules, type RangeValue,
+} from '../core/dateSelection';
+import {formatIsoDay, formatIsoRange, localeForLanguage} from '../utils';
+import type {TranslationFunction} from '../types';
 
-// Widget instance interface (minimal for calendar use)
-interface WidgetInstance {
-    container: HTMLElement | null;
-    config: {
-        language: string;
-        timezone: string;
-    };
+export interface CalendarOptions {
+    /** 'single' picks one day; 'range' picks a multi-day trip. */
+    mode: 'single' | 'range';
+    /** Range constraints from the config (range mode only). */
+    rules: RangeRules | null;
+    language: string;
+    timezone: string;
     t: TranslationFunction;
-    state: {
-        selectedDate: Date | null;
-    };
-    elements?: {
-        otherDateText?: HTMLElement | null;
-    };
-    dianaWidgetRootContainer: HTMLElement | null;
-    clearMessages: () => void;
+    /** Called with the chosen value when the user presses Apply. */
+    onApply: (value: RangeValue) => void;
 }
 
-export class SingleCalendar {
-    inputElement: HTMLInputElement | null;
-    displayElement: HTMLElement | null;
-    widget: WidgetInstance;
-    config: WidgetInstance['config'];
-    t: TranslationFunction;
-    onDateSelectCallback: ((date: Date) => void) | null;
-    styles: string;
-    triggerElement: HTMLElement | null;
-    anchorElement: HTMLElement | null;
-    selectedDate: Date;
-    currentViewMonth: number;
-    currentViewYear: number;
-    calendarContainer: HTMLDivElement | null;
-    shadowRoot: ShadowRoot | null;
-    calendarContentWrapper: HTMLDivElement | null;
+const CLOSE_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+const PREV_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"/></svg>';
+const NEXT_ICON = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>';
 
-    constructor(
-        inputElement: HTMLInputElement | null, 
-        displayElement: HTMLElement | null, 
-        initialDate: Date | null, 
-        widgetInstance: WidgetInstance, 
-        onDateSelectCallback: ((date: Date) => void) | null, 
-        triggerElement: HTMLElement | null, 
-        anchorElement: HTMLElement | null, 
-        styles: string
-    ) {
-        this.inputElement = inputElement; // Hidden input for date value
-        this.displayElement = displayElement; // Span inside "Other Date" button for text
-        this.widget = widgetInstance;
-        this.config = widgetInstance.config;
-        this.t = widgetInstance.t.bind(widgetInstance);
-        this.onDateSelectCallback = onDateSelectCallback;
-        this.styles = styles;
-
-        this.triggerElement = triggerElement;
-        this.anchorElement = anchorElement || triggerElement;
-
-        this.selectedDate = initialDate ? new Date(initialDate.valueOf()) : new Date();
-        if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-            this.currentViewMonth = this.selectedDate.getUTCMonth();
-            this.currentViewYear = this.selectedDate.getUTCFullYear();
-        } else {
-            const now = new Date();
-            this.currentViewMonth = now.getUTCMonth();
-            this.currentViewYear = now.getUTCFullYear();
-        }
-
-        this.calendarContainer = null;
-        this.shadowRoot = null;
-        this.calendarContentWrapper = null;
-        this._init();
-    }
-
-    _init() {
-        this._createCalendarContainer();
-        this._attachEventListeners();
-        this._updateInputElement();
-        this._updateDisplayElement();
-        this._applyTheming();
-    }
-
-    _applyTheming() {
-        const themableProperties = [
-            '--primary-color', '--secondary-color', '--success-color', '--warning-color', '--error-color',
-            '--wait-color', '--text-primary', '--text-secondary', '--text-tertiary', '--text-muted',
-            '--text-disabled', '--text-error', '--text-info', '--text-warning', '--icon-input-color',
-            '--bg-primary', '--bg-secondary', '--bg-tertiary', '--bg-hover', '--bg-error', '--bg-info',
-            '--bg-transparent', '--bg-waiting-block', '--border-primary', '--border-secondary',
-            '--border-tertiary', '--border-error', '--border-info', '--shadow-verylight', '--shadow-light',
-            '--shadow-medium', '--shadow-dark', '--shadow-gray'
-        ];
-
-        if (!this.widget.container || !this.calendarContentWrapper) {
-            return;
-        }
-
-        const hostStyles = getComputedStyle(this.widget.container);
-
-        themableProperties.forEach(prop => {
-            const value = hostStyles.getPropertyValue(prop).trim();
-            if (value && this.calendarContentWrapper) {
-                this.calendarContentWrapper.style.setProperty(prop, value);
-            }
-        });
-    }
-
-    _createCalendarContainer() {
-        const calendarContainerId = `dianaSingleCalendarFor_${this.widget.container?.id ?? 'default'}`;
-
-        const existingContainer = document.getElementById(calendarContainerId);
-        if (existingContainer) existingContainer.remove();
-
-        this.calendarContainer = document.createElement("div");
-        this.calendarContainer.id = calendarContainerId;
-
-        this.calendarContainer.style.position = 'absolute';
-        this.calendarContainer.style.zIndex = '1050';
-        this.calendarContainer.style.display = 'none';
-
-        document.body.appendChild(this.calendarContainer);
-
-        this.shadowRoot = this.calendarContainer.attachShadow({ mode: 'open' });
-
-        const styleTag = document.createElement('style');
-        styleTag.textContent = this.styles;
-        this.shadowRoot.appendChild(styleTag);
-
-        this.calendarContentWrapper = document.createElement('div');
-        this.calendarContentWrapper.className = 'diana-container calendar-container';
-        this.shadowRoot.appendChild(this.calendarContentWrapper);
-    }
-
-    _render() {
-        if (!this.calendarContentWrapper) return;
-
-        const daysInMonth = new Date(this.currentViewYear, this.currentViewMonth + 1, 0).getDate();
-        let firstDayOfMonthIndex = new Date(this.currentViewYear, this.currentViewMonth, 1).getDay();
-        firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1;
-        const daysHTML = this._generateDaysHTML(daysInMonth, firstDayOfMonthIndex);
-
-        this.calendarContentWrapper.innerHTML = getSingleCalendarHTML({
-            t: this.t,
-            currentViewMonth: this.currentViewMonth,
-            currentViewYear: this.currentViewYear,
-            daysHTML
-        });
-
-        this._addCalendarInternalEventListeners();
-    }
-
-    _generateDaysHTML(daysInMonth, firstDayOfMonthIndex) {
-        let html = "";
-        const today = new Date();
-        today.setUTCHours(0, 0, 0, 0);
-
-        for (let i = 0; i < firstDayOfMonthIndex; i++) {
-            html += "<div class='calendar-day empty'></div>";
-        }
-        for (let day = 1; day <= daysInMonth; day++) {
-            const date = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, day));
-            const isToday = date.getTime() === new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())).getTime();
-
-            const selectedDateUTC = this.selectedDate && !isNaN(this.selectedDate.getTime())
-                ? new Date(Date.UTC(this.selectedDate.getUTCFullYear(), this.selectedDate.getUTCMonth(), this.selectedDate.getUTCDate()))
-                : null;
-
-            const isSelected = selectedDateUTC && date.getTime() === selectedDateUTC.getTime();
-            const isDisabled = date < today;
-
-            html += `<div class="calendar-day${isToday ? " today" : ""}${isSelected ? " selected" : ""}${isDisabled ? " disabled" : ""}" data-day="${day}">${day}</div>`;
-        }
-        return html;
-    }
-
-    _addCalendarInternalEventListeners() {
-        if (!this.shadowRoot) return;
-
-        this.shadowRoot.querySelector(".prev-month")?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.currentViewMonth--;
-            if (this.currentViewMonth < 0) {
-                this.currentViewMonth = 11;
-                this.currentViewYear--;
-            }
-            this._render();
-        });
-
-        this.shadowRoot.querySelector(".next-month")?.addEventListener("click", (e) => {
-            e.stopPropagation();
-            this.currentViewMonth++;
-            if (this.currentViewMonth > 11) {
-                this.currentViewMonth = 0;
-                this.currentViewYear++;
-            }
-            this._render();
-        });
-
-        this.shadowRoot.querySelector(".calendar-cancel-btn")?.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.hide();
-        });
-
-        this.shadowRoot.querySelector(".calendar-apply-btn")?.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this._updateInputElement();
-            if (this.onDateSelectCallback) {
-                this.onDateSelectCallback(new Date(this.selectedDate.valueOf()));
-            }
-            this.hide();
-            this.widget.clearMessages();
-        });
-
-        this.shadowRoot.querySelectorAll(".calendar-day:not(.empty):not(.disabled)").forEach(dayElement => {
-            dayElement.addEventListener("click", (e) => {
-                e.stopPropagation();
-                this.selectedDate = new Date(Date.UTC(this.currentViewYear, this.currentViewMonth, parseInt((dayElement as HTMLElement).dataset.day || '1')));
-                this._render();
-            });
-        });
-    }
-
-    _attachEventListeners() {
-        if (!this.triggerElement) return;
-
-        this.triggerElement.addEventListener("click", (e) => {
-            if (window.matchMedia("(max-width: 768px)").matches) {
-                return;
-            }
-            e.stopPropagation();
-            if (this.calendarContainer && this.calendarContainer.style.display !== 'none') {
-                this.hide();
-            } else {
-                const currentDateFromWidget = this.widget.state.selectedDate || new Date();
-                this.setSelectedDate(currentDateFromWidget, false);
-                this.show();
-            }
-        });
-
-        document.addEventListener("click", (e) => {
-            if (this.calendarContainer && this.calendarContainer.style.display !== 'none') {
-                const path = e.composedPath();
-                const isClickInsideCalendar = path.includes(this.calendarContainer);
-                const isClickOnTrigger = this.triggerElement && path.includes(this.triggerElement);
-
-                if (!isClickInsideCalendar && !isClickOnTrigger) {
-                    this.hide();
-                }
-            }
-        });
-
-        const throttledReposition = throttle(this._reposition.bind(this), 50);
-        window.addEventListener('scroll', throttledReposition, true);
-        window.addEventListener('resize', throttledReposition);
-    }
-
-    _updateDisplayElement() {
-        if (this.displayElement && this.displayElement === this.widget.elements?.otherDateText) {
-            const localeMap = {EN: 'en-GB', DE: 'de-DE', FR: 'fr-FR', IT: 'it-IT', TH: 'th-TH', ES: 'es-ES'};
-            const locale = localeMap[this.config.language] || (this.config.language ? `${this.config.language.toLowerCase()}-${this.config.language.toUpperCase()}` : 'en-GB');
-
-            if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-                const todayLocal = DateTime.now().setZone(this.config.timezone).startOf('day');
-                const tomorrowLocal = todayLocal.plus({days: 1});
-                const selectedDateInDisplayZone = DateTime.fromJSDate(this.selectedDate, {zone: 'utc'}).setZone(this.config.timezone).startOf('day');
-
-                if (!selectedDateInDisplayZone.equals(todayLocal) && !selectedDateInDisplayZone.equals(tomorrowLocal)) {
-                    this.displayElement.textContent = formatDateForDisplay(this.selectedDate, locale, this.config.timezone);
-                    this.displayElement.classList.remove("placeholder");
-                }
-            } else {
-                this.displayElement.textContent = String(this.t('otherDate'));
-                this.displayElement.classList.add("placeholder");
-            }
-        }
-    }
-
-    _updateInputElement() {
-        if (this.inputElement) {
-            if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-                this.inputElement.value = formatDatetime(this.selectedDate, 'utc');
-            } else {
-                this.inputElement.value = '';
-            }
-        }
-    }
-
-    _reposition() {
-        if (!this.calendarContainer || !this.anchorElement || this.calendarContainer.style.display === 'none') {
-            return;
-        }
-        const anchorRect = this.anchorElement.getBoundingClientRect();
-        const desiredCalendarWidth = Math.max(280, anchorRect.width); // Ensure minimum width
-        if (this.calendarContentWrapper) {
-            this.calendarContentWrapper.style.width = `${desiredCalendarWidth}px`;
-        }
-
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-        const gap = 5; // Gap between anchor and calendar
-
-        // Position below the anchor element
-        let finalTop = anchorRect.bottom + scrollTop + gap;
-        let finalLeft = anchorRect.left + scrollLeft;
-
-        // Adjust if it goes off-screen
-        const calendarHeight = this.calendarContainer.offsetHeight;
-        const calendarWidth = this.calendarContainer.offsetWidth;
-
-        if (finalTop + calendarHeight > window.innerHeight + scrollTop) { // Off bottom
-            finalTop = anchorRect.top + scrollTop - calendarHeight - gap; // Position above
-        }
-        if (finalLeft + calendarWidth > window.innerWidth + scrollLeft) { // Off right
-            finalLeft = window.innerWidth + scrollLeft - calendarWidth - gap;
-        }
-        if (finalLeft < scrollLeft + gap) { // Off left
-            finalLeft = scrollLeft + gap;
-        }
-
-
-        this.calendarContainer.style.top = `${finalTop}px`;
-        this.calendarContainer.style.left = `${finalLeft}px`;
-    }
-
-    show() {
-        if (!this.calendarContainer) return;
-
-        if (this.selectedDate && !isNaN(this.selectedDate.getTime())) {
-            this.currentViewMonth = this.selectedDate.getUTCMonth();
-            this.currentViewYear = this.selectedDate.getUTCFullYear();
-        } else {
-            const now = new Date();
-            this.currentViewMonth = now.getUTCMonth();
-            this.currentViewYear = now.getUTCFullYear();
-        }
-        this._render();
-        this.calendarContainer.style.display = 'block';
-        this._reposition();
-    }
-
-    hide() {
-        if (!this.calendarContainer) return;
-        this.calendarContainer.style.display = 'none';
-    }
-
-    setSelectedDate(date: Date, triggerCallback: boolean = true): void {
-        this.selectedDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-
-        if (!isNaN(this.selectedDate.getTime())) {
-            this.currentViewMonth = this.selectedDate.getUTCMonth();
-            this.currentViewYear = this.selectedDate.getUTCFullYear();
-        }
-        this._updateInputElement();
-
-        if (this.calendarContainer && this.calendarContainer.style.display !== 'none') {
-            this._render();
-        }
-
-        if (triggerCallback && this.onDateSelectCallback) {
-            this.onDateSelectCallback(new Date(this.selectedDate.valueOf()));
-        }
+/** Maps a key pressed on a day button to the day focus should move to, or null for other keys. */
+function keyTargetDay(key: string, from: string): string | null {
+    const dt = DateTime.fromISO(from, {zone: 'utc'});
+    switch (key) {
+        case 'ArrowLeft': return addDaysIso(from, -1);
+        case 'ArrowRight': return addDaysIso(from, 1);
+        case 'ArrowUp': return addDaysIso(from, -7);
+        case 'ArrowDown': return addDaysIso(from, 7);
+        case 'PageUp': return dt.minus({months: 1}).toISODate();
+        case 'PageDown': return dt.plus({months: 1}).toISODate();
+        default: return null;
     }
 }
 
-export class RangeCalendarModal {
-    widget: WidgetInstance;
-    config: WidgetInstance['config'];
-    t: TranslationFunction;
-    onRangeSelectCallback: ((startDate: Date, endDate: Date) => void) | null;
-    activityDurationDaysFixed: number | null;
-    fixedStartDate: Date | null;
-    fixedEndDate: Date | null;
-    tempStartDate: Date;
-    tempEndDate: Date;
-    currentViewMonth: number;
-    currentViewYear: number;
-    selectingStartDate: boolean;
-    modalOverlay: HTMLDivElement | null;
-    modalElement: HTMLDivElement | null;
-    calendarInstance: HTMLElement | null;
+/**
+ * Month calendar shown as an overlay inside the widget, for single days and multi-day trips.
+ * One design for every device and embed size; keyboard: arrows / Page Up/Down move between
+ * days, Escape closes, Tab stays inside, focus returns to the opener.
+ */
+export class CalendarOverlay {
+    private options: CalendarOptions;
+    private overlay: HTMLDivElement;
+    private grid: HTMLElement;
+    private value: RangeValue = {start: null, end: null, awaitingEnd: false};
+    /** First day of the month on screen. */
+    private view: DateTime = DateTime.now();
+    private opener: HTMLElement | null = null;
 
-    constructor(
-        initialStartDate: Date | null, 
-        initialEndDate: Date | null, 
-        widgetInstance: WidgetInstance, 
-        onRangeSelectCallback: ((startDate: Date, endDate: Date) => void) | null, 
-        overrideStartDateStr: string | null, 
-        overrideEndDateStr: string | null, 
-        activityDurationDaysFixed: number | string | null
-    ) {
-        this.widget = widgetInstance;
-        this.config = widgetInstance.config;
-        this.t = widgetInstance.t.bind(widgetInstance);
-        this.onRangeSelectCallback = onRangeSelectCallback;
-        this.activityDurationDaysFixed = activityDurationDaysFixed ? parseInt(String(activityDurationDaysFixed), 10) : null;
+    constructor(container: HTMLElement, options: CalendarOptions) {
+        this.options = options;
+        const {t, mode} = options;
+        const titleId = `dianaCalendarTitle_${Math.random().toString(36).slice(2, 8)}`;
 
-        this.fixedStartDate = overrideStartDateStr ? DateTime.fromISO(overrideStartDateStr, {zone: 'utc'}).startOf('day').toJSDate() : null;
-        if (this.fixedStartDate && isNaN(this.fixedStartDate.getTime())) this.fixedStartDate = null;
-
-        this.fixedEndDate = overrideEndDateStr ? DateTime.fromISO(overrideEndDateStr, {zone: 'utc'}).startOf('day').toJSDate() : null;
-        if (this.fixedEndDate && isNaN(this.fixedEndDate.getTime())) this.fixedEndDate = null;
-
-        const todayInWidgetZone = DateTime.now().setZone(this.config.timezone);
-
-        if (this.fixedStartDate) {
-            this.tempStartDate = new Date(this.fixedStartDate.valueOf());
-        } else {
-            this.tempStartDate = convertToUTCMidnightJSDate(initialStartDate, todayInWidgetZone, this.config.timezone);
-        }
-
-        if (this.fixedEndDate) {
-            this.tempEndDate = new Date(this.fixedEndDate.valueOf());
-        } else if (this.activityDurationDaysFixed && this.tempStartDate) {
-            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'})
-                .plus({days: this.activityDurationDaysFixed - 1})
-                .startOf('day')
-                .toJSDate();
-        } else {
-            const fallbackEndDateBase = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}) : todayInWidgetZone;
-            this.tempEndDate = convertToUTCMidnightJSDate(initialEndDate, fallbackEndDateBase, this.config.timezone);
-        }
-
-        if (this.tempEndDate < this.tempStartDate) {
-            this.tempEndDate = new Date(this.tempStartDate.valueOf());
-        }
-        if (this.fixedStartDate && this.fixedEndDate && this.fixedStartDate > this.fixedEndDate) {
-            this.fixedEndDate = null;
-            this.tempEndDate = new Date(this.tempStartDate.valueOf());
-        }
-
-        this.currentViewMonth = this.tempStartDate.getUTCMonth();
-        this.currentViewYear = this.tempStartDate.getUTCFullYear();
-
-        if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
-            this.selectingStartDate = false;
-        } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) {
-            this.selectingStartDate = true;
-        } else if (this.fixedStartDate && this.fixedEndDate) {
-            this.selectingStartDate = false;
-        } else if (this.activityDurationDaysFixed) {
-            this.selectingStartDate = true;
-        } else {
-            this.selectingStartDate = true;
-        }
-
-        this.modalOverlay = null;
-        this.modalElement = null;
-        this.calendarInstance = null;
-
-        this._initDOM();
-        this._attachEventListeners();
-    }
-
-    _initDOM() {
-        this.modalOverlay = document.createElement('div');
-        this.modalOverlay.className = 'range-calendar-overlay diana-container';
-
-        this.modalElement = document.createElement('div');
-        this.modalElement.className = 'range-calendar-modal';
-        this.modalElement.innerHTML = getRangeCalendarModalHTML({ t: this.t });
-
-        this.modalOverlay.appendChild(this.modalElement);
-        this.widget.dianaWidgetRootContainer?.appendChild(this.modalOverlay);
-
-        this.calendarInstance = this.modalElement.querySelector('.range-calendar-instance');
-        this._renderCalendar();
-    }
-
-    _renderCalendar() {
-        this._renderMonth(this.currentViewYear, this.currentViewMonth, this.calendarInstance);
-    }
-
-    _renderMonth(year, month, targetElement) {
-        const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-        let firstDayOfMonthIndex = new Date(Date.UTC(year, month, 1)).getUTCDay();
-        firstDayOfMonthIndex = (firstDayOfMonthIndex === 0) ? 6 : firstDayOfMonthIndex - 1;
-
-        targetElement.innerHTML = `
-            <div class="calendar-nav">
-                <button type="button" class="calendar-nav-btn prev-month-range" aria-label="${this.t('ariaLabels.previousMonthButton')}">&#9664;</button>
-                <div class="calendar-month-year">${getMonthName(month, this.t)} ${year}</div>
-                <button type="button" class="calendar-nav-btn next-month-range" aria-label="${this.t('ariaLabels.nextMonthButton')}">&#9654;</button>
-            </div>
-            <div class="calendar-grid">
-                ${[0, 1, 2, 3, 4, 5, 6].map(d => `<div class="calendar-day-header">${getShortDayName(d, this.t)}</div>`).join('')}
-                ${this._generateRangeDaysHTML(daysInMonth, firstDayOfMonthIndex, year, month)}
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'calendar-overlay';
+        this.overlay.hidden = true;
+        this.overlay.innerHTML = `
+            <div class="calendar-dialog" role="dialog" aria-modal="true" aria-labelledby="${titleId}">
+                <div class="calendar-head">
+                    <h3 id="${titleId}">${mode === 'range' ? t('selectDateRange') : t('datePickerTitle')}</h3>
+                    <button type="button" class="icon-btn calendar-close" aria-label="${t('cancel')}">${CLOSE_ICON}</button>
+                </div>
+                ${mode === 'range' && !options.rules?.durationDays ? `<p class="calendar-hint">${t('calendarRangeHint')}</p>` : ''}
+                <div class="calendar-nav">
+                    <button type="button" class="icon-btn calendar-prev" aria-label="${t('ariaLabels.previousMonthButton')}">${PREV_ICON}</button>
+                    <div class="calendar-month" aria-live="polite"></div>
+                    <button type="button" class="icon-btn calendar-next" aria-label="${t('ariaLabels.nextMonthButton')}">${NEXT_ICON}</button>
+                </div>
+                <div class="calendar-grid"></div>
+                <div class="calendar-foot">
+                    <span class="calendar-choice" aria-live="polite"></span>
+                    <button type="button" class="calendar-btn calendar-cancel">${t('cancel')}</button>
+                    <button type="button" class="calendar-btn calendar-apply">${t('apply')}</button>
+                </div>
             </div>`;
-        this._addRangeCalendarInternalEventListeners(targetElement);
-    }
+        container.appendChild(this.overlay);
+        this.grid = this.overlay.querySelector('.calendar-grid') as HTMLElement;
 
-    _generateRangeDaysHTML(daysInMonth, firstDayOfMonthIndex, year, month) {
-        let html = "";
-        const todayUTC = DateTime.now().setZone('utc').startOf('day').toJSDate();
-
-        for (let i = 0; i < firstDayOfMonthIndex; i++) {
-            html += "<div class='calendar-day empty'></div>";
-        }
-
-        const normTempStartDate = this.tempStartDate;
-        const normTempEndDate = this.tempEndDate;
-        const normFixedStartDate = this.fixedStartDate;
-        const normFixedEndDate = this.fixedEndDate;
-
-        for (let day = 1; day <= daysInMonth; day++) {
-            const currentDate = new Date(Date.UTC(year, month, day));
-            let classes = "calendar-day";
-
-            if (currentDate.getTime() === todayUTC.getTime()) classes += " today";
-
-            let isDisabled = currentDate < todayUTC;
-
-            if (normFixedStartDate && currentDate.getTime() === normFixedStartDate.getTime()) {
-                classes += " fixed-date start-date selected";
-                isDisabled = true;
-            } else if (normFixedEndDate && currentDate.getTime() === normFixedEndDate.getTime()) {
-                classes += " fixed-date end-date selected";
-                isDisabled = true;
-            } else {
-                if (normTempStartDate && currentDate.getTime() === normTempStartDate.getTime()) classes += " start-date selected";
-                if (normTempEndDate && currentDate.getTime() === normTempEndDate.getTime()) classes += " end-date selected";
-                if (normTempStartDate && normTempEndDate && currentDate > normTempStartDate && currentDate < normTempEndDate) classes += " in-range";
-            }
-
-            if (normFixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
-                if (currentDate < normFixedStartDate) isDisabled = true;
-            } else if (normFixedEndDate && !this.fixedStartDate && !this.activityDurationDaysFixed) {
-                if (currentDate > normFixedEndDate) isDisabled = true;
-            }
-
-            if (isDisabled) classes += " disabled";
-
-            html += `<div class="${classes}" data-date="${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}">${day}</div>`;
-        }
-        return html;
-    }
-
-    _addRangeCalendarInternalEventListeners(targetElement) {
-        const prevBtn = targetElement.querySelector(".prev-month-range");
-        if (prevBtn) {
-            prevBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                this.currentViewMonth--;
-                if (this.currentViewMonth < 0) {
-                    this.currentViewMonth = 11;
-                    this.currentViewYear--;
-                }
-                this._renderCalendar();
-            });
-        }
-        const nextBtn = targetElement.querySelector(".next-month-range");
-        if (nextBtn) {
-            nextBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                this.currentViewMonth++;
-                if (this.currentViewMonth > 11) {
-                    this.currentViewMonth = 0;
-                    this.currentViewYear++;
-                }
-                this._renderCalendar();
-            });
-        }
-
-        targetElement.querySelectorAll(".calendar-day:not(.empty):not(.disabled)").forEach(dayElement => {
-            dayElement.addEventListener("click", (e) => {
-                e.stopPropagation();
-                const [year, monthIdx, day] = dayElement.dataset.date.split('-').map(Number);
-                const clickedDate = new Date(Date.UTC(year, monthIdx - 1, day));
-
-                if (this.fixedStartDate && this.fixedEndDate) {
-                    return;
-                }
-
-                if (this.activityDurationDaysFixed) {
-                    if (!this.fixedStartDate && !this.fixedEndDate) {
-                        this.tempStartDate = clickedDate;
-                        this.tempEndDate = DateTime.fromJSDate(clickedDate, {zone: 'utc'}).plus({days: this.activityDurationDaysFixed - 1}).toJSDate();
-                    } else {
-                        return;
-                    }
-                } else if (this.fixedStartDate) {
-                    if (clickedDate >= this.fixedStartDate) {
-                        this.tempEndDate = clickedDate;
-                    } else {
-                        return;
-                    }
-                } else if (this.fixedEndDate) {
-                    if (clickedDate <= this.fixedEndDate) {
-                        this.tempStartDate = clickedDate;
-                    } else {
-                        return;
-                    }
-                } else {
-                    if (this.selectingStartDate || clickedDate < this.tempStartDate) {
-                        this.tempStartDate = clickedDate;
-                        this.tempEndDate = new Date(clickedDate.valueOf());
-                        this.selectingStartDate = false;
-                    } else {
-                        this.tempEndDate = clickedDate;
-                        if (this.tempEndDate < this.tempStartDate) {
-                            this.tempStartDate = new Date(this.tempEndDate.valueOf());
-                        }
-                        this.selectingStartDate = true;
-                    }
-                }
-                this._renderCalendar();
-            });
+        this.overlay.querySelector('.calendar-close')?.addEventListener('click', () => this.close());
+        this.overlay.querySelector('.calendar-cancel')?.addEventListener('click', () => this.close());
+        this.overlay.querySelector('.calendar-apply')?.addEventListener('click', () => {
+            const value = {...this.value};
+            this.close();
+            this.options.onApply(value);
+        });
+        this.overlay.querySelector('.calendar-prev')?.addEventListener('click', () => this._showMonth(this.view.minus({months: 1}), '.calendar-prev'));
+        this.overlay.querySelector('.calendar-next')?.addEventListener('click', () => this._showMonth(this.view.plus({months: 1}), '.calendar-next'));
+        this.overlay.addEventListener('click', (e) => { if (e.target === this.overlay) this.close(); });
+        this.overlay.addEventListener('keydown', (e) => this._handleKeydown(e));
+        this.grid.addEventListener('click', (e) => {
+            const button = (e.target as HTMLElement).closest('button.calendar-day') as HTMLButtonElement | null;
+            if (!button || button.disabled || !button.dataset.date) return;
+            this._pick(button.dataset.date);
         });
     }
 
-    _attachEventListeners() {
-        if (!this.modalElement || !this.modalOverlay) return;
+    get isOpen(): boolean {
+        return !this.overlay.hidden;
+    }
 
-        this.modalElement.querySelector('.range-calendar-close-btn')?.addEventListener('click', () => this.hide());
-        this.modalElement.querySelector('.range-calendar-cancel-btn')?.addEventListener('click', () => this.hide());
-        this.modalElement.querySelector('.range-calendar-apply-btn')?.addEventListener('click', () => this._handleApply());
-        this.modalOverlay.addEventListener('click', (e) => {
-            if (e.target === this.modalOverlay) {
-                this.hide();
+    /**
+     * Opens the calendar on the given value.
+     * @param fromKeyboard - Opened with Enter/Space: appear without animation.
+     */
+    open(value: RangeValue, opener: HTMLElement | null, fromKeyboard = false): void {
+        this.value = {...value, awaitingEnd: false};
+        this.opener = opener;
+        const anchor = value.start ?? todayIso(this.options.timezone);
+        this.overlay.classList.toggle('no-animation', fromKeyboard);
+        this.overlay.hidden = false;
+        this._showMonth(DateTime.fromISO(anchor, {zone: 'utc'}).startOf('month'), null, true);
+    }
+
+    close(): void {
+        if (this.overlay.hidden) return;
+        this.overlay.hidden = true;
+        this.opener?.focus({preventScroll: true});
+    }
+
+    private _pick(iso: string): void {
+        if (this.options.mode === 'range' && this.options.rules) {
+            this.value = pickRangeDay(this.value, iso, this.options.rules);
+        } else {
+            this.value = {start: iso, end: iso, awaitingEnd: false};
+        }
+        this._render(`button.calendar-day[data-date="${iso}"]`);
+    }
+
+    private _showMonth(month: DateTime, focusSelector: string | null, focusDay = false): void {
+        this.view = month.startOf('month');
+        this._render(focusSelector, focusDay);
+    }
+
+    /** Rebuilds the grid; `focusSelector` keeps keyboard users in place across the rebuild. */
+    private _render(focusSelector: string | null = null, focusDay = false): void {
+        const {mode, language, timezone, t} = this.options;
+        const rules = mode === 'range' ? this.options.rules : null;
+        const locale = localeForLanguage(language);
+        const today = todayIso(timezone);
+        const {start, end, awaitingEnd} = this.value;
+
+        (this.overlay.querySelector('.calendar-month') as HTMLElement).textContent =
+            this.view.setLocale(locale).toLocaleString({month: 'long', year: 'numeric'});
+        // No browsing into months that are entirely in the past.
+        const prev = this.overlay.querySelector('.calendar-prev') as HTMLButtonElement;
+        prev.disabled = this.view.toISODate()! <= DateTime.fromISO(today, {zone: 'utc'}).startOf('month').toISODate()!;
+
+        const monday = DateTime.fromISO('2024-01-01', {zone: 'utc'}).setLocale(locale);
+        let html = Array.from({length: 7}, (_, i) =>
+            `<div class="calendar-dow" aria-hidden="true">${monday.plus({days: i}).toFormat('ccc').replace('.', '').slice(0, 2)}</div>`
+        ).join('');
+        html += '<span></span>'.repeat(this.view.weekday - 1);
+
+        const hasBand = mode === 'range' && !!start && !!end && start !== end;
+        for (let day = 1; day <= this.view.daysInMonth!; day++) {
+            const iso = this.view.set({day}).toISODate() as string;
+            const disabled = isDayDisabled(iso, today, rules);
+            const isEdge = iso === start || (mode === 'range' && iso === end);
+            let cls = 'calendar-day';
+            if (iso === today) cls += ' today';
+            if (isEdge) cls += ' selected';
+            let cell = 'calendar-cell';
+            if (hasBand) {
+                if (iso === start) cell += ' band-start';
+                else if (iso === end) cell += ' band-end';
+                else if (iso > start! && iso < end!) cell += ' in-range';
             }
-        });
+            html += `<div class="${cell}"><button type="button" class="${cls}" data-date="${iso}" tabindex="-1"${disabled ? ' disabled' : ''} aria-pressed="${isEdge}" aria-label="${formatIsoDay(iso, language, 'long')}">${day}</button></div>`;
+        }
+        this.grid.innerHTML = html;
+
+        let choice: string;
+        if (!start) choice = '';
+        else if (mode === 'single') choice = formatIsoDay(start, language, 'short');
+        else if (awaitingEnd) choice = `${formatIsoDay(start, language, 'short')} – ${t('pickLastDay')}`;
+        else choice = `${formatIsoRange(start, end ?? start, language)} · ${String(t('daysCount')).replace('{n}', String(countDays(start, end ?? start)))}`;
+        (this.overlay.querySelector('.calendar-choice') as HTMLElement).textContent = choice;
+        (this.overlay.querySelector('.calendar-apply') as HTMLButtonElement).disabled = !start || awaitingEnd;
+
+        // Roving tabindex: exactly one day is in the Tab order.
+        const days = Array.from(this.grid.querySelectorAll<HTMLButtonElement>('button.calendar-day'));
+        const requested = focusSelector ? this.overlay.querySelector(focusSelector) as HTMLElement | null : null;
+        const rovingDay = (requested?.classList.contains('calendar-day') && !(requested as HTMLButtonElement).disabled ? requested : null)
+            ?? days.find(d => d.classList.contains('selected') && !d.disabled)
+            ?? days.find(d => d.classList.contains('today'))
+            ?? days.find(d => !d.disabled)
+            ?? null;
+        days.forEach(d => { d.tabIndex = d === rovingDay ? 0 : -1; });
+        if (requested && !requested.classList.contains('calendar-day')) requested.focus({preventScroll: true});
+        else if (focusSelector || focusDay) rovingDay?.focus({preventScroll: true});
     }
 
-    _handleApply() {
-        if (this.fixedStartDate && this.tempEndDate < this.fixedStartDate) {
-            this.tempEndDate = new Date(this.fixedStartDate.valueOf());
+    private _handleKeydown(e: KeyboardEvent): void {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.close();
+            return;
         }
-        if (this.fixedEndDate && this.tempStartDate > this.fixedEndDate) {
-            this.tempStartDate = new Date(this.fixedEndDate.valueOf());
-        }
-        if (this.tempStartDate && this.tempEndDate && this.tempEndDate < this.tempStartDate) {
-            this.tempEndDate = new Date(this.tempStartDate.valueOf());
-        }
-
-        if (this.onRangeSelectCallback) {
-            const finalStartDate = this.tempStartDate ? new Date(this.tempStartDate.valueOf()) : new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate()));
-            const finalEndDate = this.tempEndDate ? new Date(this.tempEndDate.valueOf()) : new Date(finalStartDate.valueOf());
-            this.onRangeSelectCallback(finalStartDate, finalEndDate);
-        }
-        this.hide();
-        this.widget.clearMessages();
-    }
-
-    show(currentStartDate, currentEndDate) {
-        const todayInWidgetZone = DateTime.now().setZone(this.config.timezone);
-
-        if (this.fixedStartDate) {
-            this.tempStartDate = new Date(this.fixedStartDate.valueOf());
-        } else {
-            this.tempStartDate = convertToUTCMidnightJSDate(currentStartDate, todayInWidgetZone, this.config.timezone);
+        if (e.key === 'Tab') {
+            const focusables = Array.from(this.overlay.querySelectorAll<HTMLElement>('button:not([disabled]):not([tabindex="-1"])'));
+            if (focusables.length === 0) return;
+            const active = (this.overlay.getRootNode() as Document | ShadowRoot).activeElement;
+            const index = focusables.indexOf(active as HTMLElement);
+            if (e.shiftKey && index === 0) {
+                e.preventDefault();
+                focusables[focusables.length - 1].focus();
+            } else if (!e.shiftKey && index === focusables.length - 1) {
+                e.preventDefault();
+                focusables[0].focus();
+            }
+            return;
         }
 
-        if (this.fixedEndDate) {
-            this.tempEndDate = new Date(this.fixedEndDate.valueOf());
-        } else if (this.activityDurationDaysFixed && this.tempStartDate) {
-            this.tempEndDate = DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'})
-                .plus({days: this.activityDurationDaysFixed - 1})
-                .startOf('day')
-                .toJSDate();
-        } else {
-            const fallbackEndDateBase = this.tempStartDate ? DateTime.fromJSDate(this.tempStartDate, {zone: 'utc'}) : todayInWidgetZone;
-            this.tempEndDate = convertToUTCMidnightJSDate(currentEndDate, fallbackEndDateBase, this.config.timezone);
-        }
-
-        if (this.tempEndDate < this.tempStartDate) {
-            this.tempEndDate = new Date(this.tempStartDate.valueOf());
-        }
-
-        if (this.fixedStartDate && !this.fixedEndDate && !this.activityDurationDaysFixed) {
-            this.selectingStartDate = false;
-            this.currentViewMonth = this.tempEndDate.getUTCMonth();
-            this.currentViewYear = this.tempEndDate.getUTCFullYear();
-        } else if (!this.fixedStartDate && this.fixedEndDate && !this.activityDurationDaysFixed) {
-            this.selectingStartDate = true;
-            this.currentViewMonth = this.tempStartDate.getUTCMonth();
-            this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        } else if (this.fixedStartDate && this.fixedEndDate) {
-            this.selectingStartDate = false;
-            this.currentViewMonth = this.fixedStartDate.getUTCMonth();
-            this.currentViewYear = this.fixedStartDate.getUTCFullYear();
-        } else if (this.activityDurationDaysFixed) {
-            this.selectingStartDate = !this.fixedStartDate;
-            this.currentViewMonth = this.tempStartDate.getUTCMonth();
-            this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        } else {
-            this.selectingStartDate = true;
-            this.currentViewMonth = this.tempStartDate.getUTCMonth();
-            this.currentViewYear = this.tempStartDate.getUTCFullYear();
-        }
-
-        this._renderCalendar();
-        if (this.modalOverlay) {
-            this.modalOverlay.style.display = 'flex';
-        }
-    }
-
-    hide() {
-        if (this.modalOverlay) {
-            this.modalOverlay.style.display = 'none';
-        }
+        const dayButton = (e.target as HTMLElement).closest?.('button.calendar-day') as HTMLElement | null;
+        if (!dayButton?.dataset.date) return;
+        const target = keyTargetDay(e.key, dayButton.dataset.date);
+        if (!target) return;
+        e.preventDefault();
+        if (target < todayIso(this.options.timezone)) return;
+        this._showMonth(DateTime.fromISO(target, {zone: 'utc'}), `button.calendar-day[data-date="${target}"]`);
     }
 }
