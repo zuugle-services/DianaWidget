@@ -235,8 +235,6 @@ describe('booking', () => {
         phone_number: '+43 50 422 422',
         booking_url: 'https://book.example/rudi',
         info_url: 'https://info.example/rudi',
-        prior_notice_last_day: 1,
-        prior_notice_last_time: '17:00',
         latest_booking_time: '2026-10-18T15:00:00Z',
     };
 

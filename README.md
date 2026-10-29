@@ -665,7 +665,7 @@ All types are exported from `src/types/index.ts`:
 * `TransportLeg` - Legacy transport leg interface (deprecated, use `ConnectionElement`)
 * `TransportAlert` - Alert/warning for a connection segment (with `severity`, `scope`, optional `url` and validity periods)
 * `FlexInfo` - On-demand (GTFS-Flex) service details of a leg (service name, pickup/drop-off windows)
-* `LegBooking` / `BookingRule` - Booking requirements of a leg (GTFS-Flex booking rules with computed booking window)
+* `LegBooking` / `BookingRule` - Booking requirements of a leg (GTFS-Flex booking rules with booking window)
 * `Suggestion` - Address autocomplete suggestion (GeoJSON Feature)
 * `SuggestionProperties` - Properties of a suggestion
 * `SuggestionGeometry` - Geometry of a suggestion

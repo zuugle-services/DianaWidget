@@ -270,7 +270,7 @@ export interface FlexInfo {
 /** GTFS-Flex booking type */
 export type BookingType = 'real_time' | 'same_day' | 'prior_days';
 
-/** Booking rule (GTFS-Flex booking_rules.txt) with backend-computed booking window */
+/** Booking rule (GTFS-Flex booking_rules.txt) with booking window from the routing provider */
 export interface BookingRule {
     readonly booking_type?: BookingType;
     readonly message?: string;
@@ -281,10 +281,6 @@ export interface BookingRule {
     readonly booking_url?: string;
     readonly prior_notice_duration_min?: number;
     readonly prior_notice_duration_max?: number;
-    readonly prior_notice_last_day?: number;
-    readonly prior_notice_last_time?: string;
-    readonly prior_notice_start_day?: number;
-    readonly prior_notice_start_time?: string;
     /** Earliest time the leg can be booked (ISO 8601, UTC) */
     readonly earliest_booking_time?: string;
     /** Booking deadline (ISO 8601, UTC) */
