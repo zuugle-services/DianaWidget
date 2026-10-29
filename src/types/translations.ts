@@ -313,6 +313,7 @@ export interface LanguageTranslations {
     anytimeLeaveBy: string;
     anytimeWalkTo: string;
     transfers: string;
+    transferSg: string;
     stopSg: string;
     stopPl: string;
     daySg: string;

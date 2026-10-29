@@ -165,7 +165,7 @@ export class ConnectionRenderer {
                 ${fromLocation} - ${toLocation}
             </div>
             <div class="summary-line-3">
-                <span>${duration} &bull; ${transfers} ${this.t('transfers')}</span>
+                <span>${duration} &bull; ${transfers} ${this.t(transfers === 1 ? 'transferSg' : 'transfers')}</span>
                 ${statusHTML}
             </div>
         `;

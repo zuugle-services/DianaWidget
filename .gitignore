@@ -97,3 +97,7 @@ lerna-debug.log
 .DS_Store
 Thumbs.db
 /client_id_secret.php
+
+# Local image work (showcase screenshots, poster renders)
+img/showcase/
+img/posters/
