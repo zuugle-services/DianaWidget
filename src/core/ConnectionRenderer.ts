@@ -276,6 +276,8 @@ export class ConnectionRenderer {
      * button, or a "no online ticket" note, at the first leg of each segment.
      */
     private _ticketPlan(conn: Connection): {single?: TicketSegmentRef; perSegment: boolean; segments: TicketSegmentRef[]} {
+        // Ticket buttons (and the "no online ticket" notes that go with them) can be switched off.
+        if (this.config.showTicketShopButtons === false) return {perSegment: false, segments: []};
         const segments: TicketSegmentRef[] = (conn.connection_ticketshop_segments ?? [])
             .map((segment, index) => ({...segment, index}));
         if (segments.length === 0) {

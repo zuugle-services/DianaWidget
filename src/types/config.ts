@@ -129,6 +129,9 @@ export interface WidgetConfig {
     /** When searching for today, also list connections that have already departed (shown greyed out) so the whole day can be browsed */
     showPastConnections: boolean;
     
+    /** Show the ticketshop ("Buy Ticket") buttons on connections. Set to false to render none. */
+    showTicketShopButtons: boolean;
+    
     /** List of available dates (YYYY-MM-DD) for date selection */
     dateList?: string[] | null;
     

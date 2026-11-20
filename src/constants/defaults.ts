@@ -139,6 +139,7 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     shareURLPrefix: null,
     hideOverriddenActivityStartDate: true,
     showPastConnections: true,
+    showTicketShopButtons: true,
     dateList: null,
     onDateChange: null,
     onApiTokenExpired: null,

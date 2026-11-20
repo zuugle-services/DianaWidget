@@ -190,6 +190,21 @@ describe('ticket buttons', () => {
         expect(html).not.toContain('data-segment-index');
     });
 
+    it('renders no ticket button or note when showTicketShopButtons is false', () => {
+        const off = (extra: Partial<Connection>) =>
+            makeRenderer('EN', {showTicketShopButtons: false}).renderConnectionDetails([connection(journey(), extra)], 'to', noWait, {});
+        expect(off({connection_ticketshop_provider: 'OEBB'} as Partial<Connection>)).not.toContain('ticket-button');
+        const multi = off({
+            connection_ticketshop_provider: 'TRAIVELLING',
+            connection_ticketshop_segments: [
+                {leg_from: 0, leg_to: 1, provider: 'TRAIVELLING'},
+                {leg_from: 2, leg_to: 3, provider: null},
+            ],
+        } as Partial<Connection>);
+        expect(multi).not.toContain('ticket-button');
+        expect(multi).not.toContain('journey-leg__no-ticket');
+    });
+
     it('renders no ticket button without a provider', () => {
         expect(render({})).not.toContain('ticket-button');
     });
