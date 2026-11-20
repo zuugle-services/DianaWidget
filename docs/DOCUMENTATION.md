@@ -64,11 +64,11 @@ npm ci
 
 To use the Diana GreenConnect, you need to obtain API credentials which are used to authorize requests to the backend Zuugle Services API. This process ensures secure communication.
 
-### 1. Sign Up and Obtain Credentials
+### 1. Obtain Credentials
 
-* **Register**: First, you or your organization needs to sign up on the [zuugle-services.com](https://zuugle-services.com) dashboard.
-* **Application Creation**: Upon successful registration and setup, an "Application" will be created for you in the Zuugle Services backend.
-* **Get Credentials**: Log in to your dashboard on `zuugle-services.com`. Navigate to the API credentials or application settings section. Here, you will find your unique:
+* **Request them from us**: Contact the Zuugle Services team via the [Diana GreenConnect Info Page](https://zuugle-services.com/en/diana-widget/) and we will set up an "Application" for you and send you your credentials. You may also have received them from us already, in which case you can skip this step.
+* **Dashboard (may return)**: Credentials used to be available in a self-service dashboard on `zuugle-services.com`. That dashboard is currently not available, but we may bring it back.
+* **What you receive**:
    * `Client ID`: A public identifier for your application.
    * `Client Secret`: A confidential key. **This** secret must be **kept secure and should never be exposed in client-side code.**
 

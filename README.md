@@ -10,7 +10,7 @@ A ready-to-embed widget that lets your visitors plan public transit to and from 
 
 ## Quick Start
 
-You need a **Client ID** and **Client Secret** from your [zuugle-services.com](https://zuugle-services.com) dashboard. The secret must stay on your server, so the setup has three steps.
+You need a **Client ID** and **Client Secret**. If you haven't received them from us yet, [get in touch](https://zuugle-services.com/en/diana-widget/) and we'll send them to you. The secret must stay on your server, so the setup has three steps.
 
 ### 1. Get an access token (on your server)
 
