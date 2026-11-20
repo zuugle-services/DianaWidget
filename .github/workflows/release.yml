@@ -1,0 +1,228 @@
+name: Deploy
+
+# Builds a ref and uploads it via SFTP to the widget host, then checks the public URL serves exactly that build.
+# Three ways in, one deploy:
+# - workflow_call from release-please.yml after merging the release PR created a release (releases created
+#   with GITHUB_TOKEN do not fire `release: published`, so there is no release trigger) -> production.
+# - workflow_call from deploy-dev.yml (push to `dev`) -> the dev bundle.
+# - workflow_dispatch: manual deploy, re-deploy or rollback of any branch, tag or commit to either channel.
+#
+# production: dist/DianaWidget.bundle.js (what customers embed), dist/DianaWidget.bundle-X.Y.Z.js (pinned,
+#             never overwritten by a later release), index-demo.html, index.php; bundle attached to the release.
+# dev:        dist/DianaWidget.bundle-dev.js, index-demo-dev.html, index-dev.php.
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref (tag, branch or commit) to deploy
+        required: true
+        type: string
+      channel:
+        description: production or dev
+        required: false
+        default: production
+        type: string
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref (tag, branch or commit) to deploy, e.g. v1.16.0 or main
+        required: true
+        default: main
+        type: string
+      channel:
+        description: Where to deploy it
+        required: true
+        default: production
+        type: choice
+        options: [production, dev]
+
+# Never two uploads to the same channel at once; a second one waits for the first.
+concurrency:
+  group: deploy-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write  # attach the bundle to the GitHub Release
+    env:
+      CHANNEL: ${{ inputs.channel }}
+      REF: ${{ inputs.ref }}
+      BASE_URL: ${{ vars.WIDGET_BASE_URL || 'https://diana.zuugle-services.net' }}
+    steps:
+      - name: Validate channel
+        run: |
+          case "$CHANNEL" in
+            production|dev) ;;
+            *) echo "::error::unknown channel: $CHANNEL"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      # Set up inline: the setup action may not exist in the deployed ref (rollback to an old tag).
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Lint and tests
+        run: |
+          npm run lint
+          npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Stage files
+        id: stage
+        run: |
+          version=$(jq -r .version package.json)
+          commit=$(git rev-parse HEAD)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          if [ "$CHANNEL" = production ]; then
+            cp dist/DianaWidget.bundle.js "dist/DianaWidget.bundle-$version.js"
+            echo "check=DianaWidget.bundle.js DianaWidget.bundle-$version.js" >> "$GITHUB_OUTPUT"
+          else
+            cp dist/DianaWidget.bundle.js dist/DianaWidget.bundle-dev.js
+            echo "check=DianaWidget.bundle-dev.js" >> "$GITHUB_OUTPUT"
+          fi
+          head -1 dist/DianaWidget.bundle.js
+
+      # --- production ---------------------------------------------------------------------------------------
+      # Pinned file first, so it exists before the unversioned one flips to the new release.
+      - name: Upload versioned bundle
+        if: env.CHANNEL == 'production'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./dist/DianaWidget.bundle-${{ steps.stage.outputs.version }}.js
+          remote_path: ./dist/
+
+      - name: Upload bundle
+        if: env.CHANNEL == 'production'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./dist/DianaWidget.bundle.js
+          remote_path: ./dist/
+
+      - name: Upload index-demo.html
+        if: env.CHANNEL == 'production'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./index-demo.html
+          remote_path: ./
+
+      - name: Upload index.php
+        if: env.CHANNEL == 'production'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./index.php
+          remote_path: ./
+
+      # --- dev ----------------------------------------------------------------------------------------------
+      - name: Upload dev bundle
+        if: env.CHANNEL == 'dev'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./dist/DianaWidget.bundle-dev.js
+          remote_path: ./dist/
+
+      - name: Upload index-demo-dev.html
+        if: env.CHANNEL == 'dev'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./index-demo-dev.html
+          remote_path: ./
+
+      - name: Upload index-dev.php
+        if: env.CHANNEL == 'dev'
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          username: ${{ secrets.FTP_USERNAME }}
+          server: ${{ secrets.FTP_SERVER }}
+          port: ${{ secrets.FTP_PORT }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          sftp_only: true
+          local_path: ./index-dev.php
+          remote_path: ./
+
+      # The public URL must serve byte-for-byte what was just built (cache-busting query, retried ~1 min).
+      - name: Smoke check
+        env:
+          FILES: ${{ steps.stage.outputs.check }}
+          COMMIT: ${{ steps.stage.outputs.commit }}
+        run: |
+          expected=$(sha256sum dist/DianaWidget.bundle.js | cut -d' ' -f1)
+          for f in $FILES; do
+            url="$BASE_URL/dist/$f"
+            ok=false
+            for i in 1 2 3 4 5 6; do
+              actual=$( (curl -fsSL "$url?v=$COMMIT" || true) | sha256sum | cut -d' ' -f1)
+              if [ "$actual" = "$expected" ]; then ok=true; break; fi
+              echo "attempt $i: $url does not serve the new build yet"
+              sleep 10
+            done
+            if [ "$ok" != true ]; then
+              echo "::error::$url does not serve the deployed build"
+              exit 1
+            fi
+            echo "OK $url"
+          done
+
+      - name: Attach bundle to the GitHub Release
+        if: env.CHANNEL == 'production' && startsWith(inputs.ref, 'v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.stage.outputs.version }}
+        run: gh release upload "$REF" "dist/DianaWidget.bundle-$VERSION.js" --clobber
+
+      - name: Summary
+        env:
+          FILES: ${{ steps.stage.outputs.check }}
+          VERSION: ${{ steps.stage.outputs.version }}
+          COMMIT: ${{ steps.stage.outputs.commit }}
+        run: |
+          {
+            echo "## Deployed $CHANNEL: v$VERSION (commit ${COMMIT:0:7}, ref $REF)"
+            for f in $FILES; do echo "- $BASE_URL/dist/$f"; done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: diana-widget-${{ inputs.channel }}-${{ steps.stage.outputs.version }}
+          path: dist/

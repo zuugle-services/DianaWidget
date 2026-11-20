@@ -154,6 +154,10 @@ interface WidgetElements {
 const MAX_RECENT_START_LOCATIONS = 3;
 
 export default class DianaWidget {
+    /** Version of this bundle (package.json, set at build time; release-please bumps it). */
+    static readonly version: string =
+        typeof __DIANA_WIDGET_VERSION__ !== "undefined" ? __DIANA_WIDGET_VERSION__ : "dev";
+
     // Class property declarations
     defaultConfig: WidgetConfig;
     config: WidgetConfig;

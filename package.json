@@ -8,7 +8,11 @@
         "build": "webpack --mode production",
         "analyze": "webpack --mode production --stats=detailed",
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --passWithNoTests",
-        "lint": "eslint src/"
+        "lint": "eslint src/",
+        "typecheck": "tsc --noEmit",
+        "check": "npm run lint && npm run typecheck && npm test && npm run build",
+        "guards": "node scripts/repo-guards.mjs",
+        "prepare": "git config core.hooksPath .githooks || true"
     },
     "repository": {
         "type": "git",

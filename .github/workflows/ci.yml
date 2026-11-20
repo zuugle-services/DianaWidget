@@ -1,49 +1,50 @@
-name: 🔍 CI - Lint, Test & Build
+name: CI
 
+# The same checks as `npm run check` (lint, types, tests, production build). The git hook can be skipped with
+# --no-verify; this cannot. PR title and protected-path checks live in pr-guards.yml (they re-run on
+# title/label edits, these don't).
 on:
   pull_request:
-    branches:
-      - main
-      - dev
   push:
-    branches:
-      - main
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
 
 jobs:
-  ci:
-    name: 🔍 Lint, Test & Build
+  check:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
+    timeout-minutes: 15
     steps:
-      - name: 🚚 Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/setup
 
-      - name: ⎔ Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
-      - name: 🔍 Run linting
+      - name: Lint
         run: npm run lint
 
-      - name: 🧪 Run tests
+      - name: Types
+        run: npm run typecheck
+
+      - name: Tests
         run: npm test
 
-      - name: 🔨 Build bundle
+      - name: Production build
         run: npm run build
 
-      - name: 📊 Report bundle size
+      - name: Bundle summary
         run: |
-          echo "## Bundle Size Report" >> $GITHUB_STEP_SUMMARY
-          echo "| File | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          if ls dist/*.js 1> /dev/null 2>&1; then
-            ls -lh dist/*.js | awk '{print "| " $9 " | " $5 " |"}' >> $GITHUB_STEP_SUMMARY
-          else
-            echo "| No JS files found | - |" >> $GITHUB_STEP_SUMMARY
-          fi
+          {
+            echo "## Bundle"
+            echo '```'
+            head -c 200 dist/DianaWidget.bundle.js | head -1
+            echo '```'
+            echo "| File | Size | gzip |"
+            echo "| --- | --- | --- |"
+            for f in dist/*.js; do
+              echo "| $f | $(du -h "$f" | cut -f1) | $(gzip -c "$f" | wc -c | numfmt --to=iec) |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"

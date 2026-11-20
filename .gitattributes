@@ -1,0 +1,3 @@
+# Executed by sh/bash; a CRLF shebang breaks them, so pin LF regardless of core.autocrlf.
+.githooks/* text eol=lf
+*.sh text eol=lf

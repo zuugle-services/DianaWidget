@@ -1,0 +1,12 @@
+#!/bin/sh
+# Installed by `npm install` (package.json "prepare" sets core.hooksPath=.githooks).
+# CI repeats these checks, so --no-verify does not get a change past them.
+set -e
+node scripts/repo-guards.mjs all
+
+# Lint only the staged TypeScript files (fast); the full `npm run check` runs in CI.
+files=$(git diff --cached --name-only --diff-filter=ACMR -- 'src/*.ts' 'src/**/*.ts')
+if [ -n "$files" ]; then
+  # shellcheck disable=SC2086
+  npx --no-install eslint $files
+fi

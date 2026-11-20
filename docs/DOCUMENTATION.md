@@ -159,11 +159,13 @@ window.dianaActivityConfig = {
 ### Scripts
 
 ```sh
-npm run dev     # Start dev server with hot-reload
-npm run build   # Create production bundle
-npm run analyze # Analyze bundle size
-npm run test    # Run unit tests
-npm run lint    # Run ESLint
+npm run dev       # Development build in watch mode
+npm run build     # Create production bundle
+npm run analyze   # Analyze bundle size
+npm test          # Run unit tests
+npm run lint      # Run ESLint
+npm run typecheck # TypeScript type check
+npm run check     # Everything CI runs: lint, types, tests, production build
 ```
 
 ### Key Development Patterns
@@ -703,15 +705,64 @@ if (isTransferElement(element)) {
 
 ## Deployment
 
-**CI/CD Pipeline** (`.github/workflows/deploy.yml`)
+### Hosted bundles
 
-1.  Triggered on releases (tags pushed to GitHub)
-2.  Installs dependencies and builds the production bundle (`npm run build`)
-3.  Deploys the bundled file (`dist/DianaWidget.bundle.js`) via SFTP to the specified server.
+| URL | Contents |
+|:--|:--|
+| `https://diana.zuugle-services.net/dist/DianaWidget.bundle.js` | Latest release, updated on every release |
+| `https://diana.zuugle-services.net/dist/DianaWidget.bundle-X.Y.Z.js` | One specific release, never changes |
+| `https://diana.zuugle-services.net/dist/DianaWidget.bundle-dev.js` | Development preview, not for production |
 
-**Hosting Requirements**
+Pin a version if you want to roll out updates on your own schedule; the [changelog](../CHANGELOG.md) lists what
+changed. Every bundle starts with a banner comment naming its version and commit, and
+`window.DianaWidget.version` returns the version at runtime.
 
-* Serve the `DianaWidget.bundle.js` file (e.g., from a CDN or your web server).
+### Versioning
+
+Releases follow [semantic versioning](https://semver.org/): a **major** version can require changes to your
+embed code or configuration, a **minor** version adds features or options, a **patch** version fixes bugs.
+Releases are automated with [release-please](https://github.com/googleapis/release-please):
+
+1. Pull requests are squash-merged and their **title** is a [conventional commit](https://www.conventionalcommits.org/)
+   (`feat: …`, `fix(calendar): …`, `docs: …`). `feat` → minor, `fix`/`perf`/others → patch, `feat!:` or a
+   `BREAKING CHANGE:` footer → major. A check fails pull requests with a different title.
+2. On every push to `main`, `.github/workflows/release-please.yml` keeps one **release pull request**
+   (`chore(main): release X.Y.Z`) up to date: it bumps `version` in `package.json` / `package-lock.json` and
+   adds the changes to `CHANGELOG.md`. Never edit the version or the changelog by hand (a check fails the PR).
+3. **Merging the release pull request deploys.** It creates the tag `vX.Y.Z` and the GitHub Release, and calls
+   `.github/workflows/release.yml`.
+
+### What a deploy does
+
+`release.yml` checks out the ref, runs lint and tests, builds, and uploads via SFTP:
+`DianaWidget.bundle-X.Y.Z.js` first, then `DianaWidget.bundle.js`, `index-demo.html` and `index.php`. A smoke
+check then downloads the public URLs and fails the run unless they serve exactly the file that was built. The
+bundle is attached to the GitHub Release. Two deploys to the same target never run at once.
+
+Manual deploy, re-deploy or **rollback** to any tag, branch or commit:
+
+```sh
+gh workflow run release.yml -f ref=v1.16.0 -f channel=production
+gh workflow run release.yml -f ref=my-branch -f channel=dev   # preview as DianaWidget.bundle-dev.js
+```
+
+Every push to the `dev` branch deploys the dev bundle (`.github/workflows/deploy-dev.yml`).
+
+Configuration: repository secrets `FTP_SERVER`, `FTP_PORT`, `FTP_USERNAME`, `FTP_PASSWORD`; optional
+repository variable `WIDGET_BASE_URL` (default `https://diana.zuugle-services.net`) for the smoke check.
+
+### Continuous integration
+
+* `ci.yml` (every pull request and push to `main`): lint, type check, tests, production build, bundle size.
+* `pr-guards.yml`: conventional pull request title; `scripts/repo-guards.mjs` rejects credential files
+  (`.env`, `client_id_secret.php`), hand-edited versions/changelog, and changes to CI/release configuration
+  without the `allow-protected` label.
+* `npm ci` installs a git pre-commit hook (`.githooks/pre-commit`) running the same guards and ESLint on the
+  staged files.
+
+### Hosting the bundle yourself
+
+* Serve `DianaWidget.bundle.js` from your own web server or CDN, or use the hosted URLs above.
 * Include the widget script in your HTML page *after* defining the `window.dianaActivityConfig` object and ensuring `apiToken` is populated correctly for your environment.
 * Ensure the host page has a `<div id="dianaWidgetContainer"></div>` (or your custom ID) element.
 
@@ -722,10 +773,11 @@ We welcome contributions! Here's how to help:
 **Development Process**
 
 1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/your-feature-name`).
+2.  Create a feature branch (`git checkout -b feat/your-feature-name`).
 3.  Make your changes.
-4.  Ensure the code builds (`npm run build`).
-5.  Submit a Pull Request (PR) with:
+4.  Ensure `npm run check` passes (lint, types, tests, build).
+5.  Submit a Pull Request (PR) with a [conventional commit](https://www.conventionalcommits.org/) title
+    (e.g. `feat: add a dark theme option`, `fix: keep the selected date on month change`) and:
    * A clear description of the changes.
    * Any necessary updates to this README.
    * Information about how to test your changes.
