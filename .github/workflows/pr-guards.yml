@@ -1,0 +1,43 @@
+name: PR guards
+
+# Cheap checks that depend on the PR's title or labels, so they re-run when those change (ci.yml doesn't).
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-guards-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-title:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Conventional-commit title (squash merge makes it the commit; release-please reads it)
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          re='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([A-Za-z0-9._/-]+\))?!?: [^ ].*$'
+          if [[ ! "$TITLE" =~ $re ]]; then
+            echo "::error::PR title is not a conventional commit: '$TITLE'"
+            echo "Expected 'type(scope): summary', e.g. 'fix(calendar): keep the selected date on month change'."
+            exit 1
+          fi
+
+  guards:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: No credentials, protected paths need 'allow-protected', no hand-edited version/changelog
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          ALLOW_PROTECTED: ${{ contains(github.event.pull_request.labels.*.name, 'allow-protected') && '1' || '0' }}
+        run: node scripts/repo-guards.mjs all --base "$BASE"

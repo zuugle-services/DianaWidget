@@ -45,7 +45,7 @@ window.dianaActivityConfig = {
   apiToken: "ACCESS_TOKEN_FROM_YOUR_SERVER"
 };
 </script>
-<script src="DianaWidget.bundle.js"></script>
+<script src="https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"></script>
 <script>
   new window.DianaWidget(window.dianaActivityConfig, "dianaWidgetContainer");
 </script>
@@ -63,6 +63,12 @@ window.dianaActivityConfig.onApiTokenExpired = async () => {
 ```
 
 Without it, users see a "session expired, please reload" message.
+
+## Versions
+
+`DianaWidget.bundle.js` always serves the latest release. To control when updates reach your page, pin a
+release instead, e.g. `https://diana.zuugle-services.net/dist/DianaWidget.bundle-1.16.0.js`. Versions follow
+semantic versioning (major = may need changes on your side); see the [changelog](CHANGELOG.md).
 
 ## Common Options
 
@@ -99,4 +105,4 @@ The [full documentation](docs/DOCUMENTATION.md) covers:
 * Controlling the widget from your page (`setSelectedDate`, `onDateChange`)
 * Running the demo
 * Development, architecture, TypeScript types
-* Deployment and contributing
+* Hosted bundles, versioning, deployment and contributing

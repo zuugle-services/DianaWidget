@@ -3,6 +3,15 @@ const path = require('path');
 const webpack = require('webpack');
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const sass = require('sass');
+const { version } = require('./package.json');
+
+// Commit being built (the checked-out one, also in a deploy of an older ref); empty outside a git checkout.
+let commit = '';
+try {
+  commit = require('child_process').execSync('git rev-parse HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+} catch {
+  // not a git checkout
+}
 
 module.exports = {
   entry: './src/index.ts',
@@ -53,6 +62,16 @@ module.exports = {
     // to try and force a single file.
   },
   plugins: [
+    // Version from package.json (release-please bumps it): `DianaWidget.version` at runtime and a banner
+    // comment as the first line of the bundle, so a deployed file says which release it is.
+    new webpack.DefinePlugin({
+      __DIANA_WIDGET_VERSION__: JSON.stringify(version),
+    }),
+    new webpack.BannerPlugin({
+      banner: `DianaWidget v${version}${commit ? ` (${commit.slice(0, 7)})` : ''} | https://github.com/zuugle-services/DianaWidget`,
+      // After minification, so terser neither strips nor extracts it into a LICENSE file.
+      stage: webpack.Compilation.PROCESS_ASSETS_STAGE_REPORT,
+    }),
     new WebpackManifestPlugin(), // Generates a manifest.json file
     new webpack.optimize.LimitChunkCountPlugin({
       maxChunks: 1, // Tells Webpack to output at most 1 chunk (your main bundle)
