@@ -11,6 +11,7 @@ import {
     isCoordinateLocationType
 } from '../constants';
 import type { WidgetConfig, Language } from '../types';
+import { selfSufficientGlobals, validateDateWindowConfig } from './dateWindows';
 
 /**
  * Result of configuration validation
@@ -54,6 +55,15 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
         if (index > -1) {
             missingFields.splice(index, 1);
         }
+    }
+    // Dates that bring their own time window make the global window optional.
+    const selfSufficient = selfSufficientGlobals(config);
+    const notRequired = [
+        ...(selfSufficient.times ? TIME_CONFIG_FIELDS : []),
+        ...(selfSufficient.duration ? ['activityDurationMinutes'] : []),
+    ] as string[];
+    for (let i = missingFields.length - 1; i >= 0; i--) {
+        if (notRequired.includes(missingFields[i])) missingFields.splice(i, 1);
     }
     if (missingFields.length > 0) {
         errors.push(`Missing required configuration: ${missingFields.join(', ')}`);
@@ -110,6 +120,11 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
     // Size options: a bad value only warns and falls back to the default size.
     config.maxWidth = validateSizeOption(config.maxWidth, 'maxWidth', 'max-width');
     config.maxHeight = validateSizeOption(config.maxHeight, 'maxHeight', 'max-height');
+
+    // Validate dateList / openingHours (per-date time windows)
+    const dateWindows = validateDateWindowConfig(config);
+    errors.push(...dateWindows.errors);
+    dateWindows.warnings.forEach(w => console.warn(`DianaWidget: ${w}`));
 
     return { errors, config };
 }

@@ -47,6 +47,7 @@ import {
     resolveShareOrigin
 } from './shareConfig';
 import { isConnectionDeparted, shouldIncludePastConnections } from './pastConnections';
+import { buildDateSlots, globalActivityWindow, usesDateDropdown } from './dateWindows';
 
 import { ApiService } from '../services';
 import { FALLBACK_FONT_STACK, registerFallbackFont } from './fontFallback';
@@ -56,7 +57,10 @@ import type {
     WidgetConfig,
     PartialWidgetConfig,
     WidgetState,
-    Connection
+    Connection,
+    ActivityWindow,
+    DateSlot,
+    UnavailableReason
 } from '../types';
 import type { ShareDataResponse } from '../types/api';
 import type { ShareContext } from '../types/state';
@@ -273,6 +277,17 @@ export default class DianaWidget {
                 if (!shouldDisplay) {
                     if (this.container) this.container.innerHTML = '';
                     console.info(`DianaWidget: Current date is outside the display range. Widget will not be displayed.`);
+                    this._notifyUnavailable('outsideDisplayRange');
+                    return;
+                }
+            }
+
+            if (!isShareView && this.config.hideWhenNoFutureDates && usesDateDropdown(this.config)) {
+                const slots = buildDateSlots(this.config, this._todayIso());
+                if (slots && slots.length === 0) {
+                    this.container.innerHTML = '';
+                    console.info(`DianaWidget: No date today or later in dateList/openingHours. Widget will not be displayed.`);
+                    this._notifyUnavailable('noFutureDates');
                     return;
                 }
             }
@@ -511,54 +526,81 @@ export default class DianaWidget {
     }
 
     _setupDateInput(): void {
-        if (this.config.multiday || this.config.overrideActivityStartDate) {
-            return;
-        }
+        if (!usesDateDropdown(this.config)) return;
 
-        if (this.config.dateList) {
-            const now = DateTime.now().setZone(this.config.timezone).startOf('day');
-            const availableDates = this.config.dateList
-                .map(d => DateTime.fromISO(d, {zone: 'utc'}).startOf('day'))
-                .filter(dt => dt >= now)
-                .sort((a, b) => a.toMillis() - b.toMillis());
-            
-            // Store availableDates as DateTime[] on state
-            this.state.availableDates = availableDates;
+        const slots = buildDateSlots(this.config, this._todayIso()) ?? [];
+        this.state.dateSlots = slots;
+        this.state.selectedDateSlot = null;
+        // Store availableDates as DateTime[] on state (one per distinct date)
+        this.state.availableDates = [...new Set(slots.map(slot => slot.date))]
+            .map(d => DateTime.fromISO(d, {zone: 'utc'}).startOf('day'));
 
-            if (availableDates.length > 0) {
-                const dateContainer = this.elements.dateSection;
-                if (dateContainer) {
-                    dateContainer.innerHTML = '';
-                    dateContainer.className = 'date-select-container';
+        if (slots.length === 0) return;
+        const dateContainer = this.elements.dateSection;
+        if (!dateContainer) return;
 
-                    const label = document.createElement('label');
-                    label.htmlFor = 'diana-date-select';
-                    label.textContent = this.t('activityDate');
-                    label.className = 'form-label';
-                    dateContainer.appendChild(label);
+        dateContainer.innerHTML = '';
+        dateContainer.className = 'date-select-container';
 
-                    const select = document.createElement('select');
-                    select.id = 'diana-date-select';
-                    availableDates.forEach(dt => {
-                        const option = document.createElement('option');
-                        const isoDate = dt.toISODate();
-                        option.value = isoDate || '';
-                        option.textContent = this.formatDateForSelect(dt);
-                        select.appendChild(option);
-                    });
-                    dateContainer.appendChild(select);
-                    this.elements.dateSelect = select;
+        const label = document.createElement('label');
+        label.htmlFor = 'diana-date-select';
+        label.textContent = this.t('activityDate');
+        label.className = 'form-label';
+        dateContainer.appendChild(label);
 
-                    const initialDate = availableDates[0].toJSDate();
-                    this.onDateSelectedByButton(initialDate);
+        const select = document.createElement('select');
+        select.id = 'diana-date-select';
+        slots.forEach((slot, index) => {
+            const option = document.createElement('option');
+            option.value = String(index);
+            option.dataset.date = slot.date;
+            option.textContent = this.formatDateSlotLabel(slot);
+            select.appendChild(option);
+        });
+        dateContainer.appendChild(select);
+        this.elements.dateSelect = select;
 
-                    select.addEventListener('change', (e) => {
-                        const selectedIso = (e.target as HTMLSelectElement).value;
-                        const newDate = DateTime.fromISO(selectedIso, {zone: 'utc'}).toJSDate();
-                        this.onDateSelectedByButton(newDate);
-                    });
-                }
-            }
+        this._selectDateSlot(0);
+
+        select.addEventListener('change', (e) => {
+            this._selectDateSlot(parseInt((e.target as HTMLSelectElement).value, 10));
+        });
+    }
+
+    /** Selects a dropdown option: its window becomes the active one, its date the selected date. */
+    _selectDateSlot(index: number): void {
+        const slot = this.state.dateSlots?.[index];
+        if (!slot) return;
+        this.state.selectedDateSlot = slot;
+        this.onDateSelectedByButton(DateTime.fromISO(slot.date, {zone: 'utc'}).toJSDate());
+    }
+
+    /** "Fr, 18. Dez 2026", plus " · 15:00–21:00" when the date has its own time window. */
+    formatDateSlotLabel(slot: DateSlot): string {
+        const dateLabel = this.formatDateForSelect(DateTime.fromISO(slot.date, {zone: 'utc'}));
+        return slot.rangeLabel ? `${dateLabel} · ${slot.rangeLabel}` : dateLabel;
+    }
+
+    /** Today's date (YYYY-MM-DD) in the widget's timezone. */
+    _todayIso(): string {
+        return DateTime.now().setZone(this.config.timezone).toISODate() as string;
+    }
+
+    /**
+     * The activity time window that applies to the current selection: the selected dropdown
+     * option's own window (dateList / openingHours), otherwise the global activity* options.
+     */
+    _getActivityWindow(): ActivityWindow {
+        return this.state.selectedDateSlot?.window ?? globalActivityWindow(this.config);
+    }
+
+    /** Tells the host page that the widget decided not to render. */
+    _notifyUnavailable(reason: UnavailableReason): void {
+        if (typeof this.config.onUnavailable !== 'function') return;
+        try {
+            this.config.onUnavailable(reason);
+        } catch (e) {
+            console.error("Error executing onUnavailable callback:", e);
         }
     }
 
@@ -590,10 +632,11 @@ export default class DianaWidget {
 
             if (this.elements.dateSelect) { // The dropdown is active
                 const isoDate = newDateDt.toISODate();
-                const optionExists = Array.from(this.elements.dateSelect.options).some(opt => opt.value === isoDate);
-                if (optionExists) {
-                    this.elements.dateSelect.value = isoDate;
-                    this.onDateSelectedByButton(newDate);
+                // A date with several opening blocks selects its first block.
+                const index = (this.state.dateSlots ?? []).findIndex(slot => slot.date === isoDate);
+                if (index >= 0) {
+                    this.elements.dateSelect.value = String(index);
+                    this._selectDateSlot(index);
                 } else {
                     console.warn(`DianaWidget.setSelectedDate: Date "${dateString}" is not in the provided dateList.`);
                 }
@@ -1507,10 +1550,11 @@ export default class DianaWidget {
             ? this.state.selectedEndDate
             : activityStartDate;
 
-        const utcEarliestStart = convertLocalTimeToUTC(this.config.activityEarliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
-        const utcLatestStart = convertLocalTimeToUTC(this.config.activityLatestStartTime ?? '23:59', activityStartDate, this.config.timezone);
-        const utcEarliestEnd = convertLocalTimeToUTC(this.config.activityEarliestEndTime ?? '00:00', referenceDateForEndTimes, this.config.timezone);
-        const utcLatestEnd = convertLocalTimeToUTC(this.config.activityLatestEndTime ?? '23:59', referenceDateForEndTimes, this.config.timezone);
+        const activityWindow = this._getActivityWindow();
+        const utcEarliestStart = convertLocalTimeToUTC(activityWindow.earliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
+        const utcLatestStart = convertLocalTimeToUTC(activityWindow.latestStartTime ?? '23:59', activityStartDate, this.config.timezone);
+        const utcEarliestEnd = convertLocalTimeToUTC(activityWindow.earliestEndTime ?? '00:00', referenceDateForEndTimes, this.config.timezone);
+        const utcLatestEnd = convertLocalTimeToUTC(activityWindow.latestEndTime ?? '23:59', referenceDateForEndTimes, this.config.timezone);
 
         const params: Record<string, string | number | undefined> = {
             date: formatDatetime(activityStartDate, this.config.timezone),
@@ -1522,7 +1566,7 @@ export default class DianaWidget {
             activity_latest_start_time: utcLatestStart,
             activity_earliest_end_time: utcEarliestEnd,
             activity_latest_end_time: utcLatestEnd,
-            activity_duration_minutes: this.config.activityDurationMinutes,
+            activity_duration_minutes: activityWindow.durationMinutes,
             // Alerts and booking information are returned in this language when the feed has it.
             lang: this.config.language?.toLowerCase()
         };
@@ -1532,7 +1576,7 @@ export default class DianaWidget {
             const endDateLuxon = DateTime.fromJSDate(this.state.selectedEndDate).startOf('day');
             const diffDays = endDateLuxon.diff(startDateLuxon, 'days').days;
             params.activity_duration_days = Math.max(1, diffDays + 1);
-            if (!this.config.activityDurationMinutes) {
+            if (!activityWindow.durationMinutes) {
                 params.activity_duration_minutes = 0;
             }
         }
@@ -2078,15 +2122,16 @@ export default class DianaWidget {
             : this.state.selectedDate;
 
         if (!activityDateForCalc) return;
+        const activityWindow = this._getActivityWindow();
 
         connections.forEach(conn => {
             if (conn.connection_anytime && conn.connection_elements && conn.connection_elements.length > 0) {
                 const connectionDuration = conn.connection_elements[0].duration;
                 if (type === "to") {
-                    conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(this.config.activityLatestStartTime ?? '23:59', activityDateForCalc, this.config.timezone);
+                    conn.connection_end_timestamp = convertLocalTimeToUTCDatetime(activityWindow.latestStartTime ?? '23:59', activityDateForCalc, this.config.timezone);
                     conn.connection_start_timestamp = addMinutesToDate(conn.connection_end_timestamp, -connectionDuration);
                 } else {
-                    conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(this.config.activityEarliestEndTime ?? '00:00', activityDateForCalc, this.config.timezone);
+                    conn.connection_start_timestamp = convertLocalTimeToUTCDatetime(activityWindow.earliestEndTime ?? '00:00', activityDateForCalc, this.config.timezone);
                     conn.connection_end_timestamp = addMinutesToDate(conn.connection_start_timestamp, connectionDuration);
                 }
                 conn.connection_elements[0].departure_time = conn.connection_start_timestamp;
@@ -2318,11 +2363,11 @@ export default class DianaWidget {
             // — and any gap between their own connection and it shows up as a waiting block.
             if (type === 'to') {
                 const earliestStartLocal = this._sharedActivityBoundaryLocal('start')
-                    ?? convertConfigTimeToLocalTime(this.config.activityEarliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
+                    ?? convertConfigTimeToLocalTime(this._getActivityWindow().earliestStartTime ?? '00:00', activityStartDate, this.config.timezone);
                 this.state.activityTimes.start = getLaterTime(connectionEndTimeLocal, earliestStartLocal, this.config.timezone);
             } else { // type === 'from'
                 const latestEndLocal = this._sharedActivityBoundaryLocal('end')
-                    ?? convertConfigTimeToLocalTime(this.config.activityLatestEndTime ?? '23:59', activityEndDate, this.config.timezone);
+                    ?? convertConfigTimeToLocalTime(this._getActivityWindow().latestEndTime ?? '23:59', activityEndDate, this.config.timezone);
                 this.state.activityTimes.end = getEarlierTime(connectionStartTimeLocal, latestEndLocal, this.config.timezone);
             }
 
@@ -2341,7 +2386,7 @@ export default class DianaWidget {
             const activityStartDate = this.state.selectedDate;
             const activityEndDate = this.config.multiday && this.state.selectedEndDate ? this.state.selectedEndDate : activityStartDate;
             if (!activityStartDate) return `<div class="activity-time-placeholder"></div>`;
-            const recommendedDurationMinutes = parseInt(String(this.config.activityDurationMinutes), 10);
+            const recommendedDurationMinutes = parseInt(String(this._getActivityWindow().durationMinutes), 10);
 
             // "Geplante Dauer: 4:00h" / "Verfügbare Zeit: 4:51h" - one labelled line each,
             // so the two are directly comparable without an icon or a tooltip to decode.
@@ -3651,7 +3696,7 @@ export default class DianaWidget {
 
     /** Sets up the date field (day strip + calendar), unless a host dateList dropdown replaces it. */
     _initDateField(): void {
-        if (!this.config.multiday && !this.config.overrideActivityStartDate && this.config.dateList) {
+        if (usesDateDropdown(this.config)) {
             this._setupDateInput();
             if (this.elements.dateSelect) return;
         }

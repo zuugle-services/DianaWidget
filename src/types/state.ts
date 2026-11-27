@@ -113,6 +113,12 @@ export interface WidgetState {
     /** Available dates from dateList (computed internally as Luxon DateTime) */
     availableDates?: DateTime[];
 
+    /** Options of the date dropdown (dateList / openingHours), one per date or opening block */
+    dateSlots?: DateSlot[];
+
+    /** The dropdown option currently selected; its window replaces the global one */
+    selectedDateSlot?: DateSlot | null;
+
     /** Whether earlier to-connections exist beyond the current batch */
     hasMoreBeforeToActivity: boolean | null;
 
@@ -124,4 +130,23 @@ export interface WidgetState {
 
     /** Whether later from-connections exist beyond the current batch */
     hasMoreAfterFromActivity: boolean | null;
+}
+
+/** The activity time window the widget searches with. Times are local HH:MM(:SS). */
+export interface ActivityWindow {
+    earliestStartTime?: string;
+    latestStartTime?: string;
+    earliestEndTime?: string;
+    latestEndTime?: string;
+    durationMinutes?: number | string;
+}
+
+/** One selectable option of the date dropdown. */
+export interface DateSlot {
+    /** YYYY-MM-DD */
+    date: string;
+    /** The window for this option (already merged with the global config) */
+    window: ActivityWindow;
+    /** Time range shown next to the date ("15:00–21:00"), null for a plain date */
+    rangeLabel: string | null;
 }

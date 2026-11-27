@@ -25,6 +25,11 @@ export const DEFAULT_LANGUAGE = 'EN';
 export const DEFAULT_CACHE_TTL_MINUTES = 15;
 
 /**
+ * How many days ahead recurring (dayOfWeek) openingHours entries are expanded into dates
+ */
+export const DEFAULT_OPENING_HOURS_HORIZON_DAYS = 60;
+
+/**
  * Debounce delay for address input (in milliseconds)
  */
 export const ADDRESS_INPUT_DEBOUNCE_MS = 250;
@@ -143,6 +148,10 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     showPastConnections: true,
     showTicketShopButtons: true,
     dateList: null,
+    openingHours: null,
+    openingHoursHorizonDays: DEFAULT_OPENING_HOURS_HORIZON_DAYS,
+    hideWhenNoFutureDates: false,
+    onUnavailable: null,
     onDateChange: null,
     onApiTokenExpired: null,
     shareMode: null,
