@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.17.0](https://github.com/zuugle-services/DianaWidget/compare/v1.16.0...v1.17.0) (2026-11-27)
+
+
+### Features
+
+* A-to-B journey mode for plain point-to-point connection search ([#141](https://github.com/zuugle-services/DianaWidget/issues/141)) ([1f4525b](https://github.com/zuugle-services/DianaWidget/commit/1f4525b8f4f8add55a730974c9804b99d6ac2423))
+* maxWidth and maxHeight options to let the widget use the full container width ([d6a71ba](https://github.com/zuugle-services/DianaWidget/commit/d6a71ba2702c2e2695f6e0bb647f475e81fa9d69))
+* per-date time windows for dateList, schema.org openingHours and optional hiding when no future date is left ([#138](https://github.com/zuugle-services/DianaWidget/issues/138)) ([46106f5](https://github.com/zuugle-services/DianaWidget/commit/46106f5b272daa5cadcd9b9b145bdb519d172841))
+
+
+### Bug Fixes
+
+* empty openingHours or dateList no longer turns into a configuration error ([#142](https://github.com/zuugle-services/DianaWidget/issues/142)) ([90013ce](https://github.com/zuugle-services/DianaWidget/commit/90013ce74b991ae779b4d676b94d277fe28a520f))
+
 ## [1.16.0](https://github.com/zuugle-services/DianaWidget/compare/v1.15.0...v1.16.0) (2026-11-20)
 
 
