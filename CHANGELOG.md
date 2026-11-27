@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.1](https://github.com/zuugle-services/DianaWidget/compare/v1.17.0...v1.17.1) (2026-11-27)
+
+
+### Documentation
+
+* document the Bunny CDN hosting, caching and landing page ([#147](https://github.com/zuugle-services/DianaWidget/issues/147)) ([84f2979](https://github.com/zuugle-services/DianaWidget/commit/84f2979a73c775e66e1d4fa06d44e01aaadc9a1a))
+
 ## [1.17.0](https://github.com/zuugle-services/DianaWidget/compare/v1.16.0...v1.17.0) (2026-11-27)
 
 
