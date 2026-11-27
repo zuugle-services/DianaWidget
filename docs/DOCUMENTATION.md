@@ -968,6 +968,10 @@ if (isTransferElement(element)) {
 | `https://diana.zuugle-services.net/dist/DianaWidget.bundle-X.Y.Z.js` | One specific release, never changes |
 | `https://diana.zuugle-services.net/dist/DianaWidget.bundle-dev.js` | Development preview, not for production |
 
+All versions, with release dates and notes, are listed at https://diana.zuugle-services.net/. The bundles are
+served from a European CDN. Browsers re-check `DianaWidget.bundle.js` every 5 minutes, so a release reaches
+your visitors within minutes; pinned files never change and are cached for 30 days.
+
 Pin a version if you want to roll out updates on your own schedule; the [changelog](../CHANGELOG.md) lists what
 changed. Every bundle starts with a banner comment naming its version and commit, and
 `window.DianaWidget.version` returns the version at runtime.
@@ -989,18 +993,37 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 
 ### What a deploy does
 
-`release.yml` checks out the ref, runs lint and tests, and builds. The bundles are served by the Bunny CDN
-(storage zone `diana-widget-eu`, https://diana-widget-eu.b-cdn.net/; `diana.zuugle-services.net` is a CNAME to it). The deploy uploads `dist/DianaWidget.bundle-X.Y.Z.js` first and then `dist/DianaWidget.bundle.js` to
-the storage zone. It then renders the landing page `index.html` from `cdn/index.html`, listing every pinned version in
-storage with its release date, and uploads it to the zone's root. With `BUNNY_API_KEY` set, it also purges the changed URLs
-from the CDN cache (Bunny purges replaced storage files on its own as well). The demo (`index-demo.html`, `index.php`, `oauth2_functions.php`)
-goes via SFTP into `/demo/`. A smoke check then downloads the bundles from the CDN and from the public URL, and fails
-the run unless they serve exactly the file that was built. It also checks the landing page and that the demo
-(https://demo.zuugle-services.net/) renders. The bundle is attached to the GitHub Release. Two deploys to the same
-target never run at once.
+The bundles are hosted on the Bunny CDN: storage zone `diana-widget-eu`, served by pull zone 7094656 at
+https://diana-widget-eu.b-cdn.net/. `diana.zuugle-services.net` is a CNAME to that pull zone. The demo lives on a
+separate host (`demo.zuugle-services.net`, SFTP).
 
-To preview the landing page locally, render it from a storage listing (`GET https://storage.bunnycdn.com/diana-widget-eu/dist/`)
-and `gh release list --json tagName,publishedAt`:
+`release.yml` checks out the ref, runs lint and tests, builds, and then:
+
+1. Uploads to Bunny Storage: `dist/DianaWidget.bundle-X.Y.Z.js` first, then `dist/DianaWidget.bundle.js` (dev
+   channel: `dist/DianaWidget.bundle-dev.js`). Each upload carries a SHA-256 checksum, so Bunny rejects a corrupted
+   one.
+2. Production only: renders the landing page `index.html` from `cdn/index.html` with `cdn/render-index.mjs`, listing
+   every pinned version in storage with its release date, and uploads it to the zone's root. The template comes from
+   the commit the workflow runs from, so a rollback to an old tag still renders the current page.
+3. Purges the changed URLs from the CDN cache on both hostnames. This step is required: Bunny does **not** purge its
+   edge cache when a storage file is replaced, and the pull zone ignores query strings, so `?v=…` doesn't bypass the
+   cache either.
+4. Uploads the demo (`index-demo.html`, `index.php`, `oauth2_functions.php`; dev: `index-dev.php`,
+   `index-demo-dev.html`) via SFTP into `/demo/`.
+5. Smoke check: downloads the bundles from the CDN and from the public URL, with no cache-busting query, and fails
+   the run unless both serve exactly the file that was built. It also checks the landing page and that the demo
+   (https://demo.zuugle-services.net/) renders.
+6. Attaches the bundle to the GitHub Release.
+
+Two deploys to the same channel never run at once.
+
+Browser caching is set in the Bunny dashboard (pull zone → Edge Rules): an *Override Browser Cache Time* rule gives
+`*/dist/DianaWidget.bundle.js`, `*/dist/DianaWidget.bundle-dev.js`, `*/index.html` and `*/` a 300 second browser
+cache. Everything else, including the pinned `bundle-X.Y.Z.js`, keeps Bunny's default of 30 days. The CDN's own
+cache can stay long, because every deploy purges it.
+
+To preview the landing page locally, render it from a storage listing (`GET https://storage.bunnycdn.com/diana-widget-eu/dist/`
+with the `AccessKey` header) and `gh release list --json tagName,publishedAt`:
 `node cdn/render-index.mjs --listing listing.json --releases releases.json --current X.Y.Z --out index.html`.
 
 Manual deploy, re-deploy or **rollback** to any tag, branch or commit:
@@ -1014,11 +1037,14 @@ Every push to the `dev` branch deploys the dev bundle (`.github/workflows/deploy
 password-protected dev demo (https://demo.zuugle-services.net/index-dev.php); the deploy fails if the dev demo
 is reachable without the password.
 
-Configuration: repository secrets `BUNNY_STORAGE_PASSWORD` (storage zone password), `FTP_SERVER`, `FTP_PORT`, `FTP_USERNAME`, `FTP_PASSWORD`; optional secret `BUNNY_API_KEY` (account API key, for the explicit cache purge); optional
-repository variables
-`WIDGET_BASE_URL` (default `https://diana.zuugle-services.net`), `WIDGET_CDN_URL` (default
-`https://diana-widget-eu.b-cdn.net`), `BUNNY_STORAGE_HOST` (default `storage.bunnycdn.com`) and `BUNNY_STORAGE_ZONE`
-(default `diana-widget-eu`). The FTP secrets are only used for the demo on demo.zuugle-services.net.
+Configuration:
+
+* Secrets `BUNNY_STORAGE_PASSWORD` (storage zone password) and `BUNNY_API_KEY` (account API key, for the cache
+  purge).
+* Secrets `FTP_SERVER`, `FTP_PORT`, `FTP_USERNAME`, `FTP_PASSWORD` (demo host only).
+* Optional variables, with their defaults: `WIDGET_BASE_URL` (`https://diana.zuugle-services.net`), `WIDGET_CDN_URL`
+  (`https://diana-widget-eu.b-cdn.net`), `WIDGET_DEMO_URL` (`https://demo.zuugle-services.net/`),
+  `BUNNY_STORAGE_HOST` (`storage.bunnycdn.com`) and `BUNNY_STORAGE_ZONE` (`diana-widget-eu`).
 
 ### Continuous integration
 

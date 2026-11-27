@@ -68,7 +68,8 @@ Without it, users see a "session expired, please reload" message.
 
 `DianaWidget.bundle.js` always serves the latest release. To control when updates reach your page, pin a
 release instead, e.g. `https://diana.zuugle-services.net/dist/DianaWidget.bundle-1.16.0.js`. Versions follow
-semantic versioning (major = may need changes on your side); see the [changelog](CHANGELOG.md).
+semantic versioning (major = may need changes on your side); see the [changelog](CHANGELOG.md). All hosted
+versions are listed at https://diana.zuugle-services.net/.
 
 ## Common Options
 
