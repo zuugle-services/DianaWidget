@@ -990,7 +990,7 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 ### What a deploy does
 
 `release.yml` checks out the ref, runs lint and tests, builds, and uploads via SFTP:
-`DianaWidget.bundle-X.Y.Z.js` first, then `DianaWidget.bundle.js`, then the demo (`index-demo.html` and `index.php`)
+`DianaWidget.bundle-X.Y.Z.js` first, then `DianaWidget.bundle.js`, then the demo (`index-demo.html`, `index.php`, `oauth2_functions.php`)
 into `/demo/`. A smoke check then downloads the public URLs and fails the run unless they serve exactly the file
 that was built, and checks that the demo (https://demo.zuugle-services.net/) renders. The bundle is attached to the GitHub Release. Two deploys to the same target never run at once.
 

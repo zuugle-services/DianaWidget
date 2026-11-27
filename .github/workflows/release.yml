@@ -8,8 +8,8 @@ name: Deploy
 # - workflow_dispatch: manual deploy, re-deploy or rollback of any branch, tag or commit to either channel.
 #
 # production: dist/DianaWidget.bundle.js (what customers embed), dist/DianaWidget.bundle-X.Y.Z.js (pinned,
-#             never overwritten by a later release), demo/index-demo.html + demo/index.php (the demo, $DEMO_URL);
-#             bundle attached to the release.
+#             never overwritten by a later release), demo/ (index.php, index-demo.html,
+#             oauth2_functions.php: the demo, $DEMO_URL); bundle attached to the release.
 # dev:        dist/DianaWidget.bundle-dev.js, index-demo-dev.html, index-dev.php.
 on:
   workflow_call:
@@ -122,15 +122,14 @@ jobs:
           local_path: ./dist/DianaWidget.bundle.js
           remote_path: ./dist/
 
-      # The demo (index.php + index-demo.html) lives in /demo/, served as its own host ($DEMO_URL), so it loads
-      # the bundle by absolute URL. Uploading the directory makes sftp create /demo/ if it does not exist yet.
+      # The demo lives in /demo/, served as its own host ($DEMO_URL), so it loads the bundle by absolute URL.
+      # client_id_secret.php is kept in /demo/ on the server (never in the repo); index.php includes it from there.
+      # Uploading the directory makes sftp create /demo/ if it does not exist yet.
       - name: Stage demo
         if: env.CHANNEL == 'production'
         run: |
           mkdir -p deploy/demo
-          cp index.php deploy/demo/
-          # Refs from before the move (rollbacks) include the shared PHP files relative to the root.
-          grep -q '__DIR__' index.php || sed -i 's#include("#include(dirname(__DIR__) . "/#' deploy/demo/index.php
+          cp index.php oauth2_functions.php deploy/demo/
           sed "s#src=\"\./dist/#src=\"$BASE_URL/dist/#" index-demo.html > deploy/demo/index-demo.html
           grep -qF "src=\"$BASE_URL/dist/DianaWidget.bundle.js\"" deploy/demo/index-demo.html \
             || { echo "::error::index-demo.html does not load ./dist/DianaWidget.bundle.js"; exit 1; }
