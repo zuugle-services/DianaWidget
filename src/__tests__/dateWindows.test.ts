@@ -207,6 +207,17 @@ describe('validation', () => {
             .toEqual([]);
     });
 
+    it('does not require the global times for an empty openingHours or dateList', () => {
+        const base = config({
+            activityEarliestStartTime: undefined, activityLatestStartTime: undefined,
+            activityEarliestEndTime: undefined, activityLatestEndTime: undefined,
+        });
+        expect(validateConfig({...base, openingHours: []}).errors).toEqual([]);
+        expect(validateConfig({...base, dateList: []}).errors).toEqual([]);
+        expect(validateConfig({...base, openingHours: [], activityDurationMinutes: undefined}).errors[0])
+            .toContain('activityDurationMinutes');
+    });
+
     it('keeps the global window required for multiday', () => {
         expect(selfSufficientGlobals(config({multiday: true, dateList: [{date: '2026-12-18', opens: '15:00', closes: '21:00'}]})))
             .toEqual({times: false, duration: false});

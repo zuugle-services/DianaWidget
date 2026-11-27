@@ -136,6 +136,20 @@ describe('not rendering', () => {
         expect(onUnavailable).toHaveBeenCalledWith('noFutureDates');
     });
 
+    it('hides for empty openingHours without any global times (page without opening hours)', () => {
+        const onUnavailable = jest.fn();
+        new DianaWidget({
+            ...baseConfig,
+            activityEarliestStartTime: undefined, activityLatestStartTime: undefined,
+            activityEarliestEndTime: undefined, activityLatestEndTime: undefined,
+            openingHours: [],
+            hideWhenNoFutureDates: true,
+            onUnavailable,
+        }, 'c');
+        expect(container.innerHTML).toBe('');
+        expect(onUnavailable).toHaveBeenCalledWith('noFutureDates');
+    });
+
     it('calls onUnavailable outside the display range', () => {
         const onUnavailable = jest.fn();
         new DianaWidget({...baseConfig, displayEndDate: '2026-11-01', onUnavailable}, 'c');
