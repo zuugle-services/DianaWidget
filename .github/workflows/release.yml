@@ -8,7 +8,8 @@ name: Deploy
 # - workflow_dispatch: manual deploy, re-deploy or rollback of any branch, tag or commit to either channel.
 #
 # production: dist/DianaWidget.bundle.js (what customers embed), dist/DianaWidget.bundle-X.Y.Z.js (pinned,
-#             never overwritten by a later release), index-demo.html, index.php; bundle attached to the release.
+#             never overwritten by a later release), demo/ (index.php, index-demo.html,
+#             oauth2_functions.php: the demo, $DEMO_URL); bundle attached to the release.
 # dev:        dist/DianaWidget.bundle-dev.js, index-demo-dev.html, index-dev.php.
 on:
   workflow_call:
@@ -51,6 +52,7 @@ jobs:
       CHANNEL: ${{ inputs.channel }}
       REF: ${{ inputs.ref }}
       BASE_URL: ${{ vars.WIDGET_BASE_URL || 'https://diana.zuugle-services.net' }}
+      DEMO_URL: ${{ vars.WIDGET_DEMO_URL || 'https://demo.zuugle-services.net/' }}
     steps:
       - name: Validate channel
         run: |
@@ -120,19 +122,19 @@ jobs:
           local_path: ./dist/DianaWidget.bundle.js
           remote_path: ./dist/
 
-      - name: Upload index-demo.html
+      # The demo lives in /demo/, served as its own host ($DEMO_URL), so it loads the bundle by absolute URL.
+      # client_id_secret.php is kept in /demo/ on the server (never in the repo); index.php includes it from there.
+      # Uploading the directory makes sftp create /demo/ if it does not exist yet.
+      - name: Stage demo
         if: env.CHANNEL == 'production'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          sftp_only: true
-          local_path: ./index-demo.html
-          remote_path: ./
+        run: |
+          mkdir -p deploy/demo
+          cp index.php oauth2_functions.php deploy/demo/
+          sed "s#src=\"\./dist/#src=\"$BASE_URL/dist/#" index-demo.html > deploy/demo/index-demo.html
+          grep -qF "src=\"$BASE_URL/dist/DianaWidget.bundle.js\"" deploy/demo/index-demo.html \
+            || { echo "::error::index-demo.html does not load ./dist/DianaWidget.bundle.js"; exit 1; }
 
-      - name: Upload index.php
+      - name: Upload demo
         if: env.CHANNEL == 'production'
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
@@ -141,7 +143,7 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           password: ${{ secrets.FTP_PASSWORD }}
           sftp_only: true
-          local_path: ./index.php
+          local_path: ./deploy/demo
           remote_path: ./
 
       # --- dev ----------------------------------------------------------------------------------------------
@@ -204,6 +206,18 @@ jobs:
             echo "OK $url"
           done
 
+      # The demo page must render through PHP and load the deployed bundle.
+      - name: Demo check
+        if: env.CHANNEL == 'production'
+        run: |
+          url="$DEMO_URL"
+          if curl -fsSL "$url" | grep -qF "src=\"$BASE_URL/dist/DianaWidget.bundle.js\""; then
+            echo "OK $url"
+          else
+            echo "::error::$url does not serve the demo"
+            exit 1
+          fi
+
       - name: Attach bundle to the GitHub Release
         if: env.CHANNEL == 'production' && startsWith(inputs.ref, 'v')
         env:
@@ -220,6 +234,7 @@ jobs:
           {
             echo "## Deployed $CHANNEL: v$VERSION (commit ${COMMIT:0:7}, ref $REF)"
             for f in $FILES; do echo "- $BASE_URL/dist/$f"; done
+            if [ "$CHANNEL" = production ]; then echo "- demo: $DEMO_URL"; fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v5
