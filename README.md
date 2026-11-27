@@ -83,6 +83,10 @@ semantic versioning (major = may need changes on your side); see the [changelog]
 
 All options, including the full list of required fields, are in the [Configuration reference](docs/DOCUMENTATION.md#configuration).
 
+**Plain A-to-B search:** with `mode: 'journey'` the widget searches connections from a first point to a last point,
+without an activity (only `apiToken` is required). Both points can be prefilled or fixed, see
+[A-to-B journey mode](docs/DOCUMENTATION.md#a-to-b-journey-mode).
+
 ## Styling
 
 Theme the widget with CSS variables on its container:

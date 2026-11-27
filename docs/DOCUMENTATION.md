@@ -14,6 +14,7 @@ This is the detailed reference for the Diana GreenConnect widget. For a quick st
 * [Configuration](#configuration)
 * [Dates with their own time windows](#dates-with-their-own-time-windows)
 * [Hiding the widget when no date is left](#hiding-the-widget-when-no-date-is-left)
+* [A-to-B journey mode](#a-to-b-journey-mode)
 * [Token Expiration and Refresh](#token-expiration-and-refresh)
 * [Styling & Theming](#styling--theming)
 * [Architecture](#architecture)
@@ -42,6 +43,7 @@ Designed for integration in web applications requiring activity transit planning
 * 📅 Adaptive calendar (native on mobile/custom on desktop)
 * ⏱ Real-time connection filtering
 * 🚦 Activity duration validation
+* 🧭 Plain A-to-B journey planner (`mode: 'journey'`)
 * 🚄 Multi-modal transport visualization
 
 **Technical Highlights**
@@ -341,12 +343,16 @@ These fields must be provided in the configuration object for the widget to init
 The four activity times (and `activityDurationMinutes`) are not required when every date of the dropdown brings its
 own window, see [Dates with their own time windows](#dates-with-their-own-time-windows).
 
+In journey mode (`mode: 'journey'`) none of these fields are required, only `apiToken`. See
+[A-to-B journey mode](#a-to-b-journey-mode).
+
 **Important Note on Timezones for Activity Times**: The `activityEarliestStartTime`, `activityLatestStartTime`, `activityEarliestEndTime`, and `activityLatestEndTime` should be provided in the local time of the activity. The widget will use the `timezone` configuration (see Optional Parameters) to correctly interpret these times and convert them to UTC for API requests.
 
 **Optional Parameters**
 
 | Option                             | Type             | Default                             | Description                                                                                                                                                                                                                                              | Example                                           |
 |:-----------------------------------|:-----------------|:------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------------------------------------------------|
+| `mode` | String | `'activity'` | What the widget plans. `'activity'`: the trip to and back from an activity (default, all activity fields required). `'journey'`: a plain A-to-B connection search, see [A-to-B journey mode](#a-to-b-journey-mode). | `'journey'` |
 | `activityStartLocationDisplayName` | String           | `null`                              | Custom display name for the activity start location, shown in the results view.                                                                                                                                                                          | `"Untersbergbahn Talstation"`                     |
 | `activityEndLocationDisplayName`   | String           | `null`                              | Custom display name for the activity end location, shown in the results view.                                                                                                                                                                            | `"Eishöhle, Marktschellenberg"`                   |
 | `timezone`                         | String           | `"Europe/Vienna"`                   | IANA timezone identifier (e.g., "America/New_York", "Europe/Berlin"). Used for displaying times and interpreting activity times. Validated using Luxon. Invalid values default to `"Europe/Vienna"`.                                                     | `"America/New_York"`                              |
@@ -360,6 +366,17 @@ own window, see [Dates with their own time windows](#dates-with-their-own-time-w
 | `overrideUserStartLocation`        | String           | `null`                              | A specific start location (address string or "latitude,longitude" string) to pre-fill the origin input. This value bypasses any cached location.                                                                                                         | `"Vienna Central Station"` or `"48.2082,16.3738"` |
 | `overrideUserStartLocationType`    | String           | `null`                              | Specifies the type of `overrideUserStartLocation`. Must be `"address"` or `"coordinates"` (or `"coord"`, `"coords"`). Required if `overrideUserStartLocation` is set.                                                                                    | `"address"` or `"coordinates"`                    |
 | `disableUserStartLocationField`    | Boolean          | `false`                             | If `true`, disables (locks) the user start location input field when `overrideUserStartLocation` is set. If `false`, the field shows the default value but remains editable. Only effective when `overrideUserStartLocation` is provided.                | `true`                                            |
+| `overrideUserStartLocationDisplayName` | String | `null` | Text shown in the origin field for `overrideUserStartLocation` (e.g. a station's full name, or a place name for coordinates). The search still sends the override value and type until the user types something else. | `"Linz Hauptbahnhof"` |
+| `overrideUserDestinationLocation` | String | `null` | Journey mode only. Prefills the destination (last point): an address, station name or `"lat,lon"`. Wins over a remembered destination. | `"47.5622,13.6487"` |
+| `overrideUserDestinationLocationType` | String | `null` | Journey mode only. Type of `overrideUserDestinationLocation`: `"address"`, `"station"`, `"coordinates"` (or `"coord"`, `"coords"`). Required if the destination is set. | `"coordinates"` |
+| `overrideUserDestinationLocationDisplayName` | String | `null` | Journey mode only. Text shown for the destination (the search still sends the override value and type). | `"Hallstatt"` |
+| `disableUserDestinationLocationField` | Boolean | `false` | Journey mode only. If `true`, the destination is fixed to `overrideUserDestinationLocation` and shown as text. Ignored without a destination. | `true` |
+| `cacheUserDestinationLocation` | Boolean/Function | `false` | Journey mode only. Remember the destination the user picked in localStorage (and offer the last few as "Recent"). Off by default, since most pages embedding journey mode have a fixed or page-specific destination. Can be a callback like `cacheUserStartLocation`. | `true` |
+| `userDestinationLocationCacheTTLMinutes` | Number | `15` | Journey mode only. How long a remembered destination stays valid. | `120` |
+| `journeyTitle` | String | `null` | Journey mode only. Title in the header. Without it: `activityName`, else a localised default ("Plan your journey"). `''` renders no title. | `"Getting to Hallstatt"` |
+| `journeyDate` | String | `null` | Journey mode only. Preset travel date (YYYY-MM-DD, in `timezone`). Default today; a past date falls back to today. The user can change it; `setSelectedDate()` and `onDateChange` work as in activity mode. | `"2026-12-24"` |
+| `journeyTime` | String | `null` | Journey mode only. Preset time (HH:MM, in `timezone`). Default: the current time. | `"08:30"` |
+| `journeyArriveBy` | Boolean | `false` | Journey mode only. Preset the time as "arrive by" instead of "depart at". | `true` |
 | `displayStartDate`                 | String           | `null`                              | Optional start date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or after this date.                                                                                                                                      | `"2024-06-01"`                                    |
 | `displayEndDate`                   | String           | `null`                              | Optional end date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or before this date.                                                                                                                                       | `"2024-06-30"`                                    |
 | `destinationInputName`             | String           | `null`                              | Custom value for the destination input field. If set, this is used instead of the general activity name.                                                                                                                                                 | `"activity-destination"`                          |
@@ -548,6 +565,76 @@ window.dianaActivityConfig = {
 ```
 
 A shared journey link (`diana-share`) is always shown, even when no date is left.
+
+## A-to-B journey mode
+
+With `mode: 'journey'` the widget is a plain journey planner: connections from a first point to a last point, with
+no activity, no activity time windows and no outbound/return pair. Only `apiToken` is required; the activity
+options are ignored (a console warning lists them) and `multiday` is rejected.
+
+```html
+<div id="dianaWidgetContainer"></div>
+<script src="https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"></script>
+<script>
+  new DianaWidget({
+    mode: 'journey',
+    apiToken: 'your-server-obtained-access-token',
+    language: 'DE',
+    timezone: 'Europe/Vienna',
+    journeyTitle: 'Anreise nach Hallstatt',      // optional
+
+    // First point: editable, prefilled from the remembered start location if there is one.
+    // overrideUserStartLocation: 'Linz Hbf',
+    // overrideUserStartLocationType: 'station',
+
+    // Last point: fixed to the destination of this page.
+    overrideUserDestinationLocation: '47.5622,13.6487',
+    overrideUserDestinationLocationType: 'coordinates',
+    overrideUserDestinationLocationDisplayName: 'Hallstatt Markt',
+    disableUserDestinationLocationField: true,
+
+    // Optional presets (the user can change all of them)
+    // journeyDate: '2026-12-24',
+    // journeyTime: '09:00',
+    // journeyArriveBy: true,
+  }, 'dianaWidgetContainer');
+</script>
+```
+
+**From and to.** Each end can be left empty, prefilled as an editable default, or fixed:
+
+| | Origin (first point) | Destination (last point) |
+|:--|:--|:--|
+| Prefill | `overrideUserStartLocation` + `overrideUserStartLocationType` | `overrideUserDestinationLocation` + `overrideUserDestinationLocationType` |
+| Text shown | `overrideUserStartLocationDisplayName` | `overrideUserDestinationLocationDisplayName` |
+| Fixed | `disableUserStartLocationField: true` | `disableUserDestinationLocationField: true` |
+| Remembered | `cacheUserStartLocation` (default `true`), `userStartLocationCacheTTLMinutes` | `cacheUserDestinationLocation` (default `false`), `userDestinationLocationCacheTTLMinutes` |
+
+An editable field has the address autocomplete and the current-location button; a fixed one is shown as text. When
+neither end is fixed, a swap button exchanges them. The prefill wins over the remembered place, the remembered place
+over an empty field. The origin shares its cache with activity mode (same container id), so a visitor's start
+location carries over between both kinds of widget. The destination is not remembered by default, because a page
+with journey mode usually has a destination of its own; turn it on for a free "from anywhere to anywhere" planner.
+Typed text that was not picked from the list is matched before searching (the list opens to pick from), and the
+same place on both ends is refused with a message at the field. Two fixed ends with the same place are a
+configuration error.
+
+**Date and time.** The date field is the same as in activity mode (today preselected, `journeyDate` to preset it,
+`setSelectedDate()` and `onDateChange` work). Below it the user chooses "Depart" or "Arrive" and a time (the
+current time by default). Times are local to `timezone`; the widget converts them to UTC for the API, so a search
+just after midnight is sent with the previous UTC date. An arrive-by time that has already passed is refused at
+the field.
+
+**Results.** The connections are listed in the familiar time-slot slider with the recommended connection
+preselected and its timeline open, including realtime data, departed connections (greyed out, kept only when
+`showPastConnections` is `true`), alerts, booking information and ticket shop buttons (`showTicketShopButtons`).
+"Load earlier" and "load later" search again from the first arrival (as an arrive-by search) and from the last
+departure, and add the connections not shown yet. Searches that depart at a given time only return connections that
+have not left yet.
+
+**Not in journey mode.** Sharing is switched off (the share menu item is disabled and `diana-share` links are not
+opened), because a share link replays an activity search. `dateList`, `openingHours`, `overrideActivityStartDate`,
+`overrideActivityEndDate`, `activityDurationDaysFixed` and `destinationInputName` are ignored.
 
 ## Token Expiration and Refresh
 
