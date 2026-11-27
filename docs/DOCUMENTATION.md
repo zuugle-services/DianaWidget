@@ -284,7 +284,7 @@ const dianaWidgetInstance = new window.DianaWidget(window.dianaActivityConfig, "
 
 ## Demo
 
-A comprehensive demo is available in `index-demo.html`. This page showcases multiple widget configurations for different activities (e.g., a single-day hike, a multi-day trek) and allows you to switch between them to see the widget's versatility.
+A comprehensive demo is available in `index-demo.html` (live at https://demo.zuugle-services.net/). This page showcases multiple widget configurations for different activities (e.g., a single-day hike, a multi-day trek) and allows you to switch between them to see the widget's versatility.
 
 There are two primary ways to run the demo:
 
@@ -990,9 +990,9 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 ### What a deploy does
 
 `release.yml` checks out the ref, runs lint and tests, builds, and uploads via SFTP:
-`DianaWidget.bundle-X.Y.Z.js` first, then `DianaWidget.bundle.js`, `index-demo.html` and `index.php`. A smoke
-check then downloads the public URLs and fails the run unless they serve exactly the file that was built. The
-bundle is attached to the GitHub Release. Two deploys to the same target never run at once.
+`DianaWidget.bundle-X.Y.Z.js` first, then `DianaWidget.bundle.js`, then the demo (`index-demo.html` and `index.php`)
+into `/demo/`. A smoke check then downloads the public URLs and fails the run unless they serve exactly the file
+that was built, and checks that the demo (https://demo.zuugle-services.net/) renders. The bundle is attached to the GitHub Release. Two deploys to the same target never run at once.
 
 Manual deploy, re-deploy or **rollback** to any tag, branch or commit:
 
