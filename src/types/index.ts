@@ -11,7 +11,8 @@ export type {
     DateListEntry,
     DateListItem,
     OpeningHoursSpecification,
-    UnavailableReason
+    UnavailableReason,
+    WidgetMode
 } from './config';
 
 // State types
@@ -43,6 +44,7 @@ export type {
     SuggestionGeometry,
     ActivityObject,
     ConnectionSearchResponse,
+    JourneySearchResponse,
     AutocompleteResponse,
     ShareDataResponse,
     CreateShareResponse,

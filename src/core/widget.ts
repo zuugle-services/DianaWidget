@@ -48,6 +48,8 @@ import {
 } from './shareConfig';
 import { isConnectionDeparted, shouldIncludePastConnections } from './pastConnections';
 import { buildDateSlots, globalActivityWindow, usesDateDropdown } from './dateWindows';
+import { initialJourneyDateTime, isJourneyMode, type JourneyEndpointRole } from './journeyMode';
+import { JourneyController } from './journeyController';
 
 import { ApiService } from '../services';
 import { FALLBACK_FONT_STACK, registerFallbackFont } from './fontFallback';
@@ -181,6 +183,15 @@ export default class DianaWidget {
     private apiService: ApiService | null;
     private connectionRenderer: ConnectionRenderer | null;
 
+    /** Journey mode (`mode: 'journey'`): the A-to-B form and search. Null in activity mode. */
+    journey: JourneyController | null;
+
+    /**
+     * Which route field the autocomplete and the current-location lookup work on. Always
+     * 'origin' in activity mode; journey mode switches it as the user moves between fields.
+     */
+    _activeLocationField: JourneyEndpointRole;
+
     /**
      * Memoised share link, so re-opening the share sheet for an unchanged selection
      * does not POST a second /share/ record. Keyed by connection selection + origin.
@@ -222,6 +233,8 @@ export default class DianaWidget {
         this._shareUrlCache = null;
         this._lastSearchedOrigin = null;
         this._originSearchToken = 0;
+        this.journey = null;
+        this._activeLocationField = 'origin';
         this.debouncedHandleAddressInput = debounce((query: string) => this.handleAddressInput(query), ADDRESS_INPUT_DEBOUNCE_MS);
         
         const validationResult = validateConfig(this.config);
@@ -234,6 +247,10 @@ export default class DianaWidget {
             () => this._handleSessionExpired(),
             (key: string) => this.t(key)
         );
+
+        if (isJourneyMode(this.config)) {
+            this.journey = new JourneyController(this, this.apiService, containerId);
+        }
 
         // Initialize connection renderer after config validation
         this.connectionRenderer = new ConnectionRenderer({
@@ -256,7 +273,8 @@ export default class DianaWidget {
         }
 
         try {
-            const shareId = readShareIdFromUrl();
+            // Share links replay an activity search, so journey mode does not open them.
+            const shareId = this.journey ? null : readShareIdFromUrl();
             const isShareView = this.config.allowShareView !== false && !!shareId;
             if (isShareView) this.config.shareId = shareId as string;
             this.config.readOnly = isShareView;
@@ -305,6 +323,10 @@ export default class DianaWidget {
 
             let initialSelectedStartDate: Date | null = null;
             let initialSelectedEndDate: Date | null = null;
+            if (this.journey) {
+                // Today, or the host's journeyDate preset.
+                initialSelectedStartDate = isoToDate(initialJourneyDateTime(this.config).date);
+            }
             if (this.config.multiday && this.config.activityDurationDaysFixed) {
                 if (this.config.overrideActivityEndDate) {
                     const endDt = DateTime.fromISO(this.config.overrideActivityEndDate, {zone: 'utc'});
@@ -493,7 +515,7 @@ export default class DianaWidget {
             getTransportIcon: (type) => this.getTransportIcon(type)
         };
 
-        const formPageHTML = await this.uiManager.loadTemplate('formPageTemplate', templateArgs);
+        const formPageHTML = await this.uiManager.loadTemplate(this.journey ? 'journeyFormPageTemplate' : 'formPageTemplate', templateArgs);
         const resultsPageHTML = await this.uiManager.loadTemplate('resultsPageTemplate', templateArgs);
         const contentPageHTML = await this.uiManager.loadTemplate('contentPageTemplate', templateArgs);
 
@@ -522,7 +544,8 @@ export default class DianaWidget {
         this.setupAccessibility();
         this.setupEventListeners();
         this._initDateField();
-        this._initializeOriginInputWithOverridesAndCache();
+        if (this.journey) this.journey.init();
+        else this._initializeOriginInputWithOverridesAndCache();
     }
 
     _setupDateInput(): void {
@@ -661,6 +684,16 @@ export default class DianaWidget {
                     originInput.setAttribute('data-lon', parts[1].trim());
                 }
             }
+            // A display name only changes what the field shows; the search keeps sending the
+            // override itself (with its type) until the user types something else.
+            const displayName = firstNonBlank(this.config.overrideUserStartLocationDisplayName);
+            if (displayName) {
+                originInput.value = displayName;
+                if (!isCoordinateLocationType(this.config.overrideUserStartLocationType)) {
+                    originInput.setAttribute('data-location-value', this.config.overrideUserStartLocation);
+                    originInput.setAttribute('data-location-type', this.config.overrideUserStartLocationType ?? 'address');
+                }
+            }
             
             // Only disable the field if disableUserStartLocationField is true
             if (this.config.disableUserStartLocationField) {
@@ -688,6 +721,11 @@ export default class DianaWidget {
      */
     _syncOriginInputButtons(): void {
         const {originInput, clearInputBtn, currentLocationBtn} = this.elements;
+        if (this.journey) {
+            this.journey.syncFieldButtons('origin');
+            this.journey.syncRouteState();
+            return;
+        }
         if (!originInput || !clearInputBtn || !currentLocationBtn) return;
         const locked = originInput.classList.contains('disabled');
         const hasValue = !!originInput.value.trim();
@@ -806,6 +844,7 @@ export default class DianaWidget {
             resultsPage: this.shadowRoot.querySelector("#resultsPage"),
             contentPage: this.shadowRoot.querySelector("#contentPage"),
             originInput: this.shadowRoot.querySelector("#originInput"),
+            destinationInput: this.shadowRoot.querySelector<HTMLInputElement>("#destinationInput"),
             suggestionsContainer: this.shadowRoot.querySelector("#suggestions"),
             searchBtn: this.shadowRoot.querySelector("#searchBtn"),
             backBtn: this.shadowRoot.querySelector("#backBtn"),
@@ -908,6 +947,8 @@ export default class DianaWidget {
             this.elements.originInput.addEventListener('input', (e) => {
                 this.elements.originInput!.removeAttribute("data-lat");
                 this.elements.originInput!.removeAttribute("data-lon");
+                this.elements.originInput!.removeAttribute("data-location-value");
+                this.elements.originInput!.removeAttribute("data-location-type");
                 this.clearMessages();
                 const target = e.target as HTMLInputElement;
                 this._markOriginInvalid(false);
@@ -1047,7 +1088,8 @@ export default class DianaWidget {
             const originField = this.elements.originInput?.parentElement;
             const clickedInOriginField = (this.elements.suggestionsContainer && path.includes(this.elements.suggestionsContainer))
                 || (originField && path.includes(originField));
-            if (this.elements.suggestionsContainer?.style.display === 'block' && !clickedInOriginField) {
+            // Journey mode closes each field's list itself (JourneyController).
+            if (!this.journey && this.elements.suggestionsContainer?.style.display === 'block' && !clickedInOriginField) {
                 this.state.suggestions = [];
                 this.renderSuggestions();
             }
@@ -1110,6 +1152,7 @@ export default class DianaWidget {
         // Disable UI elements to prevent further interaction
         const elementsToDisable = [
             this.elements.originInput,
+            this.elements.destinationInput as HTMLInputElement | null | undefined,
             this.elements.searchBtn,
             this.elements.currentLocationBtn,
             this.elements.clearInputBtn,
@@ -1172,7 +1215,9 @@ export default class DianaWidget {
         }
         const locationBtn = this._isShareOriginDialogOpen()
             ? this.elements.shareOriginLocationBtn
-            : this.elements.currentLocationBtn;
+            : this.journey
+                ? this.journey.field(this._activeLocationField).locateBtn
+                : this.elements.currentLocationBtn;
         if (locationBtn) {
             (locationBtn as HTMLButtonElement).disabled = true;
             locationBtn.setAttribute('aria-busy', 'true');
@@ -1227,7 +1272,7 @@ export default class DianaWidget {
             else if (this.state.info) this.showInfo(null);
             return;
         }
-        const input = this.elements.originInput;
+        const input = this._originSearchTarget().input;
         if (!input) return;
         if (message) {
             if (input.dataset.defaultPlaceholder === undefined) input.dataset.defaultPlaceholder = input.placeholder;
@@ -1242,6 +1287,10 @@ export default class DianaWidget {
     _showOriginLookupError(message: string): void {
         if (this._isShareOriginDialogOpen()) {
             this.showError(message, 'form');
+            return;
+        }
+        if (this.journey) {
+            this.journey.markInvalid(this._activeLocationField, true, message);
             return;
         }
         this._markOriginInvalid(true, message);
@@ -1264,6 +1313,12 @@ export default class DianaWidget {
 
                 this.state.suggestions = [];
                 this.renderSuggestions();
+
+                if (this.journey && this._activeLocationField === 'destination') {
+                    this.journey.applyPickedDestination(displayName, latitude, longitude);
+                    this.clearMessages();
+                    return;
+                }
 
                 this._setOriginInputValue(displayName, latitude, longitude);
                 this.clearMessages();
@@ -1300,7 +1355,8 @@ export default class DianaWidget {
             this.lastQuery = query;
             fieldContainer?.classList.remove('is-loading');
             if (!query) {
-                this._showRecentOrigins();
+                if (this.journey) this.journey.showRecent(this._activeLocationField);
+                else this._showRecentOrigins();
                 return;
             }
             this.state.suggestions = [];
@@ -1315,7 +1371,7 @@ export default class DianaWidget {
                 this.state.suggestions = (!results || !results.features || results.features.length === 0) ? [] : results.features;
                 // While a search is blocked on an unmatched origin, keep the "choose from the list" hint.
                 const hint = this._originSearchTarget().input?.getAttribute('aria-invalid') === 'true'
-                    ? {text: this.t('chooseOriginFromList')}
+                    ? {text: this.journey ? this.journey.chooseFromListHint() : this.t('chooseOriginFromList')}
                     : null;
                 this.renderSuggestions(this.state.suggestions.length > 0 ? hint : {text: this.t('noPlacesFound')});
             }
@@ -1340,6 +1396,13 @@ export default class DianaWidget {
 
         this.state.suggestions = [];
         this.renderSuggestions();
+
+        if (this.journey && this._activeLocationField === 'destination') {
+            this.journey.applyPickedDestination(value, lat, lon);
+            this.clearMessages();
+            (this.elements.destinationInput as HTMLInputElement | null | undefined)?.focus();
+            return;
+        }
 
         this._setOriginInputValue(value, lat, lon);
         this.clearMessages();
@@ -1462,15 +1525,19 @@ export default class DianaWidget {
         this.elements.collapsibleToActivity?.classList.remove('expanded');
         this.elements.collapsibleFromActivity?.classList.remove('expanded');
 
-        if (!this.config.overrideUserStartLocation && this.elements.originInput && !this.elements.originInput.value.trim()) {
-            // Shown at the field itself rather than as a banner above the form.
-            this._markOriginInvalid(true, this.t('infos.originRequired'));
-            this.elements.originInput.focus();
-            return;
-        }
+        if (this.journey) {
+            if (!(await this.journey.validateBeforeSearch())) return;
+        } else {
+            if (!this.config.overrideUserStartLocation && this.elements.originInput && !this.elements.originInput.value.trim()) {
+                // Shown at the field itself rather than as a banner above the form.
+                this._markOriginInvalid(true, this.t('infos.originRequired'));
+                this.elements.originInput.focus();
+                return;
+            }
 
-        if (!this.config.overrideUserStartLocation && !(await this._ensureOriginResolved())) {
-            return;
+            if (!this.config.overrideUserStartLocation && !(await this._ensureOriginResolved())) {
+                return;
+            }
         }
 
 
@@ -1484,7 +1551,13 @@ export default class DianaWidget {
         this.setLoadingState(true);
 
         try {
-            await this.fetchActivityData();
+            if (this.journey) {
+                await this.journey.search();
+                // No connections: renderResults() already sent the user back to the form.
+                if (this.state.toConnections.length === 0) return;
+            } else {
+                await this.fetchActivityData();
+            }
             this.navigateToResults();
             this.slideToRecommendedConnections();
         } catch (error) {
@@ -1588,8 +1661,9 @@ export default class DianaWidget {
             params["user_start_location_type"] = "coordinates";
             params["user_start_location_display_name"] = this.elements.originInput.value;
         } else if (this.elements.originInput) {
-            params["user_start_location"] = this.elements.originInput.value;
-            params["user_start_location_type"] = "address";
+            // A host override shown under its display name still sends the override itself.
+            params["user_start_location"] = this.elements.originInput.getAttribute('data-location-value') ?? this.elements.originInput.value;
+            params["user_start_location_type"] = this.elements.originInput.getAttribute('data-location-type') ?? "address";
         }
 
         // Omitted rather than sent empty: params go through URLSearchParams, which would turn
@@ -1698,6 +1772,10 @@ export default class DianaWidget {
     }
 
     async fetchScrollConnections(direction: 'to' | 'from', scrollType: 'before' | 'after'): Promise<void> {
+        if (this.journey) {
+            await this.journey.loadMore(scrollType);
+            return;
+        }
         const currentConnections = direction === 'to' ? this.state.toConnections : this.state.fromConnections;
         if (!currentConnections.length) return;
 
@@ -1849,6 +1927,10 @@ export default class DianaWidget {
         if (this._isShareOriginDialogOpen()) {
             return {input: this.elements.shareOriginInput, suggestions: this.elements.shareOriginSuggestions};
         }
+        if (this.journey && this._activeLocationField === 'destination') {
+            const {input, suggestions} = this.journey.field('destination');
+            return {input, suggestions};
+        }
         return {input: this.elements.originInput, suggestions: this.elements.suggestionsContainer};
     }
 
@@ -1898,6 +1980,10 @@ export default class DianaWidget {
     }
 
     renderConnectionResults(): void {
+        if (this.journey) {
+            this.journey.renderResults();
+            return;
+        }
         this.showError(null, 'results');
         if (this.elements.topSlider) this.elements.topSlider.innerHTML = '';
         if (this.elements.bottomSlider) this.elements.bottomSlider.innerHTML = '';
@@ -2153,7 +2239,7 @@ export default class DianaWidget {
         return this.connectionRenderer.renderConnectionSummary(
             connection,
             type,
-            { originInput: this.elements.originInput }
+            this._rendererElements()
         );
     }
 
@@ -2272,7 +2358,8 @@ export default class DianaWidget {
         slider.querySelectorAll('button').forEach(btn => btn.classList.remove('active-time'));
         slider.querySelector(`button[data-index="${index}"]`)?.classList.add('active-time');
 
-        this.updateActivityTimeBox(selectedConnection, type);
+        // Journey mode has no activity between the trips, so no activity box either.
+        if (!this.journey) this.updateActivityTimeBox(selectedConnection, type);
         if (targetBox) targetBox.innerHTML = this.renderConnectionDetails([selectedConnection], type);
 
         if (summaryWrapper && container) {
@@ -2286,6 +2373,9 @@ export default class DianaWidget {
         if (this.elements.collapsibleFromActivity && !(this.state.fromConnections.length === 1 && this.state.fromConnections[0].connection_anytime)) {
             this.elements.collapsibleFromActivity.classList.remove('expanded');
         }
+
+        // Journey mode shows a single connection, so its details stay open.
+        if (this.journey) container?.classList.add('expanded');
 
         if (type === 'to') {
             this.state.selectedToConnection = selectedConnection;
@@ -2581,8 +2671,15 @@ export default class DianaWidget {
             connections,
             type,
             this.state,
-            { originInput: this.elements.originInput }
+            this._rendererElements()
         );
+    }
+
+    /** What the connection renderer needs to name the route's ends. */
+    _rendererElements(): { originInput: HTMLInputElement | null; destinationName?: string } {
+        return this.journey
+            ? {originInput: this.elements.originInput, destinationName: this.journey.destinationName()}
+            : {originInput: this.elements.originInput};
     }
 
     getTransportName(type) {
@@ -2738,6 +2835,8 @@ export default class DianaWidget {
 
     async handleShare() {
         this.clearMessages();
+        // A share link replays an activity search; journey mode has nothing to replay.
+        if (this.journey) return;
 
         try {
             if (!this.elements.originInput) throw new Error("Origin input not available");
@@ -2909,6 +3008,8 @@ export default class DianaWidget {
         if (!input) return;
 
         input.value = value;
+        input.removeAttribute('data-location-value');
+        input.removeAttribute('data-location-type');
         if (value && lat != null && lat !== '' && lon != null && lon !== '') {
             input.setAttribute('data-lat', String(lat));
             input.setAttribute('data-lon', String(lon));
@@ -3446,6 +3547,7 @@ export default class DianaWidget {
             this.elements.searchBtn.setAttribute('aria-busy', isLoading ? 'true' : 'false');
         }
         if (this.elements.originInput) this.elements.originInput.disabled = isLoading;
+        this.journey?.setBusy(isLoading);
 
 
         if (this.loadingTextTimeout1) {
@@ -3457,7 +3559,10 @@ export default class DianaWidget {
             this.loadingTextTimeout2 = null;
         }
 
-        if (isLoading) {
+        if (isLoading && this.journey) {
+            // One search, so no "to activity" / "from activity" steps to report.
+            this._setSearchButtonLabel(this.t("loadingStateSearching"), true);
+        } else if (isLoading) {
             this._setSearchButtonLabel(this.t("loadingStateToActivity"), true);
 
             this.loadingTextTimeout1 = setTimeout(() => {
@@ -3710,7 +3815,8 @@ export default class DianaWidget {
             locked: mode.locked,
             language: this.config.language,
             timezone: this.config.timezone,
-            t: (key) => this.t(key),
+            // The calendar's title speaks of the activity date; journey mode has its own.
+            t: (key) => this.t(this.journey && key === 'datePickerTitle' ? 'journeyMode.datePickerTitle' : key),
             overlayContainer: this.dianaWidgetRootContainer,
             onChange: (value) => this._onDateFieldChange(value),
         });

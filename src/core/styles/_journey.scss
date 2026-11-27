@@ -1,0 +1,244 @@
+/* --- Journey mode (mode: 'journey'): plain A-to-B search --- */
+
+/* From / to: the two fields as one route, with the swap button beside them. */
+.journey-route.has-swap {
+  align-items: center;
+  column-gap: 8px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.journey-route-fields {
+  min-width: 0;
+}
+
+.destination-pin {
+  transition: color var(--dur-fast) ease;
+}
+
+.destination-pin.is-resolved {
+  color: var(--primary-color);
+}
+
+/* A place the host fixed: shown, not chosen (same look as a fixed date). */
+.route-fixed {
+  align-items: center;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+  color: var(--icon-input-color);
+  display: flex;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px 12px;
+}
+
+.route-fixed svg {
+  flex: 0 0 auto;
+}
+
+.route-fixed .origin-dot-fill {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.route-fixed .origin-dot,
+.route-fixed .destination-pin {
+  color: var(--primary-color);
+}
+
+.form-section .route-fixed-name {
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.35;
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.journey-swap-btn {
+  align-items: center;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  color: var(--icon-input-color);
+  cursor: pointer;
+  display: flex;
+  height: 40px;
+  justify-content: center;
+  padding: 0;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 160ms var(--ease-out);
+  width: 40px;
+}
+
+.journey-swap-btn svg {
+  transition: transform 240ms var(--ease-out);
+}
+
+.journey-swap-btn.is-flipped svg {
+  transform: rotate(180deg);
+}
+
+.journey-swap-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.journey-swap-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.journey-swap-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Time: depart / arrive switch and the time field on one row. */
+.journey-time-row {
+  display: flex;
+  gap: 8px;
+}
+
+.journey-time-mode {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+  display: flex;
+  flex: 1 1 auto;
+  gap: 3px;
+  min-width: 0;
+  padding: 3px;
+}
+
+.journey-time-mode-btn {
+  background-color: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex: 1 1 0;
+  font-family: inherit;
+  font-size: 15px;
+  min-height: 38px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease, transform 160ms var(--ease-out);
+  white-space: nowrap;
+}
+
+.journey-time-mode-btn[aria-checked="true"] {
+  background-color: var(--primary-color);
+  color: var(--bg-primary);
+}
+
+.journey-time-mode-btn:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.journey-time-mode-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.journey-time-input {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  box-sizing: border-box;
+  color: var(--text-primary);
+  flex: 0 0 auto;
+  font-family: inherit;
+  /* 16px keeps iOS Safari from zooming the host page when the field is focused. */
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  min-height: 46px;
+  padding: 0 12px;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+  width: 124px;
+}
+
+.journey-time-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: var(--focus-ring);
+  outline: none;
+}
+
+.journey-time-input:disabled {
+  background-color: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+
+/* --- Results: one list of connections, no activity and no return trip --- */
+#resultsPage.journey-mode #activity-time,
+#resultsPage.journey-mode #collapsibleFromActivity,
+#resultsPage.journey-mode .slider-wrap-fixed {
+  display: none;
+}
+
+.journey-route-summary {
+  box-sizing: border-box;
+  padding: 0 20px 8px;
+}
+
+.journey-route-summary p {
+  margin: 0;
+}
+
+.journey-route-summary-route {
+  align-items: baseline;
+  color: var(--text-primary);
+  display: flex;
+  font-size: 14px;
+  font-weight: 500;
+  gap: 6px;
+  justify-content: center;
+  line-height: 1.4;
+}
+
+.journey-route-summary-place {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journey-route-summary-arrow {
+  color: var(--text-tertiary);
+  flex: 0 0 auto;
+}
+
+.journey-route-summary-when {
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .journey-swap-btn:hover:not(:disabled) {
+    background-color: var(--bg-hover);
+    border-color: var(--secondary-color);
+  }
+
+  .journey-time-mode-btn:hover:not([aria-checked="true"]) {
+    background-color: var(--bg-hover);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journey-swap-btn,
+  .journey-swap-btn svg,
+  .journey-time-mode-btn {
+    transition-property: background-color, border-color, color, opacity;
+  }
+
+  .journey-swap-btn:active:not(:disabled),
+  .journey-time-mode-btn:active:not(:disabled) {
+    transform: none;
+  }
+}

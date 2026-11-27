@@ -263,6 +263,33 @@ const translations: Translations = {
             title: "Change departure point",
             hint: "This journey was shared with \"{origin}\" as the departure point. Search for your own to see how you get there.",
             change: "Change"
+        },
+        journeyMode: {
+            title: "Plan your journey",
+            destination: "To",
+            enterDestination: "Enter your destination",
+            swap: "Swap start and destination",
+            date: "Date",
+            datePickerTitle: "Select travel date",
+            time: "Time",
+            timeRequired: "Please select a time.",
+            timeMode: "Departure or arrival",
+            depart: "Depart",
+            arrive: "Arrive",
+            destinationRequired: "Enter where you want to go.",
+            sameEndpoints: "Start and destination are the same. Choose a different destination.",
+            chooseDestinationFromList: "Choose your destination from the list.",
+            arrivalInPast: "This arrival time has already passed. Choose a later time.",
+            summaryDepart: "{date} · depart from {time}",
+            summaryArrive: "{date} · arrive by {time}",
+            connectionsSlider: "Available connections",
+            errors: {
+                fromNotFound: "We couldn't find your starting point. Pick a place from the list.",
+                toNotFound: "We couldn't find your destination. Pick a place from the list.",
+                invalidCoordinates: "The coordinates of a location are invalid.",
+                noConnections: "No connections found for this route and time. Try a different time or date.",
+                noFutureConnections: "No more connections leave after this time. Try a later time or another date."
+            }
         }
     },
     DE: {
@@ -527,6 +554,33 @@ const translations: Translations = {
             title: "Abfahrtsort ändern",
             hint: "Diese Reise wurde mit dem Abfahrtsort \"{origin}\" geteilt. Suche deinen eigenen, um zu sehen, wie du hinkommst.",
             change: "Ändern"
+        },
+        journeyMode: {
+            title: "Verbindung suchen",
+            destination: "Nach",
+            enterDestination: "Ziel eingeben",
+            swap: "Start und Ziel tauschen",
+            date: "Datum",
+            datePickerTitle: "Reisedatum wählen",
+            time: "Uhrzeit",
+            timeRequired: "Bitte wähle eine Uhrzeit.",
+            timeMode: "Abfahrt oder Ankunft",
+            depart: "Abfahrt",
+            arrive: "Ankunft",
+            destinationRequired: "Gib an, wohin du fahren möchtest.",
+            sameEndpoints: "Start und Ziel sind gleich. Wähle ein anderes Ziel.",
+            chooseDestinationFromList: "Wähle dein Ziel aus der Liste.",
+            arrivalInPast: "Diese Ankunftszeit ist bereits vorbei. Wähle eine spätere Uhrzeit.",
+            summaryDepart: "{date} · Abfahrt ab {time}",
+            summaryArrive: "{date} · Ankunft bis {time}",
+            connectionsSlider: "Verfügbare Verbindungen",
+            errors: {
+                fromNotFound: "Dein Startpunkt wurde nicht gefunden. Wähle einen Ort aus der Liste.",
+                toNotFound: "Dein Ziel wurde nicht gefunden. Wähle einen Ort aus der Liste.",
+                invalidCoordinates: "Die Koordinaten eines Ortes sind ungültig.",
+                noConnections: "Für diese Strecke und Uhrzeit wurden keine Verbindungen gefunden. Versuche eine andere Uhrzeit oder ein anderes Datum.",
+                noFutureConnections: "Nach dieser Uhrzeit fahren keine Verbindungen mehr. Versuche eine spätere Uhrzeit oder ein anderes Datum."
+            }
         }
     },
     ES: {
@@ -791,6 +845,33 @@ const translations: Translations = {
             title: "Cambiar punto de partida",
             hint: "Este viaje se compartió con \"{origin}\" como punto de partida. Busque el suyo para ver cómo llegar.",
             change: "Cambiar"
+        },
+        journeyMode: {
+            title: "Planifica tu viaje",
+            destination: "A",
+            enterDestination: "Introduce tu destino",
+            swap: "Intercambiar origen y destino",
+            date: "Fecha",
+            datePickerTitle: "Selecciona la fecha del viaje",
+            time: "Hora",
+            timeRequired: "Selecciona una hora.",
+            timeMode: "Salida o llegada",
+            depart: "Salida",
+            arrive: "Llegada",
+            destinationRequired: "Indica adónde quieres ir.",
+            sameEndpoints: "El origen y el destino son iguales. Elige otro destino.",
+            chooseDestinationFromList: "Elige tu destino de la lista.",
+            arrivalInPast: "Esta hora de llegada ya ha pasado. Elige una hora posterior.",
+            summaryDepart: "{date} · salida desde las {time}",
+            summaryArrive: "{date} · llegada antes de las {time}",
+            connectionsSlider: "Conexiones disponibles",
+            errors: {
+                fromNotFound: "No hemos encontrado tu punto de partida. Elige un lugar de la lista.",
+                toNotFound: "No hemos encontrado tu destino. Elige un lugar de la lista.",
+                invalidCoordinates: "Las coordenadas de una ubicación no son válidas.",
+                noConnections: "No se han encontrado conexiones para esta ruta y hora. Prueba otra hora u otra fecha.",
+                noFutureConnections: "No hay más conexiones después de esta hora. Prueba una hora posterior u otra fecha."
+            }
         }
     },
     FR: {
@@ -1055,6 +1136,33 @@ const translations: Translations = {
             title: "Changer le point de départ",
             hint: "Ce trajet a été partagé avec « {origin} » comme point de départ. Recherchez le vôtre pour voir comment vous y rendre.",
             change: "Changer"
+        },
+        journeyMode: {
+            title: "Planifiez votre trajet",
+            destination: "Vers",
+            enterDestination: "Saisissez votre destination",
+            swap: "Inverser départ et destination",
+            date: "Date",
+            datePickerTitle: "Choisissez la date du trajet",
+            time: "Heure",
+            timeRequired: "Veuillez choisir une heure.",
+            timeMode: "Départ ou arrivée",
+            depart: "Départ",
+            arrive: "Arrivée",
+            destinationRequired: "Indiquez où vous voulez aller.",
+            sameEndpoints: "Le départ et la destination sont identiques. Choisissez une autre destination.",
+            chooseDestinationFromList: "Choisissez votre destination dans la liste.",
+            arrivalInPast: "Cette heure d'arrivée est déjà passée. Choisissez une heure plus tardive.",
+            summaryDepart: "{date} · départ à partir de {time}",
+            summaryArrive: "{date} · arrivée avant {time}",
+            connectionsSlider: "Correspondances disponibles",
+            errors: {
+                fromNotFound: "Nous n'avons pas trouvé votre point de départ. Choisissez un lieu dans la liste.",
+                toNotFound: "Nous n'avons pas trouvé votre destination. Choisissez un lieu dans la liste.",
+                invalidCoordinates: "Les coordonnées d'un lieu ne sont pas valides.",
+                noConnections: "Aucune correspondance trouvée pour ce trajet et cet horaire. Essayez une autre heure ou une autre date.",
+                noFutureConnections: "Plus aucune correspondance ne part après cette heure. Essayez une heure plus tardive ou une autre date."
+            }
         }
     },
     IT: {
@@ -1319,6 +1427,33 @@ const translations: Translations = {
             title: "Cambia punto di partenza",
             hint: "Questo viaggio è stato condiviso con \"{origin}\" come punto di partenza. Cerca il tuo per vedere come arrivarci.",
             change: "Cambia"
+        },
+        journeyMode: {
+            title: "Pianifica il tuo viaggio",
+            destination: "A",
+            enterDestination: "Inserisci la destinazione",
+            swap: "Inverti partenza e destinazione",
+            date: "Data",
+            datePickerTitle: "Seleziona la data del viaggio",
+            time: "Ora",
+            timeRequired: "Seleziona un orario.",
+            timeMode: "Partenza o arrivo",
+            depart: "Partenza",
+            arrive: "Arrivo",
+            destinationRequired: "Indica dove vuoi andare.",
+            sameEndpoints: "Partenza e destinazione coincidono. Scegli un'altra destinazione.",
+            chooseDestinationFromList: "Scegli la destinazione dall'elenco.",
+            arrivalInPast: "Questo orario di arrivo è già passato. Scegli un orario successivo.",
+            summaryDepart: "{date} · partenza dalle {time}",
+            summaryArrive: "{date} · arrivo entro le {time}",
+            connectionsSlider: "Collegamenti disponibili",
+            errors: {
+                fromNotFound: "Non abbiamo trovato il tuo punto di partenza. Scegli un luogo dall'elenco.",
+                toNotFound: "Non abbiamo trovato la tua destinazione. Scegli un luogo dall'elenco.",
+                invalidCoordinates: "Le coordinate di un luogo non sono valide.",
+                noConnections: "Nessun collegamento trovato per questo percorso e orario. Prova un altro orario o un'altra data.",
+                noFutureConnections: "Non ci sono altri collegamenti dopo questo orario. Prova un orario successivo o un'altra data."
+            }
         }
     },
     TH: {
@@ -1583,6 +1718,33 @@ const translations: Translations = {
             title: "เปลี่ยนจุดออกเดินทาง",
             hint: "การเดินทางนี้ถูกแชร์โดยมี \"{origin}\" เป็นจุดออกเดินทาง ค้นหาจุดของคุณเองเพื่อดูว่าคุณจะไปถึงได้อย่างไร",
             change: "เปลี่ยน"
+        },
+        journeyMode: {
+            title: "วางแผนการเดินทาง",
+            destination: "ถึง",
+            enterDestination: "ระบุจุดหมายปลายทาง",
+            swap: "สลับต้นทางและปลายทาง",
+            date: "วันที่",
+            datePickerTitle: "เลือกวันที่เดินทาง",
+            time: "เวลา",
+            timeRequired: "กรุณาเลือกเวลา",
+            timeMode: "ออกเดินทางหรือถึง",
+            depart: "ออกเดินทาง",
+            arrive: "ถึง",
+            destinationRequired: "ระบุว่าคุณต้องการไปที่ไหน",
+            sameEndpoints: "ต้นทางและปลายทางเป็นที่เดียวกัน กรุณาเลือกปลายทางอื่น",
+            chooseDestinationFromList: "เลือกปลายทางจากรายการ",
+            arrivalInPast: "เวลาถึงนี้ผ่านไปแล้ว กรุณาเลือกเวลาที่ช้ากว่านี้",
+            summaryDepart: "{date} · ออกเดินทางตั้งแต่ {time}",
+            summaryArrive: "{date} · ถึงภายใน {time}",
+            connectionsSlider: "เส้นทางที่มีให้บริการ",
+            errors: {
+                fromNotFound: "ไม่พบจุดเริ่มต้นของคุณ กรุณาเลือกสถานที่จากรายการ",
+                toNotFound: "ไม่พบปลายทางของคุณ กรุณาเลือกสถานที่จากรายการ",
+                invalidCoordinates: "พิกัดของสถานที่ไม่ถูกต้อง",
+                noConnections: "ไม่พบเส้นทางสำหรับเส้นทางและเวลานี้ ลองเปลี่ยนเวลาหรือวันที่",
+                noFutureConnections: "ไม่มีเส้นทางออกเดินทางหลังเวลานี้แล้ว ลองเวลาที่ช้ากว่านี้หรือวันอื่น"
+            }
         }
     }
 };

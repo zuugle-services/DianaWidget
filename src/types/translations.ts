@@ -380,6 +380,39 @@ export interface LanguageTranslations {
     opensInNewTab: string;
     shareInfo: ShareInfoTranslations;
     shareOriginDialog: ShareOriginDialogTranslations;
+    /** A-to-B journey mode (mode: 'journey') */
+    journeyMode: JourneyModeTranslations;
+}
+
+/**
+ * Journey mode (plain A-to-B search) translations
+ */
+export interface JourneyModeTranslations {
+    title: string;
+    destination: string;
+    enterDestination: string;
+    swap: string;
+    date: string;
+    datePickerTitle: string;
+    time: string;
+    timeRequired: string;
+    timeMode: string;
+    depart: string;
+    arrive: string;
+    destinationRequired: string;
+    sameEndpoints: string;
+    chooseDestinationFromList: string;
+    arrivalInPast: string;
+    summaryDepart: string;
+    summaryArrive: string;
+    connectionsSlider: string;
+    errors: {
+        fromNotFound: string;
+        toNotFound: string;
+        invalidCoordinates: string;
+        noConnections: string;
+        noFutureConnections: string;
+    };
 }
 
 /**
