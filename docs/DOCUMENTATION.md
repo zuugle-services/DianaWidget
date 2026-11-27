@@ -355,6 +355,8 @@ These fields must be provided in the configuration object for the widget to init
 | `displayEndDate`                   | String           | `null`                              | Optional end date (YYYY-MM-DD) for widget visibility. If set, the widget will only display on or before this date.                                                                                                                                       | `"2024-06-30"`                                    |
 | `destinationInputName`             | String           | `null`                              | Custom value for the destination input field. If set, this is used instead of the general activity name.                                                                                                                                                 | `"activity-destination"`                          |
 | `fontFamily`                       | String           | `null`                              | Font for the widget (CSS `font-family` value). By default the widget uses the font of the page it is embedded in; hosts can also set the `--font-family` CSS variable on the container.                                                                  | `"'Inter', sans-serif"`                           |
+| `maxWidth`                         | String \| Number | `null`                              | Maximum width of the widget (default `470px`). CSS length such as `"100%"`, `"640px"` or `"none"`; a number means pixels. Use `"100%"` to fill the container. Same as the `--diana-max-width` CSS variable. See [Styling & Theming](#styling--theming).   | `"100%"`                                          |
+| `maxHeight`                        | String \| Number | `null`                              | Maximum height of the container (default `790px`). CSS length such as `"620px"` or `"none"`; a number means pixels. Same as the `--diana-max-height` CSS variable.                                                                                       | `620`                                             |
 | `multiday`                         | Boolean          | `false`                             | If set to `true`, enables multi-day activity mode. When enabled, the widget allows selection of different dates for start and end locations, supporting activities that span multiple days. This affects the calendar UI and connection search behavior. | `true`                                            |
 | `overrideActivityStartDate`        | String           | `null`                              | Optional date (YYYY-MM-DD) to pre-select as the activity start date in the calendar. If provided, this date will be automatically selected when the widget loads.                                                                                        | `"2024-06-15"`                                    |
 | `overrideActivityEndDate`          | String           | `null`                              | Optional date (YYYY-MM-DD) to pre-select as the activity end date in the calendar. Only used when `multiday` is `true`. If provided, this date will be automatically selected when the widget loads.                                                     | `"2024-06-16"`                                    |
@@ -552,14 +554,42 @@ Here is a list of the available variables you can override:
 
 **Sizing options**
 
-By setting a `max-height` on the `dianaWidgetContainer` you can also set boundaries for the sizing of the widget.
-The recommended minimum `max-height` value is 620px to ensure proper functionality and display of all widget elements.
-Setting `max-width` on the container is not recommended, but theoretically possible. The reason is, that the widget starts to look very squished.
+By default the widget is at most **470px wide** (centered in its container) and the container is at most
+**790px high**. Both limits can be changed with a config option or a CSS variable on the container:
 
-Example:
+| Limit     | Config option | CSS variable         | Default |
+|-----------|---------------|----------------------|---------|
+| Width     | `maxWidth`    | `--diana-max-width`  | `470px` |
+| Height    | `maxHeight`   | `--diana-max-height` | `790px` |
+
+Values are CSS lengths (`"100%"`, `"640px"`, `"40rem"`, `"none"`, `calc()`/`min()`/`max()`/`clamp()`); a
+number means pixels. If both are set, the config option wins. Invalid config values are ignored with a console
+warning and the default applies.
+
+To let the widget fill the full width of its column:
+
+```js
+new DianaWidget({ /* ... */ maxWidth: '100%' }, 'dianaWidgetContainer');
+```
+
+or, without touching the config:
+
+```css
+#dianaWidgetContainer {
+  --diana-max-width: 100%;
+}
+```
+
+This replaces any workaround that injects a stylesheet into the widget's shadow root (e.g. overriding
+`.modal-content`): internal class names are not part of the public API and may change.
+
+The layout adapts to the available width: wide widgets stretch inputs, the day strip and connection cards;
+narrow ones (down to about 300px) show fewer days in the strip. The recommended minimum height is 620px to
+ensure proper functionality and display of all widget elements. A `max-height` set directly on the container
+(e.g. `style="max-height: 620px"`) keeps working as before.
 
 ```html
-<div id="dianaWidgetContainer" style="max-height: 620px;">
+<div id="dianaWidgetContainer" style="--diana-max-height: 620px;">
 </div>
 ```
 

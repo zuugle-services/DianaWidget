@@ -101,7 +101,19 @@ export interface WidgetConfig {
      * widget uses the font of the page it is embedded in; the host can also set --font-family.
      */
     fontFamily?: string | null;
-    
+
+    /**
+     * Maximum width of the widget (default 470px). A CSS length such as "100%", "640px" or
+     * "none"; a number means pixels. Sets --diana-max-width on the container.
+     */
+    maxWidth?: string | number | null;
+
+    /**
+     * Maximum height of the container (default 790px). A CSS length such as "600px" or "none";
+     * a number means pixels. Sets --diana-max-height on the container.
+     */
+    maxHeight?: string | number | null;
+
     /** Enable multiday activity mode */
     multiday: boolean;
     

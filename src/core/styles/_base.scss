@@ -478,7 +478,9 @@
   height: 100%;
   margin: 0;
   max-height: inherit;
-  max-width: 470px;
+  /* Hosts widen (or narrow) the widget with --diana-max-width on the container, or the
+     maxWidth option. Custom properties inherit into the shadow root. */
+  max-width: var(--diana-max-width, 470px);
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;

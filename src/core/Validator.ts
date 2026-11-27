@@ -107,7 +107,49 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
     // Validate date fields
     validateDateFields(config, errors);
 
+    // Size options: a bad value only warns and falls back to the default size.
+    config.maxWidth = validateSizeOption(config.maxWidth, 'maxWidth', 'max-width');
+    config.maxHeight = validateSizeOption(config.maxHeight, 'maxHeight', 'max-height');
+
     return { errors, config };
+}
+
+const CSS_SIZE_PATTERN = new RegExp(
+    '^(none|fit-content|max-content|min-content' +
+    '|\\d*\\.?\\d+(px|%|r?em|ch|ex|pt|cm|mm|in|pc|[sld]?v(w|h|i|b|min|max)|cq(w|h|i|b|min|max))' +
+    '|(calc|min|max|clamp)\\(.+\\))$',
+    'i'
+);
+
+/**
+ * Normalizes a CSS size option (maxWidth / maxHeight) to a CSS value, or null for the default.
+ * Numbers and bare numeric strings mean pixels. Anything that is not a plain CSS length,
+ * keyword or math function (calc/min/max/clamp) is rejected, so it can't inject other CSS.
+ */
+export function normalizeCssSize(value: unknown, cssProperty: string): string | null {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) && value >= 0 ? `${value}px` : null;
+    }
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length > 100) return null;
+    if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}px`;
+    // Letters, digits, units, %, math operators, parentheses, commas and spaces only.
+    if (!/^[a-zA-Z0-9.%+\-*/(), ]+$/.test(trimmed)) return null;
+    if (!CSS_SIZE_PATTERN.test(trimmed)) return null;
+    if (typeof CSS !== 'undefined' && typeof CSS.supports === 'function') {
+        return CSS.supports(cssProperty, trimmed) ? trimmed : null;
+    }
+    return trimmed;
+}
+
+function validateSizeOption(value: unknown, name: string, cssProperty: string): string | null {
+    if (value === undefined || value === null || value === '') return null;
+    const normalized = normalizeCssSize(value, cssProperty);
+    if (normalized === null) {
+        console.warn(`DianaWidget: Invalid ${name} '${String(value)}'. Expected a CSS length such as "100%", "640px" or "none", or a number of pixels. Using the default.`);
+    }
+    return normalized;
 }
 
 /**

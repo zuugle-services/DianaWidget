@@ -130,6 +130,8 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     displayEndDate: null,
     destinationInputName: null,
     fontFamily: null,
+    maxWidth: null,
+    maxHeight: null,
     multiday: false,
     overrideActivityStartDate: null,
     overrideActivityEndDate: null,
