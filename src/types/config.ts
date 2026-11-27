@@ -9,6 +9,56 @@ export type LocationType = 'coordinates' | 'coord' | 'coords' | 'address' | 'sta
 export type Language = 'EN' | 'DE' | 'FR' | 'IT' | 'TH' | 'ES';
 
 /**
+ * One date in `dateList` with its own time window. Every field except `date` is optional and
+ * falls back to the global `activity*` options. `opens`/`closes` is a shorthand for opening
+ * hours: the four times are derived from it and the duration (explicit times still win).
+ * Times are local to `timezone`, HH:MM or HH:MM:SS.
+ */
+export interface DateListEntry {
+    /** The date, YYYY-MM-DD */
+    date: string;
+    /** Earliest activity start on this date */
+    earliestStartTime?: string;
+    /** Latest activity start on this date */
+    latestStartTime?: string;
+    /** Earliest activity end on this date */
+    earliestEndTime?: string;
+    /** Latest activity end on this date */
+    latestEndTime?: string;
+    /** Activity duration on this date, in minutes */
+    durationMinutes?: number | string;
+    /** Opening time (shorthand, requires `closes`) */
+    opens?: string;
+    /** Closing time (shorthand, requires `opens`) */
+    closes?: string;
+}
+
+/** A `dateList` item: a plain date (global time window) or a date with its own window. */
+export type DateListItem = string | DateListEntry;
+
+/**
+ * A schema.org `OpeningHoursSpecification`, as found in JSON-LD (`openingHoursSpecification`).
+ * Unknown properties such as `@type` are ignored.
+ */
+export interface OpeningHoursSpecification {
+    '@type'?: string;
+    /** Day name(s): "Monday" or "https://schema.org/Monday" (also http:// and "schema:Monday") */
+    dayOfWeek?: string | string[];
+    /** First day the entry applies to (YYYY-MM-DD, a date-time is cut to its date) */
+    validFrom?: string;
+    /** Last day the entry applies to (inclusive) */
+    validThrough?: string;
+    /** Opening time, HH:MM or HH:MM:SS (a UTC offset suffix is ignored) */
+    opens?: string;
+    /** Closing time, HH:MM or HH:MM:SS (a UTC offset suffix is ignored) */
+    closes?: string;
+    [key: string]: unknown;
+}
+
+/** Why the widget decided not to render (passed to `onUnavailable`). */
+export type UnavailableReason = 'noFutureDates' | 'outsideDisplayRange';
+
+/**
  * Configuration interface for DianaWidget
  */
 export interface WidgetConfig {
@@ -144,8 +194,29 @@ export interface WidgetConfig {
     /** Show the ticketshop ("Buy Ticket") buttons on connections. Set to false to render none. */
     showTicketShopButtons: boolean;
     
-    /** List of available dates (YYYY-MM-DD) for date selection */
-    dateList?: string[] | null;
+    /**
+     * Available dates for date selection: 'YYYY-MM-DD' strings and/or DateListEntry objects
+     * with their own time window. Replaces the date picker by a dropdown.
+     */
+    dateList?: DateListItem[] | null;
+
+    /**
+     * schema.org openingHoursSpecification array. Expanded into dates with time windows that
+     * drive the same dropdown as dateList. Ignored when dateList is set.
+     */
+    openingHours?: OpeningHoursSpecification[] | null;
+
+    /** How many days ahead recurring (dayOfWeek) openingHours entries are expanded */
+    openingHoursHorizonDays: number;
+
+    /**
+     * Render nothing when dateList/openingHours leaves no date today or later (instead of
+     * falling back to the free date picker).
+     */
+    hideWhenNoFutureDates: boolean;
+
+    /** Called whenever the widget decides not to render (no future date, outside display range) */
+    onUnavailable?: ((reason: UnavailableReason) => void) | null;
     
     /** Callback when date is changed */
     onDateChange?: ((date: string) => void) | null;

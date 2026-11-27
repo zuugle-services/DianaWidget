@@ -7,13 +7,19 @@ export type {
     WidgetConfig, 
     PartialWidgetConfig, 
     LocationType, 
-    Language 
+    Language,
+    DateListEntry,
+    DateListItem,
+    OpeningHoursSpecification,
+    UnavailableReason
 } from './config';
 
 // State types
 export type { 
     WidgetState, 
-    ActivityTimes 
+    ActivityTimes,
+    ActivityWindow,
+    DateSlot 
 } from './state';
 
 // API types

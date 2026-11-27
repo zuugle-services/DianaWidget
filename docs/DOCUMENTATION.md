@@ -12,6 +12,8 @@ This is the detailed reference for the Diana GreenConnect widget. For a quick st
 * [Interacting with the Widget](#interacting-with-the-widget)
 * [Demo](#demo)
 * [Configuration](#configuration)
+* [Dates with their own time windows](#dates-with-their-own-time-windows)
+* [Hiding the widget when no date is left](#hiding-the-widget-when-no-date-is-left)
 * [Token Expiration and Refresh](#token-expiration-and-refresh)
 * [Styling & Theming](#styling--theming)
 * [Architecture](#architecture)
@@ -231,6 +233,9 @@ You can externally set the activity date of the widget. This is useful for synch
 
 * **`dateString`** (String): The date to set, in `'YYYY-MM-DD'` format.
 
+When the date dropdown is active (`dateList` / `openingHours`), the date must be one of its dates. If a date
+has several opening blocks, the first block of that date is selected.
+
 **Example:**
 
 ```javascript
@@ -250,6 +255,7 @@ myDateButton.addEventListener('click', () => {
 The `onDateChange` configuration option allows you to register a callback function that will be executed whenever the user changes the date *inside* the widget. This is useful for keeping your page's UI in sync with the widget.
 
 * **`callback`** (Function): A function that receives the new date as a string in `'YYYY-MM-DD'` format.
+  Switching between two opening blocks of the same date calls it again with the same date.
 
 **Example:**
 
@@ -332,6 +338,9 @@ These fields must be provided in the configuration object for the widget to init
 | `activityLatestEndTime`     | String        | Latest possible end time for the activity (HH:MM or HH:MM:SS in activity's local timezone, defined by `timezone` config).     | `"20:00"` / `"20:00:00"`                  |
 | `activityDurationMinutes`   | String/Number | Required duration of the activity in minutes. Must be a positive integer.                                                     | `240` or `"240"`                          |
 
+The four activity times (and `activityDurationMinutes`) are not required when every date of the dropdown brings its
+own window, see [Dates with their own time windows](#dates-with-their-own-time-windows).
+
 **Important Note on Timezones for Activity Times**: The `activityEarliestStartTime`, `activityLatestStartTime`, `activityEarliestEndTime`, and `activityLatestEndTime` should be provided in the local time of the activity. The widget will use the `timezone` configuration (see Optional Parameters) to correctly interpret these times and convert them to UTC for API requests.
 
 **Optional Parameters**
@@ -367,7 +376,11 @@ These fields must be provided in the configuration object for the widget to init
 | `hideOverriddenActivityStartDate`  | Boolean          | `true`                              | If `true`, the start date input for single day activities is hidden if fully defined by config (`overrideActivityStartDate`).                                                                                                                            | `false`                                           |
 | `showPastConnections`              | Boolean          | `true`                              | When searching for today, also list connections that have already departed, so the whole day can be browsed with "load earlier". Departed connections are marked with a dashed border and stay selectable; the pre-selected connection is the best one that has not left yet. Set to `false` to only show upcoming connections. | `false`                                           |
 | `showTicketShopButtons`            | Boolean          | `true`                              | If `false`, no ticket shop ("Buy Ticket") buttons are rendered anywhere in the widget.                                                                                                                                                                  | `false`                                           |
-| `dateList`                         | Array            | `null`                              | An array of specific dates (YYYY-MM-DD) for which the activity is available. If provided, the date picker is replaced by a dropdown menu containing only these dates.                                                                                    | `['2024-08-10', '2024-08-17']`                    |
+| `dateList`                         | Array            | `null`                              | An array of specific dates for which the activity is available. If provided, the date picker is replaced by a dropdown menu containing only these dates (past dates are left out, the first remaining date is preselected). Items are `'YYYY-MM-DD'` strings (global time window) and/or objects with their own time window, see [Dates with their own time windows](#dates-with-their-own-time-windows). Not used with `multiday` or `overrideActivityStartDate`. | `['2024-08-10', {date: '2024-08-17', opens: '15:00', closes: '21:00'}]` |
+| `openingHours`                     | Array            | `null`                              | A schema.org `openingHoursSpecification` array, used as-is. It is expanded into dates with time windows that drive the same dropdown as `dateList`. Ignored (with a console warning) when `dateList` is set. See [Opening hours from schema.org](#opening-hours-from-schemaorg). | `[{dayOfWeek: 'Friday', opens: '15:00', closes: '21:00'}]` |
+| `openingHoursHorizonDays`          | Number           | `60`                                | How many days ahead (from today) recurring `dayOfWeek` entries of `openingHours` are turned into dates.                                                                                                                                                 | `30`                                              |
+| `hideWhenNoFutureDates`            | Boolean          | `false`                             | If `true` and `dateList` / `openingHours` leaves no date today or later, the widget renders nothing (and calls `onUnavailable('noFutureDates')`). If `false`, the widget falls back to the free date picker with the global time window. See [Hiding the widget when no date is left](#hiding-the-widget-when-no-date-is-left). | `true`                                            |
+| `onUnavailable`                    | Function         | `null`                              | Called whenever the widget decides not to render, with the reason: `'noFutureDates'` (see `hideWhenNoFutureDates`) or `'outsideDisplayRange'` (see `displayStartDate` / `displayEndDate`). Use it to hide your own heading or section.             | `function(reason) { section.hidden = true; }`     |
 | `onDateChange`                     | Function         | `null`                              | A callback function that is triggered when the date is changed from within the widget. It receives the new date as a string in 'YYYY-MM-DD' format.                                                                                                      | `function(newDate) { console.log(newDate); }`     |
 | `onApiTokenExpired`                | Function         | `null`                              | A callback function that is triggered when the API returns a 401 Unauthorized error. It should return a `Promise` that resolves with a new, valid API token. See [Token Expiration and Refresh](#token-expiration-and-refresh) for details.              | `async () => { return await fetchNewToken(); }`   |
 | `dev`                              | Boolean          | `false`                             | If `true`, enables development mode with verbose logging to the console and detailled Configuration Error Descriptions. This is useful for debugging during development but should be set to `false` in production environments.                         | `true`                                            |
@@ -415,6 +428,126 @@ window.dianaActivityConfig = {
 ```
 
 The callback function is evaluated each time the widget needs to determine whether to read from or write to the cache. If the callback throws an error, caching is disabled for that operation.
+
+## Dates with their own time windows
+
+`dateList` accepts objects next to plain dates, so each date can have its own time window (a market open
+Fri 15–21, Sat 11–21, Sun 11–18; a museum open Thu 10–18 and Sat 14–18; a festival with different start times
+per day). Plain `'YYYY-MM-DD'` strings keep using the global `activity*` options, and both forms can be mixed.
+
+```javascript
+dateList: [
+  '2026-12-17',                                                   // global window
+  { date: '2026-12-18', opens: '15:00', closes: '21:00' },        // opening hours
+  { date: '2026-12-19', opens: '11:00', closes: '21:00', durationMinutes: 90 },
+  { date: '2026-12-20', earliestStartTime: '10:00', latestStartTime: '10:30',
+    earliestEndTime: '16:00', latestEndTime: '18:00' },           // explicit window
+]
+```
+
+| Field               | Description                                                                         |
+|:--------------------|:------------------------------------------------------------------------------------|
+| `date`              | **Required.** The date, `'YYYY-MM-DD'`.                                             |
+| `earliestStartTime` | Earliest activity start on this date. Falls back to `activityEarliestStartTime`.    |
+| `latestStartTime`   | Latest activity start on this date. Falls back to `activityLatestStartTime`.        |
+| `earliestEndTime`   | Earliest activity end on this date. Falls back to `activityEarliestEndTime`.        |
+| `latestEndTime`     | Latest activity end on this date. Falls back to `activityLatestEndTime`.            |
+| `durationMinutes`   | Activity duration on this date. Falls back to `activityDurationMinutes`.            |
+| `opens` / `closes`  | Shorthand for opening hours (both or neither). Must satisfy `closes` > `opens`.     |
+
+Times are local to `timezone`, `HH:MM` or `HH:MM:SS`. From `opens` / `closes` and the duration *d* the widget derives:
+
+* earliest start = `opens`
+* latest start = `closes` − *d* (but not before `opens`)
+* earliest end = `opens` + *d* (but not after `closes`)
+* latest end = `closes`
+
+Explicit time fields in the same object override the derived ones. Example: `{date, opens: '15:00', closes: '21:00'}`
+with a duration of 120 minutes searches for an arrival between 15:00 and 19:00 and a return between 17:00 and 21:00.
+
+The selected date's window is used everywhere the global window is used otherwise: the connection search, the
+activity time box on the results page, "anytime" connections (e.g. walking) and shares created from it.
+
+**Several blocks on one date** (e.g. a restaurant open 11:00–14:00 and 17:30–22:00): list one object per block.
+Each block becomes its own option in the dropdown, so the visitor picks the block they want:
+
+```javascript
+dateList: [
+  { date: '2026-12-19', opens: '11:00', closes: '14:00' },
+  { date: '2026-12-19', opens: '17:30', closes: '22:00' },
+]
+```
+
+**Dropdown labels.** A date with its own window shows its time range in the dropdown (the opening hours for
+`opens` / `closes`, otherwise earliest start – latest end), localised: `Fr, 18. Dez. 2026 · 15:00–21:00`.
+Plain dates show the date only.
+
+**What is required.** The four global `activity*Time` options are not required when every `dateList` item is an
+object with `opens` / `closes` or all four explicit times, or when `openingHours` is used.
+`activityDurationMinutes` stays required unless every `dateList` object has its own `durationMinutes` (`openingHours`
+has no duration of its own). As soon as one plain date string is in the list, the global window is required.
+If the global times are omitted and no date is left, the free date picker that takes over searches the whole day
+(00:00–23:59); set `hideWhenNoFutureDates: true` to hide the widget instead. Per-date windows are not used with
+`multiday` or `overrideActivityStartDate`; those always need the global window.
+
+**Validation.** Malformed objects (bad date or time format, only one of `opens`/`closes`, `closes` not after `opens`,
+latest before earliest, a non-positive duration) are configuration errors, shown in detail with `dev: true`.
+A malformed plain date string is only a console warning and is skipped, as before.
+
+### Opening hours from schema.org
+
+If the page already has schema.org JSON-LD with an `openingHoursSpecification`, pass it as `openingHours`:
+
+```javascript
+const jsonLd = JSON.parse(document.querySelector('script[type="application/ld+json"]').textContent);
+
+window.dianaActivityConfig = {
+  // ... locations, apiToken, activityDurationMinutes
+  openingHours: jsonLd.openingHoursSpecification,
+  // e.g. [
+  //   { "@type": "OpeningHoursSpecification", "validFrom": "2026-12-03", "validThrough": "2026-12-03", "opens": "10:00", "closes": "18:00" },
+  //   { "@type": "OpeningHoursSpecification", "dayOfWeek": ["https://schema.org/Thursday", "Saturday"], "opens": "14:00", "closes": "18:00" }
+  // ]
+};
+```
+
+Every entry becomes an `{date, opens, closes}` item as described above. The rules:
+
+* **Dated entries** (no `dayOfWeek`): every day from `validFrom` to `validThrough` (inclusive; `validThrough`
+  defaults to `validFrom`). Entries with neither `dayOfWeek` nor `validFrom` are ignored.
+* **Recurring entries** (`dayOfWeek`, a string or an array; `"Monday"`, `"https://schema.org/Monday"` and
+  `"schema:Monday"` all work): every matching weekday from today (or `validFrom`, if later) up to
+  `openingHoursHorizonDays` days ahead (default 60), or up to `validThrough` if that is earlier.
+* **Dated entries win**: a date covered by a dated entry ignores the recurring entries for that date (schema.org's
+  "special opening hours").
+* **Closed**: `opens` equal to `closes` (e.g. `00:00`–`00:00`) produces no block. As a dated entry it closes that day.
+* **Overnight**: `closes` before `opens` (e.g. 18:00–02:00) is cut at 23:59, because the widget plans same-day
+  trips; `closes: "24:00"` also means end of day.
+* Seconds and UTC offsets in times (`"10:00:00+01:00"`) are ignored; times are read as local to `timezone`.
+* Past dates are left out; several blocks on one date become separate dropdown options; exact duplicates are merged.
+
+If both `dateList` and `openingHours` are set, `dateList` is used and `openingHours` is ignored (console warning).
+
+## Hiding the widget when no date is left
+
+By default, when every date of `dateList` / `openingHours` is in the past, the widget falls back to the free date
+picker. With `hideWhenNoFutureDates: true` it renders nothing instead. `onUnavailable(reason)` tells your page that
+the widget is not shown, so you can hide your own heading or section too. It is called with `'noFutureDates'` in
+this case and with `'outsideDisplayRange'` when today is outside `displayStartDate` / `displayEndDate`.
+
+```javascript
+window.dianaActivityConfig = {
+  // ... other configuration
+  dateList: ['2026-12-18', '2026-12-19'],
+  hideWhenNoFutureDates: true,
+  onUnavailable: function (reason) {
+    // reason: 'noFutureDates' | 'outsideDisplayRange'
+    document.getElementById('getting-there-section').hidden = true;
+  },
+};
+```
+
+A shared journey link (`diana-share`) is always shown, even when no date is left.
 
 ## Token Expiration and Refresh
 
@@ -681,6 +814,9 @@ All types are exported from `src/types/index.ts`:
 * `PartialWidgetConfig` - Partial configuration (for optional fields)
 * `LocationType` - Valid location types (`'coordinates' | 'coord' | 'coords' | 'address' | 'station'`)
 * `Language` - Supported languages (`'EN' | 'DE' | 'FR' | 'IT' | 'TH' | 'ES'`)
+* `DateListEntry` / `DateListItem` - A `dateList` object with its own time window / a `dateList` item (string or object)
+* `OpeningHoursSpecification` - A schema.org opening hours entry for `openingHours`
+* `UnavailableReason` - Reason passed to `onUnavailable` (`'noFutureDates' | 'outsideDisplayRange'`)
 
 **State Types**
 * `WidgetState` - Internal widget state interface
