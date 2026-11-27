@@ -3,6 +3,12 @@ name: CI
 # The same checks as `npm run check` (lint, types, tests, production build). The git hook can be skipped with
 # --no-verify; this cannot. PR title and protected-path checks live in pr-guards.yml (they re-run on
 # title/label edits, these don't).
+#
+# Runner: the company's self-hosted runner (label `self-hosted`, the same one DianaProxy and me2ski use) by
+# default. This repository is public, so pull requests from forks never run there: they get GitHub's runners
+# (a fork could otherwise run arbitrary code on the persistent runner). The repository variable
+# ACTIONS_RUNNER (JSON: a label or a list of labels, e.g. "ubuntu-latest") moves every workflow to other
+# runners, the fallback when the self-hosted one is down.
 on:
   pull_request:
   push:
@@ -17,7 +23,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.ACTIONS_RUNNER || '"self-hosted"') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6

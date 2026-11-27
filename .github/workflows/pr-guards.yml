@@ -1,6 +1,8 @@
 name: PR guards
 
 # Cheap checks that depend on the PR's title or labels, so they re-run when those change (ci.yml doesn't).
+#
+# Runner: self-hosted by default, GitHub's for pull requests from forks; ACTIONS_RUNNER overrides (see ci.yml).
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
@@ -14,7 +16,7 @@ concurrency:
 
 jobs:
   pr-title:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.ACTIONS_RUNNER || '"self-hosted"') }}
     timeout-minutes: 5
     steps:
       - name: Conventional-commit title (squash merge makes it the commit; release-please reads it)
@@ -29,12 +31,17 @@ jobs:
           fi
 
   guards:
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(github.event.pull_request.head.repo.fork && '"ubuntu-latest"' || vars.ACTIONS_RUNNER || '"self-hosted"') }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      # GitHub's runners have Node preinstalled, the self-hosted one need not (no npm ci: the guards use
+      # only Node's standard library).
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
       - name: No credentials, protected paths need 'allow-protected', no hand-edited version/changelog
         env:
           BASE: ${{ github.event.pull_request.base.sha }}

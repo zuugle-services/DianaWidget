@@ -14,7 +14,8 @@ permissions:
 
 jobs:
   release-please:
-    runs-on: ubuntu-latest
+    # Self-hosted by default; ACTIONS_RUNNER = "ubuntu-latest" switches to GitHub's runners (see release.yml).
+    runs-on: ${{ fromJSON(vars.ACTIONS_RUNNER || '"self-hosted"') }}
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
