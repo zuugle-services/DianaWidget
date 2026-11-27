@@ -282,10 +282,11 @@ export default class DianaWidget {
             const style = document.createElement('style');
             style.innerHTML = `
               #${containerId} {
-                max-height: 790px;
+                max-height: var(--diana-max-height, 790px);
               }
             `;
             document.body.appendChild(style);
+            this._applySizeOptions();
 
             let initialSelectedStartDate: Date | null = null;
             let initialSelectedEndDate: Date | null = null;
@@ -357,6 +358,15 @@ export default class DianaWidget {
                 this._showFallbackUI();
             }
         }
+    }
+
+    /** maxWidth / maxHeight options -> --diana-max-width / --diana-max-height on the container
+     *  (validated in Validator.ts). Without them the CSS defaults (470px / 790px) apply, and the
+     *  host page can set the variables itself. */
+    _applySizeOptions() {
+        if (!this.container) return;
+        if (this.config.maxWidth) this.container.style.setProperty('--diana-max-width', String(this.config.maxWidth));
+        if (this.config.maxHeight) this.container.style.setProperty('--diana-max-height', String(this.config.maxHeight));
     }
 
     _applyExternalStyles() {
