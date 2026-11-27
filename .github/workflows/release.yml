@@ -10,12 +10,6 @@ name: Deploy
 # production: dist/DianaWidget.bundle.js (what customers embed), dist/DianaWidget.bundle-X.Y.Z.js (pinned,
 #             never overwritten by a later release), index-demo.html, index.php; bundle attached to the release.
 # dev:        dist/DianaWidget.bundle-dev.js, index-demo-dev.html, index-dev.php.
-#
-# Runner: the company's self-hosted runner (label `self-hosted`, the same one DianaProxy and me2ski use) by
-# default. GitHub has no automatic fallback between runner kinds, so the fallback to GitHub's runners is a switch:
-#   one run:    "Run workflow" with runner = github-hosted (gh workflow run release.yml -f runner=github-hosted ...)
-#   every run:  repository variable ACTIONS_RUNNER = "ubuntu-latest" (JSON: a label or a list of labels)
-# The self-hosted runner is persistent and needs curl, sha256sum and Docker (the SFTP upload is a Docker action).
 on:
   workflow_call:
     inputs:
@@ -27,11 +21,6 @@ on:
         description: production or dev
         required: false
         default: production
-        type: string
-      runner:
-        description: self-hosted (default) or github-hosted
-        required: false
-        default: self-hosted
         type: string
   workflow_dispatch:
     inputs:
@@ -46,12 +35,6 @@ on:
         default: production
         type: choice
         options: [production, dev]
-      runner:
-        description: Runner (github-hosted is the fallback when the self-hosted runner is down)
-        required: true
-        default: self-hosted
-        type: choice
-        options: [self-hosted, github-hosted]
 
 # Never two uploads to the same channel at once; a second one waits for the first.
 concurrency:
@@ -60,7 +43,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ${{ fromJSON(inputs.runner == 'github-hosted' && '"ubuntu-latest"' || vars.ACTIONS_RUNNER || '"self-hosted"') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
       contents: write  # attach the bundle to the GitHub Release
@@ -75,18 +58,6 @@ jobs:
             production|dev) ;;
             *) echo "::error::unknown channel: $CHANNEL"; exit 1 ;;
           esac
-
-      # GitHub's runners have all of these; the self-hosted one must have them installed.
-      - name: Check the runner has the deploy tools
-        run: |
-          missing=""
-          for tool in git curl sha256sum docker; do
-            command -v "$tool" >/dev/null 2>&1 || missing="$missing $tool"
-          done
-          if [ -n "$missing" ]; then
-            echo "::error::runner '$RUNNER_NAME' lacks:$missing. Install them there, or run with runner = github-hosted."
-            exit 1
-          fi
 
       - uses: actions/checkout@v6
         with:
@@ -110,7 +81,7 @@ jobs:
       - name: Stage files
         id: stage
         run: |
-          version=$(node -p "require('./package.json').version")
+          version=$(jq -r .version package.json)
           commit=$(git rev-parse HEAD)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "commit=$commit" >> "$GITHUB_OUTPUT"
@@ -233,14 +204,12 @@ jobs:
             echo "OK $url"
           done
 
-      # An action instead of the gh CLI, which the self-hosted runner need not have.
       - name: Attach bundle to the GitHub Release
         if: env.CHANNEL == 'production' && startsWith(inputs.ref, 'v')
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.ref }}
-          files: dist/DianaWidget.bundle-${{ steps.stage.outputs.version }}.js
-          overwrite_files: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.stage.outputs.version }}
+        run: gh release upload "$REF" "dist/DianaWidget.bundle-$VERSION.js" --clobber
 
       - name: Summary
         env:

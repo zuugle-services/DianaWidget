@@ -1014,10 +1014,8 @@ repository variable `WIDGET_BASE_URL` (default `https://diana.zuugle-services.ne
   without the `allow-protected` label.
 * `npm ci` installs a git pre-commit hook (`.githooks/pre-commit`) running the same guards and ESLint on the
   staged files.
-* Runner: all workflows run on the company's self-hosted runner (label `self-hosted`). Pull requests from
-  forks always run on GitHub's runners instead, so outside code never reaches the self-hosted machine. Fallback
-  when the self-hosted runner is down: set the repository variable `ACTIONS_RUNNER` to `"ubuntu-latest"` (every
-  workflow), or for one deploy `gh workflow run release.yml -f ref=v1.16.0 -f channel=production -f runner=github-hosted`.
+* Runner: GitHub-hosted (`ubuntu-latest`), free for public repositories. This repository is public, so it never
+  uses a self-hosted runner: workflows of pull requests from forks could otherwise run code on that machine.
 
 ### Hosting the bundle yourself
 
