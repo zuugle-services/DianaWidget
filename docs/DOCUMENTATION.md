@@ -500,7 +500,9 @@ dateList: [
 Plain dates show the date only.
 
 **What is required.** The four global `activity*Time` options are not required when every `dateList` item is an
-object with `opens` / `closes` or all four explicit times, or when `openingHours` is used.
+object with `opens` / `closes` or all four explicit times, or when `openingHours` is used. That includes an empty
+`openingHours` or `dateList` array (e.g. a page whose opening hours are not known yet): with
+`hideWhenNoFutureDates: true` the widget then hides instead of showing a configuration error.
 `activityDurationMinutes` stays required unless every `dateList` object has its own `durationMinutes` (`openingHours`
 has no duration of its own). As soon as one plain date string is in the list, the global window is required.
 If the global times are omitted and no date is left, the free date picker that takes over searches the whole day

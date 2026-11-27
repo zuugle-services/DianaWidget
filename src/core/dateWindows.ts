@@ -352,7 +352,9 @@ export function selfSufficientGlobals(config: WidgetConfig): {times: boolean; du
     if (config.multiday || config.overrideActivityStartDate) return none;
     if (Array.isArray(config.dateList)) {
         const items = config.dateList;
-        if (items.length === 0) return none;
+        // No date at all needs no global window: the widget hides (hideWhenNoFutureDates) or
+        // falls back to the date picker with the whole day. Still needs a duration.
+        if (items.length === 0) return {times: true, duration: false};
         const objects = items.every(i => i && typeof i === 'object');
         if (!objects) return none;
         const entries = items as DateListEntry[];
@@ -361,7 +363,8 @@ export function selfSufficientGlobals(config: WidgetConfig): {times: boolean; du
             duration: entries.every(e => hasOwn(e, 'durationMinutes')),
         };
     }
-    if (Array.isArray(config.openingHours) && config.openingHours.length > 0) {
+    // Also an empty array: a page without opening hours must not turn into a config error.
+    if (Array.isArray(config.openingHours)) {
         return {times: true, duration: false};
     }
     return none;
