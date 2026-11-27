@@ -71,8 +71,10 @@ jobs:
       - name: Check CDN credentials
         env:
           STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           [ -n "$STORAGE_KEY" ] || { echo "::error::secret BUNNY_STORAGE_PASSWORD (storage zone password) is not set"; exit 1; }
+          [ -n "$API_KEY" ] || { echo "::error::secret BUNNY_API_KEY (account API key, for the cache purge) is not set"; exit 1; }
 
       - uses: actions/checkout@v6
         with:
@@ -150,15 +152,14 @@ jobs:
             put dist/DianaWidget.bundle-dev.js dist/DianaWidget.bundle-dev.js
           fi
 
-      # Optional: Bunny purges edge caches itself when a storage file is replaced. With the account API key in
-      # BUNNY_API_KEY the changed URLs are purged explicitly as well, on both hostnames. The smoke check below
-      # (no cache-busting query) fails the run if the CDN still serves an old file either way.
+      # Required: Bunny does not purge its edge cache when a storage file is replaced, and the pull zone ignores query
+      # strings. So the changed URLs are purged explicitly, on both hostnames. Browser caching is a pull zone edge rule
+      # (5 min for the unversioned files), see docs/DOCUMENTATION.md.
       - name: Purge CDN cache
         env:
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
           FILES: ${{ steps.stage.outputs.check }}
         run: |
-          if [ -z "$API_KEY" ]; then echo "BUNNY_API_KEY not set: relying on Bunny's purge on storage update"; exit 0; fi
           paths=$(for f in $FILES; do echo "dist/$f"; done)
           if [ "$CHANNEL" = production ]; then paths="$paths index.html /"; fi
           for host in $CDN_URL $BASE_URL; do
