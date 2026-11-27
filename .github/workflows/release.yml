@@ -1,6 +1,7 @@
 name: Deploy
 
-# Builds a ref and uploads it via SFTP to the widget host, then checks the public URL serves exactly that build.
+# Builds a ref, uploads it to the Bunny CDN (storage zone $BUNNY_STORAGE_ZONE, served as $CDN_URL) and via SFTP to the
+# old widget host, then checks that the public URLs serve exactly that build.
 # Three ways in, one deploy:
 # - workflow_call from release-please.yml after merging the release PR created a release (releases created
 #   with GITHUB_TOKEN do not fire `release: published`, so there is no release trigger) -> production.
@@ -9,7 +10,8 @@ name: Deploy
 #
 # production: dist/DianaWidget.bundle.js (what customers embed), dist/DianaWidget.bundle-X.Y.Z.js (pinned,
 #             never overwritten by a later release), demo/ (index.php, index-demo.html,
-#             oauth2_functions.php: the demo, $DEMO_URL); bundle attached to the release.
+#             oauth2_functions.php: the demo, $DEMO_URL); bundle attached to the release; on the CDN also
+#             index.html, the landing page listing the versions in storage (cdn/index.html, cdn/render-index.mjs).
 # dev:        dist/DianaWidget.bundle-dev.js, demo/ (index-dev.php, index-demo-dev.html, oauth2_functions.php:
 #             the password-protected dev demo, ${DEMO_URL}index-dev.php).
 on:
@@ -54,6 +56,11 @@ jobs:
       REF: ${{ inputs.ref }}
       BASE_URL: ${{ vars.WIDGET_BASE_URL || 'https://diana.zuugle-services.net' }}
       DEMO_URL: ${{ vars.WIDGET_DEMO_URL || 'https://demo.zuugle-services.net/' }}
+      # Bunny CDN: the pull zone serves the storage zone at $CDN_URL (and at $BASE_URL once its DNS points there).
+      CDN_URL: ${{ vars.WIDGET_CDN_URL || 'https://diana-widget-eu.b-cdn.net' }}
+      BUNNY_STORAGE_HOST: ${{ vars.BUNNY_STORAGE_HOST || 'storage.bunnycdn.com' }}
+      BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE || 'diana-widget-eu' }}
+      BUNNY_PULL_ZONE_ID: ${{ vars.BUNNY_PULL_ZONE_ID || '7094656' }}
     steps:
       - name: Validate channel
         run: |
@@ -61,6 +68,14 @@ jobs:
             production|dev) ;;
             *) echo "::error::unknown channel: $CHANNEL"; exit 1 ;;
           esac
+
+      - name: Check CDN credentials
+        env:
+          STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          [ -n "$STORAGE_KEY" ] || { echo "::error::secret BUNNY_STORAGE_PASSWORD (storage zone password) is not set"; exit 1; }
+          [ -n "$API_KEY" ] || { echo "::error::secret BUNNY_API_KEY (account API key, for the cache purge) is not set"; exit 1; }
 
       - uses: actions/checkout@v6
         with:
@@ -97,6 +112,57 @@ jobs:
           fi
           head -1 dist/DianaWidget.bundle.js
 
+      # --- Bunny CDN (both channels) ------------------------------------------------------------------------
+      # The landing page template comes from the commit this workflow runs from, not from the deployed ref,
+      # so a rollback to an old tag still renders the current page.
+      - name: Check out the CDN landing page
+        if: env.CHANNEL == 'production'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          path: .cdn-page
+          sparse-checkout: cdn
+          persist-credentials: false
+
+      # Pinned file first, so it exists before the unversioned one flips to the new release; the landing page
+      # last, rendered from the storage listing so it shows exactly the versions that can be loaded.
+      - name: Upload to Bunny Storage
+        env:
+          ACCESS_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.stage.outputs.version }}
+        run: |
+          storage="https://$BUNNY_STORAGE_HOST/$BUNNY_STORAGE_ZONE"
+          put() {  # put <local file> <path in the storage zone>; Bunny rejects the upload if the checksum differs
+            sum=$(sha256sum "$1" | cut -d' ' -f1 | tr a-f A-F)
+            curl --fail-with-body -sS -o /dev/null -X PUT -H "AccessKey: $ACCESS_KEY" -H "Checksum: $sum" \
+              -H "Content-Type: application/octet-stream" --data-binary "@$1" "$storage/$2"
+            echo "uploaded $2"
+          }
+          if [ "$CHANNEL" = production ]; then
+            put "dist/DianaWidget.bundle-$VERSION.js" "dist/DianaWidget.bundle-$VERSION.js"
+            put dist/DianaWidget.bundle.js dist/DianaWidget.bundle.js
+            mkdir -p cdn-out
+            curl --fail-with-body -sS -H "AccessKey: $ACCESS_KEY" -H "Accept: application/json" "$storage/dist/" \
+              > cdn-out/listing.json
+            gh release list --limit 1000 --exclude-drafts --json tagName,publishedAt > cdn-out/releases.json
+            node .cdn-page/cdn/render-index.mjs --listing cdn-out/listing.json --releases cdn-out/releases.json \
+              --current "$VERSION" --out cdn-out/index.html
+            put cdn-out/index.html index.html
+          else
+            put dist/DianaWidget.bundle-dev.js dist/DianaWidget.bundle-dev.js
+          fi
+
+      # The whole pull zone: covers every hostname it serves (b-cdn.net and the custom domain).
+      - name: Purge CDN cache
+        env:
+          API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        run: |
+          curl --fail-with-body -sS -X POST -H "AccessKey: $API_KEY" \
+            "https://api.bunny.net/pullzone/$BUNNY_PULL_ZONE_ID/purgeCache"
+          echo "purged pull zone $BUNNY_PULL_ZONE_ID"
+
+      # --- old widget host (SFTP): serves $BASE_URL until its DNS points to the CDN; then drop these uploads --
       # --- production ---------------------------------------------------------------------------------------
       # Pinned file first, so it exists before the unversioned one flips to the new release.
       - name: Upload versioned bundle
@@ -163,18 +229,18 @@ jobs:
           local_path: ./deploy/demo
           remote_path: ./
 
-      # The public URL must serve byte-for-byte what was just built (cache-busting query, retried ~1 min).
+      # The CDN and the public URL must serve byte-for-byte what was just built. No cache-busting query: the purge
+      # has to have worked (retried ~1 min).
       - name: Smoke check
         env:
           FILES: ${{ steps.stage.outputs.check }}
-          COMMIT: ${{ steps.stage.outputs.commit }}
         run: |
           expected=$(sha256sum dist/DianaWidget.bundle.js | cut -d' ' -f1)
-          for f in $FILES; do
-            url="$BASE_URL/dist/$f"
+          urls=$(for host in $CDN_URL $BASE_URL; do for f in $FILES; do echo "$host/dist/$f"; done; done | sort -u)
+          for url in $urls; do
             ok=false
             for i in 1 2 3 4 5 6; do
-              actual=$( (curl -fsSL "$url?v=$COMMIT" || true) | sha256sum | cut -d' ' -f1)
+              actual=$( (curl -fsSL "$url" || true) | sha256sum | cut -d' ' -f1)
               if [ "$actual" = "$expected" ]; then ok=true; break; fi
               echo "attempt $i: $url does not serve the new build yet"
               sleep 10
@@ -185,6 +251,20 @@ jobs:
             fi
             echo "OK $url"
           done
+
+      - name: CDN landing page check
+        if: env.CHANNEL == 'production'
+        env:
+          VERSION: ${{ steps.stage.outputs.version }}
+        run: |
+          url="$CDN_URL/"
+          for i in 1 2 3 4 5 6; do
+            if (curl -fsSL "$url" || true) | grep -qF "data-current=\"$VERSION\""; then echo "OK $url"; exit 0; fi
+            echo "attempt $i: $url does not show v$VERSION yet"
+            sleep 10
+          done
+          echo "::error::$url does not show v$VERSION"
+          exit 1
 
       # production: the demo page must render through PHP and load the deployed bundle.
       # dev: the dev pages must stay behind the password (401), never public.
@@ -225,7 +305,8 @@ jobs:
         run: |
           {
             echo "## Deployed $CHANNEL: v$VERSION (commit ${COMMIT:0:7}, ref $REF)"
-            for f in $FILES; do echo "- $BASE_URL/dist/$f"; done
+            for f in $FILES; do echo "- $BASE_URL/dist/$f (CDN: $CDN_URL/dist/$f)"; done
+            if [ "$CHANNEL" = production ]; then echo "- CDN landing page: $CDN_URL/"; fi
             if [ "$CHANNEL" = production ]; then echo "- demo: $DEMO_URL"; else echo "- dev demo: ${DEMO_URL%/}/index-dev.php"; fi
           } >> "$GITHUB_STEP_SUMMARY"
 
