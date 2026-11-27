@@ -10,7 +10,8 @@ name: Deploy
 # production: dist/DianaWidget.bundle.js (what customers embed), dist/DianaWidget.bundle-X.Y.Z.js (pinned,
 #             never overwritten by a later release), demo/ (index.php, index-demo.html,
 #             oauth2_functions.php: the demo, $DEMO_URL); bundle attached to the release.
-# dev:        dist/DianaWidget.bundle-dev.js, index-demo-dev.html, index-dev.php.
+# dev:        dist/DianaWidget.bundle-dev.js, demo/ (index-dev.php, index-demo-dev.html, oauth2_functions.php:
+#             the password-protected dev demo, ${DEMO_URL}index-dev.php).
 on:
   workflow_call:
     inputs:
@@ -122,30 +123,6 @@ jobs:
           local_path: ./dist/DianaWidget.bundle.js
           remote_path: ./dist/
 
-      # The demo lives in /demo/, served as its own host ($DEMO_URL), so it loads the bundle by absolute URL.
-      # client_id_secret.php is kept in /demo/ on the server (never in the repo); index.php includes it from there.
-      # Uploading the directory makes sftp create /demo/ if it does not exist yet.
-      - name: Stage demo
-        if: env.CHANNEL == 'production'
-        run: |
-          mkdir -p deploy/demo
-          cp index.php oauth2_functions.php deploy/demo/
-          sed "s#src=\"\./dist/#src=\"$BASE_URL/dist/#" index-demo.html > deploy/demo/index-demo.html
-          grep -qF "src=\"$BASE_URL/dist/DianaWidget.bundle.js\"" deploy/demo/index-demo.html \
-            || { echo "::error::index-demo.html does not load ./dist/DianaWidget.bundle.js"; exit 1; }
-
-      - name: Upload demo
-        if: env.CHANNEL == 'production'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          sftp_only: true
-          local_path: ./deploy/demo
-          remote_path: ./
-
       # --- dev ----------------------------------------------------------------------------------------------
       - name: Upload dev bundle
         if: env.CHANNEL == 'dev'
@@ -159,20 +136,23 @@ jobs:
           local_path: ./dist/DianaWidget.bundle-dev.js
           remote_path: ./dist/
 
-      - name: Upload index-demo-dev.html
-        if: env.CHANNEL == 'dev'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          sftp_only: true
-          local_path: ./index-demo-dev.html
-          remote_path: ./
+      # --- demo (both channels) -----------------------------------------------------------------------------
+      # Everything demo-related lives in /demo/, served as its own host ($DEMO_URL), so the pages load the bundle
+      # by absolute URL. Kept on the server only, never in the repo: client_id_secret.php, .htaccess (password
+      # protection of the dev pages) and the .htpasswd it points to.
+      # Uploading the directory makes sftp create /demo/ if it does not exist yet.
+      - name: Stage demo
+        run: |
+          if [ "$CHANNEL" = production ]; then php=index.php; html=index-demo.html; bundle=DianaWidget.bundle.js
+          else php=index-dev.php; html=index-demo-dev.html; bundle=DianaWidget.bundle-dev.js; fi
+          mkdir -p deploy/demo
+          cp "$php" oauth2_functions.php deploy/demo/
+          sed "s#src=\"\./dist/#src=\"$BASE_URL/dist/#" "$html" > "deploy/demo/$html"
+          grep -qF "src=\"$BASE_URL/dist/$bundle\"" "deploy/demo/$html" \
+            || { echo "::error::$html does not load ./dist/$bundle"; exit 1; }
+          ls -l deploy/demo
 
-      - name: Upload index-dev.php
-        if: env.CHANNEL == 'dev'
+      - name: Upload demo
         uses: wlixcc/SFTP-Deploy-Action@v1.2.6
         with:
           username: ${{ secrets.FTP_USERNAME }}
@@ -180,7 +160,7 @@ jobs:
           port: ${{ secrets.FTP_PORT }}
           password: ${{ secrets.FTP_PASSWORD }}
           sftp_only: true
-          local_path: ./index-dev.php
+          local_path: ./deploy/demo
           remote_path: ./
 
       # The public URL must serve byte-for-byte what was just built (cache-busting query, retried ~1 min).
@@ -206,16 +186,28 @@ jobs:
             echo "OK $url"
           done
 
-      # The demo page must render through PHP and load the deployed bundle.
+      # production: the demo page must render through PHP and load the deployed bundle.
+      # dev: the dev pages must stay behind the password (401), never public.
       - name: Demo check
-        if: env.CHANNEL == 'production'
         run: |
-          url="$DEMO_URL"
-          if curl -fsSL "$url" | grep -qF "src=\"$BASE_URL/dist/DianaWidget.bundle.js\""; then
-            echo "OK $url"
+          if [ "$CHANNEL" = production ]; then
+            url="$DEMO_URL"
+            if curl -fsSL "$url" | grep -qF "src=\"$BASE_URL/dist/DianaWidget.bundle.js\""; then
+              echo "OK $url"
+            else
+              echo "::error::$url does not serve the demo"
+              exit 1
+            fi
           else
-            echo "::error::$url does not serve the demo"
-            exit 1
+            for f in index-dev.php index-demo-dev.html; do
+              url="${DEMO_URL%/}/$f"
+              status=$(curl -s -o /dev/null -w '%{http_code}' "$url")
+              if [ "$status" != 401 ]; then
+                echo "::error::$url answers $status instead of 401: the dev demo is not password-protected"
+                exit 1
+              fi
+              echo "OK $url (401)"
+            done
           fi
 
       - name: Attach bundle to the GitHub Release
@@ -234,7 +226,7 @@ jobs:
           {
             echo "## Deployed $CHANNEL: v$VERSION (commit ${COMMIT:0:7}, ref $REF)"
             for f in $FILES; do echo "- $BASE_URL/dist/$f"; done
-            if [ "$CHANNEL" = production ]; then echo "- demo: $DEMO_URL"; fi
+            if [ "$CHANNEL" = production ]; then echo "- demo: $DEMO_URL"; else echo "- dev demo: ${DEMO_URL%/}/index-dev.php"; fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-artifact@v5
