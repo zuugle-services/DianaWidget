@@ -1001,7 +1001,9 @@ gh workflow run release.yml -f ref=v1.16.0 -f channel=production
 gh workflow run release.yml -f ref=my-branch -f channel=dev   # preview as DianaWidget.bundle-dev.js
 ```
 
-Every push to the `dev` branch deploys the dev bundle (`.github/workflows/deploy-dev.yml`).
+Every push to the `dev` branch deploys the dev bundle (`.github/workflows/deploy-dev.yml`) and the
+password-protected dev demo (https://demo.zuugle-services.net/index-dev.php); the deploy fails if the dev demo
+is reachable without the password.
 
 Configuration: repository secrets `FTP_SERVER`, `FTP_PORT`, `FTP_USERNAME`, `FTP_PASSWORD`; optional
 repository variable `WIDGET_BASE_URL` (default `https://diana.zuugle-services.net`) for the smoke check.
