@@ -1,7 +1,7 @@
 name: Deploy
 
-# Builds a ref, uploads it to the Bunny CDN (storage zone $BUNNY_STORAGE_ZONE, served as $CDN_URL) and via SFTP to the
-# old widget host, then checks that the public URLs serve exactly that build.
+# Builds a ref, uploads the bundle to the Bunny CDN (storage zone $BUNNY_STORAGE_ZONE, served as $CDN_URL and as
+# $BASE_URL) and the demo via SFTP to the demo host, then checks that the public URLs serve exactly that build.
 # Three ways in, one deploy:
 # - workflow_call from release-please.yml after merging the release PR created a release (releases created
 #   with GITHUB_TOKEN do not fire `release: published`, so there is no release trigger) -> production.
@@ -56,11 +56,10 @@ jobs:
       REF: ${{ inputs.ref }}
       BASE_URL: ${{ vars.WIDGET_BASE_URL || 'https://diana.zuugle-services.net' }}
       DEMO_URL: ${{ vars.WIDGET_DEMO_URL || 'https://demo.zuugle-services.net/' }}
-      # Bunny CDN: the pull zone serves the storage zone at $CDN_URL (and at $BASE_URL once its DNS points there).
+      # Bunny CDN: the pull zone serves the storage zone at $CDN_URL and at $BASE_URL (CNAME to the pull zone).
       CDN_URL: ${{ vars.WIDGET_CDN_URL || 'https://diana-widget-eu.b-cdn.net' }}
       BUNNY_STORAGE_HOST: ${{ vars.BUNNY_STORAGE_HOST || 'storage.bunnycdn.com' }}
       BUNNY_STORAGE_ZONE: ${{ vars.BUNNY_STORAGE_ZONE || 'diana-widget-eu' }}
-      BUNNY_PULL_ZONE_ID: ${{ vars.BUNNY_PULL_ZONE_ID || '7094656' }}
     steps:
       - name: Validate channel
         run: |
@@ -72,10 +71,8 @@ jobs:
       - name: Check CDN credentials
         env:
           STORAGE_KEY: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
-          API_KEY: ${{ secrets.BUNNY_API_KEY }}
         run: |
           [ -n "$STORAGE_KEY" ] || { echo "::error::secret BUNNY_STORAGE_PASSWORD (storage zone password) is not set"; exit 1; }
-          [ -n "$API_KEY" ] || { echo "::error::secret BUNNY_API_KEY (account API key, for the cache purge) is not set"; exit 1; }
 
       - uses: actions/checkout@v6
         with:
@@ -153,54 +150,24 @@ jobs:
             put dist/DianaWidget.bundle-dev.js dist/DianaWidget.bundle-dev.js
           fi
 
-      # The whole pull zone: covers every hostname it serves (b-cdn.net and the custom domain).
+      # Optional: Bunny purges edge caches itself when a storage file is replaced. With the account API key in
+      # BUNNY_API_KEY the changed URLs are purged explicitly as well, on both hostnames. The smoke check below
+      # (no cache-busting query) fails the run if the CDN still serves an old file either way.
       - name: Purge CDN cache
         env:
           API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          FILES: ${{ steps.stage.outputs.check }}
         run: |
-          curl --fail-with-body -sS -X POST -H "AccessKey: $API_KEY" \
-            "https://api.bunny.net/pullzone/$BUNNY_PULL_ZONE_ID/purgeCache"
-          echo "purged pull zone $BUNNY_PULL_ZONE_ID"
-
-      # --- old widget host (SFTP): serves $BASE_URL until its DNS points to the CDN; then drop these uploads --
-      # --- production ---------------------------------------------------------------------------------------
-      # Pinned file first, so it exists before the unversioned one flips to the new release.
-      - name: Upload versioned bundle
-        if: env.CHANNEL == 'production'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          sftp_only: true
-          local_path: ./dist/DianaWidget.bundle-${{ steps.stage.outputs.version }}.js
-          remote_path: ./dist/
-
-      - name: Upload bundle
-        if: env.CHANNEL == 'production'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          sftp_only: true
-          local_path: ./dist/DianaWidget.bundle.js
-          remote_path: ./dist/
-
-      # --- dev ----------------------------------------------------------------------------------------------
-      - name: Upload dev bundle
-        if: env.CHANNEL == 'dev'
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
-        with:
-          username: ${{ secrets.FTP_USERNAME }}
-          server: ${{ secrets.FTP_SERVER }}
-          port: ${{ secrets.FTP_PORT }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          sftp_only: true
-          local_path: ./dist/DianaWidget.bundle-dev.js
-          remote_path: ./dist/
+          if [ -z "$API_KEY" ]; then echo "BUNNY_API_KEY not set: relying on Bunny's purge on storage update"; exit 0; fi
+          paths=$(for f in $FILES; do echo "dist/$f"; done)
+          if [ "$CHANNEL" = production ]; then paths="$paths index.html /"; fi
+          for host in $CDN_URL $BASE_URL; do
+            for p in $paths; do
+              url="$host/${p#/}"
+              curl --fail-with-body -sS -o /dev/null -X POST -H "AccessKey: $API_KEY"                 "https://api.bunny.net/purge?url=$(jq -rn --arg u "$url" '$u|@uri')"
+              echo "purged $url"
+            done
+          done
 
       # --- demo (both channels) -----------------------------------------------------------------------------
       # Everything demo-related lives in /demo/, served as its own host ($DEMO_URL), so the pages load the bundle

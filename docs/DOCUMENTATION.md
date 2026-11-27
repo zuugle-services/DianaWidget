@@ -990,11 +990,10 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 ### What a deploy does
 
 `release.yml` checks out the ref, runs lint and tests, and builds. The bundles are served by the Bunny CDN
-(storage zone `diana-widget-eu`, https://diana-widget-eu.b-cdn.net/, and `diana.zuugle-services.net` once its DNS
-points there). The deploy uploads `dist/DianaWidget.bundle-X.Y.Z.js` first and then `dist/DianaWidget.bundle.js` to
+(storage zone `diana-widget-eu`, https://diana-widget-eu.b-cdn.net/; `diana.zuugle-services.net` is a CNAME to it). The deploy uploads `dist/DianaWidget.bundle-X.Y.Z.js` first and then `dist/DianaWidget.bundle.js` to
 the storage zone. It then renders the landing page `index.html` from `cdn/index.html`, listing every pinned version in
-storage with its release date, and uploads it to the zone's root. Finally it purges the pull zone cache. Until the DNS
-switch, the bundles also go via SFTP to the old host. The demo (`index-demo.html`, `index.php`, `oauth2_functions.php`)
+storage with its release date, and uploads it to the zone's root. With `BUNNY_API_KEY` set, it also purges the changed URLs
+from the CDN cache (Bunny purges replaced storage files on its own as well). The demo (`index-demo.html`, `index.php`, `oauth2_functions.php`)
 goes via SFTP into `/demo/`. A smoke check then downloads the bundles from the CDN and from the public URL, and fails
 the run unless they serve exactly the file that was built. It also checks the landing page and that the demo
 (https://demo.zuugle-services.net/) renders. The bundle is attached to the GitHub Release. Two deploys to the same
@@ -1015,11 +1014,11 @@ Every push to the `dev` branch deploys the dev bundle (`.github/workflows/deploy
 password-protected dev demo (https://demo.zuugle-services.net/index-dev.php); the deploy fails if the dev demo
 is reachable without the password.
 
-Configuration: repository secrets `BUNNY_STORAGE_PASSWORD` (storage zone password), `BUNNY_API_KEY` (account API
-key, for the cache purge), `FTP_SERVER`, `FTP_PORT`, `FTP_USERNAME`, `FTP_PASSWORD`; optional repository variables
+Configuration: repository secrets `BUNNY_STORAGE_PASSWORD` (storage zone password), `FTP_SERVER`, `FTP_PORT`, `FTP_USERNAME`, `FTP_PASSWORD`; optional secret `BUNNY_API_KEY` (account API key, for the explicit cache purge); optional
+repository variables
 `WIDGET_BASE_URL` (default `https://diana.zuugle-services.net`), `WIDGET_CDN_URL` (default
-`https://diana-widget-eu.b-cdn.net`), `BUNNY_STORAGE_HOST` (default `storage.bunnycdn.com`), `BUNNY_STORAGE_ZONE`
-(default `diana-widget-eu`) and `BUNNY_PULL_ZONE_ID` (default `7094656`).
+`https://diana-widget-eu.b-cdn.net`), `BUNNY_STORAGE_HOST` (default `storage.bunnycdn.com`) and `BUNNY_STORAGE_ZONE`
+(default `diana-widget-eu`). The FTP secrets are only used for the demo on demo.zuugle-services.net.
 
 ### Continuous integration
 
