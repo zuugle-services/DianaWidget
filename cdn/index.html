@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diana GreenConnect Widget · Zuugle Services</title>
+<meta name="description" content="Hosting of the Diana GreenConnect widget: the embed URL, the demo and every released version.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='11' fill='%230a1f4a'/%3E%3Ccircle cx='40' cy='8' r='26' fill='%237d87ff'/%3E%3Cpolygon points='8,13 22,27 22,16 29,23 29,37 15,37 8,30 19,30 5,16' fill='%23c0fbd5' transform='translate(4 2)'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.bunny.net">
+<link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,700,900&display=swap">
+<style>
+:root{--ocean:#0a1f4a;--forest:#013936;--corn:#7d87ff;--mint:#c0fbd5;--white:#fff;--mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--white);color:var(--ocean);font:400 18px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--corn);font-weight:700;text-decoration:none}
+a:hover{text-decoration:underline}
+a:focus-visible,button:focus-visible{outline:3px solid var(--mint);outline-offset:3px;border-radius:4px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+.top{background:var(--ocean)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:24px;min-height:110px}
+.logo{display:block;width:230px;height:auto}
+.top nav{display:flex;flex-wrap:wrap;gap:8px 44px}
+.hero{position:relative;overflow:hidden;background:var(--ocean);color:var(--white);padding:96px 0 120px}
+.circle{position:absolute;width:960px;aspect-ratio:1;border-radius:50%;background:var(--corn);left:calc(50% + 130px);top:-300px}
+.arrow{position:absolute;width:210px;right:max(40px,calc(50% - 600px));bottom:56px;fill:var(--mint)}
+.hero .wrap{position:relative}
+.hero-text{max-width:min(620px,58%)}
+.kicker{margin:0;color:var(--mint);font-size:clamp(20px,2.2vw,31px)}
+h1{margin:4px 0 32px;color:var(--mint);font-size:clamp(46px,7vw,90px);line-height:1;font-weight:900}
+.intro{margin:0 0 20px;color:var(--mint);font-weight:500;font-size:clamp(21px,2.2vw,28px);line-height:1.25}
+.hero p.body{margin:0 0 36px}
+.pill{display:inline-block;border-radius:50px;padding:12px 24px;font:700 15px/17px inherit;font-family:inherit;border:0;cursor:pointer;text-decoration:none}
+.pill:hover{text-decoration:none}
+.pill-mint{background:var(--mint);color:var(--ocean)}
+.pill-corn{background:var(--corn);color:var(--white)}
+section.block{padding:96px 0 0}
+h2{margin:0 0 20px;color:var(--forest);font-size:30px;line-height:1.2;font-weight:900}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:40px 64px}
+.cols>div{min-width:0}
+.cols p{margin:0 0 20px}
+code,pre{font-family:var(--mono)}
+.snippet{position:relative;margin:0 0 16px;background:var(--ocean);color:var(--white);border-radius:16px;padding:20px 22px;font-size:15px;line-height:1.5;overflow-x:auto;white-space:pre}
+.snippet .s{color:var(--mint)}
+.snippet-row{display:flex;justify-content:flex-end}
+p code{font-size:.85em;background:#eef0ff;padding:1px 6px;border-radius:6px;overflow-wrap:anywhere}
+.product{margin:0;color:var(--corn);font-size:clamp(40px,5vw,64px);line-height:1;font-weight:900}
+.nodeline{position:relative;height:72px;margin:-6px 0 40px}
+.nodeline::before{content:"";position:absolute;left:0;top:0;width:72px;height:72px;border-radius:50%;background:var(--ocean)}
+.nodeline::after{content:"";position:absolute;left:36px;top:24px;height:24px;right:calc(-50vw + 50%);background:var(--ocean)}
+.versions-wrap{overflow:hidden}
+.card{border:6px solid var(--mint);border-radius:28px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:14px 22px;vertical-align:middle}
+th{font-size:14px;font-weight:700;color:var(--forest);border-bottom:2px solid var(--mint)}
+tbody tr+tr td{border-top:1px solid #e3e6f5}
+td.v{font-weight:900;white-space:nowrap}
+td.v a{color:var(--ocean)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+td.links,th.links{text-align:right;white-space:nowrap}
+td.links a+a{margin-left:20px}
+.badge{display:inline-block;margin-left:10px;border-radius:50px;padding:2px 10px;background:var(--corn);color:var(--white);font-size:12px;font-weight:700;vertical-align:2px}
+.collapsed .more{display:none}
+.more-row{display:flex;justify-content:flex-end;margin-top:16px}
+.more-row[hidden]{display:none}
+.meta{margin:16px 0 0;font-size:15px}
+footer{margin-top:120px;background:var(--ocean)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px 40px;min-height:120px;padding-top:24px;padding-bottom:24px}
+@media (max-width:860px){
+  .top .wrap{flex-direction:column;align-items:flex-start;justify-content:center;padding-top:24px;padding-bottom:20px}
+  .logo{width:190px}
+  .top nav{gap:6px 24px;font-size:16px}
+  .hero{padding:112px 0 88px}
+  .circle{width:200px;left:auto;right:-80px;top:-110px}
+  .arrow{width:96px;right:20px;bottom:24px}
+  .hero-text{max-width:none}
+  .cols{grid-template-columns:1fr}
+  section.block{padding-top:72px}
+  .nodeline{height:48px}
+  .nodeline::before{width:48px;height:48px}
+  .nodeline::after{left:24px;top:16px;height:16px}
+  th,td{padding:12px 14px}
+  .hide-s{display:none}
+  td.links a+a{margin-left:12px}
+  footer{margin-top:88px}
+  footer .wrap{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a href="https://zuugle-services.com/" aria-label="Zuugle Services homepage"><svg class="logo" fill="#fff" role="img" aria-label="Zuugle Services" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 906.1 271.4"><g><g><path d="M191.3,162.1v-37.1s18.7-18.6,18.7-18.6l-3.3-3.3-17.7,17.7-27.5-27.5h-24.4s-21.8-21.7-21.8-21.7c0,.2-.2.4-.3.6-.6,1-1.4,1.9-2.4,2.5-.2.1-.4.2-.5.3l21,20.9-12.7,12.7.2,50.9h-31.1s0,4.6,0,4.6h31.1s0,9,0,9h-31.1c0,0,0,4.6,0,4.6h32.2c0,0,21.3,21.3,21.3,21.3,0,0,0-.2.1-.3.7-1.2,1.7-2.2,2.9-2.9,0,0,.2,0,.2-.1l-18-17.9h49.2c0,0,11.5-11.4,11.5-11.4l20.3,20.3,3.3-3.3-21.2-21.2ZM183.5,121.7h-19.3c0,0-15,15.1-15,15.1v14.4s8.2,8.2,8.2,8.2h-17.6v-34.6l12.5-12.4h22l9.3,9.3ZM125.1,110.4l12.5-12.5h22.1s9.9,9.9,9.9,9.9h-19.3l-15.2,15.1v36.5h-9.8s-.2-49-.2-49ZM125.3,173.1v-9s10.6,0,10.6,0l9.1,9h-19.7ZM186.7,162.1l-11.1,11.1h-24.1s-9.1-9.1-9.1-9.1h33.7s10.6-10.5,10.6-10.5v8.6ZM174.2,159.4h-10.4l-10.1-10.1v-10.6s12.3-12.3,12.3-12.3h20.7c0,0,0,20.5,0,20.5l-12.5,12.5Z"/><path d="M170.8,140.8c-1.4-1.2-3.1-1.9-5-1.8-1.8,0-3.5.9-4.8,2.3-1.2,1.4-1.9,3.1-1.8,5,0,1.8.9,3.5,2.3,4.8,1.3,1.2,2.9,1.8,4.6,1.8s.2,0,.4,0c3.8-.2,6.7-3.4,6.5-7.2,0-1.8-.9-3.5-2.3-4.8Z"/></g><path d="M170.8,140.8c-1.4-1.2-3.1-1.9-5-1.8-1.8,0-3.5.9-4.8,2.3-1.2,1.4-1.9,3.1-1.8,5,0,1.8.9,3.5,2.3,4.8,1.3,1.2,2.9,1.8,4.6,1.8s.2,0,.4,0c3.8-.2,6.7-3.4,6.5-7.2,0-1.8-.9-3.5-2.3-4.8Z"/><path d="M278.8,130.8c-1.3-42.4-23.3-81.2-59-104.2,0,.1,0,.3,0,.4-.2.6-.4,1.1-.6,1.6-.3.6-.7,1.1-1.3,1.6-.1.1-.2.2-.4.3,34.3,22.1,55.5,59.5,56.8,100.2l-5-5v7.4l7.4,7.4,7.4-7.4v-7.4l-5.2,5.2Z"/><path d="M253.3,128.2c-1.6-25.1-12.1-48.6-29.6-66.4-5.7-5.8-12.1-10.8-19-15.1,0-.1,0-.2,0-.3,0-3.8-3.1-6.9-6.9-6.9s-2.8.5-4,1.3c-11.4-5.2-23.5-8.3-36.2-9.1-.9-2.9-3.6-4.9-6.6-4.9s-6.9,3.1-6.9,6.9,3.1,7,6.9,7,5.4-1.8,6.5-4.4c11.8.8,23.1,3.6,33.8,8.4-.2.6-.2,1.1-.2,1.7,0,3.8,3.1,6.9,6.9,6.9s3.8-.8,5.1-2.3c6.4,4,12.2,8.7,17.5,14,16.7,16.9,26.8,39.4,28.3,63.4-2.7,1-4.5,3.6-4.5,6.5s3.1,6.9,6.9,6.9,7-3.1,7-6.9-2-5.7-4.9-6.6Z"/><path d="M219.1,28.6c.3-.5.5-.9.6-1.6,0-.1,0-.3,0-.4.6-3-.6-6-3.3-7.5-3.3-1.9-7.6-.8-9.5,2.6-.9,1.6-1.2,3.5-.7,5.3.5,1.8,1.6,3.3,3.2,4.2,1.1.6,2.3.9,3.4.9s3.1-.6,4.4-1.6c.1,0,.3-.2.4-.3.6-.5,1-1,1.3-1.6Z"/><path d="M149.7,230.6c-2.9,0-5.4,1.8-6.5,4.4-11.7-.8-23.1-3.6-33.7-8.3.1-.5.2-1,.2-1.4,0-3.8-3.1-6.9-6.9-6.9s-3.6.8-4.9,2.1c-6.4-4-12.4-8.8-17.7-14.1-16.7-16.9-26.8-39.4-28.3-63.4,2.7-1,4.5-3.6,4.5-6.5s-3.1-6.9-6.9-6.9-7,3.1-7,6.9,2,5.7,4.9,6.6c1.6,25.1,12.1,48.6,29.6,66.4,5.7,5.8,12.1,10.9,19,15.1,0,.2,0,.4,0,.6,0,3.8,3.1,6.9,6.9,6.9s3-.5,4.3-1.5c11.3,5.2,23.4,8.2,35.9,9,.9,2.9,3.6,4.9,6.6,4.9s7-3.1,7-6.9-3.1-7-7-7Z"/><path d="M81.6,242.8c.3-.6.7-1.1,1.3-1.6.1-.1.2-.2.4-.3-34.3-22.2-55.5-59.5-56.8-100.2l5,5v-7.4l-7.4-7.4-7.4,7.4v7.4l5.2-5.2c1.3,42.4,23.3,81.2,59,104.2,0-.1,0-.3,0-.4.2-.6.4-1.1.6-1.6Z"/><path d="M91.1,240.2c-2.5-1.4-5.6-1.1-7.8.7-.1,0-.2.2-.4.3-.6.5-1,1-1.3,1.6-.3.5-.5.9-.6,1.6,0,.1,0,.3,0,.4-.6,3,.6,6,3.3,7.5,1.1.6,2.3.9,3.4.9s1.2,0,1.8-.2c1.8-.5,3.3-1.6,4.2-3.2s1.2-3.5.7-5.3c-.5-1.8-1.6-3.3-3.2-4.2Z"/><path d="M115.1,72.1c0-.2.2-.4.3-.6.4-.8.5-1.7.5-2.7-.2-3.5-3.1-6.1-6.6-6s-6.1,3.1-6,6.6c.2,3.5,3.1,6.1,6.6,6,.8,0,1.6-.3,2.3-.6.2,0,.4-.2.5-.3,1-.6,1.9-1.4,2.4-2.5Z"/><path d="M143.2,198.6c0,0,0,.2-.1.3-.6,1.2-.9,2.4-.8,3.7.2,4,3.5,7.1,7.4,7.1s.3,0,.4,0c4.1-.2,7.3-3.7,7.1-7.8-.2-4-3.5-7.1-7.4-7.1s-.3,0-.4,0c-1,0-2,.3-3,.8,0,0-.2,0-.2.1-1.2.7-2.2,1.7-2.9,2.9Z"/></g><g><path d="M315.3,118.2h15.4c2.4,0,4.8,0,7.2,0,.6,0,1.3,0,1.9,0-.3.4-.7.7-1,1.1-1.8,2-3.4,3.9-4.9,5.9l-18.6,24.9v7.6h41v-11h-14.2c-2.6,0-5.2,0-7.8,0-.8,0-1.7,0-2.5,0,.4-.5.9-.9,1.3-1.4,1.9-2,3.6-4.1,5.1-6.1l18.2-24.3v-7.6h-41v11Z"/><path d="M383.3,155c1.7-1.7,2.9-3.8,3.8-6.2l.2,8.6h12.7v-37.7h-13.6v21.2c0,1.2-.2,2.3-.7,3.2s-1.1,1.6-1.9,2.1-1.8.7-2.9.7c-1.7,0-3-.5-4-1.6-.9-1.1-1.4-2.5-1.4-4.4v-21.2h-13.6v24c0,2.7.5,5.2,1.6,7.3,1.1,2.1,2.6,3.8,4.6,5s4.3,1.8,6.9,1.8,6.2-1,8.1-2.9Z"/><path d="M433.6,157.4h12.7v-37.7h-13.6v21.2c0,1.2-.2,2.3-.7,3.2-.5.9-1.1,1.6-1.9,2.1-.8.5-1.8.7-2.9.7-1.7,0-3-.5-4-1.6-.9-1.1-1.4-2.5-1.4-4.4v-21.2h-13.6v24c0,2.7.5,5.2,1.6,7.3,1.1,2.1,2.6,3.8,4.6,5,2,1.2,4.3,1.8,6.9,1.8s6.2-1,8.1-2.9c1.7-1.7,2.9-3.8,3.8-6.2l.2,8.6Z"/><path d="M492.4,119.7h-13.4v6.6h-.3c-.5-1.3-1.2-2.5-2.2-3.5-1-1.1-2.2-1.9-3.6-2.6-1.4-.6-3.1-1-4.9-1s-4.9.7-7.1,2c-2.2,1.3-4.1,3.4-5.5,6.3-1.4,2.8-2.1,6.5-2.1,11.1s.7,7.9,2,10.6c1.4,2.7,3.2,4.7,5.4,5.9,2.2,1.2,4.7,1.9,7.4,1.9s3.2-.2,4.6-.7c1.3-.5,2.5-1.2,3.4-2.1.9-.9,1.6-2,2.1-3.2h1v6.4c0,2-.5,3.5-1.6,4.4-1.1,1-2.7,1.5-4.9,1.5s-2.2-.1-3-.4c-.9-.3-1.6-.6-2.1-1.1-.5-.5-.9-1.1-1-1.7l-11.9,1.8c.4,2.2,1.3,4,2.9,5.6,1.6,1.6,3.6,2.8,6.2,3.7,2.6.9,5.6,1.3,9,1.3s7.5-.6,10.4-1.9c3-1.2,5.3-3.1,6.9-5.5,1.7-2.4,2.5-5.4,2.5-8.9v-36.3ZM478.3,143.3c-.5,1.3-1.2,2.3-2.1,3-.9.7-2,1-3.2,1s-2.3-.3-3.2-1c-.9-.7-1.5-1.7-2-3s-.7-2.9-.7-4.7.2-3.5.7-4.8,1.1-2.4,2-3.1c.9-.7,1.9-1.1,3.2-1.1s2.3.4,3.2,1.1,1.6,1.7,2.1,3.1c.5,1.3.7,2.9.7,4.8s-.2,3.4-.7,4.7Z"/><rect x="500.6" y="107.2" width="13.6" height="50.2"/><path d="M546.5,145.3c-.3.7-.7,1.3-1.2,1.8-.5.5-1.2.9-1.9,1.1-.8.3-1.6.4-2.5.4s-2.4-.3-3.4-.8c-1-.5-1.7-1.3-2.2-2.4-.5-1-.7-2.2-.8-3.7h24.5v-3.1c0-3-.4-5.7-1.3-8.1-.9-2.4-2.1-4.4-3.8-6.1-1.6-1.7-3.6-3-5.9-3.8-2.3-.9-4.9-1.3-7.7-1.3s-7.3.8-10.1,2.4c-2.9,1.6-5.1,3.9-6.6,6.8-1.6,2.9-2.3,6.3-2.3,10.2s.8,7.6,2.3,10.5c1.6,2.9,3.8,5.1,6.7,6.7,2.9,1.5,6.4,2.3,10.4,2.3s6-.4,8.5-1.3c2.4-.9,4.5-2.2,6.1-3.8,1.6-1.7,2.7-3.6,3.3-5.9l-11.9-1.8ZM537.1,129.6c.9-.6,2-.8,3.3-.8s2.4.3,3.3.8,1.5,1.3,2,2.4c.3.7.4,1.5.6,2.3h-11.6c.1-.9.3-1.6.6-2.3.5-1,1.1-1.8,2-2.4Z"/><path d="M604.6,146.3c-1,.4-2.2.5-3.7.5s-3.3-.3-4.5-.8c-1.2-.5-2.2-1.3-2.9-2.4-.7-1.1-1.1-2.3-1.2-3.9h-12.9c0,4.2.9,7.7,2.7,10.4s4.3,4.7,7.6,6c3.2,1.3,7.1,1.9,11.4,1.9s7.9-.6,10.9-1.8c3-1.2,5.4-2.9,7-5.2s2.4-5.1,2.4-8.4-.3-3.7-.9-5.3c-.6-1.6-1.5-3.1-2.8-4.4-1.3-1.3-2.9-2.4-4.9-3.4s-4.4-1.7-7.1-2.3l-4.1-.9c-1.6-.3-2.9-.7-3.9-1.2-1-.4-1.7-1-2.2-1.6s-.7-1.3-.7-2.1.2-1.4.6-2,1.1-1,2-1.4c.9-.3,2-.5,3.4-.5,2.2,0,3.8.5,4.9,1.4,1.1.9,1.7,2.2,1.8,3.8h13.1c0-3.3-.8-6.2-2.4-8.6-1.6-2.5-3.9-4.4-6.8-5.7-3-1.4-6.5-2-10.5-2s-7.5.7-10.5,2c-3,1.3-5.4,3.2-7.2,5.6-1.7,2.4-2.6,5.2-2.6,8.4s1.3,7,3.8,9.3c2.6,2.3,6,3.9,10.5,4.8l5.1,1.1c1.9.4,3.3.8,4.5,1.3,1.1.5,1.9,1,2.4,1.6.5.6.7,1.2.7,2s-.3,1.6-.8,2.2-1.3,1.1-2.2,1.5Z"/><path d="M662.5,147.1l-11.9-1.8c-.3.7-.7,1.3-1.2,1.8-.5.5-1.2.9-1.9,1.1-.8.3-1.6.4-2.5.4s-2.4-.3-3.4-.8c-1-.5-1.7-1.3-2.2-2.4-.5-1-.7-2.2-.8-3.7h24.5v-3.1c0-3-.4-5.7-1.3-8.1-.9-2.4-2.1-4.4-3.8-6.1-1.6-1.7-3.6-3-5.9-3.8-2.3-.9-4.9-1.3-7.7-1.3s-7.3.8-10.1,2.4c-2.9,1.6-5.1,3.9-6.6,6.8-1.6,2.9-2.3,6.3-2.3,10.2s.8,7.6,2.3,10.5c1.6,2.9,3.8,5.1,6.7,6.7,2.9,1.5,6.4,2.3,10.4,2.3s6-.4,8.5-1.3c2.4-.9,4.5-2.2,6.1-3.8,1.6-1.7,2.7-3.6,3.3-5.9ZM641.1,129.6c.9-.6,2-.8,3.3-.8s2.4.3,3.3.8c.9.6,1.5,1.3,2,2.4.3.7.4,1.5.6,2.3h-11.6c.1-.9.3-1.6.6-2.3.5-1,1.1-1.8,2-2.4Z"/><path d="M683.3,137.8c0-1.4.3-2.7.9-3.8.6-1.1,1.4-1.9,2.5-2.5,1.1-.6,2.2-.9,3.6-.9s1.5,0,2.5.2c1,.1,1.8.3,2.5.5v-11.5c-.5-.2-1.1-.3-1.7-.4-.6,0-1.2-.1-1.8-.1-2,0-3.7.6-5.2,1.8-1.5,1.2-2.6,3.2-3.3,5.9h-.4v-7.2h-13.2v37.7h13.6v-19.6Z"/><path d="M728,119.7l-4.8,17.2c-.7,2.6-1.3,5.2-1.9,7.8-.2.9-.4,1.9-.6,2.9-.2-1-.4-2-.6-3-.6-2.7-1.2-5.3-1.9-7.8l-4.9-17.2h-14.2l13.4,37.7h15.9l13.5-37.7h-14Z"/><rect x="747.2" y="119.7" width="13.6" height="37.7"/><path d="M754.1,113.9c2,0,3.8-.7,5.2-2.2,1.4-1.5,2.2-3.2,2.2-5.2s-.7-3.8-2.2-5.3c-1.4-1.4-3.2-2.2-5.2-2.2s-3.8.7-5.2,2.2c-1.4,1.4-2.2,3.2-2.2,5.3s.7,3.8,2.2,5.2c1.4,1.5,3.2,2.2,5.2,2.2Z"/><path d="M776.7,155.7c2.9,1.6,6.4,2.4,10.5,2.4s5-.3,7.1-1c2.1-.7,4-1.6,5.5-2.9,1.6-1.3,2.8-2.8,3.7-4.6s1.5-3.8,1.7-6.1l-12.4-1.8c-.1,1-.4,1.9-.7,2.7-.3.8-.7,1.4-1.1,2-.5.5-1,.9-1.6,1.2-.6.3-1.3.4-2,.4-1.2,0-2.2-.4-3.1-1.1-.9-.7-1.6-1.8-2-3.2-.5-1.4-.7-3.1-.7-5.2s.2-3.8.7-5.2c.5-1.4,1.2-2.4,2-3.1.9-.7,1.9-1,3.1-1s1.4.1,2,.4c.6.3,1.1.6,1.6,1.2.5.5.8,1.2,1.1,1.9.3.8.5,1.6.7,2.6l12.4-1.9c-.2-2.2-.8-4.2-1.7-5.9s-2.2-3.3-3.7-4.5c-1.6-1.2-3.4-2.2-5.5-2.9-2.1-.7-4.5-1-7.1-1-4.1,0-7.6.8-10.5,2.4-2.9,1.6-5.1,3.9-6.7,6.8-1.5,2.9-2.3,6.3-2.3,10.2s.8,7.3,2.3,10.2,3.8,5.2,6.7,6.8Z"/><path d="M842.1,124.4c-1.6-1.7-3.6-3-5.9-3.8-2.3-.9-4.9-1.3-7.7-1.3s-7.3.8-10.1,2.4c-2.9,1.6-5.1,3.9-6.6,6.8-1.6,2.9-2.3,6.3-2.3,10.2s.8,7.6,2.3,10.5c1.6,2.9,3.8,5.1,6.7,6.7,2.9,1.5,6.4,2.3,10.4,2.3s6-.4,8.5-1.3c2.4-.9,4.5-2.2,6.1-3.8,1.6-1.7,2.7-3.6,3.3-5.9l-11.9-1.8c-.3.7-.7,1.3-1.2,1.8-.5.5-1.2.9-1.9,1.1-.8.3-1.6.4-2.5.4s-2.4-.3-3.4-.8c-1-.5-1.7-1.3-2.2-2.4-.5-1-.7-2.2-.8-3.7h24.5v-3.1c0-3-.4-5.7-1.3-8.1-.9-2.4-2.1-4.4-3.8-6.1ZM825.4,129.6c.9-.6,2-.8,3.3-.8s2.4.3,3.3.8,1.5,1.3,2,2.4c.3.7.4,1.5.6,2.3h-11.6c.1-.9.3-1.6.6-2.3.5-1,1.1-1.8,2-2.4Z"/><path d="M886.5,138.3c-1.9-1.7-4.8-2.8-8.6-3.5l-7.7-1.3c-1.4-.2-2.4-.6-2.8-1.1-.5-.5-.7-1-.7-1.6s.4-1.4,1.2-1.8c.8-.4,1.8-.6,3-.6s2.5.3,3.5.9c1,.6,1.6,1.5,1.9,2.7l11.9-1.7c-.4-2.3-1.3-4.2-2.8-5.9-1.5-1.6-3.5-2.9-6-3.7-2.5-.9-5.4-1.3-8.7-1.3s-6.7.5-9.3,1.4-4.6,2.3-6,4.2c-1.4,1.8-2.1,4-2.1,6.7s1,5.4,2.9,7.2c1.9,1.9,4.8,3.1,8.6,3.8l6.7,1.2c1.5.3,2.6.6,3.3,1s1,1,1,1.7-.4,1.3-1.1,1.8-1.8.6-3.1.6c-1.9,0-3.4-.4-4.4-1.2-1-.8-1.7-1.9-2.2-3.4l-12.5,1.8c.4,2.5,1.5,4.6,3.1,6.4,1.6,1.8,3.8,3.2,6.4,4.1s5.6,1.4,9.1,1.4,6.8-.5,9.6-1.6c2.8-1.1,5-2.6,6.6-4.6s2.4-4.3,2.4-7-.9-5-2.8-6.7Z"/></g></svg></a>
+    <nav aria-label="Main">
+      <a href="https://demo.zuugle-services.net/">Demo</a>
+      <a href="#versions">Versions</a>
+      <a href="https://github.com/zuugle-services/DianaWidget/blob/main/docs/DOCUMENTATION.md">Documentation</a>
+      <a href="https://zuugle-services.com/">zuugle-services.com</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="circle" aria-hidden="true"></div>
+  <svg class="arrow" viewBox="0 0 528 528" aria-hidden="true"><polygon points="88,0 386,297 386,53 528,195 528,528 195,528 53,386 297,386 0,88"/></svg>
+  <div class="wrap">
+    <div class="hero-text">
+      <p class="kicker">Diana GreenConnect widget:</p>
+      <h1>ready to embed.</h1>
+      <p class="intro">Diana GreenConnect links your destinations, events and accommodation with live public transport timetables, from the doorstep to the destination. This is where its widget is hosted.</p>
+      <p class="body">Served from a European CDN. Embed the latest release with one line, or pin a version and update when it suits you.</p>
+      <a class="pill pill-mint" href="https://demo.zuugle-services.net/">open the demo</a>
+    </div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="wrap cols">
+    <div>
+      <h2>Always the latest release.</h2>
+      <p>This address always serves the current version. Fixes and new features reach your site without touching your embed code.</p>
+      <pre class="snippet" id="embed">&lt;script src=<span class="s">"https://diana.zuugle-services.net/dist/DianaWidget.bundle.js"</span>&gt;&lt;/script&gt;</pre>
+      <div class="snippet-row"><button class="pill pill-corn" type="button" data-copy="embed">copy</button></div>
+    </div>
+    <div>
+      <h2>Or a fixed version.</h2>
+      <p>Prefer to update on your own schedule? Load a pinned file such as <code>DianaWidget.bundle-{{CURRENT}}.js</code>. Pinned files never change; every version below stays available.</p>
+      <p>Configuration options and examples are in the <a href="https://github.com/zuugle-services/DianaWidget/blob/main/docs/DOCUMENTATION.md">documentation</a>, changes in the <a href="https://github.com/zuugle-services/DianaWidget/blob/main/CHANGELOG.md">changelog</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="block versions-wrap" id="versions">
+  <div class="wrap">
+    <h2 class="product">Versions</h2>
+    <div class="nodeline" aria-hidden="true"></div>
+    <div class="card" id="vcard">
+      <table>
+        <thead><tr><th scope="col">Version</th><th scope="col">Released</th><th scope="col" class="hide-s">Size</th><th scope="col" class="links hide-s">Links</th></tr></thead>
+        <tbody>
+<!-- VERSIONS -->
+        </tbody>
+      </table>
+    </div>
+    <div class="more-row" id="more" hidden><button class="pill pill-corn" type="button">show all {{COUNT}} versions</button></div>
+    <p class="meta" data-current="{{CURRENT}}"><code>DianaWidget.bundle.js</code> serves v{{CURRENT}}. Updated by the deploy on {{UPDATED}}.</p>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <a href="https://demo.zuugle-services.net/">Demo</a>
+    <a href="https://github.com/zuugle-services/DianaWidget">GitHub</a>
+    <a href="https://zuugle-services.com/">zuugle-services.com</a>
+    <a href="https://zuugle-services.com/impressum/">Impressum</a>
+    <a href="https://zuugle-services.com/datenschutz/">Datenschutz</a>
+  </div>
+</footer>
+<script>
+var card = document.getElementById('vcard'), more = document.getElementById('more');
+if (card.querySelector('.more')) {
+  card.classList.add('collapsed');
+  more.hidden = false;
+  more.firstChild.addEventListener('click', function () { card.classList.remove('collapsed'); more.hidden = true; });
+}
+document.querySelectorAll('[data-copy]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var t = document.getElementById(b.dataset.copy).textContent;
+    if (!navigator.clipboard) return;
+    navigator.clipboard.writeText(t).then(function () {
+      b.textContent = 'copied';
+      setTimeout(function () { b.textContent = 'copy'; }, 1500);
+    });
+  });
+});
+</script>
+</body>
+</html>
