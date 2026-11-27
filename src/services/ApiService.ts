@@ -7,6 +7,7 @@
 import type { 
     WidgetConfig,
     ConnectionSearchResponse,
+    JourneySearchResponse,
     ShareDataResponse,
     CreateShareResponse,
     Suggestion
@@ -212,6 +213,17 @@ export class ApiService {
         const response = await this.fetch(
             `${this.config.apiBaseUrl}/connections?${queryString}`
         );
+        return await response.json();
+    }
+
+    /**
+     * Fetches plain A-to-B connections (journey mode).
+     * @param params - Query parameters for `GET /journey` (see buildJourneyParams)
+     * @returns Promise resolving to the journey response
+     */
+    async fetchJourney(params: Record<string, string>): Promise<JourneySearchResponse> {
+        const queryString = new URLSearchParams(params);
+        const response = await this.fetch(`${this.config.apiBaseUrl}/journey?${queryString}`);
         return await response.json();
     }
 

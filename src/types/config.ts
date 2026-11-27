@@ -5,6 +5,13 @@
 /** Valid location types for activity and user start locations */
 export type LocationType = 'coordinates' | 'coord' | 'coords' | 'address' | 'station';
 
+/**
+ * What the widget plans:
+ * - 'activity' (default): the outbound and return trip to an activity, within its time windows.
+ * - 'journey': a plain A-to-B connection search from a first point to a last point.
+ */
+export type WidgetMode = 'activity' | 'journey';
+
 /** Supported language codes */
 export type Language = 'EN' | 'DE' | 'FR' | 'IT' | 'TH' | 'ES';
 
@@ -62,6 +69,9 @@ export type UnavailableReason = 'noFutureDates' | 'outsideDisplayRange';
  * Configuration interface for DianaWidget
  */
 export interface WidgetConfig {
+    /** What the widget plans; defaults to 'activity'. See WidgetMode. */
+    mode: WidgetMode;
+
     /** Name of the activity. Optional: with no value the widget renders no title anywhere. */
     activityName?: string | null;
     
@@ -134,8 +144,44 @@ export interface WidgetConfig {
     /** Location type for override user start location */
     overrideUserStartLocationType?: LocationType | null;
     
+    /**
+     * Text shown in the origin field for overrideUserStartLocation, e.g. a station's full name
+     * or a place name for coordinates. The search still uses the override value and type.
+     */
+    overrideUserStartLocationDisplayName?: string | null;
+
     /** Whether to disable user start location field */
     disableUserStartLocationField: boolean;
+
+    /** Journey mode: prefilled destination (last point). */
+    overrideUserDestinationLocation?: string | null;
+
+    /** Journey mode: location type of overrideUserDestinationLocation. */
+    overrideUserDestinationLocationType?: LocationType | null;
+
+    /** Journey mode: text shown in the destination field for overrideUserDestinationLocation. */
+    overrideUserDestinationLocationDisplayName?: string | null;
+
+    /** Journey mode: lock the destination to overrideUserDestinationLocation (not editable). */
+    disableUserDestinationLocationField: boolean;
+
+    /** Journey mode: remember the destination the user picked (off by default). */
+    cacheUserDestinationLocation: boolean | (() => boolean);
+
+    /** Journey mode: TTL for the remembered destination in minutes. */
+    userDestinationLocationCacheTTLMinutes: number;
+
+    /** Journey mode: title in the header. Unset: a localised default; '' renders no title. */
+    journeyTitle?: string | null;
+
+    /** Journey mode: preset travel date (YYYY-MM-DD, widget timezone). Default: today. */
+    journeyDate?: string | null;
+
+    /** Journey mode: preset time (HH:MM, widget timezone). Default: the current time. */
+    journeyTime?: string | null;
+
+    /** Journey mode: preset the time as the latest arrival instead of the departure. */
+    journeyArriveBy: boolean;
     
     /** Start date for widget display period (YYYY-MM-DD) */
     displayStartDate?: string | null;

@@ -65,6 +65,11 @@ const TICKET_ICON = '<svg class="ticket-button__icon" xmlns="http://www.w3.org/2
  */
 export interface RendererElements {
     originInput?: HTMLInputElement | null;
+    /**
+     * Journey mode: the name of the route's last point. Replaces the activity's location as
+     * the end of a 'to' connection, and drops the "To activity" label from the summary.
+     */
+    destinationName?: string | null;
 }
 
 /**
@@ -128,8 +133,10 @@ export class ConnectionRenderer {
         let toLocation: string;
 
         if (type === 'to') {
-            fromLocation = elements.originInput?.value ?? '';
-            toLocation = connection.connection_elements[connection.connection_elements.length - 1].to_location ?? '';
+            const origin = elements.originInput?.value ?? '';
+            fromLocation = elements.destinationName != null ? escapeHtml(origin) : origin;
+            toLocation = elements.destinationName != null ? escapeHtml(elements.destinationName)
+                : connection.connection_elements[connection.connection_elements.length - 1].to_location ?? '';
         } else { // 'from'
             fromLocation = connection.connection_elements[0].from_location ?? '';
             toLocation = elements.originInput?.value ?? '';
@@ -158,7 +165,7 @@ export class ConnectionRenderer {
 
         return `
             <div class="summary-line-1">
-                <strong>${type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal}${renderDelayHint(departureDelay, 'departure', ctx)} - ${endTimeLocal}${renderDelayHint(arrivalDelay, 'arrival', ctx)}</strong>
+                <strong>${elements.destinationName != null ? '' : type === "to" ? this.t("journeyToActivity") + "  " : this.t("journeyFromActivity") + "  "}${startTimeLocal}${renderDelayHint(departureDelay, 'departure', ctx)} - ${endTimeLocal}${renderDelayHint(arrivalDelay, 'arrival', ctx)}</strong>
                 <div class="summary-icons">${iconsHTML}</div>
             </div>
             <div class="summary-line-2">
@@ -358,6 +365,7 @@ export class ConnectionRenderer {
         if (!isOriginalEnd) return escapeHtml(location ?? '');
         // The user's origin is where a 'to' connection starts and a 'from' connection ends.
         if ((type === 'to') === (end === 'first')) return escapeHtml(elements.originInput?.value ?? '');
+        if (type === 'to' && elements.destinationName != null) return escapeHtml(elements.destinationName);
         return escapeHtml(end === 'first'
             ? (this.config.activityEndLocationDisplayName || this.config.activityEndLocation)
             : (this.config.activityStartLocationDisplayName || this.config.activityStartLocation));

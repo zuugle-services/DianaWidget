@@ -179,6 +179,18 @@ export function getApiErrorTranslationKey(errorCode: string | number): string {
         5001: 'errors.api.sharedLinkInvalid',
         5002: 'errors.api.internalError',
         6001: 'errors.api.monthlyQuotaExceeded',
+        // /journey (journey mode)
+        8001: 'journeyMode.errors.invalidCoordinates',
+        8002: 'journeyMode.errors.fromNotFound',
+        8003: 'errors.api.internalError',
+        8004: 'errors.api.internalError',
+        8005: 'journeyMode.errors.invalidCoordinates',
+        8006: 'journeyMode.errors.toNotFound',
+        8007: 'errors.api.internalError',
+        8008: 'errors.api.internalError',
+        8010: 'errors.api.internalError',
+        8011: 'journeyMode.errors.noConnections',
+        8012: 'journeyMode.errors.noFutureConnections',
         'APP_INVALID_DATA': 'errors.api.invalidDataReceived'
     };
     return codeMap[errorCode] || 'errors.api.unknown';

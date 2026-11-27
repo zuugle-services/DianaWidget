@@ -477,7 +477,7 @@ export interface ConnectionSearchResponse {
     /** Canonical activity object */
     readonly activity?: ActivityObject;
 
-    /** Whether a billable realtime routing provider (VAO) answered; accounting only, not displayed */
+    /** Whether a billable realtime routing provider answered; accounting only, not displayed */
     readonly realtime_provider_used?: boolean;
 
     /** Error code if any */
@@ -488,6 +488,23 @@ export interface ConnectionSearchResponse {
 
     /** Shared journey block; present only in bundled mode (?share_id=...) */
     readonly shared_journey?: SharedJourneyBlock | null;
+}
+
+/**
+ * API response of `GET /journey` (plain A-to-B search, journey mode)
+ */
+export interface JourneySearchResponse {
+    /** Echo of the validated request (locations resolved to coordinates) */
+    readonly journey_request?: Record<string, unknown>;
+
+    /** Connections, ordered by departure */
+    readonly connections: Connection[];
+
+    /** `connection_id` of the recommended connection (not an array index) */
+    readonly recommended_connection_id?: number;
+
+    /** Whether a billable realtime routing provider answered; accounting only, not displayed */
+    readonly realtime_provider_used?: boolean;
 }
 
 /**

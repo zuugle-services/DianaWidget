@@ -7,9 +7,12 @@ import translations from '../translations';
 import { convertLocalTimeToUTC } from '../datetimeUtils';
 import {
     TIME_CONFIG_FIELDS,
+    REQUIRED_CONFIG_FIELDS,
+    JOURNEY_REQUIRED_CONFIG_FIELDS,
     isValidLocationType,
     isCoordinateLocationType
 } from '../constants';
+import { validateJourneyConfig } from './journeyMode';
 import type { WidgetConfig, Language } from '../types';
 import { selfSufficientGlobals, validateDateWindowConfig } from './dateWindows';
 
@@ -46,6 +49,17 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
     if (!translations[config.language]) {
         console.warn(`Unsupported language '${config.language}', falling back to EN`);
         config.language = 'EN';
+    }
+
+    // Validate the mode. Journey mode plans without an activity, so the activity fields are
+    // only required when the host left requiredFields at its default.
+    if (config.mode === undefined || config.mode === null) config.mode = 'activity';
+    if (config.mode !== 'activity' && config.mode !== 'journey') {
+        errors.push(`Invalid mode '${config.mode}'. Expected 'activity' or 'journey'.`);
+        config.mode = 'activity';
+    }
+    if (config.mode === 'journey' && config.requiredFields === (REQUIRED_CONFIG_FIELDS as unknown as string[])) {
+        config.requiredFields = [...JOURNEY_REQUIRED_CONFIG_FIELDS];
     }
 
     // Validate required fields
@@ -113,6 +127,9 @@ export function validateConfig(config: WidgetConfig): ValidationResult {
 
     // Validate override user start location
     validateUserStartLocation(config, errors);
+
+    // Journey-mode options (and warnings for options that do not apply to the mode)
+    validateJourneyConfig(config, errors);
 
     // Validate date fields
     validateDateFields(config, errors);

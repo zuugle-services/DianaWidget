@@ -103,6 +103,11 @@ export const REQUIRED_CONFIG_FIELDS = [
 ] as const;
 
 /**
+ * Required configuration fields in journey mode (no activity to describe).
+ */
+export const JOURNEY_REQUIRED_CONFIG_FIELDS = ['apiToken'] as const;
+
+/**
  * Time fields that require validation
  */
 export const TIME_CONFIG_FIELDS = [
@@ -118,6 +123,7 @@ export const TIME_CONFIG_FIELDS = [
 export const DEFAULT_CONFIG: WidgetConfig = {
     // REQUIRED_CONFIG_FIELDS is readonly to prevent mutation; cast needed for WidgetConfig.requiredFields type
     requiredFields: REQUIRED_CONFIG_FIELDS as unknown as string[],
+    mode: 'activity',
     activityStartLocationDisplayName: null,
     activityEndLocationDisplayName: null,
     timezone: DEFAULT_TIMEZONE,
@@ -130,7 +136,18 @@ export const DEFAULT_CONFIG: WidgetConfig = {
     userStartLocationCacheTTLMinutes: DEFAULT_CACHE_TTL_MINUTES,
     overrideUserStartLocation: null,
     overrideUserStartLocationType: null,
+    overrideUserStartLocationDisplayName: null,
     disableUserStartLocationField: false,
+    overrideUserDestinationLocation: null,
+    overrideUserDestinationLocationType: null,
+    overrideUserDestinationLocationDisplayName: null,
+    disableUserDestinationLocationField: false,
+    cacheUserDestinationLocation: false,
+    userDestinationLocationCacheTTLMinutes: DEFAULT_CACHE_TTL_MINUTES,
+    journeyTitle: null,
+    journeyDate: null,
+    journeyTime: null,
+    journeyArriveBy: false,
     displayStartDate: null,
     displayEndDate: null,
     destinationInputName: null,
